@@ -65,7 +65,7 @@ class PureAdvection {
   SparseMatrix<double> mass_matrix;
   SparseMatrix<double> dg_matrix;
   SparseMatrix<double> system_matrix;
-  
+
   Vector<double> current_solution;
   Vector<double> previous_solution;
 
@@ -86,8 +86,18 @@ class PureAdvection {
   // Point<dim> right_top;
 };
 
-}  // namespace pure_advection_system
-int main() {
+template <int max_degree, int dim>
+PureAdvection<max_degree, dim>::PureAdvection()
+    : dof_handler(triangulation),
+      mapping(),
+      fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
+      quadrature(fe.tensor_degree() + 1),
+      quadrature_face(fe.tensor_degree() + 1),
+      time_step(3. / 64),
+      time(0.),
+      time_step_number(0),
+      theta(0.5),
+      eta(1.) {}
 
-  return 0;
-}
+}  // namespace pure_advection_system
+int main() { return 0; }
