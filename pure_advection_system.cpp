@@ -147,5 +147,13 @@ void PureAdvection<max_degree, dim>::setup_system() {
   constraints.close();
 }
 
+template <int max_degree, int dim>
+void PureAdvection<max_degree, dim>::output_parameters() const {
+  std::cout << "	Time step: " << time_step << "\n";
+  std::cout << "	Theta: " << theta << "\n";
+  std::cout << "	Eta: " << eta << "\n";
+  std::cout << "	Number of modes: " << num_modes << "\n";
+}
+
 }  // namespace pure_advection_system
 int main() { return 0; }
