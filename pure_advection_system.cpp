@@ -122,7 +122,7 @@ void PureAdvection<max_degree, dim>::make_grid() {
   // grid_out.write_vtk(triangulation, out);
   // std::cout << "	Grid written to grid.vtk"
   //           << "\n";
-  std::cout << "	Number of active cells:"
+  std::cout << "	Number of active cells: "
             << triangulation.n_active_cells() << "\n";
 }
 
