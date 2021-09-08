@@ -108,5 +108,19 @@ void PureAdvection<max_degree, dim>::run() {
   setup_system();
 }
 
+template <int max_degree, int dim>
+void PureAdvection<max_degree, dim>::make_grid() {
+  GridGenerator::hyper_cube(triangulation);
+  triangulation.refine_global(4);
+
+  // std::ofstream out("grid.vtk");
+  // GridOut grid_out;
+  // grid_out.write_vtk(triangulation, out);
+  // std::cout << "	Grid written to grid.vtk"
+  //           << "\n";
+  std::cout << "	Number of active cells:"
+            << triangulation.n_active_cells() << "\n";
+}
+
 }  // namespace pure_advection_system
 int main() { return 0; }
