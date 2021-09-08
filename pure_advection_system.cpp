@@ -122,5 +122,30 @@ void PureAdvection<max_degree, dim>::make_grid() {
             << triangulation.n_active_cells() << "\n";
 }
 
+template <int max_degree, int dim>
+void PureAdvection<max_degree, dim>::setup_system() {
+  dof_handler.distribute_dofs(fe);
+  const unsigned int n_dofs = dof_handler.n_dofs();
+  std::cout << "	Number of degrees of freedom: " << n_dofs << "\n";
+
+  DynamicSparsityPattern dsp(n_dofs);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  sparsity_pattern.copy_from(dsp);
+
+  dg_matrix.reinit(sparsity_pattern);
+  // TODO: Check if you can work with two different sparsity patterns.
+  mass_matrix.reinit(sparsity_pattern);
+  system_matrix.reinit(sparsity_pattern);
+
+  // Vectors
+  current_solution.reinit(n_dofs);
+  previous_solution.reinit(n_dofs);
+  system_rhs.reinit(n_dofs);
+
+  // This is an rather obscure line. I do not know why I need it. (cf. example
+  // 23)
+  constraints.close();
+}
+
 }  // namespace pure_advection_system
 int main() { return 0; }
