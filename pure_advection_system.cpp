@@ -37,8 +37,8 @@ class PureAdvection {
   void run();
 
  private:
-  void setup_system();
   void make_grid();
+  void setup_system();
   void assemble_system();
   void solve_system();
   void output_results() const;
@@ -72,14 +72,17 @@ class PureAdvection {
   Vector<double> system_rhs;
 
   // number of expansion coefficients
-  unsigned int num_modes = (max_degree + 1) * (max_degree + 1);
+  const unsigned int num_modes = (max_degree + 1) * (max_degree + 1);
 
-  double time_step;
+  const double time_step;
   double time;
   unsigned int time_step_number;
   const double theta;
   // penalty parameter ( for a scalar equation eta = 1 -> upwinding)
-  double eta;
+  const double eta;
+
+  // Number of refinements
+  const unsigned int num_refinements;
   // Fort the moment, I will use a quadratic domain
   // Rectangular domain
   // Point<dim> left_bottom;
@@ -97,7 +100,8 @@ PureAdvection<max_degree, dim>::PureAdvection()
       time(0.),
       time_step_number(0),
       theta(0.5),
-      eta(1.) {}
+      eta(1.),
+      num_refinements(4) {}
 
 template <int max_degree, int dim>
 void PureAdvection<max_degree, dim>::run() {
@@ -111,7 +115,7 @@ void PureAdvection<max_degree, dim>::run() {
 template <int max_degree, int dim>
 void PureAdvection<max_degree, dim>::make_grid() {
   GridGenerator::hyper_cube(triangulation);
-  triangulation.refine_global(4);
+  triangulation.refine_global(num_refinements);
 
   // std::ofstream out("grid.vtk");
   // GridOut grid_out;
@@ -153,6 +157,8 @@ void PureAdvection<max_degree, dim>::output_parameters() const {
   std::cout << "	Theta: " << theta << "\n";
   std::cout << "	Eta: " << eta << "\n";
   std::cout << "	Number of modes: " << num_modes << "\n";
+  std::cout << "	Number of global refinements: " << num_refinements
+            << "\n";
 }
 }  // namespace pure_advection_system
 
