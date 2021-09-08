@@ -154,6 +154,11 @@ void PureAdvection<max_degree, dim>::output_parameters() const {
   std::cout << "	Eta: " << eta << "\n";
   std::cout << "	Number of modes: " << num_modes << "\n";
 }
-
 }  // namespace pure_advection_system
-int main() { return 0; }
+
+int main() {
+  pure_advection_system::PureAdvection<2, 1> pure_advection;
+  pure_advection.run();
+
+  return 0;
+}
