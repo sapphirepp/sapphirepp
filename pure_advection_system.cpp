@@ -99,5 +99,14 @@ PureAdvection<max_degree, dim>::PureAdvection()
       theta(0.5),
       eta(1.) {}
 
+template <int max_degree, int dim>
+void PureAdvection<max_degree, dim>::run() {
+  std::cout << "Start the simulation: "
+            << "\n\n";
+  output_parameters();
+  make_grid();
+  setup_system();
+}
+
 }  // namespace pure_advection_system
 int main() { return 0; }
