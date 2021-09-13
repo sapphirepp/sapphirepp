@@ -1,7 +1,6 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/quadrature_lib.h>
-// #include <deal.II/base/tensor.h>
-
+#include <deal.II/base/tensor_function.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/tria.h>
@@ -30,6 +29,24 @@
 
 namespace pure_advection_system {
 using namespace dealii;
+// Input data
+// the velocity field field
+template <int dim>
+class VelocityField : public TensorFunction<1, dim> {
+ public:
+  virtual void value_list(const std::vector<Point<dim>>& points,
+                          std::vector<Tensor<1, dim>>& values) const override {
+    Assert(dim == 1, ExcNotImplemented());
+    Assert(values.size() == points.size(),
+           ExcDimensionMismatch(values.size(), points.size()));
+
+    Tensor<1, dim> value({.5});
+    // constant velocity field
+    for (unsigned int i = 0; i < points.size(); ++i) {
+      values[i] = value;
+    }
+  }
+};
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
 
@@ -216,6 +233,17 @@ void PureAdvection<flags, max_degree, dim>::output_index_order() const {
 
 int main() {
   using namespace pure_advection_system;
+  // Test 1D velocity field
+  VelocityField<1> beta;
+  Point<1> point_01{0.3};
+  Point<1> point_02{0.1};
+  std::vector<Point<1>> points{point_01, point_02};
+  std::vector<Tensor<1, 1>> values(2);
+  beta.value_list(points, values);
+  for (auto value : values) {
+    std::cout << value << "\n";
+  }
+
   constexpr TermFlags flags = advection;
   PureAdvection<flags, 2, 1> pure_advection;
   pure_advection.run();
