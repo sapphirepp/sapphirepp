@@ -30,7 +30,25 @@
 namespace pure_advection_system {
 using namespace dealii;
 
-template <int max_degree, int dim>
+enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
+
+constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
+  return static_cast<TermFlags>(static_cast<int>(f1) | static_cast<int>(f2));
+}
+
+constexpr TermFlags operator&(TermFlags f1, TermFlags f2) {
+  return static_cast<TermFlags>(static_cast<int>(f1) & static_cast<int>(f2));
+}
+
+template <typename StreamType>
+inline StreamType& operator<<(StreamType& s, TermFlags f) {
+  s << "Term flags: \n";
+  if (f & advection) s << "	 - Advection\n";
+  if (f & reaction) s << "	 - Reaction\n";
+  return s;
+}
+
+template <TermFlags flags, int max_degree, int dim>
 class PureAdvection {
  public:
   PureAdvection();
@@ -89,8 +107,8 @@ class PureAdvection {
   // Point<dim> right_top;
 };
 
-template <int max_degree, int dim>
-PureAdvection<max_degree, dim>::PureAdvection()
+template <TermFlags flags, int max_degree, int dim>
+PureAdvection<flags, max_degree, dim>::PureAdvection()
     : dof_handler(triangulation),
       mapping(),
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
@@ -103,8 +121,8 @@ PureAdvection<max_degree, dim>::PureAdvection()
       eta(1.),
       num_refinements(4) {}
 
-template <int max_degree, int dim>
-void PureAdvection<max_degree, dim>::run() {
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::run() {
   std::cout << "Start the simulation: "
             << "\n\n";
   output_parameters();
@@ -112,8 +130,8 @@ void PureAdvection<max_degree, dim>::run() {
   setup_system();
 }
 
-template <int max_degree, int dim>
-void PureAdvection<max_degree, dim>::make_grid() {
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::make_grid() {
   GridGenerator::hyper_cube(triangulation);
   triangulation.refine_global(num_refinements);
 
@@ -126,8 +144,8 @@ void PureAdvection<max_degree, dim>::make_grid() {
             << triangulation.n_active_cells() << "\n";
 }
 
-template <int max_degree, int dim>
-void PureAdvection<max_degree, dim>::setup_system() {
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::setup_system() {
   dof_handler.distribute_dofs(fe);
   const unsigned int n_dofs = dof_handler.n_dofs();
   std::cout << "	Number of degrees of freedom: " << n_dofs << "\n";
@@ -151,11 +169,12 @@ void PureAdvection<max_degree, dim>::setup_system() {
   constraints.close();
 }
 
-template <int max_degree, int dim>
-void PureAdvection<max_degree, dim>::output_parameters() const {
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
   std::cout << "	Theta: " << theta << "\n";
   std::cout << "	Eta: " << eta << "\n";
+  std::cout << "	" << flags;
   std::cout << "	Number of modes: " << num_modes << "\n";
   std::cout << "	Number of global refinements: " << num_refinements
             << "\n";
@@ -163,7 +182,9 @@ void PureAdvection<max_degree, dim>::output_parameters() const {
 }  // namespace pure_advection_system
 
 int main() {
-  pure_advection_system::PureAdvection<2, 1> pure_advection;
+  using namespace pure_advection_system;
+  constexpr TermFlags flags = advection;
+  PureAdvection<flags, 2, 1> pure_advection;
   pure_advection.run();
 
   return 0;
