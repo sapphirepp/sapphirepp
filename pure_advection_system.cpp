@@ -1,6 +1,8 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
+#include <deal.II/base/types.h>
+#include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/tria.h>
@@ -65,6 +67,63 @@ inline StreamType& operator<<(StreamType& s, TermFlags f) {
   if (f & reaction) s << "	 - Reaction\n";
   return s;
 }
+
+// the mesh_loop function requires helper data types
+template <int dim>
+class ScratchData {
+  // Constructor
+  ScratchData(const Mapping<dim>& mapping, const FiniteElement<dim>& fe,
+              const Quadrature<dim>& quadrature,
+              const Quadrature<dim - 1>& quadrature_face,
+              const UpdateFlags update_flags = update_values |
+                                               update_gradients |
+                                               update_quadrature_points |
+                                               update_JxW_values,
+              const UpdateFlags interface_update_flags =
+                  update_values | update_quadrature_points | update_JxW_values |
+                  update_normal_vectors)
+      : fe_values(mapping, fe, quadrature, update_flags),
+        fe_interface_values(mapping, fe, quadrature_face,
+                            interface_update_flags) {}
+
+  // Copy Constructor
+  ScratchData(const ScratchData<dim>& scratch_data)
+      : fe_values(scratch_data.fe_values.get_mapping(),
+                  scratch_data.fe_values.get_fe(),
+                  scratch_data.fe_values.get_quadrature(),
+                  scratch_data.fe_values.get_update_flags()),
+        fe_interface_values(
+            scratch_data.fe_interface_values.get_mapping(),
+            scratch_data.fe_interface_values.get_fe(),
+            scratch_data.fe_interface_values.get_quadratutre(),
+            scratch_data.fe_interface_values.get_update_flags()) {}
+
+  FEValues<dim> fe_values;
+  FEInterfaceValues<dim> fe_interface_values;
+};
+
+struct CopyDataFace {
+  FullMatrix<double> cell_matrix;
+  std::vector<types::global_dof_index> joint_dof_indices;
+};
+
+struct CopyData {
+  FullMatrix<double> cell_dg_matrix;
+  FullMatrix<double> cell_mass_matrix;
+  Vector<double> cell_rhs;
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<CopyDataFace> face_data;
+
+  template <typename Iterator>
+  void reinit(const Iterator& cell, unsigned int dofs_per_cell) {
+    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_rhs.reinit(dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+  }
+};
 
 template <TermFlags flags, int max_degree, int dim>
 class PureAdvection {
@@ -208,6 +267,21 @@ void PureAdvection<flags, max_degree, dim>::setup_system() {
   // This is an rather obscure line. I do not know why I need it. (cf. example
   // 23)
   constraints.close();
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::assemble_system() {
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
+  // A templated bit mask could be used to decide which terms of the
+  // Fokker-Planck equation are included
+  /*
+     What kind of loops are there ?
+     1. Loop over all cells (this happens inside the mesh_loop)
+     2. Loop over the degrees of freedom on each cell
+     - the metod system_to_componet_index() returns the index of the non-zero
+     component of the vector-valued shape function which corresponds to the
+     indices (l,m,s)
+   */
 }
 
 template <TermFlags flags, int max_degree, int dim>
