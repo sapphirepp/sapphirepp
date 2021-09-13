@@ -71,6 +71,7 @@ inline StreamType& operator<<(StreamType& s, TermFlags f) {
 // the mesh_loop function requires helper data types
 template <int dim>
 class ScratchData {
+ public:
   // Constructor
   ScratchData(const Mapping<dim>& mapping, const FiniteElement<dim>& fe,
               const Quadrature<dim>& quadrature,
@@ -227,6 +228,7 @@ void PureAdvection<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_system();
+  assemble_system();
   output_index_order();
 }
 
@@ -271,17 +273,65 @@ void PureAdvection<flags, max_degree, dim>::setup_system() {
 
 template <TermFlags flags, int max_degree, int dim>
 void PureAdvection<flags, max_degree, dim>::assemble_system() {
-  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-  // A templated bit mask could be used to decide which terms of the
-  // Fokker-Planck equation are included
   /*
-     What kind of loops are there ?
-     1. Loop over all cells (this happens inside the mesh_loop)
-     2. Loop over the degrees of freedom on each cell
-     - the metod system_to_componet_index() returns the index of the non-zero
-     component of the vector-valued shape function which corresponds to the
-     indices (l,m,s)
-   */
+    What kind of loops are there ?
+    1. Loop over all cells (this happens inside the mesh_loop)
+    2. Loop over the degrees of freedom on each cell
+    - the metod system_to_componet_index() returns the index of the non-zero
+    component of the vector-valued shape function which corresponds to the
+    indices (l,m,s)
+  */
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
+
+  VelocityField<dim> beta;
+  beta.set_time(time);
+  // I do not no the meaning of the following "const" specifier
+  const auto cell_worker = [&](const Iterator& cell,
+                               ScratchData<dim>& scratch_data,
+                               CopyData& copy_data) {
+    FEValues<dim>& fe_v = scratch_data.fe_values;
+    // reinit cell
+    fe_v.reinit(cell);
+
+    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
+    // reinit the matrices cell_matrix_dg, cell_mass_matrix
+    copy_data.reinit(cell, n_dofs);
+
+    const std::vector<Point<dim>>& q_points = fe_v.get_quadrature_points();
+    const std::vector<double>& JxW = fe_v.get_JxW_values();
+
+    std::vector<Tensor<1, dim>> velocities(q_points.size());
+    beta.value_list(q_points, velocities);
+    for (unsigned int i : fe_v.dof_indices()) {
+      const unsigned int component_i =
+          fe_v.get_fe().system_to_component_index(i).first;
+      const std::array<unsigned int, 3> lms_i = lms_indices[i];
+
+      for (unsigned int j : fe_v.dof_indices()) {
+        const unsigned int component_j =
+            fe_v.get_fe().system_to_component_index(j).first;
+        const std::array<unsigned int, 3> lms_j = lms_indices[j];
+
+        for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+          // mass matrix
+          copy_data.cell_mass_matrix(i, j) +=
+              (component_i == component_j
+                   ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
+                   : 0) *
+              JxW[q_index];
+          // dg matrix
+          if (flags & TermFlags::reaction)
+            // l(l+1) * \phi_i * \phi_i
+            copy_data.cell_dg_matrix(i, j) +=
+                (component_i == component_j
+                     ? lms_i[0] * (lms_i[0] + 1) *
+                           fe_v.shape_value(i, q_index) *
+                           fe_v.shape_value(j, q_index) * JxW[q_index]
+                     : 0);
+        }
+      }
+    }
+  };
 }
 
 template <TermFlags flags, int max_degree, int dim>
