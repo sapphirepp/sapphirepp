@@ -24,6 +24,7 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 
+#include <array>
 #include <fstream>
 #include <iostream>
 
@@ -61,6 +62,7 @@ class PureAdvection {
   void solve_system();
   void output_results() const;
   void output_parameters() const;
+  void output_index_order() const;
 
   Triangulation<dim> triangulation;
   DoFHandler<dim> dof_handler;
@@ -105,6 +107,10 @@ class PureAdvection {
   // Rectangular domain
   // Point<dim> left_bottom;
   // Point<dim> right_top;
+
+  // Map between i and l,m,s (implemented in constructor)
+  std::array<std::array<unsigned int, 3>, (max_degree + 1) * (max_degree + 1)>
+      lms_indices;
 };
 
 template <TermFlags flags, int max_degree, int dim>
@@ -119,7 +125,24 @@ PureAdvection<flags, max_degree, dim>::PureAdvection()
       time_step_number(0),
       theta(0.5),
       eta(1.),
-      num_refinements(4) {}
+      num_refinements(4) {
+  for (unsigned int j = 0.5 * (max_degree + 1) * (max_degree + 2), i = 0, l = 0;
+       l <= max_degree; ++l) {
+    // a_lm indices
+    for (unsigned int m = 0; m <= l; ++m, ++i) {
+      lms_indices[i][0] = l;
+      lms_indices[i][1] = m;
+      lms_indices[i][2] = 0;
+      // b_lm indices
+      if (m != 0) {
+        lms_indices[j][0] = l;
+        lms_indices[j][1] = m;
+        lms_indices[j][2] = 1;
+        ++j;
+      }
+    }
+  }
+}
 
 template <TermFlags flags, int max_degree, int dim>
 void PureAdvection<flags, max_degree, dim>::run() {
@@ -128,6 +151,7 @@ void PureAdvection<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_system();
+  output_index_order();
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -178,6 +202,15 @@ void PureAdvection<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Number of modes: " << num_modes << "\n";
   std::cout << "	Number of global refinements: " << num_refinements
             << "\n";
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::output_index_order() const {
+  std::cout << "Ordering of the lms indices: "
+            << "\n";
+
+  for (std::array<unsigned int, 3> lms : lms_indices)
+    std::cout << "	" << lms[0] << lms[1] << lms[2] << "\n";
 }
 }  // namespace pure_advection_system
 
