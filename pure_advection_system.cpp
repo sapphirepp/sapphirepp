@@ -25,6 +25,7 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iostream>
@@ -47,6 +48,14 @@ class VelocityField : public TensorFunction<1, dim> {
     for (unsigned int i = 0; i < points.size(); ++i) {
       values[i] = value;
     }
+  }
+
+  void divergence_list(const std::vector<Point<dim>>& points,
+                       std::vector<double>& values) {
+    Assert(dim == 1, ExcNotImplemented());
+    Assert(values.size() == points.size(),
+           ExcDimensionMismatch(values.size(), points.size()));
+    std::fill(values.begin(), values.end(), 0.);
   }
 };
 
@@ -302,15 +311,18 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
 
     std::vector<Tensor<1, dim>> velocities(q_points.size());
     beta.value_list(q_points, velocities);
+    std::vector<double> div_velocities(q_points.size());
+    beta.divergence_list(q_points, div_velocities);
+
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
           fe_v.get_fe().system_to_component_index(i).first;
-      const std::array<unsigned int, 3> lms_i = lms_indices[i];
+      const std::array<unsigned int, 3> i_lms = lms_indices[i];
 
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-        const std::array<unsigned int, 3> lms_j = lms_indices[j];
+        const std::array<unsigned int, 3> j_lms = lms_indices[j];
 
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
@@ -362,13 +374,14 @@ int main() {
   Point<1> point_01{0.3};
   Point<1> point_02{0.1};
   std::vector<Point<1>> points{point_01, point_02};
-  std::vector<Tensor<1, 1>> values(2);
-  beta.value_list(points, values);
+  // std::vector<Tensor<1, 1>> values(2);
+  std::vector<double> values(2);
+  beta.divergence_list(points, values);
   for (auto value : values) {
     std::cout << value << "\n";
   }
 
-  constexpr TermFlags flags = advection;
+  constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
   PureAdvection<flags, 2, 1> pure_advection;
   pure_advection.run();
 
