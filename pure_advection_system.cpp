@@ -38,8 +38,8 @@ using namespace dealii;
 template <int dim>
 class VelocityField : public TensorFunction<1, dim> {
  public:
-  virtual void value_list(const std::vector<Point<dim>>& points,
-                          std::vector<Tensor<1, dim>>& values) const override {
+  virtual void value_list(const std::vector<Point<dim>> &points,
+                          std::vector<Tensor<1, dim>> &values) const override {
     Assert(dim == 1, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
@@ -51,8 +51,8 @@ class VelocityField : public TensorFunction<1, dim> {
     }
   }
 
-  void divergence_list(const std::vector<Point<dim>>& points,
-                       std::vector<double>& values) {
+  void divergence_list(const std::vector<Point<dim>> &points,
+                       std::vector<double> &values) {
     Assert(dim == 1, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
@@ -71,7 +71,7 @@ constexpr TermFlags operator&(TermFlags f1, TermFlags f2) {
 }
 
 template <typename StreamType>
-inline StreamType& operator<<(StreamType& s, TermFlags f) {
+inline StreamType &operator<<(StreamType &s, TermFlags f) {
   s << "Term flags: \n";
   if (f & advection) s << "	 - Advection\n";
   if (f & reaction) s << "	 - Reaction\n";
@@ -83,9 +83,9 @@ template <int dim>
 class ScratchData {
  public:
   // Constructor
-  ScratchData(const Mapping<dim>& mapping, const FiniteElement<dim>& fe,
-              const Quadrature<dim>& quadrature,
-              const Quadrature<dim - 1>& quadrature_face,
+  ScratchData(const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
+              const Quadrature<dim> &quadrature,
+              const Quadrature<dim - 1> &quadrature_face,
               const UpdateFlags update_flags = update_values |
                                                update_gradients |
                                                update_quadrature_points |
@@ -98,7 +98,7 @@ class ScratchData {
                             interface_update_flags) {}
 
   // Copy Constructor
-  ScratchData(const ScratchData<dim>& scratch_data)
+  ScratchData(const ScratchData<dim> &scratch_data)
       : fe_values(scratch_data.fe_values.get_mapping(),
                   scratch_data.fe_values.get_fe(),
                   scratch_data.fe_values.get_quadrature(),
@@ -126,7 +126,7 @@ struct CopyData {
   std::vector<CopyDataFace> face_data;
 
   template <typename Iterator>
-  void reinit(const Iterator& cell, unsigned int dofs_per_cell) {
+  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
     cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
     cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
     cell_rhs.reinit(dofs_per_cell);
@@ -154,8 +154,8 @@ class PureAdvection {
   Triangulation<dim> triangulation;
   DoFHandler<dim> dof_handler;
 
-  // NOTE: The explicit use of a mapping is most likely related to the usage of
-  // mesh_loop as well
+  // NOTE: The explicit use of a mapping is most likely related to the usage
+  // of mesh_loop as well
   const MappingQ1<dim> mapping;
   const FESystem<dim> fe;  // TODO: const is probably wrong
 
@@ -296,10 +296,10 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
   VelocityField<dim> beta;
   beta.set_time(time);
   // I do not no the meaning of the following "const" specifier
-  const auto cell_worker = [&](const Iterator& cell,
-                               ScratchData<dim>& scratch_data,
-                               CopyData& copy_data) {
-    FEValues<dim>& fe_v = scratch_data.fe_values;
+  const auto cell_worker = [&](const Iterator &cell,
+                               ScratchData<dim> &scratch_data,
+                               CopyData &copy_data) {
+    FEValues<dim> &fe_v = scratch_data.fe_values;
     // reinit cell
     fe_v.reinit(cell);
 
