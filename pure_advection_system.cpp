@@ -473,6 +473,34 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
     }
   };
 
+  // assemble interior face terms
+  const auto face_worker =
+      [&](const Iterator &cell, const unsigned int &face_no,
+          const unsigned int &subface_no, const Iterator &neighbor_cell,
+          const unsigned int &neighbor_face_no,
+          const unsigned int &neighbor_subface_no,
+          ScratchData<dim> &scratch_data, CopyData &copy_data) {
+        FEInterfaceValues<dim> &fe_interface_v =
+            scratch_data.fe_interface_values;
+        fe_interface_v.reinit(cell, face_no, subface_no, neighbor_cell,
+                              neighbor_face_no, neighbor_subface_no);
+
+        const std::vector<Point<dim>> &q_points =
+            fe_interface_v.get_quadrature_points();
+        // Create an element at the end of the vector containig the face data
+        copy_data.face_data.emplace_back();
+	CopyDataFace &copy_data_face = copy_data.face_data.back();
+	const unsigned int n_interface_dofs = fe_interface_v.n_current_interface_dofs();
+	copy_data_face.cell_matrix.reinit(n_interface_dofs, n_interface_dofs);
+	copy_data_face.joint_dof_indices = fe_interface_v.get_interface_dof_indices();
+
+	const std::vector<double> &JxW = fe_interface_v.get_JxW_values();
+	const std::vector<Tensor<1,dim>> &normals = fe_interface_v.get_normal_vectors();
+
+	std::vector<Tensor<1,dim>> velocities(q_points.size());
+	beta.value_list(q_points, velocities);
+	
+      };
   for (const auto &cell : dof_handler.active_cell_iterators()) {
     CopyData copy_data;
     ScratchData<dim> scratch_data{mapping, fe, quadrature, quadrature_face};
