@@ -317,12 +317,12 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
           fe_v.get_fe().system_to_component_index(i).first;
-      const std::array<unsigned int, 3> i_lms = lms_indices[i];
+      const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
 
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-        const std::array<unsigned int, 3> j_lms = lms_indices[j];
+        const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
 
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
