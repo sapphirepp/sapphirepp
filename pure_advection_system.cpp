@@ -2,6 +2,7 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/types.h>
+#include <deal.II/base/vectorization.h>
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
@@ -332,18 +333,81 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
                    : 0) *
               JxW[q_index];
           // dg matrix
-          if (flags & TermFlags::reaction)
-            // l(l+1) * \phi_i * \phi_i
-            copy_data.cell_dg_matrix(i, j) +=
-                (component_i == component_j
-                     ? lms_i[0] * (lms_i[0] + 1) *
-                           fe_v.shape_value(i, q_index) *
-                           fe_v.shape_value(j, q_index) * JxW[q_index]
-                     : 0);
+          if (flags & TermFlags::reaction) {
+            std::cout << "reaction"
+                      << "\n";
+            // l(l+1) * \phi_i * \phi_j
+            if (component_i == component_j) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  (i_lms[0] * (i_lms[0] + 1) * fe_v.shape_value(i, q_index) *
+                   fe_v.shape_value(j, q_index) * JxW[q_index]);
+            }
+          }
+          if (flags & TermFlags::advection) {
+            std::cout << "advection"
+                      << "\n";
+            // - \div \vec{a}_ij \phi_i \phi_j where \div \vec{a}_ij = 0 for i
+            // != j and \div \vec{a}_ii = \div \vec{u}
+            if (component_i == component_j) {
+              copy_data.cell_dg_matrix(i, j) += -div_velocities[q_index] *
+                                                fe_v.shape_value(i, q_index) *
+                                                fe_v.shape_value(j, q_index);
+            }
+            // -\grad \phi_i * \vec{a}_i_j * phi_j
+            if (component_i == component_j) {
+              std::cout << "component_i: " << component_i << "\n";
+              std::cout << "component_j: " << component_j << "\n";
+              std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
+                        << "\n";
+              std::cout << "l_prime, m_prime, s_prime: " << j_lms[0] << j_lms[1]
+                        << j_lms[2] << "\n";
+              std::cout << "a: " << velocities[q_index] << "\n";
+
+              copy_data.cell_dg_matrix(i, j) += -fe_v.shape_grad(i, q_index) *
+                                                velocities[q_index] *
+                                                fe_v.shape_value(j, q_index);
+            }
+            if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] && i_lms[2] == j_lms[2]) {
+              std::cout << "component_i: " << component_i << "\n";
+              std::cout << "component_j: " << component_j << "\n";
+              std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
+                        << "\n";
+              std::cout << "l_prime, m_prime, s_prime: " << j_lms[0] << j_lms[1]
+                        << j_lms[2] << "\n";
+
+              Tensor<1, dim> a;
+              a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+              std::cout << "a: " << a << "\n";
+
+              copy_data.cell_dg_matrix(i, j) += -fe_v.shape_grad(i, q_index) *
+                                                a *
+                                                fe_v.shape_value(j, q_index);
+            }
+            if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] && i_lms[2] == j_lms[2]) {
+              std::cout << "component_i: " << component_i << "\n";
+              std::cout << "component_j: " << component_j << "\n";
+              std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
+                        << "\n";
+              std::cout << "l_prime, m_prime, s_prime: " << j_lms[0] << j_lms[1]
+                        << j_lms[2] << "\n";
+
+              Tensor<1, dim> a;
+              a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+              std::cout << "a: " << a << "\n";
+              copy_data.cell_dg_matrix(i, j) += -fe_v.shape_grad(i, q_index) *
+                                                a *
+                                                fe_v.shape_value(j, q_index);
+            }
+          }
         }
       }
     }
   };
+  for (const auto& cell : dof_handler.active_cell_iterators()) {
+    CopyData copy_data;
+    ScratchData<dim> scratch_data{mapping, fe, quadrature, quadrature_face};
+    cell_worker(cell, scratch_data, copy_data);
+  }
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -381,7 +445,7 @@ int main() {
     std::cout << value << "\n";
   }
 
-  constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
+  constexpr TermFlags flags = TermFlags::advection;
   PureAdvection<flags, 2, 1> pure_advection;
   pure_advection.run();
 
