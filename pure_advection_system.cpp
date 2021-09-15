@@ -307,8 +307,8 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
     // reinit the matrices cell_matrix_dg, cell_mass_matrix
     copy_data.reinit(cell, n_dofs);
 
-    const std::vector<Point<dim>>& q_points = fe_v.get_quadrature_points();
-    const std::vector<double>& JxW = fe_v.get_JxW_values();
+    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     std::vector<Tensor<1, dim>> velocities(q_points.size());
     beta.value_list(q_points, velocities);
@@ -346,12 +346,13 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
           if (flags & TermFlags::advection) {
             std::cout << "advection"
                       << "\n";
-            // - \div \vec{a}_ij \phi_i \phi_j where \div \vec{a}_ij = 0 for i
+            // - \div \vec{a}_ij \phi_i \phi_j where \div \vec{a}_ij =
+            // 0 for i
             // != j and \div \vec{a}_ii = \div \vec{u}
             if (component_i == component_j) {
-              copy_data.cell_dg_matrix(i, j) += -div_velocities[q_index] *
-                                                fe_v.shape_value(i, q_index) *
-                                                fe_v.shape_value(j, q_index);
+              copy_data.cell_dg_matrix(i, j) +=
+                  -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
             // -\grad \phi_i * \vec{a}_i_j * phi_j
             if (component_i == component_j) {
@@ -363,11 +364,12 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
                         << j_lms[2] << "\n";
               std::cout << "a: " << velocities[q_index] << "\n";
 
-              copy_data.cell_dg_matrix(i, j) += -fe_v.shape_grad(i, q_index) *
-                                                velocities[q_index] *
-                                                fe_v.shape_value(j, q_index);
+              copy_data.cell_dg_matrix(i, j) +=
+                  -fe_v.shape_grad(i, q_index) * velocities[q_index] *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
-            if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] && i_lms[2] == j_lms[2]) {
+            if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+                i_lms[2] == j_lms[2]) {
               std::cout << "component_i: " << component_i << "\n";
               std::cout << "component_j: " << component_j << "\n";
               std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
@@ -379,11 +381,12 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
               a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
               std::cout << "a: " << a << "\n";
 
-              copy_data.cell_dg_matrix(i, j) += -fe_v.shape_grad(i, q_index) *
-                                                a *
-                                                fe_v.shape_value(j, q_index);
+              copy_data.cell_dg_matrix(i, j) +=
+                  -fe_v.shape_grad(i, q_index) * a *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
-            if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] && i_lms[2] == j_lms[2]) {
+            if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+                i_lms[2] == j_lms[2]) {
               std::cout << "component_i: " << component_i << "\n";
               std::cout << "component_j: " << component_j << "\n";
               std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
