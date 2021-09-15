@@ -397,16 +397,83 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
               Tensor<1, dim> a;
               a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
               std::cout << "a: " << a << "\n";
-              copy_data.cell_dg_matrix(i, j) += -fe_v.shape_grad(i, q_index) *
-                                                a *
-                                                fe_v.shape_value(j, q_index);
+              copy_data.cell_dg_matrix(i, j) +=
+                  -fe_v.shape_grad(i, q_index) * a *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
         }
       }
     }
   };
-  for (const auto& cell : dof_handler.active_cell_iterators()) {
+  // assemble boundary face terms
+  const auto boundary_worker = [&](const Iterator &cell,
+                                   const unsigned int &face_no,
+                                   ScratchData<dim> &scratch_data,
+                                   CopyData &copy_data) {
+    scratch_data.fe_interface_values.reinit(cell, face_no);
+    // Return a reference to the FEFaceValues or FESubfaceValues object
+    // of the specified cell of the interface
+    const FEFaceValuesBase<dim> &fe_face_v =
+        scratch_data.fe_interface_values.get_fe_face_values(0);
+    // The next line is unclear to me; Are the number of DOFs on an
+    // interface the same as the number of DOFs on a cell when using DG?
+    const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
+
+    const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
+    const std::vector<double> &JxW = fe_face_v.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
+
+    std::vector<Tensor<1, dim>> velocities(q_points.size());
+    beta.value_list(q_points, velocities);
+
+    for (unsigned int i = 0; i < n_facet_dofs; ++i) {
+      const unsigned int component_i =
+          fe_face_v.get_fe().system_to_component_index(i).first;
+      const std::array<unsigned int, 3> i_lms = lms_indices[i];
+
+      for (unsigned int j = 0; j < n_facet_dofs; ++j) {
+        const unsigned int component_j =
+            fe_face_v.get_fe().system_to_component_index(j).first;
+        const std::array<unsigned int, 3> j_lms = lms_indices[j];
+
+        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+          // for outflow boundary \vec{a}_ij * n \phi_i \phi_j
+          if (component_i == component_j) {
+            if (velocities[q_index] * normals[q_index] > 0) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) * velocities[q_index] *
+                  normals[q_index] * fe_face_v.shape_value(j, q_index) *
+                  JxW[q_index];
+            }
+          }
+          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+
+            if (a * normals[q_index] > 0) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+          }
+          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            if (a * normals[q_index] > 0) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+          }
+        }
+      }
+    }
+  };
+
+  for (const auto &cell : dof_handler.active_cell_iterators()) {
     CopyData copy_data;
     ScratchData<dim> scratch_data{mapping, fe, quadrature, quadrature_face};
     cell_worker(cell, scratch_data, copy_data);
