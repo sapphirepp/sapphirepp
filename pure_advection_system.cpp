@@ -1,3 +1,4 @@
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
@@ -27,6 +28,7 @@
 #include <deal.II/meshworker/mesh_loop.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/vector_tools_project.h>
 
 #include <algorithm>
 #include <array>
@@ -83,7 +85,22 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
   return s;
 }
 
-// the mesh_loop function requires helper data types
+// Initial values
+template <int max_degree, int dim>
+class InitialValues : public Function<dim> {
+ public:
+  virtual void vector_value(const Point<dim> p,
+                            std::vector<double> &values) const override {
+    Assert(dim == 1, ExcNotImplemented());
+    Assert(values.size() == (max_degree + 1) * (max_degree + 1),
+           ExcDimensionMismatch(values.size(),
+                                (max_degree + 1) * (max_degree + 1)));
+    std::fill(values.begin(), values.end(),
+              1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.5)));
+  }
+};
+
+// The mesh_loop function requires helper data types
 template <int dim>
 class ScratchData {
  public:
@@ -243,6 +260,11 @@ void PureAdvection<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_system();
+  VectorTools::project(dof_handler,
+                       constraints,
+                       quadrature,
+                       InitialValues<max_degree, dim>(),
+                       previous_solution);
   assemble_system();
   output_results();
   output_index_order();
