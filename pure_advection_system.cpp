@@ -2,6 +2,7 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/types.h>
+#include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
@@ -32,6 +33,8 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 
 namespace pure_advection_system {
 using namespace dealii;
@@ -241,6 +244,7 @@ void PureAdvection<flags, max_degree, dim>::run() {
   make_grid();
   setup_system();
   assemble_system();
+  output_results();
   output_index_order();
 }
 
@@ -586,6 +590,33 @@ void PureAdvection<flags, max_degree, dim>::solve_system() {
   std::cout << "	Solver converged in " << solver_control.last_step()
             << " iterations."
             << "\n";
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::output_results() const {
+  DataOut<dim> data_out;
+  data_out.attach_dof_handler(dof_handler);
+  // Create a vector of strings with names for the components of the solution
+  std::vector<std::string> component_names((max_degree + 1) * (max_degree + 1));
+
+  for (unsigned int i = 0; i < (max_degree + 1) * (max_degree + 1); ++i) {
+    const std::array<unsigned int, 3> lms = lms_indices[i];
+    component_names[i] = "f_" + std::to_string(lms[0]) +
+                         std::to_string(lms[1]) + std::to_string(lms[2]);
+  }
+
+  data_out.add_data_vector(current_solution, component_names);
+
+  data_out.build_patches();
+  const std::string filename =
+      "solution" + Utilities::int_to_string(time_step_number, 3) + ".vtu";
+
+  DataOutBase::VtkFlags vtk_flags;
+  vtk_flags.compression_level = DataOutBase::VtkFlags::best_speed;
+  data_out.set_flags(vtk_flags);
+
+  std::ofstream output(filename);
+  data_out.write_vtu(output);
 }
 
 template <TermFlags flags, int max_degree, int dim>
