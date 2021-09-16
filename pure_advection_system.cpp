@@ -260,14 +260,38 @@ void PureAdvection<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_system();
-  VectorTools::project(dof_handler,
-                       constraints,
-                       quadrature,
-                       InitialValues<max_degree, dim>(),
-                       previous_solution);
+
+  VectorTools::project(dof_handler, constraints, quadrature,
+                       InitialValues<max_degree, dim>(), previous_solution);
   assemble_system();
+  time += time_step;
+  ++time_step_number;
+  current_solution = previous_solution;
   output_results();
-  output_index_order();
+  Vector<double> tmp(current_solution.size());
+  for (; time <= 2; time += time_step, ++time_step_number) {
+    std::cout << "	Time step " << time_step_number << " at t = " << time
+              << "\n";
+    mass_matrix.vmult(system_rhs, previous_solution);
+    dg_matrix.vmult(tmp, previous_solution);
+    system_rhs.add(-time_step * (1 - theta), tmp);
+
+    // Since the the dg_matrix depends on the velocity field and the the
+    // velocity field may depend on time, it needs to reassembled every time
+    // step. This is not true for the mass matrix ( but it may if the grid
+    // adapts after a specified amount of time steps)
+    mass_matrix = 0;
+    dg_matrix = 0;
+
+    assemble_system();
+    system_matrix.copy_from(mass_matrix);
+    system_matrix.add(time_step * theta, dg_matrix);
+    solve_system();
+
+    output_results();
+    previous_solution = current_solution;
+  }
+  // output_index_order();
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -663,22 +687,34 @@ void PureAdvection<flags, max_degree, dim>::output_index_order() const {
 }  // namespace pure_advection_system
 
 int main() {
-  using namespace pure_advection_system;
-  // Test 1D velocity field
-  VelocityField<1> beta;
-  Point<1> point_01{0.3};
-  Point<1> point_02{0.1};
-  std::vector<Point<1>> points{point_01, point_02};
-  // std::vector<Tensor<1, 1>> values(2);
-  std::vector<double> values(2);
-  beta.divergence_list(points, values);
-  for (auto value : values) {
-    std::cout << value << "\n";
+  try {
+    using namespace pure_advection_system;
+
+    constexpr TermFlags flags = TermFlags::advection;
+    PureAdvection<flags, 2, 1> pure_advection;
+    pure_advection.run();
+
+  } catch (std::exception &exc) {
+    std::cerr << std::endl
+              << std::endl
+              << "----------------------------------------------------"
+              << std::endl;
+    std::cerr << "Exception on processing: " << std::endl
+              << exc.what() << std::endl
+              << "Aborting!" << std::endl
+              << "----------------------------------------------------"
+              << std::endl;
+    return 1;
+  } catch (...) {
+    std::cerr << std::endl
+              << std::endl
+              << "----------------------------------------------------"
+              << std::endl;
+    std::cerr << "Unknown exception!" << std::endl
+              << "Aborting!" << std::endl
+              << "----------------------------------------------------"
+              << std::endl;
+    return 1;
   }
-
-  constexpr TermFlags flags = TermFlags::advection;
-  PureAdvection<flags, 2, 1> pure_advection;
-  pure_advection.run();
-
   return 0;
 }
