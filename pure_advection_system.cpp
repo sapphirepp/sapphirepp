@@ -576,6 +576,19 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::solve_system() {
+  SolverControl solver_control(1000, 1e-12);
+  SolverRichardson<Vector<double>> solver(solver_control);
+
+  PreconditionBlockSSOR<SparseMatrix<double>> preconditioner;
+  preconditioner.initialize(system_matrix, fe.n_dofs_per_cell());
+
+  std::cout << "	Solver converged in " << solver_control.last_step()
+            << " iterations."
+            << "\n";
+}
+
+template <TermFlags flags, int max_degree, int dim>
 void PureAdvection<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
   std::cout << "	Theta: " << theta << "\n";
