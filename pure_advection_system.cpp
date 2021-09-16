@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -474,33 +475,82 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
   };
 
   // assemble interior face terms
-  const auto face_worker =
-      [&](const Iterator &cell, const unsigned int &face_no,
-          const unsigned int &subface_no, const Iterator &neighbor_cell,
-          const unsigned int &neighbor_face_no,
-          const unsigned int &neighbor_subface_no,
-          ScratchData<dim> &scratch_data, CopyData &copy_data) {
-        FEInterfaceValues<dim> &fe_interface_v =
-            scratch_data.fe_interface_values;
-        fe_interface_v.reinit(cell, face_no, subface_no, neighbor_cell,
-                              neighbor_face_no, neighbor_subface_no);
+  const auto face_worker = [&](const Iterator &cell,
+                               const unsigned int &face_no,
+                               const unsigned int &subface_no,
+                               const Iterator &neighbor_cell,
+                               const unsigned int &neighbor_face_no,
+                               const unsigned int &neighbor_subface_no,
+                               ScratchData<dim> &scratch_data,
+                               CopyData &copy_data) {
+    FEInterfaceValues<dim> &fe_interface_v = scratch_data.fe_interface_values;
+    fe_interface_v.reinit(cell, face_no, subface_no, neighbor_cell,
+                          neighbor_face_no, neighbor_subface_no);
 
-        const std::vector<Point<dim>> &q_points =
-            fe_interface_v.get_quadrature_points();
-        // Create an element at the end of the vector containig the face data
-        copy_data.face_data.emplace_back();
-	CopyDataFace &copy_data_face = copy_data.face_data.back();
-	const unsigned int n_interface_dofs = fe_interface_v.n_current_interface_dofs();
-	copy_data_face.cell_matrix.reinit(n_interface_dofs, n_interface_dofs);
-	copy_data_face.joint_dof_indices = fe_interface_v.get_interface_dof_indices();
+    const std::vector<Point<dim>> &q_points =
+        fe_interface_v.get_quadrature_points();
+    // Create an element at the end of the vector containig the face data
+    copy_data.face_data.emplace_back();
+    CopyDataFace &copy_data_face = copy_data.face_data.back();
+    const unsigned int n_interface_dofs =
+        fe_interface_v.n_current_interface_dofs();
+    copy_data_face.cell_matrix.reinit(n_interface_dofs, n_interface_dofs);
+    copy_data_face.joint_dof_indices =
+        fe_interface_v.get_interface_dof_indices();
 
-	const std::vector<double> &JxW = fe_interface_v.get_JxW_values();
-	const std::vector<Tensor<1,dim>> &normals = fe_interface_v.get_normal_vectors();
+    const std::vector<double> &JxW = fe_interface_v.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals =
+        fe_interface_v.get_normal_vectors();
 
-	std::vector<Tensor<1,dim>> velocities(q_points.size());
-	beta.value_list(q_points, velocities);
-	
-      };
+    std::vector<Tensor<1, dim>> velocities(q_points.size());
+    beta.value_list(q_points, velocities);
+
+    for (unsigned int i = 0; i < n_interface_dofs; ++i) {
+      unsigned int component_i =
+          fe_interface_v.get_fe().system_to_component_index(i).first;
+      std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+      for (unsigned int j = 0; j < n_interface_dofs; ++j) {
+        unsigned int component_j =
+            fe_interface_v.get_fe().system_to_component_index(j).first;
+        std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+        for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
+          if (component_i == component_j) {
+            // centered flux \vec{a}_ij * n_F *
+            // average_of_shape_values(\phi) * jump_in_shape_values(\phi_j)
+            copy_data.cell_dg_matrix(i, j) +=
+                velocities[q_index] * normals[q_index] *
+                fe_interface_v.average(i, q_index) *
+                fe_interface_v.jump(j, q_index) * JxW[q_index];
+            // updwinding eta/2 * abs(\vec{a}_ij * n_F) *
+            // jump_in_shape_values(\phi_i) * jump_in_shape_values(phi_j)
+            copy_data.cell_dg_matrix(i, j) +=
+                eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
+                fe_interface_v.jump(i, q_index) *
+                fe_interface_v.jump(j, q_index) * JxW[q_index];
+          }
+          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            // centered fluxes ( no updwinding in off diagonal elements,
+            // since it should increase coercivity of the bilinear form)
+            copy_data.cell_dg_matrix(i, j) +=
+                a * normals[q_index] * fe_interface_v.average(i, q_index) *
+                fe_interface_v.jump(j, q_index) * JxW[q_index];
+          }
+          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            copy_data.cell_dg_matrix(i, j) +=
+                a * normals[q_index] * fe_interface_v.average(i, q_index) *
+                fe_interface_v.jump(j, q_index) * JxW[q_index];
+          }
+        }
+      }
+    }
+  };
+  
   for (const auto &cell : dof_handler.active_cell_iterators()) {
     CopyData copy_data;
     ScratchData<dim> scratch_data{mapping, fe, quadrature, quadrature_face};
