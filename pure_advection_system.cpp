@@ -550,12 +550,18 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
       }
     }
   };
+
+  // copier for the mesh_loop function
+  const auto copier = [&](const CopyData &c) {
+    constraints.distribute_local_to_global(c.cell_dg_matrix, c.local_dof_indices, dg_matrix);
+    constraints.distribute_local_to_global(c.cell_mass_matrix, c.local_dof_indices, mass_matrix);
+    for(auto &cdf : c.face_data) {
+      constraints.distribute_local_to_global(cdf.cell_matrix,
+					     c.local_dof_indices,
+					     dg_matrix);
+    }
+  };
   
-  for (const auto &cell : dof_handler.active_cell_iterators()) {
-    CopyData copy_data;
-    ScratchData<dim> scratch_data{mapping, fe, quadrature, quadrature_face};
-    cell_worker(cell, scratch_data, copy_data);
-  }
 }
 
 template <TermFlags flags, int max_degree, int dim>
