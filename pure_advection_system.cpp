@@ -22,6 +22,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q1.h>
+#include <deal.II/meshworker/assemble_flags.h>
 #include <deal.II/meshworker/mesh_loop.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -553,15 +554,25 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
 
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
-    constraints.distribute_local_to_global(c.cell_dg_matrix, c.local_dof_indices, dg_matrix);
-    constraints.distribute_local_to_global(c.cell_mass_matrix, c.local_dof_indices, mass_matrix);
-    for(auto &cdf : c.face_data) {
+    constraints.distribute_local_to_global(c.cell_dg_matrix,
+                                           c.local_dof_indices, dg_matrix);
+    constraints.distribute_local_to_global(c.cell_mass_matrix,
+                                           c.local_dof_indices, mass_matrix);
+    for (auto &cdf : c.face_data) {
       constraints.distribute_local_to_global(cdf.cell_matrix,
-					     c.local_dof_indices,
-					     dg_matrix);
+                                             c.local_dof_indices, dg_matrix);
     }
   };
-  
+
+  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
+  CopyData copy_data;
+
+  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
+                        cell_worker, copier, scratch_data, copy_data,
+                        MeshWorker::assemble_own_cells |
+                            MeshWorker::assemble_boundary_faces |
+                            MeshWorker::assemble_own_interior_faces_once,
+                        boundary_worker, face_worker);
 }
 
 template <TermFlags flags, int max_degree, int dim>
