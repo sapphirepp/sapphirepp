@@ -89,8 +89,8 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
 template <int max_degree, int dim>
 class InitialValues : public Function<dim> {
  public:
-  virtual void vector_value(const Point<dim> p,
-                            std::vector<double> &values) const override {
+  virtual void vector_value(const Point<dim> &p,
+                            Vector<double> &values) const override {
     Assert(dim == 1, ExcNotImplemented());
     Assert(values.size() == (max_degree + 1) * (max_degree + 1),
            ExcDimensionMismatch(values.size(),
