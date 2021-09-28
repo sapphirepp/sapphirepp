@@ -654,14 +654,15 @@ void PureAdvection<flags, max_degree, dim>::output_results() const {
   data_out.add_data_vector(current_solution, component_names);
 
   data_out.build_patches();
-  const std::string filename =
-      "solution" + Utilities::int_to_string(time_step_number, 3) + ".vtu";
+  const std::string file_path = "results/solution" +
+                                Utilities::int_to_string(time_step_number, 3) +
+                                ".vtu";
 
   DataOutBase::VtkFlags vtk_flags;
   vtk_flags.compression_level = DataOutBase::VtkFlags::best_speed;
   data_out.set_flags(vtk_flags);
 
-  std::ofstream output(filename);
+  std::ofstream output(file_path);
   data_out.write_vtu(output);
 }
 
