@@ -51,7 +51,7 @@ class VelocityField : public TensorFunction<1, dim> {
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
 
-    Tensor<1, dim> value({.5});
+    Tensor<1, dim> value({.1});
     // constant velocity field
     for (unsigned int i = 0; i < points.size(); ++i) {
       values[i] = value;
@@ -96,7 +96,7 @@ class InitialValues : public Function<dim> {
            ExcDimensionMismatch(values.size(),
                                 (max_degree + 1) * (max_degree + 1)));
     std::fill(values.begin(), values.end(),
-              1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.5)));
+              1. * std::exp(-(std::pow(p[0] - 0.5, 0.01) / 0.5)));
   }
 };
 
