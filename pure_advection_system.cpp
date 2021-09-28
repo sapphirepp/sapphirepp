@@ -557,27 +557,49 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
     beta.value_list(q_points, velocities);
 
     for (unsigned int i = 0; i < n_interface_dofs; ++i) {
+      // compute system_component_index
+      // cf. https://groups.google.com/g/dealii/c/-rACgze44Uc/m/Nzix2cU3AwAJ
+      std::array<unsigned int, 2> i_dof_index =
+          fe_interface_v.interface_dof_to_dof_indices(i);
+
       unsigned int component_i =
-          fe_interface_v.get_fe().system_to_component_index(i).first;
+          (i_dof_index[0] != numbers::invalid_unsigned_int
+               ? fe_interface_v.get_fe()
+                     .system_to_component_index(i_dof_index[0])
+                     .first
+               : fe_interface_v.get_fe()
+                     .system_to_component_index(i_dof_index[1])
+                     .first);
+
       std::array<unsigned int, 3> i_lms = lms_indices[component_i];
       for (unsigned int j = 0; j < n_interface_dofs; ++j) {
+        std::array<unsigned int, 2> j_dof_index =
+            fe_interface_v.interface_dof_to_dof_indices(j);
+
         unsigned int component_j =
-            fe_interface_v.get_fe().system_to_component_index(j).first;
+            (j_dof_index[0] != numbers::invalid_unsigned_int
+                 ? fe_interface_v.get_fe()
+                       .system_to_component_index(j_dof_index[0])
+                       .first
+                 : fe_interface_v.get_fe()
+                       .system_to_component_index(j_dof_index[1])
+                       .first);
+
         std::array<unsigned int, 3> j_lms = lms_indices[component_j];
         for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
           if (component_i == component_j) {
             // centered flux \vec{a}_ij * n_F *
             // average_of_shape_values(\phi) * jump_in_shape_values(\phi_j)
-            copy_data.cell_dg_matrix(i, j) +=
+            copy_data_face.cell_matrix(i, j) +=
                 velocities[q_index] * normals[q_index] *
-                fe_interface_v.average(i, q_index) *
-                fe_interface_v.jump(j, q_index) * JxW[q_index];
+                fe_interface_v.average_of_shape_values(i, q_index) *
+                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
             // updwinding eta/2 * abs(\vec{a}_ij * n_F) *
             // jump_in_shape_values(\phi_i) * jump_in_shape_values(phi_j)
-            copy_data.cell_dg_matrix(i, j) +=
+            copy_data_face.cell_matrix(i, j) +=
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-                fe_interface_v.jump(i, q_index) *
-                fe_interface_v.jump(j, q_index) * JxW[q_index];
+                fe_interface_v.jump_in_shape_values(i, q_index) *
+                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
           }
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
@@ -585,17 +607,17 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
             // centered fluxes ( no updwinding in off diagonal elements,
             // since it should increase coercivity of the bilinear form)
-            copy_data.cell_dg_matrix(i, j) +=
-                a * normals[q_index] * fe_interface_v.average(i, q_index) *
-                fe_interface_v.jump(j, q_index) * JxW[q_index];
+            copy_data_face.cell_matrix(i, j) +=
+                a * normals[q_index] * fe_interface_v.average_of_shape_values(i, q_index) *
+                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
           }
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
             a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-            copy_data.cell_dg_matrix(i, j) +=
-                a * normals[q_index] * fe_interface_v.average(i, q_index) *
-                fe_interface_v.jump(j, q_index) * JxW[q_index];
+            copy_data_face.cell_matrix(i, j) +=
+                a * normals[q_index] * fe_interface_v.average_of_shape_values(i, q_index) *
+                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
           }
         }
       }
