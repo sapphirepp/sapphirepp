@@ -776,6 +776,7 @@ void PureAdvection<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Theta: " << theta << "\n";
   std::cout << "	Eta: " << eta << "\n";
   std::cout << "	" << flags;
+  std::cout << "	Dimension: " << dim << "\n";
   std::cout << "	Number of modes: " << num_modes << "\n";
   std::cout << "	Number of global refinements: " << num_refinements
             << "\n";
