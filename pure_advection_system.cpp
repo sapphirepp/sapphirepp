@@ -264,16 +264,17 @@ void PureAdvection<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_system();
-
-  VectorTools::project(dof_handler, constraints, quadrature,
-                       InitialValues<max_degree, dim>(), previous_solution);
-  assemble_system();
-  time += time_step;
-  ++time_step_number;
+  project_initial_condition();
   current_solution = previous_solution;
   output_results();
+
+  time += time_step;
+  ++time_step_number;
+
+  assemble_system();
+
   Vector<double> tmp(current_solution.size());
-  for (; time <= 2; time += time_step, ++time_step_number) {
+  for (; time <= 1.; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     mass_matrix.vmult(system_rhs, previous_solution);
