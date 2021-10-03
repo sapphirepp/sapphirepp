@@ -233,12 +233,12 @@ PureAdvection<flags, max_degree, dim>::PureAdvection()
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
-      time_step(3. / 64),
+      time_step(1. / 128),
       time(0.),
       time_step_number(0),
-      theta(0.5),
+      theta(1.),
       eta(1.),
-      num_refinements(4) {
+      num_refinements(7) {
   for (unsigned int j = 0.5 * (max_degree + 1) * (max_degree + 2), i = 0, l = 0;
        l <= max_degree; ++l) {
     // a_lm indices
