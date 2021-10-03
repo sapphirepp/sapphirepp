@@ -735,6 +735,7 @@ void PureAdvection<flags, max_degree, dim>::solve_system() {
 
   PreconditionBlockSSOR<SparseMatrix<double>> preconditioner;
   preconditioner.initialize(system_matrix, fe.n_dofs_per_cell());
+  solver.solve(system_matrix, current_solution, system_rhs, preconditioner);
 
   std::cout << "	Solver converged in " << solver_control.last_step()
             << " iterations."
