@@ -689,7 +689,8 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             // centered fluxes ( no updwinding in off diagonal elements,
             // since it should increase coercivity of the bilinear form)
             copy_data_face.cell_matrix(i, j) +=
-                a * normals[q_index] * fe_interface_v.average_of_shape_values(i, q_index) *
+                a * normals[q_index] *
+                fe_interface_v.average_of_shape_values(i, q_index) *
                 fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
           }
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
@@ -697,7 +698,8 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             Tensor<1, dim> a;
             a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
             copy_data_face.cell_matrix(i, j) +=
-                a * normals[q_index] * fe_interface_v.average_of_shape_values(i, q_index) *
+                a * normals[q_index] *
+                fe_interface_v.average_of_shape_values(i, q_index) *
                 fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
           }
         }
