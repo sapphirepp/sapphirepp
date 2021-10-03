@@ -1,5 +1,6 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/types.h>
@@ -11,7 +12,9 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/precondition.h>
 #include <deal.II/lac/precondition_block.h>
+#include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
@@ -167,6 +170,7 @@ class PureAdvection {
  private:
   void make_grid();
   void setup_system();
+  void project_initial_condition();
   void assemble_system();
   void solve_system();
   void output_results() const;
@@ -331,6 +335,82 @@ void PureAdvection<flags, max_degree, dim>::setup_system() {
   // This is an rather obscure line. I do not know why I need it. (cf. example
   // 23)
   constraints.close();
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void PureAdvection<flags, max_degree, dim>::project_initial_condition() {
+  FEValues<dim> fe_v(
+      mapping, fe, quadrature,
+      update_values | update_quadrature_points | update_JxW_values);
+
+  const unsigned int n_dofs = fe.n_dofs_per_cell();
+
+  FullMatrix<double> cell_mass_matrix(n_dofs, n_dofs);
+  Vector<double> cell_rhs(n_dofs);
+
+  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
+
+  for (const auto &cell : dof_handler.active_cell_iterators()) {
+    cell_mass_matrix = 0;
+    cell_rhs = 0;
+    fe_v.reinit(cell);
+
+    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+    // Initial values
+    InitialValues<max_degree, dim> initial_values;
+    // The Vector<double> inside the standard vector will not have the
+    // correct size when the function vector_value is called by the function
+    // vector _value_list(). Thus I have to create an empty vector of the
+    // correct size and copy it into the standard vector. I am using the
+    // corresponding constructor of the standard vector class template
+    Vector<double> empty_vector_correct_size((max_degree + 1) *
+                                             (max_degree + 1));
+    std::vector<Vector<double>> f_values(q_points.size(),
+                                         empty_vector_correct_size);
+    initial_values.vector_value_list(q_points, f_values);
+
+    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+      for (unsigned int i : fe_v.dof_indices()) {
+        const unsigned int component_i = fe.system_to_component_index(i).first;
+        for (unsigned int j : fe_v.dof_indices()) {
+          const unsigned int component_j =
+              fe.system_to_component_index(j).first;
+          // mass matrix
+          cell_mass_matrix(i, j) +=
+              (component_i == component_j
+                   ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
+                   : 0) *
+              JxW[q_index];
+        }
+        cell_rhs(i) += fe_v.shape_value(i, q_index) *
+                       f_values[q_index][component_i] * JxW[q_index];
+      }
+    }
+    cell->get_dof_indices(local_dof_indices);
+
+    constraints.distribute_local_to_global(
+        cell_mass_matrix, cell_rhs, local_dof_indices, mass_matrix, system_rhs);
+  }
+  mass_matrix.print(std::cout);
+  // Solve the system
+  SolverControl solver_control(1000, 1e-12);
+  SolverCG<Vector<double>> cg(solver_control);
+  // PreconditionSSOR<SparseMatrix<double>> preconditioner;
+  // preconditioner.initialize(mass_matrix, 1.2);
+  cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
+
+  DataOut<dim> data_out;
+  data_out.attach_dof_handler(dof_handler);
+  data_out.add_data_vector(previous_solution, "projection");
+  data_out.build_patches();
+  std::ofstream output("projection.vtu");
+  data_out.write_vtu(output);
+
+  // Reset mass matrix and system RHS
+  mass_matrix = 0;
+  system_rhs = 0;
 }
 
 template <TermFlags flags, int max_degree, int dim>
