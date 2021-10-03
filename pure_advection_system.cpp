@@ -713,7 +713,7 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
                                            c.local_dof_indices, mass_matrix);
     for (auto &cdf : c.face_data) {
       constraints.distribute_local_to_global(cdf.cell_matrix,
-                                             c.local_dof_indices, dg_matrix);
+                                             cdf.joint_dof_indices, dg_matrix);
     }
   };
 
