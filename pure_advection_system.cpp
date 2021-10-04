@@ -673,8 +673,10 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             // average_of_shape_values(\phi) * jump_in_shape_values(\phi_j)
             copy_data_face.cell_matrix(i, j) +=
                 velocities[q_index] * normals[q_index] *
-                fe_interface_v.average_of_shape_values(i, q_index) *
-                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
+                fe_interface_v.jump_in_shape_values(i, q_index) *
+                fe_interface_v.average_of_shape_values(j, q_index) *
+                JxW[q_index];
+
             // updwinding eta/2 * abs(\vec{a}_ij * n_F) *
             // jump_in_shape_values(\phi_i) * jump_in_shape_values(phi_j)
             copy_data_face.cell_matrix(i, j) +=
