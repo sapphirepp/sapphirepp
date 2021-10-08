@@ -397,7 +397,7 @@ void PureAdvection<flags, max_degree, dim>::project_initial_condition() {
     constraints.distribute_local_to_global(
         cell_mass_matrix, cell_rhs, local_dof_indices, mass_matrix, system_rhs);
   }
-  mass_matrix.print(std::cout);
+
   // Solve the system
   SolverControl solver_control(1000, 1e-12);
   SolverCG<Vector<double>> cg(solver_control);
@@ -493,30 +493,14 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             }
             // -\grad \phi_i * \vec{a}_i_j * phi_j
             if (component_i == component_j) {
-              std::cout << "component_i: " << component_i << "\n";
-              std::cout << "component_j: " << component_j << "\n";
-              std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
-                        << "\n";
-              std::cout << "l_prime, m_prime, s_prime: " << j_lms[0] << j_lms[1]
-                        << j_lms[2] << "\n";
-              std::cout << "a: " << velocities[q_index] << "\n";
-
               copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * velocities[q_index] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
             if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
                 i_lms[2] == j_lms[2]) {
-              std::cout << "component_i: " << component_i << "\n";
-              std::cout << "component_j: " << component_j << "\n";
-              std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
-                        << "\n";
-              std::cout << "l_prime, m_prime, s_prime: " << j_lms[0] << j_lms[1]
-                        << j_lms[2] << "\n";
-
               Tensor<1, dim> a;
               a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-              std::cout << "a: " << a << "\n";
 
               copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * a *
@@ -524,16 +508,8 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             }
             if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
                 i_lms[2] == j_lms[2]) {
-              std::cout << "component_i: " << component_i << "\n";
-              std::cout << "component_j: " << component_j << "\n";
-              std::cout << "l, m, s: " << i_lms[0] << i_lms[1] << i_lms[2]
-                        << "\n";
-              std::cout << "l_prime, m_prime, s_prime: " << j_lms[0] << j_lms[1]
-                        << j_lms[2] << "\n";
-
               Tensor<1, dim> a;
               a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-              std::cout << "a: " << a << "\n";
               copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * a *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
