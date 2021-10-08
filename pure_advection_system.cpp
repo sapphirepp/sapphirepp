@@ -115,12 +115,17 @@ class ScratchData {
                                                update_gradients |
                                                update_quadrature_points |
                                                update_JxW_values,
-              const UpdateFlags interface_update_flags =
-                  update_values | update_quadrature_points | update_JxW_values |
-                  update_normal_vectors)
+              const UpdateFlags face_update_flags = update_values |
+                                                    update_quadrature_points |
+                                                    update_JxW_values |
+                                                    update_normal_vectors,
+              const UpdateFlags neighbor_face_update_flags = update_values)
       : fe_values(mapping, fe, quadrature, update_flags),
-        fe_interface_values(mapping, fe, quadrature_face,
-                            interface_update_flags) {}
+        fe_values_face(mapping, fe, quadrature_face, face_update_flags),
+        fe_values_face_neighbor(mapping, fe, quadrature_face,
+                                neighbor_face_update_flags),
+        fe_values_subface_neighbor(mapping, fe, quadrature_face,
+                                   neighbor_face_update_flags) {}
 
   // Copy Constructor
   ScratchData(const ScratchData<dim> &scratch_data)
@@ -128,19 +133,50 @@ class ScratchData {
                   scratch_data.fe_values.get_fe(),
                   scratch_data.fe_values.get_quadrature(),
                   scratch_data.fe_values.get_update_flags()),
-        fe_interface_values(
-            scratch_data.fe_interface_values.get_mapping(),
-            scratch_data.fe_interface_values.get_fe(),
-            scratch_data.fe_interface_values.get_quadrature(),
-            scratch_data.fe_interface_values.get_update_flags()) {}
+        fe_values_face(scratch_data.fe_values_face.get_mapping(),
+                       scratch_data.fe_values_face.get_fe(),
+                       scratch_data.fe_values_face.get_quadrature(),
+                       scratch_data.fe_values_face.get_update_flags()),
+        fe_values_face_neighbor(
+            scratch_data.fe_values_face_neighbor.get_mapping(),
+            scratch_data.fe_values_face_neighbor.get_fe(),
+            scratch_data.fe_values_face_neighbor.get_quadrature(),
+            scratch_data.fe_values_face_neighbor.get_update_flags()),
+        fe_values_subface_neighbor(
+            scratch_data.fe_values_subface_neighbor.get_mapping(),
+            scratch_data.fe_values_subface_neighbor.get_fe(),
+            scratch_data.fe_values_subface_neighbor.get_quadrature(),
+            scratch_data.fe_values_subface_neighbor.get_update_flags()) {}
 
   FEValues<dim> fe_values;
-  FEInterfaceValues<dim> fe_interface_values;
+  FEFaceValues<dim> fe_values_face;
+  FEFaceValues<dim> fe_values_face_neighbor;
+  FESubfaceValues<dim> fe_values_subface_neighbor;
 };
 
 struct CopyDataFace {
-  FullMatrix<double> cell_matrix;
-  std::vector<types::global_dof_index> joint_dof_indices;
+  FullMatrix<double> cell_dg_matrix_11;
+  FullMatrix<double> cell_dg_matrix_12;
+  FullMatrix<double> cell_dg_matrix_21;
+  FullMatrix<double> cell_dg_matrix_22;
+
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, const Iterator &neighbor_cell,
+              unsigned int dofs_per_cell) {
+    cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+
+    local_dof_indices_neighbor.resize(dofs_per_cell);
+    neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
+  }
 };
 
 struct CopyData {
@@ -148,6 +184,7 @@ struct CopyData {
   FullMatrix<double> cell_mass_matrix;
   Vector<double> cell_rhs;
   std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
   std::vector<CopyDataFace> face_data;
 
   template <typename Iterator>
@@ -524,15 +561,13 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
                                    const unsigned int &face_no,
                                    ScratchData<dim> &scratch_data,
                                    CopyData &copy_data) {
-    scratch_data.fe_interface_values.reinit(cell, face_no);
-    // Return a reference to the FEFaceValues or FESubfaceValues object
-    // of the specified cell of the interface
-    const FEFaceValuesBase<dim> &fe_face_v =
-        scratch_data.fe_interface_values.get_fe_face_values(0);
+    scratch_data.fe_values_face.reinit(cell, face_no);
+    const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
     // The next line is unclear to me; Are the number of DOFs on an
     // interface the same as the number of DOFs on a cell when using DG?
     const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
-
+    // NOTE: copy_data is not reinitialised, the cell_workers contribution to
+    // the cell_dg_matrix should not be deleted
     const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_face_v.get_JxW_values();
     const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
@@ -595,100 +630,216 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
                                const unsigned int &neighbor_subface_no,
                                ScratchData<dim> &scratch_data,
                                CopyData &copy_data) {
-    FEInterfaceValues<dim> &fe_interface_v = scratch_data.fe_interface_values;
-    fe_interface_v.reinit(cell, face_no, subface_no, neighbor_cell,
-                          neighbor_face_no, neighbor_subface_no);
+    // NOTE: The flag MeshWorker::assemble_own_interior_faces_both will not
+    // work for this face_worker. It implicitly assumes that faces are only
+    // assembled once. And hence subface_no, can be ignored
+    (void)subface_no;  // suppress compiler warning
 
-    const std::vector<Point<dim>> &q_points =
-        fe_interface_v.get_quadrature_points();
+    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
+    fe_v_face.reinit(cell, face_no);
+
+    // NOTE: I do not know how to initialise this reference whose value
+    // depends on the value of neighbor_subface_no. Subfaces only exists if
+    // the triangulation was refined differently in different parts of the
+    // domain. Since I am currently testing, I am always refining globally,
+    // so no subfaces exist and I just ignore this case. Hence
+    // neighbor_subface_no can be ignored
+    (void)neighbor_subface_no;
+    FEFaceValues<dim> &fe_v_face_neighbor =
+        scratch_data.fe_values_face_neighbor;
+    fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
     // Create an element at the end of the vector containig the face data
     copy_data.face_data.emplace_back();
     CopyDataFace &copy_data_face = copy_data.face_data.back();
-    const unsigned int n_interface_dofs =
-        fe_interface_v.n_current_interface_dofs();
-    copy_data_face.cell_matrix.reinit(n_interface_dofs, n_interface_dofs);
-    copy_data_face.joint_dof_indices =
-        fe_interface_v.get_interface_dof_indices();
+    const unsigned int n_dofs = fe_v_face.get_fe().n_dofs_per_cell();
+    copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
-    const std::vector<double> &JxW = fe_interface_v.get_JxW_values();
-    const std::vector<Tensor<1, dim>> &normals =
-        fe_interface_v.get_normal_vectors();
-
+    const std::vector<double> &JxW = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
+    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
     std::vector<Tensor<1, dim>> velocities(q_points.size());
     beta.value_list(q_points, velocities);
 
-    for (unsigned int i = 0; i < n_interface_dofs; ++i) {
-      // compute system_component_index
-      // cf. https://groups.google.com/g/dealii/c/-rACgze44Uc/m/Nzix2cU3AwAJ
-      std::array<unsigned int, 2> i_dof_index =
-          fe_interface_v.interface_dof_to_dof_indices(i);
-
-      unsigned int component_i =
-          (i_dof_index[0] != numbers::invalid_unsigned_int
-               ? fe_interface_v.get_fe()
-                     .system_to_component_index(i_dof_index[0])
-                     .first
-               : fe_interface_v.get_fe()
-                     .system_to_component_index(i_dof_index[1])
-                     .first);
-
-      std::array<unsigned int, 3> i_lms = lms_indices[component_i];
-      for (unsigned int j = 0; j < n_interface_dofs; ++j) {
-        std::array<unsigned int, 2> j_dof_index =
-            fe_interface_v.interface_dof_to_dof_indices(j);
-
-        unsigned int component_j =
-            (j_dof_index[0] != numbers::invalid_unsigned_int
-                 ? fe_interface_v.get_fe()
-                       .system_to_component_index(j_dof_index[0])
-                       .first
-                 : fe_interface_v.get_fe()
-                       .system_to_component_index(j_dof_index[1])
-                       .first);
-
-        std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-        for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
+    for (unsigned int q_index : fe_v_face.quadrature_point_indices()) {
+      // cell_dg_matrix_11
+      for (unsigned int i : fe_v_face.dof_indices()) {
+        const unsigned int component_i =
+            fe_v_face.get_fe().system_to_component_index(i).first;
+        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        for (unsigned int j : fe_v_face.dof_indices()) {
+          unsigned int component_j =
+              fe_v_face.get_fe().system_to_component_index(j).first;
+          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
-            // centered flux \vec{a}_ij * n_F *
-            // average_of_shape_values(\phi) * jump_in_shape_values(\phi_j)
-            copy_data_face.cell_matrix(i, j) +=
-                velocities[q_index] * normals[q_index] *
-                fe_interface_v.jump_in_shape_values(i, q_index) *
-                fe_interface_v.average_of_shape_values(j, q_index) *
-                JxW[q_index];
-
-            // updwinding eta/2 * abs(\vec{a}_ij * n_F) *
-            // jump_in_shape_values(\phi_i) * jump_in_shape_values(phi_j)
-            copy_data_face.cell_matrix(i, j) +=
+            // centered flux
+            copy_data_face.cell_dg_matrix_11(i, j) +=
+                0.5 * velocities[q_index] * normals[q_index] *
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            // upwinding
+            copy_data_face.cell_dg_matrix_11(i, j) +=
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-                fe_interface_v.jump_in_shape_values(i, q_index) *
-                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
           }
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
             a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-            // centered fluxes ( no updwinding in off diagonal elements,
-            // since it should increase coercivity of the bilinear form)
-            copy_data_face.cell_matrix(i, j) +=
-                a * normals[q_index] *
-                fe_interface_v.average_of_shape_values(i, q_index) *
-                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_11(i, j) +=
+                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            // no updwinding in off diagonal elements, since it should increase
+            // the coercivity of the bilinear form
           }
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
             a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-            copy_data_face.cell_matrix(i, j) +=
-                a * normals[q_index] *
-                fe_interface_v.average_of_shape_values(i, q_index) *
-                fe_interface_v.jump_in_shape_values(j, q_index) * JxW[q_index];
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_11(i, j) +=
+                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          }
+        }
+      }
+      // cell_dg_matrix_12
+      for (unsigned int i : fe_v_face.dof_indices()) {
+        const unsigned int component_i =
+            fe_v_face.get_fe().system_to_component_index(i).first;
+        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
+          unsigned int component_j =
+              fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
+          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          if (component_i == component_j) {
+            // centered flux
+            copy_data_face.cell_dg_matrix_12(i, j) +=
+                0.5 * velocities[q_index] * normals[q_index] *
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+
+            // upwinding
+            copy_data_face.cell_dg_matrix_12(i, j) -=
+                eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          }
+          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_12(i, j) +=
+                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            // no updwinding in off diagonal elements, since it should increase
+            // the coercivity of the bilinear form
+          }
+          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_12(i, j) +=
+                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          }
+        }
+      }
+      // cell_dg_matrix_21
+      for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
+        const unsigned int component_i =
+            fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
+        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        for (unsigned int j : fe_v_face.dof_indices()) {
+          unsigned int component_j =
+              fe_v_face.get_fe().system_to_component_index(j).first;
+          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          if (component_i == component_j) {
+            // centered flux
+            copy_data_face.cell_dg_matrix_21(i, j) -=
+                0.5 * velocities[q_index] * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            // upwinding
+            copy_data_face.cell_dg_matrix_21(i, j) -=
+                eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          }
+          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_21(i, j) -=
+                0.5 * a * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            // no updwinding in off diagonal elements, since it should increase
+            // the coercivity of the bilinear form
+          }
+          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_21(i, j) -=
+                0.5 * a * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          }
+        }
+      }
+      // cell_dg_matrix_22
+      for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
+        const unsigned int component_i =
+            fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
+        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
+          unsigned int component_j =
+              fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
+          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          if (component_i == component_j) {
+            // centered flux
+            copy_data_face.cell_dg_matrix_22(i, j) -=
+                0.5 * velocities[q_index] * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            // upwinding
+            copy_data_face.cell_dg_matrix_22(i, j) +=
+                eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          }
+          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_22(i, j) -=
+                0.5 * a * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            // no updwinding in off diagonal elements, since it should increase
+            // the coercivity of the bilinear form
+          }
+          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+              i_lms[2] == j_lms[2]) {
+            Tensor<1, dim> a;
+            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            // centered fluxes
+            copy_data_face.cell_dg_matrix_22(i, j) -=
+                0.5 * a * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           }
         }
       }
     }
   };
-
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
     constraints.distribute_local_to_global(c.cell_dg_matrix,
@@ -696,8 +847,19 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
     constraints.distribute_local_to_global(c.cell_mass_matrix,
                                            c.local_dof_indices, mass_matrix);
     for (auto &cdf : c.face_data) {
-      constraints.distribute_local_to_global(cdf.cell_matrix,
-                                             cdf.joint_dof_indices, dg_matrix);
+      for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
+        for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
+          dg_matrix.add(cdf.local_dof_indices[i], cdf.local_dof_indices[j],
+                        cdf.cell_dg_matrix_11(i, j));
+          dg_matrix.add(cdf.local_dof_indices[i],
+                        cdf.local_dof_indices_neighbor[j],
+                        cdf.cell_dg_matrix_12(i, j));
+          dg_matrix.add(cdf.local_dof_indices_neighbor[i],
+                        cdf.local_dof_indices[j], cdf.cell_dg_matrix_21(i, j));
+          dg_matrix.add(cdf.local_dof_indices_neighbor[i],
+                        cdf.local_dof_indices_neighbor[j],
+                        cdf.cell_dg_matrix_22(i, j));
+        }
     }
   };
 
