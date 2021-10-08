@@ -588,33 +588,33 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
           // for outflow boundary \vec{a}_ij * n \phi_i \phi_j
           if (component_i == component_j) {
-            if (velocities[q_index] * normals[q_index] > 0) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  fe_face_v.shape_value(i, q_index) * velocities[q_index] *
-                  normals[q_index] * fe_face_v.shape_value(j, q_index) *
-                  JxW[q_index];
-            }
+            // if (velocities[q_index] * normals[q_index] > 0) {
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_face_v.shape_value(i, q_index) * velocities[q_index] *
+                normals[q_index] * fe_face_v.shape_value(j, q_index) *
+                JxW[q_index];
+            // }
           }
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
             a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-
-            if (a * normals[q_index] > 0) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
-                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
+            // if (a * normals[q_index] > 0) {
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
+                fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            // }
           }
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
             a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-            if (a * normals[q_index] > 0) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
-                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
+
+            // if (a * normals[q_index] > 0) {
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
+                fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            // }
           }
         }
       }
