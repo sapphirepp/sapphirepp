@@ -543,12 +543,12 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i = 0; i < n_facet_dofs; ++i) {
       const unsigned int component_i =
           fe_face_v.get_fe().system_to_component_index(i).first;
-      const std::array<unsigned int, 3> i_lms = lms_indices[i];
+      const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
 
       for (unsigned int j = 0; j < n_facet_dofs; ++j) {
         const unsigned int component_j =
             fe_face_v.get_fe().system_to_component_index(j).first;
-        const std::array<unsigned int, 3> j_lms = lms_indices[j];
+        const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
 
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
           // for outflow boundary \vec{a}_ij * n \phi_i \phi_j
