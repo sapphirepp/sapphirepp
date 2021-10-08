@@ -100,6 +100,7 @@ class InitialValues : public Function<dim> {
                                 (max_degree + 1) * (max_degree + 1)));
     std::fill(values.begin(), values.end(),
               1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.01)));
+    // values[0]= 1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.01));
   }
 };
 
@@ -507,8 +508,6 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
               JxW[q_index];
           // dg matrix
           if (flags & TermFlags::reaction) {
-            std::cout << "reaction"
-                      << "\n";
             // l(l+1) * \phi_i * \phi_j
             if (component_i == component_j) {
               copy_data.cell_dg_matrix(i, j) +=
@@ -518,11 +517,8 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             }
           }
           if (flags & TermFlags::advection) {
-            std::cout << "advection"
-                      << "\n";
             // - \div \vec{a}_ij \phi_i \phi_j where \div \vec{a}_ij =
-            // 0 for i
-            // != j and \div \vec{a}_ii = \div \vec{u}
+            // 0 for i != j and \div \vec{a}_ii = \div \vec{u}
             if (component_i == component_j) {
               copy_data.cell_dg_matrix(i, j) +=
                   -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
@@ -943,8 +939,8 @@ int main() {
   try {
     using namespace pure_advection_system;
 
-    constexpr TermFlags flags = TermFlags::advection;
-    PureAdvection<flags, 2, 1> pure_advection;
+    constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
+    PureAdvection<flags, 1, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
