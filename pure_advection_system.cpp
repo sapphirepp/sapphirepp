@@ -405,12 +405,12 @@ void PureAdvection<flags, max_degree, dim>::project_initial_condition() {
   // preconditioner.initialize(mass_matrix, 1.2);
   cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
 
-  DataOut<dim> data_out;
-  data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(previous_solution, "projection");
-  data_out.build_patches();
-  std::ofstream output("projection.vtu");
-  data_out.write_vtu(output);
+  // DataOut<dim> data_out;
+  // data_out.attach_dof_handler(dof_handler);
+  // data_out.add_data_vector(previous_solution, "projection");
+  // data_out.build_patches();
+  // std::ofstream output("projection.vtu");
+  // data_out.write_vtu(output);
 
   // Reset mass matrix and system RHS
   mass_matrix = 0;
