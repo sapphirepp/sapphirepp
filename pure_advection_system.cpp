@@ -214,6 +214,8 @@ class PureAdvection {
   // penalty parameter ( for a scalar equation eta = 1 -> upwinding)
   const double eta;
 
+  // scattering frequency
+  const double scattering_frequency;
   // Number of refinements
   const unsigned int num_refinements;
   // Fort the moment, I will use a quadratic domain
@@ -236,8 +238,9 @@ PureAdvection<flags, max_degree, dim>::PureAdvection()
       time_step(1. / 128),
       time(0.),
       time_step_number(0),
-      theta(1.),
+      theta(.5),
       eta(1.),
+      scattering_frequency(1.),
       num_refinements(7) {
   for (unsigned int j = 0.5 * (max_degree + 1) * (max_degree + 2), i = 0, l = 0;
        l <= max_degree; ++l) {
@@ -472,6 +475,7 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
             // l(l+1) * \phi_i * \phi_j
             if (component_i == component_j) {
               copy_data.cell_dg_matrix(i, j) +=
+                  scattering_frequency *
                   (i_lms[0] * (i_lms[0] + 1) * fe_v.shape_value(i, q_index) *
                    fe_v.shape_value(j, q_index) * JxW[q_index]);
             }
@@ -781,6 +785,7 @@ void PureAdvection<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Eta: " << eta << "\n";
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n";
+  std::cout << "	Scattering frequency: " << scattering_frequency << "\n";
   std::cout << "	Number of modes: " << num_modes << "\n";
   std::cout << "	Number of global refinements: " << num_refinements
             << "\n";
