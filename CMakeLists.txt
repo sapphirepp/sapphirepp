@@ -15,11 +15,11 @@ FIND_PACKAGE(deal.II 9.3.0 REQUIRED
 DEAL_II_INITIALIZE_CACHED_VARIABLES() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
 
 PROJECT(VFP-Equation)
-option(pure_advection_system "Compile the pure advection system" ON )
-if(pure_advection_system)
-  ADD_EXECUTABLE(pure_advection_system pure_advection_system.cpp)
-  DEAL_II_SETUP_TARGET(pure_advection_system)
-endif(pure_advection_system)
+option(vfp-equation-solver "Compile the pure advection system" ON )
+if(vfp-equation-solver)
+  ADD_EXECUTABLE(vfp-equation-solver vfp-equation-solver.cpp)
+  DEAL_II_SETUP_TARGET(vfp-equation-solver)
+endif(vfp-equation-solver)
 
 
 

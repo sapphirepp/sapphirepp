@@ -940,7 +940,7 @@ int main() {
     using namespace pure_advection_system;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    PureAdvection<flags, 1, 1> pure_advection;
+    PureAdvection<flags, 4, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
