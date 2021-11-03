@@ -41,7 +41,7 @@
 #include <string>
 #include <vector>
 
-namespace pure_advection_system {
+namespace vfp_equation_solver {
 using namespace dealii;
 // Input data
 // the velocity field field
@@ -200,9 +200,9 @@ struct CopyData {
 };
 
 template <TermFlags flags, int max_degree, int dim>
-class PureAdvection {
+class VFPEquationSolver {
  public:
-  PureAdvection();
+  VFPEquationSolver();
   void run();
 
  private:
@@ -267,7 +267,7 @@ class PureAdvection {
 };
 
 template <TermFlags flags, int max_degree, int dim>
-PureAdvection<flags, max_degree, dim>::PureAdvection()
+VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
     : dof_handler(triangulation),
       mapping(),
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
@@ -299,7 +299,7 @@ PureAdvection<flags, max_degree, dim>::PureAdvection()
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::run() {
+void VFPEquationSolver<flags, max_degree, dim>::run() {
   std::cout << "Start the simulation: "
             << "\n\n";
   output_parameters();
@@ -341,7 +341,7 @@ void PureAdvection<flags, max_degree, dim>::run() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::make_grid() {
+void VFPEquationSolver<flags, max_degree, dim>::make_grid() {
   GridGenerator::hyper_cube(triangulation);
   triangulation.refine_global(num_refinements);
 
@@ -355,7 +355,7 @@ void PureAdvection<flags, max_degree, dim>::make_grid() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::setup_system() {
+void VFPEquationSolver<flags, max_degree, dim>::setup_system() {
   dof_handler.distribute_dofs(fe);
   const unsigned int n_dofs = dof_handler.n_dofs();
   std::cout << "	Number of degrees of freedom: " << n_dofs << "\n";
@@ -380,7 +380,7 @@ void PureAdvection<flags, max_degree, dim>::setup_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::project_initial_condition() {
+void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
   FEValues<dim> fe_v(
       mapping, fe, quadrature,
       update_values | update_quadrature_points | update_JxW_values);
@@ -456,7 +456,7 @@ void PureAdvection<flags, max_degree, dim>::project_initial_condition() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::assemble_system() {
+void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -871,7 +871,7 @@ void PureAdvection<flags, max_degree, dim>::assemble_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::solve_system() {
+void VFPEquationSolver<flags, max_degree, dim>::solve_system() {
   SolverControl solver_control(1000, 1e-12);
   SolverRichardson<Vector<double>> solver(solver_control);
 
@@ -885,7 +885,7 @@ void PureAdvection<flags, max_degree, dim>::solve_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::output_results() const {
+void VFPEquationSolver<flags, max_degree, dim>::output_results() const {
   DataOut<dim> data_out;
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
@@ -913,7 +913,7 @@ void PureAdvection<flags, max_degree, dim>::output_results() const {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::output_parameters() const {
+void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
   std::cout << "	Theta: " << theta << "\n";
   std::cout << "	Eta: " << eta << "\n";
@@ -926,21 +926,21 @@ void PureAdvection<flags, max_degree, dim>::output_parameters() const {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void PureAdvection<flags, max_degree, dim>::output_index_order() const {
+void VFPEquationSolver<flags, max_degree, dim>::output_index_order() const {
   std::cout << "Ordering of the lms indices: "
             << "\n";
 
   for (std::array<unsigned int, 3> lms : lms_indices)
     std::cout << "	" << lms[0] << lms[1] << lms[2] << "\n";
 }
-}  // namespace pure_advection_system
+}  // namespace vfp_equation_solver
 
 int main() {
   try {
-    using namespace pure_advection_system;
+    using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    PureAdvection<flags, 4, 1> pure_advection;
+    VFPEquationSolver<flags, 4, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
