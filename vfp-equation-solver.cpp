@@ -12,6 +12,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/precondition_block.h>
 #include <deal.II/lac/solver_cg.h>
@@ -207,6 +208,7 @@ class VFPEquationSolver {
 
  private:
   void make_grid();
+  void setup_pde_system();
   void setup_system();
   void project_initial_condition();
   void assemble_system();
@@ -231,6 +233,15 @@ class VFPEquationSolver {
   AffineConstraints<double> constraints;  // used in the L_2 projection of the
   // intial condition onto the finite
   // element space
+
+  // PDE System data
+  // Spatial advection
+  LAPACKFullMatrix<double> Ax;
+  LAPACKFullMatrix<double> Ax_eigenvectors;
+  LAPACKFullMatrix<double> Ay;
+  LAPACKFullMatrix<double> Ay_eigenvectors;
+  // Magnetic field terms
+  LAPACKFullMatrix<double> Omega;
 
   SparsityPattern sparsity_pattern;
   SparseMatrix<double> mass_matrix;
