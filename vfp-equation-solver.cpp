@@ -51,7 +51,7 @@ class VelocityField : public TensorFunction<1, dim> {
  public:
   virtual void value_list(const std::vector<Point<dim>> &points,
                           std::vector<Tensor<1, dim>> &values) const override {
-    Assert(dim == 1, ExcNotImplemented());
+    Assert(dim <= 2, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
 
@@ -64,7 +64,7 @@ class VelocityField : public TensorFunction<1, dim> {
 
   void divergence_list(const std::vector<Point<dim>> &points,
                        std::vector<double> &values) {
-    Assert(dim == 1, ExcNotImplemented());
+    Assert(dim <= 2, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
@@ -95,7 +95,7 @@ class InitialValues : public Function<dim> {
  public:
   virtual void vector_value(const Point<dim> &p,
                             Vector<double> &values) const override {
-    Assert(dim == 1, ExcNotImplemented());
+    Assert(dim <= 2, ExcNotImplemented());
     Assert(values.size() == (max_degree + 1) * (max_degree + 1),
            ExcDimensionMismatch(values.size(),
                                 (max_degree + 1) * (max_degree + 1)));
