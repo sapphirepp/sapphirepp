@@ -630,22 +630,21 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
               JxW[q_index];
           // dg matrix
           if (flags & TermFlags::reaction) {
-            // l(l+1) * \phi_i * \phi_j
             if (component_i == component_j) {
+	      // scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_dg_matrix(i, j) +=
                   scattering_frequency *
                   (i_lms[0] * (i_lms[0] + 1) * fe_v.shape_value(i, q_index) *
                    fe_v.shape_value(j, q_index) * JxW[q_index]);
-            }
-          }
-          if (flags & TermFlags::advection) {
-            // - \div \vec{a}_ij \phi_i \phi_j where \div \vec{a}_ij =
-            // 0 for i != j and \div \vec{a}_ii = \div \vec{u}
-            if (component_i == component_j) {
-              copy_data.cell_dg_matrix(i, j) +=
+	     // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
+	     // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
+	      copy_data.cell_dg_matrix(i, j) +=
                   -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
+
+          }
+          if (flags & TermFlags::advection) {
             // -\grad \phi_i * \vec{a}_i_j * phi_j
             if (component_i == component_j) {
               copy_data.cell_dg_matrix(i, j) +=
