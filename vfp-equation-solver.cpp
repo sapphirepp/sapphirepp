@@ -12,6 +12,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/precondition_block.h>
 #include <deal.II/lac/solver_cg.h>
@@ -207,6 +208,7 @@ class VFPEquationSolver {
 
  private:
   void make_grid();
+  void setup_pde_system();
   void setup_system();
   void project_initial_condition();
   void assemble_system();
@@ -232,6 +234,9 @@ class VFPEquationSolver {
   // intial condition onto the finite
   // element space
 
+  LAPACKFullMatrix<double> Ax, Ay, Omega;
+  Vector<double> R;
+  
   SparsityPattern sparsity_pattern;
   SparseMatrix<double> mass_matrix;
   SparseMatrix<double> dg_matrix;
@@ -304,6 +309,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
             << "\n\n";
   output_parameters();
   make_grid();
+  setup_pde_system();
   setup_system();
   project_initial_condition();
   current_solution = previous_solution;
@@ -338,6 +344,121 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     previous_solution = current_solution;
   }
   // output_index_order();
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
+  Ax.reinit(num_modes);
+  Ay.reinit(num_modes);
+  Omega.reinit(num_modes);
+  R.reinit(num_modes);
+  for (int s = 0; s <= 1; ++s) {
+    for (int l = 0, i = 0; l <= max_degree; ++l) {
+      for (int m = l; m >= s; --m) {
+        i = l * (l + 1) - (s ? -1. : 1.) * m;  // (-1)^s
+        for (int s_prime = 0; s_prime <= 1; ++s_prime) {
+          for (int l_prime = 0, j = 0; l_prime <= max_degree; ++l_prime) {
+            for (int m_prime = l_prime; m_prime >= s_prime; --m_prime) {
+              j = l_prime * (l_prime + 1) - (s_prime ? -1. : 1.) * m_prime;
+              // Ax
+              if (l + 1 == l_prime && m == m_prime && s == s_prime)
+                Ax.set(i, j,
+                       std::sqrt(((l - m + 1.) * (l + m + 1.)) /
+                                 ((2. * l + 3.) * (2 * l + 1.))));
+              if (l - 1 == l_prime && m == m_prime && s == s_prime)
+                Ax.set(i, j,
+                       std::sqrt(((l - m) * (l + m)) /
+                                 ((2. * l + 1.) * (2. * l - 1.))));
+              // Ay
+              if ((l + 1) == l_prime && (m + 1) == m_prime && s == s_prime)
+                Ay.set(i, j,
+                       -0.5 * std::sqrt(((l + m + 1.) * (l + m + 2.)) /
+                                        ((2. * l + 3.) * (2. * l + 1.))));
+              if ((l - 1) == l_prime && m + 1 == m_prime && s == s_prime)
+                Ay.set(i, j,
+                       0.5 * std::sqrt(((l - m - 1.) * (l - m)) /
+                                       ((2. * l + 1.) * (2. * l - 1.))));
+              if ((l + 1) == l_prime && (m - 1) == m_prime && s == s_prime)
+                Ay.set(i, j,
+                       0.5 * std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                       ((2. * l + 3.) * (2 * l + 1.))));
+              if ((l - 1) == l_prime && (m - 1) == m_prime && s == s_prime)
+                Ay.set(i, j,
+                       -0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
+                                        ((2. * l + 1.) * (2. * l - 1.))));
+              // Omega
+              if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
+                Omega.set(i, j, -1. * m);
+                Omega.set(j, i, 1. * m);  // Omega is anti-symmetric
+              }
+              if (l == l_prime && (m + 1) == m_prime && s == 0 &&
+                  s_prime == 1) {
+                Omega.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega.set(j, i, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+              }
+              if (l == l_prime && (m - 1) == m_prime && s == 0 &&
+                  s_prime == 1) {
+                Omega.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+              }
+              // R
+              if (l == l_prime && m == m_prime && s == s_prime) {
+                R[i] = 0.5 * scattering_frequency * l * (l + 1.);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  // Edit entries of the matrices around m=0 and s=0. After the transformation
+  // they fall out of the pattern of the matrix elements, namely they differ by
+  // a factor of 2^(1/2).
+  //
+  // NOTE: These corrections were not included in the above loops, because some
+  // of them were overwritten. This is an effect of the s loops being outside
+  // the l and m loops.
+  if (max_degree > 0) {
+    for (unsigned int l = 0; l <= max_degree; ++l) {
+      // Special cases for Omega
+      // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
+      Omega(l * (l + 1), l * (l + 1) + 1) =
+          std::sqrt(2) * Omega(l * (l + 1), l * (l + 1) + 1);
+      // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
+      Omega(l * (l + 1) + 1, l * (l + 1)) =
+          std::sqrt(2) * Omega(l * (l + 1) + 1, l * (l + 1));
+      // Special cases for A_y (necessary for every value of l)
+      // Above the diagonal
+      // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
+      if (l != max_degree)
+        Ay(l * (l + 1), (l + 1) * (l + 2) - 1) =
+            std::sqrt(2) * Ay(l * (l + 1), (l + 2) * (l + 1) - 1);
+      // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
+      if (l != 0 && l != max_degree)
+        Ay(l * (l + 1) - 1, (l + 1) * (l + 2)) =
+            std::sqrt(2) * Ay(l * (l + 1) - 1, (l + 2) * (l + 1));
+      // Below the diagonal
+      // l - 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
+      if (l > 1)
+        Ay(l * (l + 1), l * (l - 1) - 1) =
+            std::sqrt(2) * Ay(l * (l + 1), l * (l - 1) - 1);
+      // l - 1 = l_prime , m = 1, s = 0 and m_prime = 0, s_prime = 0
+      if (l != 0)
+        Ay(l * (l + 1) - 1, l * (l - 1)) =
+            std::sqrt(2) * Ay(l * (l + 1) - 1, l * (l - 1));
+    }
+  }
+  // std::cout << "Ax: " << "\n";
+  // Ax.print_formatted(std::cout);
+  // std::cout << "Ay: "
+  //           << "\n";
+  // Ay.print_formatted(std::cout);
+  // std::cout << "Omega: "
+  //           << "\n";
+  // Omega.print_formatted(std::cout);
+  // std::cout << "R: "
+  //           << "\n";
+  // R.print(std::cout);
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -523,33 +644,35 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
               copy_data.cell_dg_matrix(i, j) +=
                   -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            // -\grad \phi_i * \vec{a}_i_j * phi_j
-            if (component_i == component_j) {
-              copy_data.cell_dg_matrix(i, j) +=
+	      // -\grad \phi_i * \vec{a}_i_j * phi_j
+	      copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * velocities[q_index] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-                i_lms[2] == j_lms[2]) {
-              Tensor<1, dim> a;
-              a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-                               ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+	    } else {
+	      copy_data.cell_dg_matrix(i, j) +=
+                  -fe_v.shape_grad(i, q_index) * a *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+	    }
+            // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+            //     i_lms[2] == j_lms[2]) {
+            //   Tensor<1, dim> a;
+            //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+            //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
 
-              copy_data.cell_dg_matrix(i, j) +=
-                  -fe_v.shape_grad(i, q_index) * a *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-                i_lms[2] == j_lms[2]) {
-              Tensor<1, dim> a;
-              a[0] = std::sqrt(
-                  ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-                  ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
-              copy_data.cell_dg_matrix(i, j) +=
-                  -fe_v.shape_grad(i, q_index) * a *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
-            }
+            //   copy_data.cell_dg_matrix(i, j) +=
+            //       -fe_v.shape_grad(i, q_index) * a *
+            //       fe_v.shape_value(j, q_index) * JxW[q_index];
+            // }
+            // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+            //     i_lms[2] == j_lms[2]) {
+            //   Tensor<1, dim> a;
+            //   a[0] = std::sqrt(
+            //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+            //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+            //   copy_data.cell_dg_matrix(i, j) +=
+            //       -fe_v.shape_grad(i, q_index) * a *
+            //       fe_v.shape_value(j, q_index) * JxW[q_index];
+            // }
           }
         }
       }
