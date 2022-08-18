@@ -208,6 +208,7 @@ class VFPEquationSolver {
  private:
   void make_grid();
   void setup_pde_system();
+  void prepare_upwind_fluxes();
   void setup_system();
   void project_initial_condition();
   void assemble_system();
@@ -240,10 +241,11 @@ class VFPEquationSolver {
   // Magnetic field terms
   LAPACKFullMatrix<double> Omega;
 
-  // Upwind fluxes
-  LAPACKFullMatrix<double> Ax_eigenvectors;
-  LAPACKFullMatrix<double> Ay_eigenvectors;
-  Vector<double> eigenvalues;  // Eigenvalues of A_x and A_y are the same
+  // Upwind flux matrices
+  FullMatrix<double> pi_x_positive;
+  FullMatrix<double> pi_x_negative;
+  FullMatrix<double> pi_y_positive;
+  FullMatrix<double> pi_y_negative;
 
   SparsityPattern sparsity_pattern;
   SparseMatrix<double> mass_matrix;
@@ -318,6 +320,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_pde_system();
+  prepare_upwind_fluxes();
   setup_system();
   project_initial_condition();
   current_solution = previous_solution;
@@ -473,6 +476,89 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // std::cout << "Omega: "
   //           << "\n";
   // Omega.print_formatted(std::cout);
+
+template <TermFlags flags, int max_degree, int dim>
+void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes() {
+  double tolerance = 1.e-8;
+  // Ax
+  Vector<double> x_eigenvalues(num_modes);
+  FullMatrix<double> Ax_eigenvectors(num_modes);
+
+  Ax.compute_eigenvalues_symmetric(-2., 2., tolerance, x_eigenvalues,
+                                   Ax_eigenvectors);
+  // Ax_eigenvectors.print_formatted(std::cout);
+  // Remove eigenvalues, which are smaller than tolerance
+  auto smaller_than_tolerance = [&tolerance](double value) {
+    return (std::abs(value) < tolerance ? true : false);
+  };
+  std::replace_if(x_eigenvalues.begin(), x_eigenvalues.end(),
+                  smaller_than_tolerance, 0.);
+
+  // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
+  VelocityField<dim> u;
+  // NOTE: Currently the velocity is constant. prepare_upwind_fluxes will be
+  // accompanied by update_fluxes or will be called each time step
+  Point<dim> p {0.};
+  double u_x = u.value(p)[0];
+  // double u_x = 0.;
+  x_eigenvalues.add(u_x);
+
+  // std::cout << "x eigenvalues plus velocity: "
+  //           << "\n";
+  // x_eigenvalues.print(std::cout);
+  // Split the x_eigenvalues in positive and negative
+  Vector<double> x_eigenvalues_negative = x_eigenvalues;
+  // For naming consistency we introduce a reference to x_eigenvalues
+  Vector<double> &x_eigenvalues_positive = x_eigenvalues;
+  // Replace all values smaller than zero with 0
+  std::replace_if(x_eigenvalues_positive.begin(), x_eigenvalues_positive.end(),
+                  std::bind(std::less<double>(), std::placeholders::_1, 0.),
+                  0.);
+  // std::cout << "x eigenvalues plus velocity positive: "
+  //           << "\n";
+  // x_eigenvalues_positive.print(std::cout);
+  // Replace all values greater than zero with 0
+  std::replace_if(x_eigenvalues_negative.begin(), x_eigenvalues_negative.end(),
+                  std::bind(std::greater<double>(), std::placeholders::_1, 0.),
+                  0.);
+  // std::cout << "x eigenvalues plus velocity negative: "
+  //           << "\n";
+  // x_eigenvalues_negative.print(std::cout);
+  // prepare flux matrices
+  pi_x_positive.reinit(num_modes, num_modes);
+  pi_x_negative.reinit(num_modes, num_modes);
+  FullMatrix<double> lambda_positive(num_modes, num_modes);
+  FullMatrix<double> lambda_negative(num_modes, num_modes);
+  // Fill diagonal
+  for (unsigned int i = 0; i < num_modes; ++i) {
+    lambda_positive(i, i) = x_eigenvalues_positive[i];
+    lambda_negative(i, i) = x_eigenvalues_negative[i];
+  }
+  // lambda_positive.print_formatted(std::cout);
+  // lambda_negative.print_formatted(std::cout);
+  pi_x_positive.triple_product(lambda_positive, Ax_eigenvectors,
+                               Ax_eigenvectors, false, true);
+  // pi_x_positive.print_formatted(std::cout);
+  pi_x_negative.triple_product(lambda_negative, Ax_eigenvectors,
+                               Ax_eigenvectors, false, true);
+  // pi_x_negative.print_formatted(std::cout);
+  // Ay
+  // Vector<double> y_eigenvalues(num_modes);
+  // FullMatrix<double> Ay_eigenvectors(num_modes);
+  // NOTE: The eigenvalues of A_x and A_y are the same, but for the fluxes, it
+  // is necessary to add the velocities to them and the LAPACKFullMatrix calls
+  // does not have a method, which only computes the eigenvectors.
+  // Ay.compute_eigenvalues_symmetric(-2., 2., tolerance, y_eigenvalues,
+  // Ay_eigenvectors);
+
+  // std::replace_if(y_eigenvalues.begin(), y_eigenvalues.end(),
+  // smaller_than_tolerance, 0.);
+
+  // double u_y = u.value({0.,0.})[1];
+  // y_eigenvalues.add(u_y);
+
+  // std::cout << "Eigenvalues of matrix Ay: " << "\n";
+  // y_eigenvalues.print(std::cout);
 }
 
 template <TermFlags flags, int max_degree, int dim>
