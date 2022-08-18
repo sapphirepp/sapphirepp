@@ -645,9 +645,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             // l(l+1) * \phi_i * \phi_j
             if (component_i == component_j) {
               copy_data.cell_dg_matrix(i, j) +=
-                  scattering_frequency *
-                  (i_lms[0] * (i_lms[0] + 1) * fe_v.shape_value(i, q_index) *
-                   fe_v.shape_value(j, q_index) * JxW[q_index]);
+                  R[component_i] * fe_v.shape_value(i, q_index) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
           if (flags & TermFlags::advection) {
@@ -657,21 +656,24 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
               copy_data.cell_dg_matrix(i, j) +=
                   -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
-	      // -\grad \phi_i * \vec{a}_i_j * phi_j
-	      copy_data.cell_dg_matrix(i, j) +=
+              // -\grad \phi_i * \vec{a}_i_j * phi_j
+              copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * velocities[q_index] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
-	    } else {
-	      copy_data.cell_dg_matrix(i, j) +=
-                  -fe_v.shape_grad(i, q_index) * a *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
-	    }
+            } else {
+              copy_data.cell_dg_matrix(i, j) +=
+                  -fe_v.shape_grad(i, q_index)[0] *
+                  Ax(component_i, component_j) * fe_v.shape_value(j, q_index) *
+                  JxW[q_index];
+            }
             // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
             //     i_lms[2] == j_lms[2]) {
             //   Tensor<1, dim> a;
-            //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-            //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
-
+            //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] +
+            //   i_lms[1])) /
+            //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0]
+            //                    - 1.)));
+            //   // std::cout << "a[0]: " << a[0] << "\n";
             //   copy_data.cell_dg_matrix(i, j) +=
             //       -fe_v.shape_grad(i, q_index) * a *
             //       fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -819,30 +821,37 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
                 fe_v_face.shape_value(i, q_index) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
-          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
-            // centered fluxes
+          } else {
             copy_data_face.cell_dg_matrix_11(i, j) +=
-                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-            // no updwinding in off diagonal elements, since it should increase
-            // the coercivity of the bilinear form
-          }
-          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(
-                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_11(i, j) +=
-                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
+                0.5 * normals[q_index][0] * Ax(component_i, component_j) *
+                fe_v_face.shape_value(i, q_index) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
           }
+          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1]))
+          //   /
+          //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_11(i, j) +=
+          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
+          //       q_index) * fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          //   // no updwinding in off diagonal elements, since it should
+          //   increase
+          //   // the coercivity of the bilinear form
+          // }
+          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(
+          //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+          //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_11(i, j) +=
+          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
+          //       q_index) * fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          // }
         }
       }
       // cell_dg_matrix_12
@@ -866,31 +875,42 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
                 fe_v_face.shape_value(i, q_index) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
-          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_12(i, j) +=
-                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-            // no updwinding in off diagonal elements, since it should increase
+          } else {
+	    // no updwinding in off diagonal elements, since it should increase
             // the coercivity of the bilinear form
-          }
-          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(
-                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
-
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_12(i, j) +=
-                0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
+             copy_data_face.cell_dg_matrix_12(i, j) +=
+                0.5 * normals[q_index][0] * Ax(component_i, component_j) *
+                fe_v_face.shape_value(i, q_index) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           }
+          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1]))
+          //   /
+          //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_12(i, j) +=
+          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
+          //       q_index) * fe_v_face_neighbor.shape_value(j, q_index) *
+          //       JxW[q_index];
+          //   // no updwinding in off diagonal elements, since it should
+          //   increase
+          //   // the coercivity of the bilinear form
+          // }
+          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(
+          //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+          //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_12(i, j) +=
+          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
+          //       q_index) * fe_v_face_neighbor.shape_value(j, q_index) *
+          //       JxW[q_index];
+          // }
         }
       }
       // cell_dg_matrix_21
@@ -913,34 +933,39 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
                 fe_v_face_neighbor.shape_value(i, q_index) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
-          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
-
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_21(i, j) -=
-                0.5 * a * normals[q_index] *
+          } else {
+	    copy_data_face.cell_dg_matrix_21(i, j) -=
+                0.5 * normals[q_index][0] * Ax(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(i, q_index) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
-            // no updwinding in off diagonal elements, since it should increase
-            // the coercivity of the bilinear form
-          }
-          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(
-                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+	  }
+          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+          //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
 
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_21(i, j) -=
-                0.5 * a * normals[q_index] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_21(i, j) -=
+          //       0.5 * a * normals[q_index] *
+          //       fe_v_face_neighbor.shape_value(i, q_index) *
+          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          //   // no updwinding in off diagonal elements, since it should increase
+          //   // the coercivity of the bilinear form
+          // }
+          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(
+          //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+          //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_21(i, j) -=
+          //       0.5 * a * normals[q_index] *
+          //       fe_v_face_neighbor.shape_value(i, q_index) *
+          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          // }
         }
       }
       // cell_dg_matrix_22
@@ -963,33 +988,38 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
                 fe_v_face_neighbor.shape_value(i, q_index) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
-          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+          } else {
+	    copy_data_face.cell_dg_matrix_22(i, j) -=
+                0.5 * normals[q_index][0] * Ax(component_i, component_j) *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+	  }
+          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+          //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
 
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_22(i, j) -=
-                0.5 * a * normals[q_index] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-            // no updwinding in off diagonal elements, since it should increase
-            // the coercivity of the bilinear form
-          }
-          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(
-                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
-            // centered fluxes
-            copy_data_face.cell_dg_matrix_22(i, j) -=
-                0.5 * a * normals[q_index] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_22(i, j) -=
+          //       0.5 * a * normals[q_index] *
+          //       fe_v_face_neighbor.shape_value(i, q_index) *
+          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          //   // no updwinding in off diagonal elements, since it should increase
+          //   // the coercivity of the bilinear form
+          // }
+          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+          //     i_lms[2] == j_lms[2]) {
+          //   Tensor<1, dim> a;
+          //   a[0] = std::sqrt(
+          //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+          //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+          //   // centered fluxes
+          //   copy_data_face.cell_dg_matrix_22(i, j) -=
+          //       0.5 * a * normals[q_index] *
+          //       fe_v_face_neighbor.shape_value(i, q_index) *
+          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          // }
         }
       }
     }
