@@ -240,6 +240,8 @@ class VFPEquationSolver {
   LAPACKFullMatrix<double> Ay;
   // Magnetic field terms
   LAPACKFullMatrix<double> Omega;
+  // Reaction term
+  Vector<double> R;
 
   // Upwind flux matrices
   FullMatrix<double> pi_x_positive;
@@ -376,6 +378,7 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   Ax.reinit(num_modes);
   Ay.reinit(num_modes);
   Omega.reinit(num_modes);
+  R.reinit(num_modes);
   for (int s = 0; s <= 1; ++s) {
     for (int l = 0, i = 0; l <= max_degree; ++l) {
       for (int m = l; m >= s; --m) {
@@ -424,6 +427,10 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
                   s_prime == 1) {
                 Omega.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
                 Omega.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+              }
+              // R
+              if (l == l_prime && m == m_prime && s == s_prime) {
+                R[i] = 0.5 * scattering_frequency * l * (l + 1.);
               }
             }
           }
@@ -476,6 +483,10 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // std::cout << "Omega: "
   //           << "\n";
   // Omega.print_formatted(std::cout);
+  // std::cout << "R: "
+  //           << "\n";
+  // R.print(std::cout);
+}
 
 template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes() {
