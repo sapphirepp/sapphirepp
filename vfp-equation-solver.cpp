@@ -345,10 +345,10 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     // velocity field may depend on time, it needs to reassembled every time
     // step. This is not true for the mass matrix ( but it may if the grid
     // adapts after a specified amount of time steps)
-    mass_matrix = 0;
-    dg_matrix = 0;
+    // mass_matrix = 0;
+    // dg_matrix = 0;
 
-    assemble_system();
+    // assemble_system();
     system_matrix.copy_from(mass_matrix);
     system_matrix.add(time_step * theta, dg_matrix);
     solve_system();
@@ -356,7 +356,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     output_results();
     previous_solution = current_solution;
   }
-  // output_index_order();
+  // // output_index_order();
 }
 
 template <TermFlags flags, int max_degree, int dim>
