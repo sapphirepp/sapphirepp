@@ -285,28 +285,41 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       eta(1.),
       scattering_frequency(1.),
       num_refinements(7) {
-  for (unsigned int j = 0.5 * (max_degree + 1) * (max_degree + 2), i = 0, l = 0;
-       l <= max_degree; ++l) {
-    // a_lm indices
-    for (unsigned int m = 0; m <= l; ++m, ++i) {
-      lms_indices[i][0] = l;
-      lms_indices[i][1] = m;
-      lms_indices[i][2] = 0;
-      // b_lm indices
-      if (m != 0) {
-        lms_indices[j][0] = l;
-        lms_indices[j][1] = m;
-        lms_indices[j][2] = 1;
-        ++j;
+  for (int s = 0, idx = 0; s <= 1; ++s) {
+    for (int l = 0; l <= max_degree; ++l) {
+      for (int m = l; m >= s; --m) {
+        idx = l * (l + 1) - (s ? -1. : 1.) * m;
+        lms_indices[idx][0] = l;
+        lms_indices[idx][1] = m;
+        lms_indices[idx][2] = s;
       }
     }
   }
+
+  // for (unsigned int j = 0.5 * (max_degree + 1) * (max_degree + 2), i = 0, l =
+  // 0;
+  //      l <= max_degree; ++l) {
+  //   // a_lm indices
+  //   for (unsigned int m = 0; m <= l; ++m, ++i) {
+  //     lms_indices[i][0] = l;
+  //     lms_indices[i][1] = m;
+  //     lms_indices[i][2] = 0;
+  //     // b_lm indices
+  //     if (m != 0) {
+  //       lms_indices[j][0] = l;
+  //       lms_indices[j][1] = m;
+  //       lms_indices[j][2] = 1;
+  //       ++j;
+  //     }
+  //   }
+  // }
 }
 
 template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::run() {
   std::cout << "Start the simulation: "
             << "\n\n";
+  output_index_order();
   output_parameters();
   make_grid();
   setup_pde_system();
