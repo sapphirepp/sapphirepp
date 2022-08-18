@@ -533,7 +533,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
                 i_lms[2] == j_lms[2]) {
               Tensor<1, dim> a;
-              a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+              a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+                               ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
 
               copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * a *
@@ -542,7 +543,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
                 i_lms[2] == j_lms[2]) {
               Tensor<1, dim> a;
-              a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+              a[0] = std::sqrt(
+                  ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+                  ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
               copy_data.cell_dg_matrix(i, j) +=
                   -fe_v.shape_grad(i, q_index) * a *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -594,7 +597,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+
             // if (a * normals[q_index] > 0) {
             copy_data.cell_dg_matrix(i, j) +=
                 fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
@@ -604,8 +609,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-
+            a[0] = std::sqrt(
+                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
             // if (a * normals[q_index] > 0) {
             copy_data.cell_dg_matrix(i, j) +=
                 fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
@@ -681,7 +687,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
             // centered fluxes
             copy_data_face.cell_dg_matrix_11(i, j) +=
                 0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
@@ -692,7 +699,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            a[0] = std::sqrt(
+                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
             // centered fluxes
             copy_data_face.cell_dg_matrix_11(i, j) +=
                 0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
@@ -725,7 +734,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
             // centered fluxes
             copy_data_face.cell_dg_matrix_12(i, j) +=
                 0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
@@ -736,7 +746,10 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            a[0] = std::sqrt(
+                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+
             // centered fluxes
             copy_data_face.cell_dg_matrix_12(i, j) +=
                 0.5 * a * normals[q_index] * fe_v_face.shape_value(i, q_index) *
@@ -768,7 +781,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+
             // centered fluxes
             copy_data_face.cell_dg_matrix_21(i, j) -=
                 0.5 * a * normals[q_index] *
@@ -780,7 +795,10 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            a[0] = std::sqrt(
+                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+
             // centered fluxes
             copy_data_face.cell_dg_matrix_21(i, j) -=
                 0.5 * a * normals[q_index] *
@@ -813,7 +831,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
+            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
+                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+
             // centered fluxes
             copy_data_face.cell_dg_matrix_22(i, j) -=
                 0.5 * a * normals[q_index] *
@@ -825,7 +845,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
               i_lms[2] == j_lms[2]) {
             Tensor<1, dim> a;
-            a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
+            a[0] = std::sqrt(
+                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
             // centered fluxes
             copy_data_face.cell_dg_matrix_22(i, j) -=
                 0.5 * a * normals[q_index] *
@@ -940,7 +962,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 4, 1> pure_advection;
+    VFPEquationSolver<flags, 1, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
