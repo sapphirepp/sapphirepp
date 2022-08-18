@@ -49,17 +49,13 @@ using namespace dealii;
 template <int dim>
 class VelocityField : public TensorFunction<1, dim> {
  public:
-  virtual void value_list(const std::vector<Point<dim>> &points,
-                          std::vector<Tensor<1, dim>> &values) const override {
+  virtual Tensor<1, dim> value(const Point<dim> &point) const override {
     Assert(dim <= 2, ExcNotImplemented());
-    Assert(values.size() == points.size(),
-           ExcDimensionMismatch(values.size(), points.size()));
-
-    Tensor<1, dim> value({.1});
-    // constant velocity field
-    for (unsigned int i = 0; i < points.size(); ++i) {
-      values[i] = value;
-    }
+    (void)point;  // constant velocity field (suppresses the
+                  // compiler warning unused variable)
+    // constant velocity
+    Tensor<1, dim> velocity({u_x});
+    return velocity;
   }
 
   void divergence_list(const std::vector<Point<dim>> &points,
@@ -69,6 +65,9 @@ class VelocityField : public TensorFunction<1, dim> {
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
   }
+
+ private:
+  double u_x = 0.1;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
