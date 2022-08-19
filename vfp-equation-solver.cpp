@@ -833,18 +833,19 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
           // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
           // \phi_j
-          // if (normals[q_index][0] == 1.) {
-            /* copy_data.cell_dg_matrix(i, j) += */
-            /*     normals[q_index][0] * fe_face_v.shape_value(i, q_index) * */
-            /*     pi_x_positive(component_i, component_j) * */
-            /*     fe_face_v.shape_value(j, q_index) * JxW[q_index]; */
-          // }
-          // if (normals[q_index][0] == -1.) {
-          //   copy_data.cell_dg_matrix(i, j) +=
-          //       normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-          //       pi_x_negative(component_i, component_j) *
-          //       fe_face_v.shape_value(j, q_index) * JxW[q_index];
-          // }
+          if (normals[q_index][0] == 1.) {
+            copy_data.cell_dg_matrix(i, j) +=
+                normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                pi_x_positive(component_i, component_j) *
+                fe_face_v.shape_value(j, q_index) * JxW[q_index];
+          }
+          if (normals[q_index][0] == -1.) {
+	    std::cout << "test" << "\n";
+            copy_data.cell_dg_matrix(i, j) +=
+                normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                pi_x_negative(component_i, component_j) *
+                fe_face_v.shape_value(j, q_index) * JxW[q_index];
+          }
 
           // if (component_i == component_j) {
           //   // if (velocities[q_index] * normals[q_index] > 0) {
