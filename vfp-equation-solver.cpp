@@ -739,15 +739,15 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           // dg matrix
           if (flags & TermFlags::reaction) {
             if (component_i == component_j) {
-              /* // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j */
-              /* copy_data.cell_dg_matrix(i, j) += */
-              /*     R[component_i] * fe_v.shape_value(i, q_index) * */
-              /*     fe_v.shape_value(j, q_index) * JxW[q_index]; */
-              /* // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij + */
-              /* // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0 */
-              /* copy_data.cell_dg_matrix(i, j) += */
-              /*     -div_velocities[q_index] * fe_v.shape_value(i, q_index) * */
-              /*     fe_v.shape_value(j, q_index) * JxW[q_index]; */
+              // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
+              copy_data.cell_dg_matrix(i, j) +=
+                  R[component_i] * fe_v.shape_value(i, q_index) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+              // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
+              // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
+              copy_data.cell_dg_matrix(i, j) +=
+                  -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
           if (flags & TermFlags::advection) {
