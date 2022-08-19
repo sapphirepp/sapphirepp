@@ -504,8 +504,10 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes() {
   // Ax
   Vector<double> x_eigenvalues(num_modes);
   FullMatrix<double> Ax_eigenvectors(num_modes);
-
-  Ax.compute_eigenvalues_symmetric(-2., 2., tolerance, x_eigenvalues,
+  LAPACKFullMatrix<double> CopyAx = Ax; // The matrix gets destroyed, when the
+					// eigenvalues are computed
+  
+  CopyAx.compute_eigenvalues_symmetric(-2., 2., tolerance, x_eigenvalues,
                                    Ax_eigenvectors);
   // Ax_eigenvectors.print_formatted(std::cout);
   // Remove eigenvalues, which are smaller than tolerance
