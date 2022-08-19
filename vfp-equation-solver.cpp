@@ -55,7 +55,7 @@ class VelocityField : public TensorFunction<1, dim> {
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
 
-    Tensor<1, dim> value({.1});
+    Tensor<1, dim> value({.6});
     // constant velocity field
     for (unsigned int i = 0; i < points.size(); ++i) {
       values[i] = value;
@@ -278,7 +278,7 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
-      time_step(1. / 128),
+      time_step(1. / 512),
       time(0.),
       time_step_number(0),
       theta(.5),
@@ -728,41 +728,41 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             fe_face_v.get_fe().system_to_component_index(j).first;
         const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
 
-        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-          // for outflow boundary \vec{a}_ij * n \phi_i \phi_j
-          if (component_i == component_j) {
-            // if (velocities[q_index] * normals[q_index] > 0) {
-            copy_data.cell_dg_matrix(i, j) +=
-                fe_face_v.shape_value(i, q_index) * velocities[q_index] *
-                normals[q_index] * fe_face_v.shape_value(j, q_index) *
-                JxW[q_index];
-            // }
-          }
-          if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) /
-                             ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.)));
+        /* for (unsigned int q_index : fe_face_v.quadrature_point_indices()) { */
+        /*   // for outflow boundary \vec{a}_ij * n \phi_i \phi_j */
+        /*   if (component_i == component_j) { */
+        /*     // if (velocities[q_index] * normals[q_index] > 0) { */
+        /*     copy_data.cell_dg_matrix(i, j) += */
+        /*         fe_face_v.shape_value(i, q_index) * velocities[q_index] * */
+        /*         normals[q_index] * fe_face_v.shape_value(j, q_index) * */
+        /*         JxW[q_index]; */
+        /*     // } */
+        /*   } */
+        /*   if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] && */
+        /*       i_lms[2] == j_lms[2]) { */
+        /*     Tensor<1, dim> a; */
+        /*     a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] + i_lms[1])) / */
+        /*                      ((2. * i_lms[0] + 1.) * (2. * i_lms[0] - 1.))); */
 
-            // if (a * normals[q_index] > 0) {
-            copy_data.cell_dg_matrix(i, j) +=
-                fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            // }
-          }
-          if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-              i_lms[2] == j_lms[2]) {
-            Tensor<1, dim> a;
-            a[0] = std::sqrt(
-                ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-                ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
-            // if (a * normals[q_index] > 0) {
-            copy_data.cell_dg_matrix(i, j) +=
-                fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            // }
-          }
-        }
+        /*     // if (a * normals[q_index] > 0) { */
+        /*     copy_data.cell_dg_matrix(i, j) += */
+        /*         fe_face_v.shape_value(i, q_index) * a * normals[q_index] * */
+        /*         fe_face_v.shape_value(j, q_index) * JxW[q_index]; */
+        /*     // } */
+        /*   } */
+        /*   if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] && */
+        /*       i_lms[2] == j_lms[2]) { */
+        /*     Tensor<1, dim> a; */
+        /*     a[0] = std::sqrt( */
+        /*         ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) / */
+        /*         ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.))); */
+        /*     // if (a * normals[q_index] > 0) { */
+        /*     copy_data.cell_dg_matrix(i, j) += */
+        /*         fe_face_v.shape_value(i, q_index) * a * normals[q_index] * */
+        /*         fe_face_v.shape_value(j, q_index) * JxW[q_index]; */
+        /*     // } */
+        /*   } */
+        /* } */
       }
     }
   };
@@ -827,6 +827,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
                 fe_v_face.shape_value(i, q_index) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
+	    std::cout << "component_i: " << component_i << "compenent_j: " <<
+		component_j << " cell_dg_matrix: " <<
+		copy_data_face.cell_dg_matrix_11(i, j)  << "\n";
           } else {
             copy_data_face.cell_dg_matrix_11(i, j) +=
                 0.5 * normals[q_index][0] * Ax(component_i, component_j) *
@@ -1134,7 +1137,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 2, 1> pure_advection;
+    VFPEquationSolver<flags, 1, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
