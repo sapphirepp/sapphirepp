@@ -626,12 +626,12 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
           fe_v.get_fe().system_to_component_index(i).first;
-      const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+      // const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
 
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-        const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+        // const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
 
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
@@ -805,11 +805,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face.dof_indices()) {
         const unsigned int component_i =
             fe_v_face.get_fe().system_to_component_index(i).first;
-        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
             copy_data_face.cell_dg_matrix_11(i, j) +=
@@ -858,11 +858,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face.dof_indices()) {
         const unsigned int component_i =
             fe_v_face.get_fe().system_to_component_index(i).first;
-        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
             copy_data_face.cell_dg_matrix_12(i, j) +=
@@ -917,11 +917,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
         const unsigned int component_i =
             fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
-        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
             copy_data_face.cell_dg_matrix_21(i, j) -=
@@ -972,11 +972,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
         const unsigned int component_i =
             fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
-        std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
             copy_data_face.cell_dg_matrix_22(i, j) -=
