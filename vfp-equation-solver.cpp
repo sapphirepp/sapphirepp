@@ -1134,7 +1134,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 1, 1> pure_advection;
+    VFPEquationSolver<flags, 2, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
