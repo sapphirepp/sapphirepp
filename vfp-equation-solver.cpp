@@ -334,7 +334,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   assemble_system();
 
   Vector<double> tmp(current_solution.size());
-  for (; time <= 1.; time += time_step, ++time_step_number) {
+  for (; time <= .1; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     mass_matrix.vmult(system_rhs, previous_solution);
@@ -356,7 +356,6 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     output_results();
     previous_solution = current_solution;
   }
-  // output_index_order();
 }
 
 template <TermFlags flags, int max_degree, int dim>
