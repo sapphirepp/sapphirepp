@@ -67,7 +67,7 @@ class VelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_x = 0.6;
+  double u_x = 0.1;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
