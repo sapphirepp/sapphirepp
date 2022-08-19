@@ -55,7 +55,7 @@ class VelocityField : public TensorFunction<1, dim> {
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
 
-    Tensor<1, dim> value({.6});
+    Tensor<1, dim> value({.1});
     // constant velocity field
     for (unsigned int i = 0; i < points.size(); ++i) {
       values[i] = value;
@@ -278,7 +278,7 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
-      time_step(1. / 512),
+      time_step(1. / 128),
       time(0.),
       time_step_number(0),
       theta(.5),
@@ -1137,7 +1137,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 1, 1> pure_advection;
+    VFPEquationSolver<flags, 2, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
