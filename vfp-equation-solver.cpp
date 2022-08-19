@@ -724,11 +724,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
           fe_v.get_fe().system_to_component_index(i).first;
-
+      const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-
+      const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
           copy_data.cell_mass_matrix(i, j) +=
@@ -766,6 +766,29 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 -fe_v.shape_grad(i, q_index)[0] * Ax(component_i, component_j) *
                 fe_v.shape_value(j, q_index) * JxW[q_index];
 	    }
+	    // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+            //     i_lms[2] == j_lms[2]) {
+            //   Tensor<1, dim> a;
+            //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] +
+            //   i_lms[1])) /
+            //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0]
+            //                    - 1.)));
+            //   // std::cout << "a[0]: " << a[0] << "\n";
+            //   copy_data.cell_dg_matrix(i, j) +=
+            //       -fe_v.shape_grad(i, q_index) * a *
+            //       fe_v.shape_value(j, q_index) * JxW[q_index];
+            // }
+            // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
+            //     i_lms[2] == j_lms[2]) {
+            //   Tensor<1, dim> a;
+            //   a[0] = std::sqrt(
+            //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
+            //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
+            //   copy_data.cell_dg_matrix(i, j) +=
+            //       -fe_v.shape_grad(i, q_index) * a *
+            //       fe_v.shape_value(j, q_index) * JxW[q_index];
+            // }
+
             // if (dim == 2) {
             //   copy_data.cell_dg_matrix(i, j) +=
             //       -fe_v.shape_grad(i, q_index)[1] *
