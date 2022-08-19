@@ -461,7 +461,14 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
             std::sqrt(2) * Ay(l * (l + 1) - 1, l * (l - 1));
     }
   }
-  // std::cout << "Ax: " << "\n";
+  // FullMatrix<double> eigenvectors(num_modes, num_modes);
+  // Vector<double> eigenvalues(num_modes);
+  // LAPACKFullMatrix<double> dummy = Ax;
+  // Ax.compute_eigenvalues_symmetric(-2., 2., 1.e-8, eigenvalues, eigenvectors);
+  // eigenvalues.print(std::cout);
+ 
+  std::cout << "Ax: "
+            << "\n";
   // Ax.print_formatted(std::cout);
   // std::cout << "Ay: "
   //           << "\n";
