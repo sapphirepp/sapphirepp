@@ -267,7 +267,7 @@ class VFPEquationSolver {
   unsigned int time_step_number;
   const double theta;
   // penalty parameter ( for a scalar equation eta = 1 -> upwinding)
-  const double eta;
+  /* const double eta; */
 
   // scattering frequency
   const double scattering_frequency;
@@ -290,11 +290,11 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
-      time_step(1. / 512),
+      time_step(1. / 128),
       time(0.),
       time_step_number(0),
       theta(.5),
-      eta(1.),
+      /* eta(1.), */
       scattering_frequency(1.),
       num_refinements(7) {
     for (int s = 0, idx = 0; s <= 1; ++s) {
@@ -307,22 +307,6 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       }
     }
   }
-  /* for (unsigned int j = 0.5 * (max_degree + 1) * (max_degree + 2), i = 0, l = 0; */
-  /*      l <= max_degree; ++l) { */
-  /*   // a_lm indices */
-  /*   for (unsigned int m = 0; m <= l; ++m, ++i) { */
-  /*     lms_indices[i][0] = l; */
-  /*     lms_indices[i][1] = m; */
-  /*     lms_indices[i][2] = 0; */
-  /*     // b_lm indices */
-  /*     if (m != 0) { */
-  /*       lms_indices[j][0] = l; */
-  /*       lms_indices[j][1] = m; */
-  /*       lms_indices[j][2] = 1; */
-  /*       ++j; */
-  /*     } */
-  /*   } */
-  /* } */
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -344,7 +328,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   assemble_system();
 
   Vector<double> tmp(current_solution.size());
-  for (; time <= .1; time += time_step, ++time_step_number) {
+  for (; time <= 2.; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     mass_matrix.vmult(system_rhs, previous_solution);
@@ -504,9 +488,8 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes() {
   // Ax
   Vector<double> x_eigenvalues(num_modes);
   FullMatrix<double> Ax_eigenvectors(num_modes);
-  LAPACKFullMatrix<double> CopyAx = Ax; // The matrix gets destroyed, when the
-					// eigenvalues are computed
-  
+  // The matrix gets destroyed, when the  eigenvalues are computed
+  LAPACKFullMatrix<double> CopyAx = Ax;
   CopyAx.compute_eigenvalues_symmetric(-2., 2., tolerance, x_eigenvalues,
                                    Ax_eigenvectors);
   // Ax_eigenvectors.print_formatted(std::cout);
@@ -724,11 +707,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
           fe_v.get_fe().system_to_component_index(i).first;
-      const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
+      /* const std::array<unsigned int, 3> i_lms = lms_indices[component_i]; */
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-      const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+      /* const std::array<unsigned int, 3> j_lms = lms_indices[component_j]; */
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
           copy_data.cell_mass_matrix(i, j) +=
@@ -766,35 +749,6 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 -fe_v.shape_grad(i, q_index)[0] * Ax(component_i, component_j) *
                 fe_v.shape_value(j, q_index) * JxW[q_index];
 	    }
-	    // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-            //     i_lms[2] == j_lms[2]) {
-            //   Tensor<1, dim> a;
-            //   a[0] = std::sqrt(((i_lms[0] - i_lms[1]) * (i_lms[0] +
-            //   i_lms[1])) /
-            //                    ((2. * i_lms[0] + 1.) * (2. * i_lms[0]
-            //                    - 1.)));
-            //   // std::cout << "a[0]: " << a[0] << "\n";
-            //   copy_data.cell_dg_matrix(i, j) +=
-            //       -fe_v.shape_grad(i, q_index) * a *
-            //       fe_v.shape_value(j, q_index) * JxW[q_index];
-            // }
-            // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-            //     i_lms[2] == j_lms[2]) {
-            //   Tensor<1, dim> a;
-            //   a[0] = std::sqrt(
-            //       ((i_lms[0] - i_lms[1] + 1.) * (i_lms[0] + i_lms[1] + 1.)) /
-            //       ((2. * i_lms[0] + 3.) * (2. * i_lms[0] + 1.)));
-            //   copy_data.cell_dg_matrix(i, j) +=
-            //       -fe_v.shape_grad(i, q_index) * a *
-            //       fe_v.shape_value(j, q_index) * JxW[q_index];
-            // }
-
-            // if (dim == 2) {
-            //   copy_data.cell_dg_matrix(i, j) +=
-            //       -fe_v.shape_grad(i, q_index)[1] *
-            //       Ay(component_i, component_j) * fe_v.shape_value(j, q_index)
-            //       * JxW[q_index];
-            // }
           }
         }
       }
@@ -822,13 +776,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i = 0; i < n_facet_dofs; ++i) {
       const unsigned int component_i =
           fe_face_v.get_fe().system_to_component_index(i).first;
-      // const std::array<unsigned int, 3> i_lms = lms_indices[component_i];
-
       for (unsigned int j = 0; j < n_facet_dofs; ++j) {
         const unsigned int component_j =
             fe_face_v.get_fe().system_to_component_index(j).first;
-        // const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
           // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
           // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
@@ -846,36 +796,6 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 pi_x_negative(component_i, component_j) *
                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
           }
-
-          // if (component_i == component_j) {
-          //   // if (velocities[q_index] * normals[q_index] > 0) {
-          //   copy_data.cell_dg_matrix(i, j) +=
-          //       fe_face_v.shape_value(i, q_index) * velocities[q_index] *
-          //       normals[q_index] * fe_face_v.shape_value(j, q_index) *
-          //       JxW[q_index];
-          //   // }
-          // }
-          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-          //   // if (a * normals[q_index] > 0) {
-          //   copy_data.cell_dg_matrix(i, j) +=
-          //       fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
-          //       fe_face_v.shape_value(j, q_index) * JxW[q_index];
-          //   // }
-          // }
-          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-
-          //   // if (a * normals[q_index] > 0) {
-          //   copy_data.cell_dg_matrix(i, j) +=
-          //       fe_face_v.shape_value(i, q_index) * a * normals[q_index] *
-          //       fe_face_v.shape_value(j, q_index) * JxW[q_index];
-          //   // }
-          // }
         }
       }
     }
@@ -925,20 +845,15 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face.dof_indices()) {
         const unsigned int component_i =
             fe_v_face.get_fe().system_to_component_index(i).first;
-        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
-        for (unsigned int j : fe_v_face.dof_indices()) {
+	for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          /* if (normals[q_index][0] == 1.) { */
+          if (normals[q_index][0] == 1.) {
             copy_data_face.cell_dg_matrix_11(i, j) +=
                 normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
                 pi_x_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
-	    /* std::cout << "component_i: " << component_i << "compenent_j: " << */
-	    /* 	component_j << " cell_dg_matrix: " << */
-	    /* 	copy_data_face.cell_dg_matrix_11(i, j)  << "\n"; */
-
-          /* } */
+          }
 	  /* if (normals[q_index][0] == -1.) { */
 	  /*   std::cout << "test" << "\n"; */
           //   copy_data_face.cell_dg_matrix_11(i, j) +=
@@ -946,57 +861,22 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           //       pi_x_negative(component_i, component_j) *
           //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
           /* } */
-          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-          // if (component_i == component_j) {
-          //   // centered flux
-          //   copy_data_face.cell_dg_matrix_11(i, j) +=
-          //       0.5 * velocities[q_index] * normals[q_index] *
-          //       fe_v_face.shape_value(i, q_index) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          //   // upwinding
-          //   copy_data_face.cell_dg_matrix_11(i, j) +=
-          //       eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-          //       fe_v_face.shape_value(i, q_index) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          // }
-          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_11(i, j) +=
-          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
-          //       q_index) * fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          //   // no updwinding in off diagonal elements, since it should
-          //   increase
-          //   // the coercivity of the bilinear form
-          // }
-          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_11(i, j) +=
-          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
-          //       q_index) * fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          // }
         }
       }
       // cell_dg_matrix_12
       for (unsigned int i : fe_v_face.dof_indices()) {
         const unsigned int component_i =
             fe_v_face.get_fe().system_to_component_index(i).first;
-        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          // if (normals[q_index][0] == 1.) {
+          if (normals[q_index][0] == 1.) {
 	  copy_data_face.cell_dg_matrix_12(i, j) -=
                 normals[q_index][0] *
                 fe_v_face_neighbor.shape_value(i, q_index) *
                 pi_x_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
-	  // }
+	  }
           // if (normals[q_index][0] == -1.) {
           //   copy_data_face.cell_dg_matrix_12(i, j) -=
           //       normals[q_index][0] *
@@ -1004,104 +884,26 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           //       pi_x_negative(component_i, component_j) *
           //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
           // }
-          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-          // if (component_i == component_j) {
-          //   // centered flux
-          //   copy_data_face.cell_dg_matrix_12(i, j) +=
-          //       0.5 * velocities[q_index] * normals[q_index] *
-          //       fe_v_face.shape_value(i, q_index) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-
-          //   // upwinding
-          //   copy_data_face.cell_dg_matrix_12(i, j) -=
-          //       eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-          //       fe_v_face.shape_value(i, q_index) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
-          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_12(i, j) +=
-          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
-          //       q_index) * fe_v_face_neighbor.shape_value(j, q_index) *
-          //       JxW[q_index];
-          //   // no updwinding in off diagonal elements, since it should
-          //   increase
-          //   // the coercivity of the bilinear form
-          // }
-          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_12(i, j) +=
-          //       0.5 * a * normals[q_index] * fe_v_face.shape_value(i,
-          //       q_index) * fe_v_face_neighbor.shape_value(j, q_index) *
-          //       JxW[q_index];
-          // }
         }
       }
       // cell_dg_matrix_21
       for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
         const unsigned int component_i =
             fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
-        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          // if (normals[q_index][0] == 1.) {
-          //   copy_data_face.cell_dg_matrix_21(i, j) += 0.;
-          //       /* normals[q_index][0] * fe_v_face.shape_value(i, q_index) * */
-          //       /* pi_x_positive(component_i, component_j) * */
-          //       /* fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
+          if (normals[q_index][0] == 1.) {
 	  copy_data_face.cell_dg_matrix_21(i, j) +=
                 normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
                 pi_x_negative(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
+          }
           // if (normals[q_index][0] == -1.) {
           //   copy_data_face.cell_dg_matrix_21(i, j) +=
           //       normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
           //       pi_x_positive(component_i, component_j) *
           //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
-          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-          // if (component_i == component_j) {
-          //   // centered flux
-          //   copy_data_face.cell_dg_matrix_21(i, j) -=
-          //       0.5 * velocities[q_index] * normals[q_index] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          //   // upwinding
-          //   copy_data_face.cell_dg_matrix_21(i, j) -=
-          //       eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          // }
-          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_21(i, j) -=
-          //       0.5 * a * normals[q_index] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          //   // no updwinding in off diagonal elements, since it should
-          //   increase
-          //   // the coercivity of the bilinear form
-          // }
-          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_21(i, j) -=
-          //       0.5 * a * normals[q_index] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
           // }
         }
       }
@@ -1109,60 +911,20 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
         const unsigned int component_i =
             fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
-        // std::array<unsigned int, 3> i_lms = lms_indices[component_i];
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-          // if (normals[q_index][0] == 1.) {
-                /* normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index) * */
-                /* pi_x_positive(component_i, component_j) * */
-                /* fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
+          if (normals[q_index][0] == 1.) {
 	  copy_data_face.cell_dg_matrix_22(i, j) -= 
                 normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index) *
                 pi_x_negative(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
+          }
           // if (normals[q_index][0] == -1.) {
 	      /* copy_data_face.cell_dg_matrix_22(i, j) -= */
               /*   normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index) * */
               /*   pi_x_positive(component_i, component_j) * */
               /*   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
-          // }
-          // if (component_i == component_j) {
-          //   // centered flux
-          //   copy_data_face.cell_dg_matrix_22(i, j) -=
-          //       0.5 * velocities[q_index] * normals[q_index] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          //   // upwinding
-          //   copy_data_face.cell_dg_matrix_22(i, j) +=
-          //       eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
-          // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] - i_lms[1]) / (2. * i_lms[0] - 1.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_22(i, j) -=
-          //       0.5 * a * normals[q_index] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          //   // no updwinding in off diagonal elements, since it should
-          //   increase
-          //   // the coercivity of the bilinear form
-          // }
-          // if (i_lms[0] + 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
-          //     i_lms[2] == j_lms[2]) {
-          //   Tensor<1, dim> a;
-          //   a[0] = (i_lms[0] + i_lms[1] + 1.) / (2. * i_lms[0] + 3.);
-          //   // centered fluxes
-          //   copy_data_face.cell_dg_matrix_22(i, j) -=
-          //       0.5 * a * normals[q_index] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           // }
         }
       }
@@ -1248,7 +1010,7 @@ template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
   std::cout << "	Theta: " << theta << "\n";
-  std::cout << "	Eta: " << eta << "\n";
+  /* std::cout << "	Eta: " << eta << "\n"; */
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n";
   std::cout << "	Scattering frequency: " << scattering_frequency << "\n";
@@ -1272,7 +1034,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 1, 1> pure_advection;
+    VFPEquationSolver<flags, 2, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
