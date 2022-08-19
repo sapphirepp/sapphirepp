@@ -933,15 +933,15 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
-            copy_data_face.cell_dg_matrix_21(i, j) += 0.;
-            /*     0.5 * velocities[q_index] * normals[q_index] * */
-            /*     fe_v_face.shape_value(i, q_index) * */
-            /*     fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
-            /* // upwinding */
-            /* copy_data_face.cell_dg_matrix_21(i, j) -= */
-            /*     eta / 2 * std::abs(velocities[q_index] * normals[q_index]) * */
-            /*     fe_v_face.shape_value(i, q_index) * */
-            /*     fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
+            copy_data_face.cell_dg_matrix_21(i, j) +=
+                0.5 * velocities[q_index] * normals[q_index] *
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            // upwinding
+            copy_data_face.cell_dg_matrix_21(i, j) -=
+                eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           } else {
 	    copy_data_face.cell_dg_matrix_21(i, j) +=
                 0.5 * normals[q_index][0] * Ax(component_i, component_j) *
@@ -988,15 +988,15 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
-            copy_data_face.cell_dg_matrix_22(i, j) -= 0.;
-            /*     0.5 * velocities[q_index] * normals[q_index] * */
-            /*     fe_v_face_neighbor.shape_value(i, q_index) * */
-            /*     fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
-            /* // upwinding */
-            /* copy_data_face.cell_dg_matrix_22(i, j) += */
-            /*     eta / 2 * std::abs(velocities[q_index] * normals[q_index]) * */
-            /*     fe_v_face_neighbor.shape_value(i, q_index) * */
-            /*     fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
+            copy_data_face.cell_dg_matrix_22(i, j) -=
+                0.5 * velocities[q_index] * normals[q_index] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            // upwinding
+            copy_data_face.cell_dg_matrix_22(i, j) +=
+                eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           } else {
 	    copy_data_face.cell_dg_matrix_22(i, j) -=
                 0.5 * normals[q_index][0] * Ax(component_i, component_j) *
