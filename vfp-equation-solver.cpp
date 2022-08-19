@@ -865,23 +865,23 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
-            copy_data_face.cell_dg_matrix_12(i, j) +=
+            copy_data_face.cell_dg_matrix_12(i, j) -=
                 0.5 * velocities[q_index] * normals[q_index] *
-                fe_v_face.shape_value(i, q_index) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
 
             // upwinding
             copy_data_face.cell_dg_matrix_12(i, j) -=
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-                fe_v_face.shape_value(i, q_index) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
           } else {
 	    // no updwinding in off diagonal elements, since it should increase
             // the coercivity of the bilinear form
-             copy_data_face.cell_dg_matrix_12(i, j) +=
+             copy_data_face.cell_dg_matrix_12(i, j) -=
                 0.5 * normals[q_index][0] * Ax(component_i, component_j) *
-                fe_v_face.shape_value(i, q_index) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                fe_v_face_neighbor.shape_value(i, q_index) *
+                fe_v_face.shape_value(j, q_index) * JxW[q_index];
           }
           // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
           //     i_lms[2] == j_lms[2]) {
@@ -924,20 +924,20 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           // std::array<unsigned int, 3> j_lms = lms_indices[component_j];
           if (component_i == component_j) {
             // centered flux
-            copy_data_face.cell_dg_matrix_21(i, j) -=
+            copy_data_face.cell_dg_matrix_21(i, j) +=
                 0.5 * velocities[q_index] * normals[q_index] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
             // upwinding
             copy_data_face.cell_dg_matrix_21(i, j) -=
                 eta / 2 * std::abs(velocities[q_index] * normals[q_index]) *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           } else {
-	    copy_data_face.cell_dg_matrix_21(i, j) -=
+	    copy_data_face.cell_dg_matrix_21(i, j) +=
                 0.5 * normals[q_index][0] * Ax(component_i, component_j) *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                fe_v_face.shape_value(i, q_index) *
+                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
 	  }
           // if (i_lms[0] - 1 == j_lms[0] && i_lms[1] == j_lms[1] &&
           //     i_lms[2] == j_lms[2]) {
@@ -1035,11 +1035,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
           dg_matrix.add(cdf.local_dof_indices[i], cdf.local_dof_indices[j],
                         cdf.cell_dg_matrix_11(i, j));
-          dg_matrix.add(cdf.local_dof_indices[i],
-                        cdf.local_dof_indices_neighbor[j],
-                        cdf.cell_dg_matrix_12(i, j));
           dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-                        cdf.local_dof_indices[j], cdf.cell_dg_matrix_21(i, j));
+                        cdf.local_dof_indices[j],
+                        cdf.cell_dg_matrix_12(i, j));
+          dg_matrix.add(cdf.local_dof_indices[i],
+                        cdf.local_dof_indices_neighbor[j], cdf.cell_dg_matrix_21(i, j));
           dg_matrix.add(cdf.local_dof_indices_neighbor[i],
                         cdf.local_dof_indices_neighbor[j],
                         cdf.cell_dg_matrix_22(i, j));
