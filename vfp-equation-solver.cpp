@@ -217,7 +217,11 @@ class VFPEquationSolver {
  private:
   void make_grid();
   void setup_pde_system();
-  void prepare_upwind_fluxes();
+  // Enum to determine if positive or negative upwind flux should be computed
+  enum class FluxDirection { positive, negative };
+  enum class Coordinate { x, y };
+  void prepare_upwind_fluxes(const Point<dim> &p, const Coordinate coordinate,
+                             const FluxDirection flux_direction);
   void setup_system();
   void project_initial_condition();
   void assemble_system();
@@ -325,7 +329,11 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   output_parameters();
   make_grid();
   setup_pde_system();
-  prepare_upwind_fluxes();
+  // Compute upwind fluxes
+  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::x, FluxDirection::positive);
+  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::x, FluxDirection::negative);
+  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::positive);
+  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::negative);
   setup_system();
   project_initial_condition();
   current_solution = previous_solution;
@@ -492,90 +500,110 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes() {
+void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
+    const Point<dim> &p, const Coordinate coordinate,
+    const FluxDirection flux_direction) {
   double tolerance = 1.e-8;
-  // Ax
-  Vector<double> x_eigenvalues(num_modes);
-  FullMatrix<double> Ax_eigenvectors(num_modes);
-  // The matrix gets destroyed, when the  eigenvalues are computed
-  LAPACKFullMatrix<double> CopyAx = Ax;
-  CopyAx.compute_eigenvalues_symmetric(-2., 2., tolerance, x_eigenvalues,
-                                   Ax_eigenvectors);
-  // Ax_eigenvectors.print_formatted(std::cout);
+
+  Vector<double> eigenvalues(num_modes);
+  FullMatrix<double> eigenvectors(num_modes);
+  // The matrix gets destroyed, when the eigenvalues are computed. This requires
+  // to copy it
+  LAPACKFullMatrix<double> CopyA;
+  switch (coordinate) {
+    case Coordinate::x:
+      CopyA = Ax;
+      break;
+    case Coordinate::y:
+      CopyA = Ay;
+      break;
+  }
+  CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
+                                      eigenvectors);
+  // std::cout << "Eigenvectors: " << "\n"
+  // eigenvectors.print_formatted(std::cout);
   // Remove eigenvalues, which are smaller than tolerance
   auto smaller_than_tolerance = [&tolerance](double value) {
     return (std::abs(value) < tolerance ? true : false);
   };
-  std::replace_if(x_eigenvalues.begin(), x_eigenvalues.end(),
+  std::replace_if(eigenvalues.begin(), eigenvalues.end(),
                   smaller_than_tolerance, 0.);
-
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
-  VelocityField<dim> u;
-  // NOTE: Currently the velocity is constant. prepare_upwind_fluxes will be
-  // accompanied by update_fluxes or will be called each time step
-  Point<dim> p {0.};
-  double u_x = u.value(p)[0];
-  // double u_x = 0.;
-  x_eigenvalues.add(u_x);
+  VelocityField<dim> velocity_field;
+  double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)];
+  eigenvalues.add(u);
+  // std::cout << "eigenvalues plus velocity: "
+  //           << "\n";
+  // eigenvalues.print(std::cout);
 
-  // std::cout << "x eigenvalues plus velocity: "
-  //           << "\n";
-  // x_eigenvalues.print(std::cout);
-  // Split the x_eigenvalues in positive and negative
-  Vector<double> x_eigenvalues_negative = x_eigenvalues;
-  // For naming consistency we introduce a reference to x_eigenvalues
-  Vector<double> &x_eigenvalues_positive = x_eigenvalues;
-  // Replace all values smaller than zero with 0
-  std::replace_if(x_eigenvalues_positive.begin(), x_eigenvalues_positive.end(),
-                  std::bind(std::less<double>(), std::placeholders::_1, 0.),
-                  0.);
-  // std::cout << "x eigenvalues plus velocity positive: "
-  //           << "\n";
-  // x_eigenvalues_positive.print(std::cout);
-  // Replace all values greater than zero with 0
-  std::replace_if(x_eigenvalues_negative.begin(), x_eigenvalues_negative.end(),
-                  std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-                  0.);
-  // std::cout << "x eigenvalues plus velocity negative: "
-  //           << "\n";
-  // x_eigenvalues_negative.print(std::cout);
-  // prepare flux matrices
-  pi_x_positive.reinit(num_modes, num_modes);
-  pi_x_negative.reinit(num_modes, num_modes);
-  FullMatrix<double> lambda_positive(num_modes, num_modes);
-  FullMatrix<double> lambda_negative(num_modes, num_modes);
+  // Depending on the flux direction extract either the positive or negative
+  // eigenvalues
+  switch (flux_direction) {
+      // Replace all values smaller than zero with 0
+    case FluxDirection::positive:
+      std::replace_if(eigenvalues.begin(), eigenvalues.end(),
+                      std::bind(std::less<double>(), std::placeholders::_1, 0.),
+                      0.);
+      break;
+      // Replace all values greater than zero with 0
+    case FluxDirection::negative:
+      std::replace_if(
+          eigenvalues.begin(), eigenvalues.end(),
+          std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
+      break;
+  }
+  // std::cout << "positive (or negative) eigenvalues of the flux matrix pi_x/y:
+  //           " << "\n";
+  // eigenvalues.print(std::cout);
+
+  // Create Lambda_+/-
+  FullMatrix<double> lambda(num_modes, num_modes);
   // Fill diagonal
   for (unsigned int i = 0; i < num_modes; ++i) {
-    lambda_positive(i, i) = x_eigenvalues_positive[i];
-    lambda_negative(i, i) = x_eigenvalues_negative[i];
+    lambda(i, i) = eigenvalues[i];
   }
-  lambda_positive.print_formatted(std::cout);
-  lambda_negative.print_formatted(std::cout);
-  pi_x_positive.triple_product(lambda_positive, Ax_eigenvectors,
-                               Ax_eigenvectors, false, true);
+  // std::cout << "positive (or negative) lambda matrix: " << "\n";
+  // lambda.print_formatted(std::cout);
 
-  pi_x_positive.print_formatted(std::cout);
-  // pi_x_positive.print_formatted(std::cout);
-  pi_x_negative.triple_product(lambda_negative, Ax_eigenvectors,
-                               Ax_eigenvectors, false, true);
-  // pi_x_negative.print_formatted(std::cout);
-  // Ay
-  // Vector<double> y_eigenvalues(num_modes);
-  // FullMatrix<double> Ay_eigenvectors(num_modes);
-  // NOTE: The eigenvalues of A_x and A_y are the same, but for the fluxes, it
-  // is necessary to add the velocities to them and the LAPACKFullMatrix calls
-  // does not have a method, which only computes the eigenvectors.
-  // Ay.compute_eigenvalues_symmetric(-2., 2., tolerance, y_eigenvalues,
-  // Ay_eigenvectors);
-
-  // std::replace_if(y_eigenvalues.begin(), y_eigenvalues.end(),
-  // smaller_than_tolerance, 0.);
-
-  // double u_y = u.value({0.,0.})[1];
-  // y_eigenvalues.add(u_y);
-
-  // std::cout << "Eigenvalues of matrix Ay: " << "\n";
-  // y_eigenvalues.print(std::cout);
+  // Compute the flux matrices
+  switch (coordinate) {
+    case Coordinate::x:
+      switch (flux_direction) {
+        case FluxDirection::positive:
+          pi_x_positive.reinit(num_modes, num_modes);
+          pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
+                                       false, true);
+	  std::cout << "pi_x_positive: " << "\n";
+          pi_x_positive.print_formatted(std::cout);
+          break;
+        case FluxDirection::negative:
+          pi_x_negative.reinit(num_modes, num_modes);
+          pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
+                                       false, true);
+	  std::cout << "pi_x_negative: " << "\n";
+          pi_x_negative.print_formatted(std::cout);
+          break;
+      }
+      break;
+    case Coordinate::y:
+      switch (flux_direction) {
+        case FluxDirection::positive:
+          pi_y_positive.reinit(num_modes, num_modes);
+          pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
+                                       false, true);
+	  std::cout << "pi_y_positive: " << "\n";
+          pi_y_positive.print_formatted(std::cout);
+          break;
+        case FluxDirection::negative:
+          pi_y_negative.reinit(num_modes, num_modes);
+          pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
+                                       false, true);
+	  std::cout << "pi_y_negative: " << "\n";
+          pi_y_negative.print_formatted(std::cout);
+          break;
+      }
+      break;
+  }
 }
 
 template <TermFlags flags, int max_degree, int dim>
