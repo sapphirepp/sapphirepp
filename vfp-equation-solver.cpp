@@ -310,7 +310,7 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       /* eta(1.), */
       scattering_frequency(1.),
       num_refinements(7) {
-    for (int s = 0, idx = 0; s <= 1; ++s) {
+  for (int s = 0, idx = 0; s <= 1; ++s) {
     for (int l = 0; l <= max_degree; ++l) {
       for (int m = l; m >= s; --m) {
         idx = l * (l + 1) - (s ? -1. : 1.) * m;
@@ -573,14 +573,16 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           pi_x_positive.reinit(num_modes, num_modes);
           pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_x_positive: " << "\n";
+          std::cout << "pi_x_positive: "
+                    << "\n";
           pi_x_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
           pi_x_negative.reinit(num_modes, num_modes);
           pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_x_negative: " << "\n";
+          std::cout << "pi_x_negative: "
+                    << "\n";
           pi_x_negative.print_formatted(std::cout);
           break;
       }
@@ -591,14 +593,16 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           pi_y_positive.reinit(num_modes, num_modes);
           pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_y_positive: " << "\n";
+          std::cout << "pi_y_positive: "
+                    << "\n";
           pi_y_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
           pi_y_negative.reinit(num_modes, num_modes);
           pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_y_negative: " << "\n";
+          std::cout << "pi_y_negative: "
+                    << "\n";
           pi_y_negative.print_formatted(std::cout);
           break;
       }
@@ -746,7 +750,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-      /* const std::array<unsigned int, 3> j_lms = lms_indices[component_j]; */
+        /* const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
+         */
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
           copy_data.cell_mass_matrix(i, j) +=
@@ -776,14 +781,15 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   -fe_v.shape_grad(i, q_index) * velocities[q_index] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             } else {
-            // NOTE: Many zerso are added here, because the matrices Ax, Ay are
-            // sparse. TODO: Performance check. If too bad, return to the
-            // strategy, which was used in v0.6.5
-            // Ax
-            copy_data.cell_dg_matrix(i, j) +=
-                -fe_v.shape_grad(i, q_index)[0] * Ax(component_i, component_j) *
-                fe_v.shape_value(j, q_index) * JxW[q_index];
-	    }
+              // NOTE: Many zerso are added here, because the matrices Ax, Ay
+              // are sparse. TODO: Performance check. If too bad, return to the
+              // strategy, which was used in v0.6.5
+              // Ax
+              copy_data.cell_dg_matrix(i, j) +=
+                  -fe_v.shape_grad(i, q_index)[0] *
+                  Ax(component_i, component_j) * fe_v.shape_value(j, q_index) *
+                  JxW[q_index];
+            }
           }
         }
       }
@@ -825,7 +831,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
           }
           if (normals[q_index][0] == -1.) {
-	    std::cout << "test" << "\n";
+            std::cout << "test"
+                      << "\n";
             copy_data.cell_dg_matrix(i, j) +=
                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
                 pi_x_negative(component_i, component_j) *
@@ -880,7 +887,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
       for (unsigned int i : fe_v_face.dof_indices()) {
         const unsigned int component_i =
             fe_v_face.get_fe().system_to_component_index(i).first;
-	for (unsigned int j : fe_v_face.dof_indices()) {
+        for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
           if (normals[q_index][0] == 1.) {
@@ -889,8 +896,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 pi_x_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
           }
-	  /* if (normals[q_index][0] == -1.) { */
-	  /*   std::cout << "test" << "\n"; */
+          /* if (normals[q_index][0] == -1.) { */
+          /*   std::cout << "test" << "\n"; */
           //   copy_data_face.cell_dg_matrix_11(i, j) +=
           //       normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
           //       pi_x_negative(component_i, component_j) *
@@ -906,12 +913,12 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
           if (normals[q_index][0] == 1.) {
-	  copy_data_face.cell_dg_matrix_12(i, j) -=
+            copy_data_face.cell_dg_matrix_12(i, j) -=
                 normals[q_index][0] *
                 fe_v_face_neighbor.shape_value(i, q_index) *
                 pi_x_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
-	  }
+          }
           // if (normals[q_index][0] == -1.) {
           //   copy_data_face.cell_dg_matrix_12(i, j) -=
           //       normals[q_index][0] *
@@ -929,7 +936,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
           if (normals[q_index][0] == 1.) {
-	  copy_data_face.cell_dg_matrix_21(i, j) +=
+            copy_data_face.cell_dg_matrix_21(i, j) +=
                 normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
                 pi_x_negative(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
@@ -950,16 +957,18 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
           if (normals[q_index][0] == 1.) {
-	  copy_data_face.cell_dg_matrix_22(i, j) -= 
-                normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index) *
+            copy_data_face.cell_dg_matrix_22(i, j) -=
+                normals[q_index][0] *
+                fe_v_face_neighbor.shape_value(i, q_index) *
                 pi_x_negative(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           }
           // if (normals[q_index][0] == -1.) {
-	      /* copy_data_face.cell_dg_matrix_22(i, j) -= */
-              /*   normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index) * */
-              /*   pi_x_positive(component_i, component_j) * */
-              /*   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
+          /* copy_data_face.cell_dg_matrix_22(i, j) -= */
+          /*   normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index)
+           * * */
+          /*   pi_x_positive(component_i, component_j) * */
+          /*   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index]; */
           // }
         }
       }
@@ -977,10 +986,10 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           dg_matrix.add(cdf.local_dof_indices[i], cdf.local_dof_indices[j],
                         cdf.cell_dg_matrix_11(i, j));
           dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-                        cdf.local_dof_indices[j],
-                        cdf.cell_dg_matrix_12(i, j));
+                        cdf.local_dof_indices[j], cdf.cell_dg_matrix_12(i, j));
           dg_matrix.add(cdf.local_dof_indices[i],
-                        cdf.local_dof_indices_neighbor[j], cdf.cell_dg_matrix_21(i, j));
+                        cdf.local_dof_indices_neighbor[j],
+                        cdf.cell_dg_matrix_21(i, j));
           dg_matrix.add(cdf.local_dof_indices_neighbor[i],
                         cdf.local_dof_indices_neighbor[j],
                         cdf.cell_dg_matrix_22(i, j));
@@ -1069,7 +1078,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 2, 1> pure_advection;
+    VFPEquationSolver<flags, 2, 2> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
