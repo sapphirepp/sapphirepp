@@ -321,10 +321,11 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   make_grid();
   setup_pde_system();
   // Compute upwind fluxes
-  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::x, FluxDirection::positive);
-  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::x, FluxDirection::negative);
-  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::positive);
-  prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::negative);
+  Point<dim> p {0.1};
+  prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::positive);
+  prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::negative);
+  // prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::positive);
+  // prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::negative);
   setup_system();
   project_initial_condition();
   current_solution = previous_solution;
@@ -505,9 +506,9 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
     case Coordinate::x:
       CopyA = Ax;
       break;
-    case Coordinate::y:
-      CopyA = Ay;
-      break;
+    // case Coordinate::y:
+    //   CopyA = Ay;
+    //   break;
   }
   CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
                                       eigenvectors);
@@ -576,24 +577,24 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           break;
       }
       break;
-    case Coordinate::y:
-      switch (flux_direction) {
-        case FluxDirection::positive:
-          pi_y_positive.reinit(num_modes, num_modes);
-          pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
-                                       false, true);
-	  std::cout << "pi_y_positive: " << "\n";
-          pi_y_positive.print_formatted(std::cout);
-          break;
-        case FluxDirection::negative:
-          pi_y_negative.reinit(num_modes, num_modes);
-          pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
-                                       false, true);
-	  std::cout << "pi_y_negative: " << "\n";
-          pi_y_negative.print_formatted(std::cout);
-          break;
-      }
-      break;
+    // case Coordinate::y:
+    //   switch (flux_direction) {
+    //     case FluxDirection::positive:
+    //       pi_y_positive.reinit(num_modes, num_modes);
+    //       pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
+    //                                    false, true);
+    // 	  std::cout << "pi_y_positive: " << "\n";
+    //       pi_y_positive.print_formatted(std::cout);
+    //       break;
+    //     case FluxDirection::negative:
+    //       pi_y_negative.reinit(num_modes, num_modes);
+    //       pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
+    //                                    false, true);
+    // 	  std::cout << "pi_y_negative: " << "\n";
+    //       pi_y_negative.print_formatted(std::cout);
+    //       break;
+    //   }
+    //   break;
   }
 }
 
@@ -1062,7 +1063,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 2, 1> pure_advection;
+    VFPEquationSolver<flags, 1, 1> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
