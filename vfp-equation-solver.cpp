@@ -91,17 +91,25 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
 
 // Initial values
 template <int max_degree, int dim>
-class InitialValues : public Function<dim> {
+class InitialValueFunction : public Function<dim> {
  public:
   virtual void vector_value(const Point<dim> &p,
                             Vector<double> &values) const override {
-    Assert(dim <= 2, ExcNotImplemented());
+    Assert(dim == 2, ExcNotImplemented());
     Assert(values.size() == (max_degree + 1) * (max_degree + 1),
            ExcDimensionMismatch(values.size(),
                                 (max_degree + 1) * (max_degree + 1)));
-    std::fill(values.begin(), values.end(),
-              1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.01)));
-    // values[0]= 1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.01));
+    // The zeroth component of values corresponds to f_000, the first component
+    // to f_110 etc.
+    values[0] =
+        1. *
+        std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) / 0.01));
+
+    // Fill all components with the same values
+    // std::fill(
+    //     values.begin(), values.end(),
+    //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
+    //                     0.01)));
   }
 };
 
@@ -617,17 +625,15 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     // Initial values
-    InitialValues<max_degree, dim> initial_values;
+    InitialValueFunction<max_degree, dim> initial_value_function;
     // The Vector<double> inside the standard vector will not have the
     // correct size when the function vector_value is called by the function
-    // vector _value_list(). Thus I have to create an empty vector of the
-    // correct size and copy it into the standard vector. I am using the
-    // corresponding constructor of the standard vector class template
-    Vector<double> empty_vector_correct_size((max_degree + 1) *
-                                             (max_degree + 1));
-    std::vector<Vector<double>> f_values(q_points.size(),
-                                         empty_vector_correct_size);
-    initial_values.vector_value_list(q_points, f_values);
+    // vector_value_list(). Thus I have to create an empty vector of the
+    // correct size and copy it into the standard vector.
+    Vector<double> empty_vector_correct_size(num_modes);
+    std::vector<Vector<double>> initial_values(q_points.size(),
+                                               empty_vector_correct_size);
+    initial_value_function.vector_value_list(q_points, initial_values);
 
     for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
       for (unsigned int i : fe_v.dof_indices()) {
@@ -643,7 +649,7 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
               JxW[q_index];
         }
         cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                       f_values[q_index][component_i] * JxW[q_index];
+                       initial_values[q_index][component_i] * JxW[q_index];
       }
     }
     cell->get_dof_indices(local_dof_indices);
