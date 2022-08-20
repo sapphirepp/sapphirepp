@@ -50,17 +50,17 @@ template <int dim>
 class VelocityField : public TensorFunction<1, dim> {
  public:
   virtual Tensor<1, dim> value(const Point<dim> &point) const override {
-    Assert(dim <= 2, ExcNotImplemented());
+    Assert(dim == 2, ExcNotImplemented());
     (void)point;  // constant velocity field (suppresses the
                   // compiler warning unused variable)
     // constant velocity
-    Tensor<1, dim> velocity({u_x});
+    Tensor<1, dim> velocity({u_x, u_y});
     return velocity;
   }
 
   void divergence_list(const std::vector<Point<dim>> &points,
                        std::vector<double> &values) {
-    Assert(dim <= 2, ExcNotImplemented());
+    Assert(dim == 2, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
@@ -68,6 +68,7 @@ class VelocityField : public TensorFunction<1, dim> {
 
  private:
   double u_x = 0.1;
+  double u_y = 0.1;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
