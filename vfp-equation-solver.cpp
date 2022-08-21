@@ -67,8 +67,8 @@ class VelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_x = 0.1;
-  double u_y = 0.1;
+  double u_x = 0.;
+  double u_y = 0.2;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1, magnetic = 1 << 2 };
@@ -102,15 +102,16 @@ class InitialValueFunction : public Function<dim> {
                                 (max_degree + 1) * (max_degree + 1)));
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
-    values[0] =
-        1. *
-        std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) / 0.01));
+    /* values[0] = */
+    /*     1. * */
+    /*     std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
+     * 0.01)); */
 
     // Fill all components with the same values
-    // std::fill(
-    //     values.begin(), values.end(),
-    //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
-    //                     0.01)));
+    std::fill(
+        values.begin(), values.end(),
+        1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
+                        0.01)));
   }
 };
 
@@ -310,7 +311,7 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       theta(.5),
       /* eta(1.), */
       scattering_frequency(1.),
-      num_refinements(7) {
+      num_refinements(5) {
   for (int s = 0, idx = 0; s <= 1; ++s) {
     for (int l = 0; l <= max_degree; ++l) {
       for (int m = l; m >= s; --m) {
@@ -328,6 +329,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   std::cout << "Start the simulation: "
             << "\n\n";
   output_parameters();
+  output_index_order();
   make_grid();
   setup_pde_system();
   // Compute upwind fluxes
@@ -346,7 +348,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   assemble_system();
 
   Vector<double> tmp(current_solution.size());
-  for (; time <= 2.; time += time_step, ++time_step_number) {
+  for (; time <= .4; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     mass_matrix.vmult(system_rhs, previous_solution);
@@ -368,7 +370,6 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     output_results();
     previous_solution = current_solution;
   }
-  // // output_index_order();
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -504,8 +505,6 @@ template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
     const Point<dim> &p, const Coordinate coordinate,
     const FluxDirection flux_direction) {
-  double tolerance = 1.e-8;
-
   Vector<double> eigenvalues(num_modes);
   FullMatrix<double> eigenvectors(num_modes);
   // The matrix gets destroyed, when the eigenvalues are computed. This requires
@@ -519,7 +518,8 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
       CopyA = Ay;
       break;
   }
-  CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
+  double tolerance = 1.e-8;
+  CopyA.compute_eigenvalues_symmetric(-5., 5., tolerance, eigenvalues,
                                       eigenvectors);
   // std::cout << "Eigenvectors: " << "\n"
   // eigenvectors.print_formatted(std::cout);
@@ -574,17 +574,17 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           pi_x_positive.reinit(num_modes, num_modes);
           pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          std::cout << "pi_x_positive: "
-                    << "\n";
-          pi_x_positive.print_formatted(std::cout);
+          // std::cout << "pi_x_positive: "
+          //           << "\n";
+          // pi_x_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
           pi_x_negative.reinit(num_modes, num_modes);
           pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          std::cout << "pi_x_negative: "
-                    << "\n";
-          pi_x_negative.print_formatted(std::cout);
+          // std::cout << "pi_x_negative: "
+          //           << "\n";
+          // pi_x_negative.print_formatted(std::cout);
           break;
       }
       break;
@@ -594,17 +594,17 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           pi_y_positive.reinit(num_modes, num_modes);
           pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          std::cout << "pi_y_positive: "
-                    << "\n";
-          pi_y_positive.print_formatted(std::cout);
+          // std::cout << "pi_y_positive: "
+          //           << "\n";
+          // pi_y_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
           pi_y_negative.reinit(num_modes, num_modes);
           pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          std::cout << "pi_y_negative: "
-                    << "\n";
-          pi_y_negative.print_formatted(std::cout);
+          // std::cout << "pi_y_negative: "
+          //           << "\n";
+          // pi_y_negative.print_formatted(std::cout);
           break;
       }
       break;
@@ -721,7 +721,6 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-
   VelocityField<dim> beta;
   beta.set_time(time);
   // I do not no the meaning of the following "const" specifier
@@ -747,12 +746,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
           fe_v.get_fe().system_to_component_index(i).first;
-      /* const std::array<unsigned int, 3> i_lms = lms_indices[component_i]; */
       for (unsigned int j : fe_v.dof_indices()) {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
-        /* const std::array<unsigned int, 3> j_lms = lms_indices[component_j];
-         */
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
           copy_data.cell_mass_matrix(i, j) +=
@@ -837,8 +833,6 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
           }
           if (normals[q_index][0] == -1.) {
-            std::cout << "test"
-                      << "\n";
             copy_data.cell_dg_matrix(i, j) +=
                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
                 pi_x_negative(component_i, component_j) *
@@ -1083,8 +1077,9 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 2, 2> pure_advection;
+    constexpr TermFlags flags =
+        TermFlags::advection | TermFlags::reaction | TermFlags::magnetic;
+    VFPEquationSolver<flags, 1, 2> pure_advection;
     pure_advection.run();
 
   } catch (std::exception &exc) {
