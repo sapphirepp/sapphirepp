@@ -71,7 +71,7 @@ class VelocityField : public TensorFunction<1, dim> {
   double u_y = 0.1;
 };
 
-enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
+enum TermFlags { advection = 1 << 0, reaction = 1 << 1, magnetic = 1 << 2 };
 
 constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
   return static_cast<TermFlags>(static_cast<int>(f1) | static_cast<int>(f2));
@@ -86,6 +86,7 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
   s << "Term flags: \n";
   if (f & advection) s << "	 - Advection\n";
   if (f & reaction) s << "	 - Reaction\n";
+  if (f & magnetic) s << "	 - Magnetic\n";
   return s;
 }
 
@@ -790,6 +791,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   Ax(component_i, component_j) * fe_v.shape_value(j, q_index) *
                   JxW[q_index];
             }
+          }
+          if (flags & TermFlags::magnetic) {
+            copy_data.cell_dg_matrix(i, j) =
+                fe_v.shape_value(i, q_index) * Omega(component_i, component_j) *
+                fe_v.shape_value(j, q_index) * JxW[q_index];
           }
         }
       }
