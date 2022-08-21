@@ -54,7 +54,7 @@ class VelocityField : public TensorFunction<1, dim> {
     (void)point;  // constant velocity field (suppresses the
                   // compiler warning unused variable)
     // constant velocity
-    Tensor<1, dim> velocity({u_x});
+    Tensor<1, dim> velocity({u_y});
     return velocity;
   }
 
@@ -67,7 +67,7 @@ class VelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_x = 0.1;
+  double u_y = 0.1;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
@@ -322,10 +322,10 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   setup_pde_system();
   // Compute upwind fluxes
   Point<dim> p {0.1};
-  prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::positive);
-  prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::negative);
-  // prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::positive);
-  // prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::negative);
+  /* prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::positive); */
+  /* prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::negative); */
+  prepare_upwind_fluxes(p, Coordinate::y, FluxDirection::positive);
+  prepare_upwind_fluxes(p, Coordinate::y, FluxDirection::negative);
   setup_system();
   project_initial_condition();
   current_solution = previous_solution;
@@ -503,12 +503,12 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
   // to copy it
   LAPACKFullMatrix<double> CopyA;
   switch (coordinate) {
-    case Coordinate::x:
-      CopyA = Ax;
+    /* case Coordinate::x: */
+    /*   CopyA = Ax; */
+    /*   break; */
+    case Coordinate::y:
+      CopyA = Ay;
       break;
-    // case Coordinate::y:
-    //   CopyA = Ay;
-    //   break;
   }
   CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
                                       eigenvectors);
@@ -522,7 +522,8 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
                   smaller_than_tolerance, 0.);
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
   VelocityField<dim> velocity_field;
-  double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)];
+  /* double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)]; */
+  double u = velocity_field.value(p)[0];
   eigenvalues.add(u);
   // std::cout << "eigenvalues plus velocity: "
   //           << "\n";
@@ -559,42 +560,42 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
 
   // Compute the flux matrices
   switch (coordinate) {
-    case Coordinate::x:
+    /* case Coordinate::x: */
+    /*   switch (flux_direction) { */
+    /*     case FluxDirection::positive: */
+    /*       pi_x_positive.reinit(num_modes, num_modes); */
+    /*       pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors, */
+    /*                                    false, true); */
+    /* 	  std::cout << "pi_x_positive: " << "\n"; */
+    /*       pi_x_positive.print_formatted(std::cout); */
+    /*       break; */
+    /*     case FluxDirection::negative: */
+    /*       pi_x_negative.reinit(num_modes, num_modes); */
+    /*       pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors, */
+    /*                                    false, true); */
+    /* 	  std::cout << "pi_x_negative: " << "\n"; */
+    /*       pi_x_negative.print_formatted(std::cout); */
+    /*       break; */
+    /*   } */
+    /*   break; */
+    case Coordinate::y:
       switch (flux_direction) {
         case FluxDirection::positive:
-          pi_x_positive.reinit(num_modes, num_modes);
-          pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
+          pi_y_positive.reinit(num_modes, num_modes);
+          pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_x_positive: " << "\n";
-          pi_x_positive.print_formatted(std::cout);
+	  std::cout << "pi_y_positive: " << "\n";
+          pi_y_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
-          pi_x_negative.reinit(num_modes, num_modes);
-          pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
+          pi_y_negative.reinit(num_modes, num_modes);
+          pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_x_negative: " << "\n";
-          pi_x_negative.print_formatted(std::cout);
+	  std::cout << "pi_y_negative: " << "\n";
+          pi_y_negative.print_formatted(std::cout);
           break;
       }
       break;
-    // case Coordinate::y:
-    //   switch (flux_direction) {
-    //     case FluxDirection::positive:
-    //       pi_y_positive.reinit(num_modes, num_modes);
-    //       pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
-    //                                    false, true);
-    // 	  std::cout << "pi_y_positive: " << "\n";
-    //       pi_y_positive.print_formatted(std::cout);
-    //       break;
-    //     case FluxDirection::negative:
-    //       pi_y_negative.reinit(num_modes, num_modes);
-    //       pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
-    //                                    false, true);
-    // 	  std::cout << "pi_y_negative: " << "\n";
-    //       pi_y_negative.print_formatted(std::cout);
-    //       break;
-    //   }
-    //   break;
   }
 }
 
@@ -766,16 +767,16 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             // -[partial_x \phi_i * (u_x \delta_ij + Ax_ij)
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  -fe_v.shape_grad(i, q_index) * velocities[q_index] *
+              copy_data.cell_dg_matrix(i, j) -=
+                  fe_v.shape_grad(i, q_index) * velocities[q_index] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             } else {
             // NOTE: Many zerso are added here, because the matrices Ax, Ay are
             // sparse. TODO: Performance check. If too bad, return to the
             // strategy, which was used in v0.6.5
             // Ax
-            copy_data.cell_dg_matrix(i, j) +=
-                -fe_v.shape_grad(i, q_index)[0] * Ax(component_i, component_j) *
+            copy_data.cell_dg_matrix(i, j) -=
+                fe_v.shape_grad(i, q_index)[0] * Ay(component_i, component_j) *
                 fe_v.shape_value(j, q_index) * JxW[q_index];
 	    }
           }
@@ -815,14 +816,14 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (normals[q_index][0] == 1.) {
             copy_data.cell_dg_matrix(i, j) +=
                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                pi_x_positive(component_i, component_j) *
+                pi_y_positive(component_i, component_j) *
                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
           }
           if (normals[q_index][0] == -1.) {
 	    std::cout << "test" << "\n";
             copy_data.cell_dg_matrix(i, j) +=
                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
+                pi_y_negative(component_i, component_j) *
                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
           }
         }
@@ -880,7 +881,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (normals[q_index][0] == 1.) {
             copy_data_face.cell_dg_matrix_11(i, j) +=
                 normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                pi_x_positive(component_i, component_j) *
+                pi_y_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
           }
 	  /* if (normals[q_index][0] == -1.) { */
@@ -903,7 +904,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
 	  copy_data_face.cell_dg_matrix_12(i, j) -=
                 normals[q_index][0] *
                 fe_v_face_neighbor.shape_value(i, q_index) *
-                pi_x_positive(component_i, component_j) *
+                pi_y_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
 	  }
           // if (normals[q_index][0] == -1.) {
@@ -925,7 +926,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (normals[q_index][0] == 1.) {
 	  copy_data_face.cell_dg_matrix_21(i, j) +=
                 normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
+                pi_y_negative(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           }
           // if (normals[q_index][0] == -1.) {
@@ -946,7 +947,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           if (normals[q_index][0] == 1.) {
 	  copy_data_face.cell_dg_matrix_22(i, j) -= 
                 normals[q_index][0] * fe_v_face_neighbor.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
+                pi_y_negative(component_i, component_j) *
                 fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
           }
           // if (normals[q_index][0] == -1.) {
