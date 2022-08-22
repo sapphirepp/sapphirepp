@@ -67,8 +67,51 @@ class VelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_x = 0.1;
-  double u_y = 0.1;
+  double u_x = 0.;
+  double u_y = 0.;
+};
+
+// the magnetic field
+template <int dim>
+class MagneticField : public Function<dim> {
+ public:
+  virtual double value(const Point<dim> &point,
+                       const unsigned int component) const override {
+    // Check if a component was picked
+    Assert(component == 0 || component == 1 || component == 2,
+           ExcNotImplemented());
+    // constant magnetic field
+    (void)point;  // (suppresses the compiler warning unused variable)
+    // constant magnetic field
+    switch (component) {
+      case 0:
+        return B_x;
+        break;
+      case 1:
+        return B_y;
+        break;
+      case 2:
+        return B_z;
+        break;
+        // NOTE: This is very bad style, because it does not give an error, if
+        // no component was chosen
+      default:
+        return B_x;
+    }
+  }
+
+  virtual void vector_value(const Point<dim> &point,
+                            Vector<double> &value) const override {
+    (void)point;
+    value[0] = B_x;
+    value[1] = B_y;
+    value[2] = B_z;
+  }
+
+ private:
+  double B_x = 0.;
+  double B_y = 0.;
+  double B_z = 1.;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1, magnetic = 1 << 2 };
@@ -252,8 +295,10 @@ class VFPEquationSolver {
   // Spatial advection
   LAPACKFullMatrix<double> Ax;
   LAPACKFullMatrix<double> Ay;
-  // Magnetic field terms
-  LAPACKFullMatrix<double> Omega;
+  // Magnetic field
+  LAPACKFullMatrix<double> Omega_x;
+  LAPACKFullMatrix<double> Omega_y;
+  LAPACKFullMatrix<double> Omega_z;
   // Reaction term
   Vector<double> R;
 
@@ -389,7 +434,9 @@ template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   Ax.reinit(num_modes);
   Ay.reinit(num_modes);
-  Omega.reinit(num_modes);
+  Omega_x.reinit(num_modes);
+  Omega_y.reinit(num_modes);
+  Omega_z.reinit(num_modes);
   R.reinit(num_modes);
   for (int s = 0; s <= 1; ++s) {
     for (int l = 0, i = 0; l <= max_degree; ++l) {
@@ -425,20 +472,28 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
                 Ay.set(i, j,
                        -0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
                                         ((2. * l + 1.) * (2. * l - 1.))));
-              // Omega
+              // Omega_x
               if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
-                Omega.set(i, j, -1. * m);
-                Omega.set(j, i, 1. * m);  // Omega is anti-symmetric
+                Omega_x.set(i, j, -1. * m);
+                Omega_x.set(j, i, 1. * m);  // Omega matrices are anti-symmetric
               }
+              // Omega_y
               if (l == l_prime && (m + 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                Omega.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
-                Omega.set(j, i, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_y.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_y.set(j, i, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
               }
               if (l == l_prime && (m - 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                Omega.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
-                Omega.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_y.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_y.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+              }
+              // Omega_z
+              if (l == l_prime && (m + 1) == m_prime && s == s_prime) {
+                Omega_z.set(i, j, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+              }
+              if (l == l_prime && (m - 1) == m_prime && s == s_prime) {
+                Omega_z.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // R
               if (l == l_prime && m == m_prime && s == s_prime) {
@@ -460,12 +515,21 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   if (max_degree > 0) {
     for (unsigned int l = 0; l <= max_degree; ++l) {
       // Special cases for Omega
-      // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
-      Omega(l * (l + 1), l * (l + 1) + 1) =
-          std::sqrt(2) * Omega(l * (l + 1), l * (l + 1) + 1);
-      // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
-      Omega(l * (l + 1) + 1, l * (l + 1)) =
-          std::sqrt(2) * Omega(l * (l + 1) + 1, l * (l + 1));
+      if (l > 0) {
+        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
+        Omega_y(l * (l + 1), l * (l + 1) + 1) =
+            std::sqrt(2) * Omega_y(l * (l + 1), l * (l + 1) + 1);
+        // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
+        Omega_y(l * (l + 1) + 1, l * (l + 1)) =
+            std::sqrt(2) * Omega_y(l * (l + 1) + 1, l * (l + 1));
+
+        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
+        Omega_z(l * (l + 1), l * (l + 1) - 1) =
+            std::sqrt(2) * Omega_z(l * (l + 1), l * (l + 1) - 1);
+        // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
+        Omega_z(l * (l + 1) - 1, l * (l + 1)) =
+            std::sqrt(2) * Omega_z(l * (l + 1) - 1, l * (l + 1));
+      }
       // Special cases for A_y (necessary for every value of l)
       // Above the diagonal
       // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
@@ -492,9 +556,16 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // std::cout << "Ay: "
   //           << "\n";
   // Ay.print_formatted(std::cout);
-  // std::cout << "Omega: "
-  //           << "\n";
-  // Omega.print_formatted(std::cout);
+  std::cout << "Omega_x: "
+            << "\n";
+  Omega_x.print_formatted(std::cout);
+  std::cout << "Omega_y: "
+            << "\n";
+  Omega_y.print_formatted(std::cout);
+  std::cout << "Omega_z: "
+            << "\n";
+  Omega_z.print_formatted(std::cout);
+
   // std::cout << "R: "
   //           << "\n";
   // R.print(std::cout);
@@ -723,6 +794,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   VelocityField<dim> beta;
   beta.set_time(time);
+  MagneticField<dim> magnetic_field;
+  magnetic_field.set_time(time);
+
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
                                ScratchData<dim> &scratch_data,
@@ -742,6 +816,11 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     beta.value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
     beta.divergence_list(q_points, div_velocities);
+    // Second argument constructs empty vectors with 3 values. They are copied
+    // q_points.size() times
+    std::vector<Vector<double>> magnetic_field_values(q_points.size(),
+                                                      Vector<double>(3));
+    magnetic_field.vector_value_list(q_points, magnetic_field_values);
 
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
@@ -798,18 +877,30 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             }
           }
           if (flags & TermFlags::magnetic) {
-            // other diagonal
-            if (component_i == num_modes - component_j) {
-              copy_data.cell_dg_matrix(i, j) =
-                  0. * fe_v.shape_value(i, q_index) *
-                  Omega(component_i, component_j) *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
-            } else {
-              copy_data.cell_dg_matrix(i, j) =
-                  0.1 * fe_v.shape_value(i, q_index) *
-                  Omega(component_i, component_j) *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
-            }
+            // Omega_x
+            // std::cout << "B_x: " << magnetic_field_values[q_index][0] <<
+            // "\n";
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_v.shape_value(i, q_index) *
+                magnetic_field_values[q_index][0] *
+                Omega_x(component_i, component_j) *
+                fe_v.shape_value(j, q_index) * JxW[q_index];
+            // Omega_y
+            // std::cout << "B_y: " << magnetic_field_values[q_index][1] <<
+            // "\n";
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_v.shape_value(i, q_index) *
+                magnetic_field_values[q_index][1] *
+                Omega_y(component_i, component_j) *
+                fe_v.shape_value(j, q_index) * JxW[q_index];
+            // Omega_z
+            // std::cout << "B_z: " << magnetic_field_values[q_index][2] <<
+            // "\n";
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_v.shape_value(i, q_index) *
+                magnetic_field_values[q_index][2] *
+                Omega_z(component_i, component_j) *
+                fe_v.shape_value(j, q_index) * JxW[q_index];
           }
         }
       }
