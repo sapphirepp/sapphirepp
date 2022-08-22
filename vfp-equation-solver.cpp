@@ -67,8 +67,8 @@ class VelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_x = 0.;
-  double u_y = 0.2;
+  double u_x = 0.1;
+  double u_y = 0.1;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1, magnetic = 1 << 2 };
@@ -102,16 +102,15 @@ class InitialValueFunction : public Function<dim> {
                                 (max_degree + 1) * (max_degree + 1)));
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
-    /* values[0] = */
-    /*     1. * */
-    /*     std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
-     * 0.01)); */
+    values[0] =
+        1. *
+        std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) / 0.01));
 
     // Fill all components with the same values
-    std::fill(
-        values.begin(), values.end(),
-        1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
-                        0.01)));
+    // std::fill(
+    //     values.begin(), values.end(),
+    //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
+    //                     0.01)));
   }
 };
 
@@ -348,7 +347,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   assemble_system();
 
   Vector<double> tmp(current_solution.size());
-  for (; time <= .4; time += time_step, ++time_step_number) {
+  for (; time <= .8; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     mass_matrix.vmult(system_rhs, previous_solution);
@@ -518,8 +517,9 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
       CopyA = Ay;
       break;
   }
+
   double tolerance = 1.e-8;
-  CopyA.compute_eigenvalues_symmetric(-5., 5., tolerance, eigenvalues,
+  CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
                                       eigenvectors);
   // std::cout << "Eigenvectors: " << "\n"
   // eigenvectors.print_formatted(std::cout);
@@ -594,17 +594,17 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           pi_y_positive.reinit(num_modes, num_modes);
           pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          // std::cout << "pi_y_positive: "
-          //           << "\n";
-          // pi_y_positive.print_formatted(std::cout);
+          std::cout << "pi_y_positive: "
+                    << "\n";
+          pi_y_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
           pi_y_negative.reinit(num_modes, num_modes);
           pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          // std::cout << "pi_y_negative: "
-          //           << "\n";
-          // pi_y_negative.print_formatted(std::cout);
+          std::cout << "pi_y_negative: "
+                    << "\n";
+          pi_y_negative.print_formatted(std::cout);
           break;
       }
       break;
@@ -765,8 +765,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   fe_v.shape_value(j, q_index) * JxW[q_index];
               // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
               // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
-              copy_data.cell_dg_matrix(i, j) +=
-                  -div_velocities[q_index] * fe_v.shape_value(i, q_index) *
+              copy_data.cell_dg_matrix(i, j) -=
+                  div_velocities[q_index] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
@@ -775,8 +775,12 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
               copy_data.cell_dg_matrix(i, j) -=
-                  fe_v.shape_grad(i, q_index) * velocities[q_index] *
+                  fe_v.shape_grad(i, q_index)[0] * velocities[q_index][0] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
+              copy_data.cell_dg_matrix(i, j) -=
+                  fe_v.shape_grad(i, q_index)[1] * velocities[q_index][1] *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+
             } else {
               // NOTE: Many zerso are added here, because the matrices Ax, Ay
               // are sparse. TODO: Performance check. If too bad, return to the
@@ -787,16 +791,25 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                                                 fe_v.shape_value(j, q_index) *
                                                 JxW[q_index];
               // Ay
-              copy_data.cell_dg_matrix(i, j) -= fe_v.shape_grad(i, q_index)[0] *
+              copy_data.cell_dg_matrix(i, j) -= fe_v.shape_grad(i, q_index)[1] *
                                                 Ay(component_i, component_j) *
                                                 fe_v.shape_value(j, q_index) *
                                                 JxW[q_index];
             }
           }
           if (flags & TermFlags::magnetic) {
-            copy_data.cell_dg_matrix(i, j) =
-                fe_v.shape_value(i, q_index) * Omega(component_i, component_j) *
-                fe_v.shape_value(j, q_index) * JxW[q_index];
+            // other diagonal
+            if (component_i == num_modes - component_j) {
+              copy_data.cell_dg_matrix(i, j) =
+                  0. * fe_v.shape_value(i, q_index) *
+                  Omega(component_i, component_j) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+            } else {
+              copy_data.cell_dg_matrix(i, j) =
+                  0.1 * fe_v.shape_value(i, q_index) *
+                  Omega(component_i, component_j) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+            }
           }
         }
       }
@@ -926,14 +939,14 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                 pi_x_positive(component_i, component_j) *
                 fe_v_face.shape_value(j, q_index) * JxW[q_index];
           }
-          if (normals[q_index][0] == -1.) {
-            /* std::cout << "test" */
-            /*           << "\n"; */
-            copy_data_face.cell_dg_matrix_11(i, j) +=
-                normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
+          /* if (normals[q_index][0] == -1.) { */
+          /*   /\* std::cout << "test" *\/ */
+          /*   /\*           << "\n"; *\/ */
+          /*   copy_data_face.cell_dg_matrix_11(i, j) += */
+          /*       normals[q_index][0] * fe_v_face.shape_value(i, q_index) * */
+          /*       pi_x_negative(component_i, component_j) * */
+          /*       fe_v_face.shape_value(j, q_index) * JxW[q_index]; */
+          /* } */
 
           // Ay
           if (normals[q_index][1] == 1.) {
@@ -1138,8 +1151,7 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags =
-        TermFlags::advection | TermFlags::reaction | TermFlags::magnetic;
+    constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
     VFPEquationSolver<flags, 1, 2> pure_advection;
     pure_advection.run();
 
