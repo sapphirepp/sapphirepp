@@ -319,7 +319,7 @@ class VFPEquationSolver {
   Vector<double> system_rhs;
 
   // number of expansion coefficients
-  const unsigned int num_modes = (max_degree + 1) * (max_degree + 1);
+  const unsigned int num_exp_coefficients = (max_degree + 1) * (max_degree + 1);
 
   // parameters of the time stepping method
   const double time_step = 1. / 128;
@@ -434,12 +434,12 @@ void VFPEquationSolver<flags, max_degree, dim>::make_grid() {
 
 template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
-  Ax.reinit(num_modes);
-  Ay.reinit(num_modes);
-  Omega_x.reinit(num_modes);
-  Omega_y.reinit(num_modes);
-  Omega_z.reinit(num_modes);
-  R.reinit(num_modes);
+  Ax.reinit(num_exp_coefficients);
+  Ay.reinit(num_exp_coefficients);
+  Omega_x.reinit(num_exp_coefficients);
+  Omega_y.reinit(num_exp_coefficients);
+  Omega_z.reinit(num_exp_coefficients);
+  R.reinit(num_exp_coefficients);
   for (int s = 0; s <= 1; ++s) {
     for (int l = 0, i = 0; l <= max_degree; ++l) {
       for (int m = l; m >= s; --m) {
@@ -577,8 +577,8 @@ template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
     const Point<dim> &p, const Coordinate coordinate,
     const FluxDirection flux_direction) {
-  Vector<double> eigenvalues(num_modes);
-  FullMatrix<double> eigenvectors(num_modes);
+  Vector<double> eigenvalues(num_exp_coefficients);
+  FullMatrix<double> eigenvectors(num_exp_coefficients);
   // The matrix gets destroyed, when the eigenvalues are computed. This requires
   // to copy it
   LAPACKFullMatrix<double> CopyA;
@@ -633,9 +633,9 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
   // eigenvalues.print(std::cout);
 
   // Create Lambda_+/-
-  FullMatrix<double> lambda(num_modes, num_modes);
+  FullMatrix<double> lambda(num_exp_coefficients, num_exp_coefficients);
   // Fill diagonal
-  for (unsigned int i = 0; i < num_modes; ++i) {
+  for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
     lambda(i, i) = eigenvalues[i];
   }
   // std::cout << "positive (or negative) lambda matrix: " << "\n";
@@ -646,7 +646,7 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
     case Coordinate::x:
       switch (flux_direction) {
         case FluxDirection::positive:
-          pi_x_positive.reinit(num_modes, num_modes);
+          pi_x_positive.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
           // std::cout << "pi_x_positive: "
@@ -654,7 +654,7 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           // pi_x_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
-          pi_x_negative.reinit(num_modes, num_modes);
+          pi_x_negative.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
           // std::cout << "pi_x_negative: "
@@ -666,7 +666,7 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
     case Coordinate::y:
       switch (flux_direction) {
         case FluxDirection::positive:
-          pi_y_positive.reinit(num_modes, num_modes);
+          pi_y_positive.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
           // std::cout << "pi_y_positive: "
@@ -674,7 +674,7 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           // pi_y_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
-          pi_y_negative.reinit(num_modes, num_modes);
+          pi_y_negative.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
           // std::cout << "pi_y_negative: "
@@ -740,7 +740,7 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
     // correct size when the function vector_value is called by the function
     // vector_value_list(). Thus I have to create an empty vector of the
     // correct size and copy it into the standard vector.
-    Vector<double> empty_vector_correct_size(num_modes);
+    Vector<double> empty_vector_correct_size(num_exp_coefficients);
     std::vector<Vector<double>> initial_values(q_points.size(),
                                                empty_vector_correct_size);
     initial_value_function.vector_value_list(q_points, initial_values);
@@ -1227,7 +1227,8 @@ void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n";
   std::cout << "	Scattering frequency: " << scattering_frequency << "\n";
-  std::cout << "	Number of modes: " << num_modes << "\n";
+  std::cout << "	Number of expansion coeffiecients: "
+            << num_exp_coefficients << "\n";
   std::cout << "	Number of global refinements: " << num_refinements
             << "\n";
 }
