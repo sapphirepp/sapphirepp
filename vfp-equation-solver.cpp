@@ -47,7 +47,7 @@ using namespace dealii;
 // Input data
 // the velocity field field
 template <int dim>
-class VelocityField : public TensorFunction<1, dim> {
+class BackgroundVelocityField : public TensorFunction<1, dim> {
  public:
   virtual Tensor<1, dim> value(const Point<dim> &point) const override {
     Assert(dim == 2, ExcNotImplemented());
@@ -330,6 +330,9 @@ class VFPEquationSolver {
 
   // scattering frequency
   const double scattering_frequency;
+  // particle velocity
+  const double particle_velocity = 1.;
+
   // Number of refinements
   const unsigned int num_refinements;
   // Fort the moment, I will use a quadratic domain
@@ -604,8 +607,10 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
   };
   std::replace_if(eigenvalues.begin(), eigenvalues.end(),
                   smaller_than_tolerance, 0.);
+  // Multiply the eigenvalues with the particle velocity
+  eigenvalues *= particle_velocity;
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
-  VelocityField<dim> velocity_field;
+  BackgroundVelocityField<dim> velocity_field;
   double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)];
   eigenvalues.add(u);
   // std::cout << "eigenvalues plus velocity: "
@@ -798,7 +803,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-  VelocityField<dim> beta;
+  BackgroundVelocityField<dim> beta;
   beta.set_time(time);
   MagneticField<dim> magnetic_field;
   magnetic_field.set_time(time);
@@ -871,15 +876,15 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
               // are sparse. TODO: Performance check. If too bad, return to the
               // strategy, which was used in v0.6.5
               // Ax
-              copy_data.cell_dg_matrix(i, j) -= fe_v.shape_grad(i, q_index)[0] *
-                                                Ax(component_i, component_j) *
-                                                fe_v.shape_value(j, q_index) *
-                                                JxW[q_index];
+              copy_data.cell_dg_matrix(i, j) -=
+                  fe_v.shape_grad(i, q_index)[0] * particle_velocity *
+                  Ax(component_i, component_j) * fe_v.shape_value(j, q_index) *
+                  JxW[q_index];
               // Ay
-              copy_data.cell_dg_matrix(i, j) -= fe_v.shape_grad(i, q_index)[1] *
-                                                Ay(component_i, component_j) *
-                                                fe_v.shape_value(j, q_index) *
-                                                JxW[q_index];
+              copy_data.cell_dg_matrix(i, j) -=
+                  fe_v.shape_grad(i, q_index)[1] * particle_velocity *
+                  Ay(component_i, component_j) * fe_v.shape_value(j, q_index) *
+                  JxW[q_index];
             }
           }
           if (flags & TermFlags::magnetic) {
