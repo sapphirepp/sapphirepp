@@ -558,15 +558,15 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // std::cout << "Ay: "
   //           << "\n";
   // Ay.print_formatted(std::cout);
-  std::cout << "Omega_x: "
-            << "\n";
-  Omega_x.print_formatted(std::cout);
-  std::cout << "Omega_y: "
-            << "\n";
-  Omega_y.print_formatted(std::cout);
-  std::cout << "Omega_z: "
-            << "\n";
-  Omega_z.print_formatted(std::cout);
+  // std::cout << "Omega_x: "
+  //           << "\n";
+  // Omega_x.print_formatted(std::cout);
+  // std::cout << "Omega_y: "
+  //           << "\n";
+  // Omega_y.print_formatted(std::cout);
+  // std::cout << "Omega_z: "
+  //           << "\n";
+  // Omega_z.print_formatted(std::cout);
 
   // std::cout << "R: "
   //           << "\n";
@@ -669,17 +669,17 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
           pi_y_positive.reinit(num_modes, num_modes);
           pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          std::cout << "pi_y_positive: "
-                    << "\n";
-          pi_y_positive.print_formatted(std::cout);
+          // std::cout << "pi_y_positive: "
+          //           << "\n";
+          // pi_y_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
           pi_y_negative.reinit(num_modes, num_modes);
           pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          std::cout << "pi_y_negative: "
-                    << "\n";
-          pi_y_negative.print_formatted(std::cout);
+          // std::cout << "pi_y_negative: "
+          //           << "\n";
+          // pi_y_negative.print_formatted(std::cout);
           break;
       }
       break;
