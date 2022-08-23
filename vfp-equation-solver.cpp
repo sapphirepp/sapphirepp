@@ -403,10 +403,14 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     // velocity field may depend on time, it needs to reassembled every time
     // step. This is not true for the mass matrix ( but it may if the grid
     // adapts after a specified amount of time steps)
-    // mass_matrix = 0;
-    // dg_matrix = 0;
 
+    // mass_matrix = 0; dg_matrix = 0;
     // assemble_system();
+
+    // NOTE: Currently that is not necessary, because the velocity field is
+    // constant. And I should check if I cannot update the system matrix without
+    // reassembling in each time step.
+    
     system_matrix.copy_from(mass_matrix);
     system_matrix.add(time_step * theta, dg_matrix);
     solve_system();
@@ -693,7 +697,9 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_system() {
   sparsity_pattern.copy_from(dsp);
 
   dg_matrix.reinit(sparsity_pattern);
-  // TODO: Check if you can work with two different sparsity patterns.
+  // NOTE: DealII does not allow to use different sparsity patterns for
+  // matrices, which you would like to add. Even though the the mass matrix
+  // differs from the dg matrix.
   mass_matrix.reinit(sparsity_pattern);
   system_matrix.reinit(sparsity_pattern);
 
