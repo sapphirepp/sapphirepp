@@ -67,8 +67,8 @@ class BackgroundVelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_x = 0.;
-  double u_y = 0.;
+  double u_x = 0.1;
+  double u_y = 0.1;
 };
 
 // the magnetic field
