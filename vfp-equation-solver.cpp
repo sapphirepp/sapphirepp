@@ -1252,9 +1252,9 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 1, 2> pure_advection;
-    pure_advection.run();
+    constexpr TermFlags flags = TermFlags::reaction;
+    VFPEquationSolver<flags, 1, 2> vfp_equation_solver;
+    vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
     std::cerr << std::endl
