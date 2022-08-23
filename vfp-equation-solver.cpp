@@ -847,7 +847,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           //          q_index) : 0) *
           //     JxW[q_index];
           // dg matrix
-          if (flags & TermFlags::reaction) {
+          if constexpr (flags & TermFlags::reaction) {
             if (component_i == component_j) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_dg_matrix(i, j) +=
@@ -860,7 +860,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
-          if (flags & TermFlags::advection) {
+          if constexpr (flags & TermFlags::advection) {
             // -[partial_x \phi_i * (u_x \delta_ij + Ax_ij)
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
@@ -887,7 +887,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   JxW[q_index];
             }
           }
-          if (flags & TermFlags::magnetic) {
+          if constexpr (flags & TermFlags::magnetic) {
             // Omega_x
             // std::cout << "B_x: " << magnetic_field_values[q_index][0] <<
             // "\n";
@@ -943,34 +943,36 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         const unsigned int component_j =
             fe_face_v.get_fe().system_to_component_index(j).first;
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-          // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
-          // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
-          // \phi_j
-          // Ax
-          if (normals[q_index][0] == 1.) {
-            copy_data.cell_dg_matrix(i, j) +=
-                normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                pi_x_positive(component_i, component_j) *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
-          }
-          if (normals[q_index][0] == -1.) {
-            copy_data.cell_dg_matrix(i, j) +=
-                normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
-          }
-          // Ay
-          if (normals[q_index][1] == 1.) {
-            copy_data.cell_dg_matrix(i, j) +=
-                normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-                pi_y_positive(component_i, component_j) *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
-          }
-          if (normals[q_index][1] == -1.) {
-            copy_data.cell_dg_matrix(i, j) +=
-                normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-                pi_y_negative(component_i, component_j) *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
+          if constexpr (flags & TermFlags::advection) {
+            // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
+            // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
+            // \phi_j
+            // Ax
+            if (normals[q_index][0] == 1.) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                  pi_x_positive(component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+            if (normals[q_index][0] == -1.) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                  pi_x_negative(component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+            // Ay
+            if (normals[q_index][1] == 1.) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
+                  pi_y_positive(component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+            if (normals[q_index][1] == -1.) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
+                  pi_y_negative(component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
           }
         }
       }
@@ -983,9 +985,9 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
   //    ^
   // *--|--*
   // |     |
-  // -     -->
-  // |     |
-  // *-----*
+  // -     -->   ^ y
+  // |     |     |
+  // *-----*     *--> x
   // Hence, n_x = 1. and n_y = 1.
   const auto face_worker = [&](const Iterator &cell,
                                const unsigned int &face_no,
@@ -1033,29 +1035,30 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          /* std::cout << normals[q_index] << std::endl; */
-          // Ax
-          if (normals[q_index][0] == 1.) {
-            copy_data_face.cell_dg_matrix_11(i, j) +=
-                normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                pi_x_positive(component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
-          /* if (normals[q_index][0] == -1.) { */
-          /*   /\* std::cout << "test" *\/ */
-          /*   /\*           << "\n"; *\/ */
-          /*   copy_data_face.cell_dg_matrix_11(i, j) += */
-          /*       normals[q_index][0] * fe_v_face.shape_value(i, q_index) * */
-          /*       pi_x_negative(component_i, component_j) * */
-          /*       fe_v_face.shape_value(j, q_index) * JxW[q_index]; */
-          /* } */
-
-          // Ay
-          if (normals[q_index][1] == 1.) {
-            copy_data_face.cell_dg_matrix_11(i, j) +=
-                normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
-                pi_y_positive(component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          if constexpr (flags & TermFlags::advection) {
+            // x-direction
+	    // 
+	    // NOTE: The following if expression is not necessay, because if
+	    // normals[q_index][0] is unequal to 1. it is equal to zero and the
+	    // matrix entry is zero as well. It is there to remember that the
+	    // upwind flux depends on the direction of the normal (see
+	    // boundary_worker).
+            if (normals[q_index][0] == 1.) {
+              copy_data_face.cell_dg_matrix_11(i, j) +=
+                  normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
+                  pi_x_positive(component_i, component_j) *
+                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            }
+	    // NOTE: For interior faces the normal vector is always positive
+            // (see comment above face_worker).
+            //
+            // y-direction
+            if (normals[q_index][1] == 1.) {
+              copy_data_face.cell_dg_matrix_11(i, j) +=
+                  normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
+                  pi_y_positive(component_i, component_j) *
+                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            }
           }
         }
       }
@@ -1066,28 +1069,23 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          // Ax
-          if (normals[q_index][0] == 1.) {
-            copy_data_face.cell_dg_matrix_12(i, j) -=
-                normals[q_index][0] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                pi_x_positive(component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
-          // if (normals[q_index][0] == -1.) {
-          //   copy_data_face.cell_dg_matrix_12(i, j) -=
-          //       normals[q_index][0] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       pi_x_negative(component_i, component_j) *
-          //       fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          // }
-          // Ay
-          if (normals[q_index][1] == 1.) {
-            copy_data_face.cell_dg_matrix_12(i, j) -=
-                normals[q_index][1] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                pi_y_positive(component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
+          if constexpr (flags & TermFlags::advection) {
+            // x-direction
+            if (normals[q_index][0] == 1.) {
+              copy_data_face.cell_dg_matrix_12(i, j) -=
+                  normals[q_index][0] *
+                  fe_v_face_neighbor.shape_value(i, q_index) *
+                  pi_x_positive(component_i, component_j) *
+                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            }
+            // y-direction
+            if (normals[q_index][1] == 1.) {
+              copy_data_face.cell_dg_matrix_12(i, j) -=
+                  normals[q_index][1] *
+                  fe_v_face_neighbor.shape_value(i, q_index) *
+                  pi_y_positive(component_i, component_j) *
+                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            }
           }
         }
       }
@@ -1098,23 +1096,21 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          if (normals[q_index][0] == 1.) {
-            copy_data_face.cell_dg_matrix_21(i, j) +=
-                normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
-          // if (normals[q_index][0] == -1.) {
-          //   copy_data_face.cell_dg_matrix_21(i, j) +=
-          //       normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-          //       pi_x_positive(component_i, component_j) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
-          if (normals[q_index][1] == 1.) {
-            copy_data_face.cell_dg_matrix_21(i, j) +=
-                normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
-                pi_y_negative(component_i, component_j) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          if constexpr (flags & TermFlags::advection) {
+	    // x-direction
+            if (normals[q_index][0] == 1.) {
+              copy_data_face.cell_dg_matrix_21(i, j) +=
+                  normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
+                  pi_x_negative(component_i, component_j) *
+                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            }
+    	    // y-direction
+            if (normals[q_index][1] == 1.) {
+              copy_data_face.cell_dg_matrix_21(i, j) +=
+                  normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
+                  pi_y_negative(component_i, component_j) *
+                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            }
           }
         }
       }
@@ -1125,26 +1121,23 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          if (normals[q_index][0] == 1.) {
-            copy_data_face.cell_dg_matrix_22(i, j) -=
-                normals[q_index][0] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                pi_x_negative(component_i, component_j) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
-          // if (normals[q_index][0] == -1.) {
-          //   copy_data_face.cell_dg_matrix_22(i, j) -=
-          //       normals[q_index][0] *
-          //       fe_v_face_neighbor.shape_value(i, q_index) *
-          //       pi_x_positive(component_i, component_j) *
-          //       fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          // }
-          if (normals[q_index][1] == 1.) {
-            copy_data_face.cell_dg_matrix_22(i, j) -=
-                normals[q_index][1] *
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                pi_y_negative(component_i, component_j) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+          if constexpr (flags & TermFlags::advection) {
+	    // x-direction
+            if (normals[q_index][0] == 1.) {
+              copy_data_face.cell_dg_matrix_22(i, j) -=
+                  normals[q_index][0] *
+                  fe_v_face_neighbor.shape_value(i, q_index) *
+                  pi_x_negative(component_i, component_j) *
+                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            }
+    	    // y-direction
+            if (normals[q_index][1] == 1.) {
+              copy_data_face.cell_dg_matrix_22(i, j) -=
+                  normals[q_index][1] *
+                  fe_v_face_neighbor.shape_value(i, q_index) *
+                  pi_y_negative(component_i, component_j) *
+                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            }
           }
         }
       }
