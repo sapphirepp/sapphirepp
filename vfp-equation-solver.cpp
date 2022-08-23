@@ -782,8 +782,8 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
   // std::ofstream output("projection.vtu");
   // data_out.write_vtu(output);
 
-  // Reset mass matrix and system RHS
-  mass_matrix = 0;
+  // Reset system RHS, the mass matrix is needed later on
+  // mass_matrix = 0;
   system_rhs = 0;
 }
 
@@ -836,11 +836,16 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             fe_v.get_fe().system_to_component_index(j).first;
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           // mass matrix
-          copy_data.cell_mass_matrix(i, j) +=
-              (component_i == component_j
-                   ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
-                   : 0) *
-              JxW[q_index];
+          //
+          // NOTE: As long as the grid is constant in time, the mass matrix does
+          // not change and it is already assembled in the method
+          // project_initial_condition
+          //
+          // copy_data.cell_mass_matrix(i, j) +=
+          //     (component_i == component_j
+          //          ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j,
+          //          q_index) : 0) *
+          //     JxW[q_index];
           // dg matrix
           if (flags & TermFlags::reaction) {
             if (component_i == component_j) {
