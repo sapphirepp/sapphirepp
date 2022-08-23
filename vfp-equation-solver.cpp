@@ -321,21 +321,23 @@ class VFPEquationSolver {
   // number of expansion coefficients
   const unsigned int num_modes = (max_degree + 1) * (max_degree + 1);
 
-  const double time_step;
-  double time;
-  unsigned int time_step_number;
-  const double theta;
+  // parameters of the time stepping method
+  const double time_step = 1. / 128;
+  double time = 0.;
+  unsigned int time_step_number = 0;
+  const double theta = 0.5;
+
   // penalty parameter ( for a scalar equation eta = 1 -> upwinding)
   /* const double eta; */
 
   // scattering frequency
-  const double scattering_frequency;
+  const double scattering_frequency = 1.;
   // particle velocity
   const double particle_velocity = 1.;
 
   // Number of refinements
-  const unsigned int num_refinements;
-  // Fort the moment, I will use a quadratic domain
+  const unsigned int num_refinements = 5;
+  // For the moment, I will use a quadratic domain
   // Rectangular domain
   // Point<dim> left_bottom;
   // Point<dim> right_top;
@@ -351,14 +353,7 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       mapping(),
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
       quadrature(fe.tensor_degree() + 1),
-      quadrature_face(fe.tensor_degree() + 1),
-      time_step(1. / 128),
-      time(0.),
-      time_step_number(0),
-      theta(.5),
-      /* eta(1.), */
-      scattering_frequency(1.),
-      num_refinements(5) {
+      quadrature_face(fe.tensor_degree() + 1) {
   for (int s = 0, idx = 0; s <= 1; ++s) {
     for (int l = 0; l <= max_degree; ++l) {
       for (int m = l; m >= s; --m) {
