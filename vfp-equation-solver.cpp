@@ -408,7 +408,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     // NOTE: Currently that is not necessary, because the velocity field is
     // constant. And I should check if I cannot update the system matrix without
     // reassembling in each time step.
-    
+
     system_matrix.copy_from(mass_matrix);
     system_matrix.add(time_step * theta, dg_matrix);
     solve_system();
@@ -1037,19 +1037,19 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
               fe_v_face.get_fe().system_to_component_index(j).first;
           if constexpr (flags & TermFlags::advection) {
             // x-direction
-	    // 
-	    // NOTE: The following if expression is not necessay, because if
-	    // normals[q_index][0] is unequal to 1. it is equal to zero and the
-	    // matrix entry is zero as well. It is there to remember that the
-	    // upwind flux depends on the direction of the normal (see
-	    // boundary_worker).
+            //
+            // NOTE: The following if expression is not necessay, because if
+            // normals[q_index][0] is unequal to 1. it is equal to zero and the
+            // matrix entry is zero as well. It is there to remember that the
+            // upwind flux depends on the direction of the normal (see
+            // boundary_worker).
             if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_11(i, j) +=
                   normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
                   pi_x_positive(component_i, component_j) *
                   fe_v_face.shape_value(j, q_index) * JxW[q_index];
             }
-	    // NOTE: For interior faces the normal vector is always positive
+            // NOTE: For interior faces the normal vector is always positive
             // (see comment above face_worker).
             //
             // y-direction
@@ -1097,14 +1097,14 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
           if constexpr (flags & TermFlags::advection) {
-	    // x-direction
+            // x-direction
             if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_21(i, j) +=
                   normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
                   pi_x_negative(component_i, component_j) *
                   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
             }
-    	    // y-direction
+            // y-direction
             if (normals[q_index][1] == 1.) {
               copy_data_face.cell_dg_matrix_21(i, j) +=
                   normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
@@ -1122,7 +1122,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
           if constexpr (flags & TermFlags::advection) {
-	    // x-direction
+            // x-direction
             if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_22(i, j) -=
                   normals[q_index][0] *
@@ -1130,7 +1130,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   pi_x_negative(component_i, component_j) *
                   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
             }
-    	    // y-direction
+            // y-direction
             if (normals[q_index][1] == 1.) {
               copy_data_face.cell_dg_matrix_22(i, j) -=
                   normals[q_index][1] *
