@@ -114,7 +114,12 @@ class MagneticField : public Function<dim> {
   double B_z = 1.;
 };
 
-enum TermFlags { advection = 1 << 0, reaction = 1 << 1, magnetic = 1 << 2 };
+enum class TermFlags {
+  none = 0,
+  advection = 1 << 0,
+  reaction = 1 << 1,
+  magnetic = 1 << 2
+};
 
 constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
   return static_cast<TermFlags>(static_cast<int>(f1) | static_cast<int>(f2));
@@ -127,9 +132,9 @@ constexpr TermFlags operator&(TermFlags f1, TermFlags f2) {
 template <typename StreamType>
 inline StreamType &operator<<(StreamType &s, TermFlags f) {
   s << "Term flags: \n";
-  if (f & advection) s << "	 - Advection\n";
-  if (f & reaction) s << "	 - Reaction\n";
-  if (f & magnetic) s << "	 - Magnetic\n";
+  if ((f & TermFlags::advection) != TermFlags::none) s << "	 - Advection\n";
+  if ((f & TermFlags::reaction) != TermFlags::none) s << "	 - Reaction\n";
+  if ((f & TermFlags::magnetic) != TermFlags::none) s << "	 - Magnetic\n";
   return s;
 }
 
@@ -847,7 +852,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
           //          q_index) : 0) *
           //     JxW[q_index];
           // dg matrix
-          if constexpr (flags & TermFlags::reaction) {
+          if constexpr ((flags & TermFlags::reaction) != TermFlags::none) {
             if (component_i == component_j) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_dg_matrix(i, j) +=
@@ -860,7 +865,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
-          if constexpr (flags & TermFlags::advection) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // -[partial_x \phi_i * (u_x \delta_ij + Ax_ij)
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
@@ -887,7 +892,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
                   JxW[q_index];
             }
           }
-          if constexpr (flags & TermFlags::magnetic) {
+          if constexpr ((flags & TermFlags::magnetic) != TermFlags::none) {
             // Omega_x
             // std::cout << "B_x: " << magnetic_field_values[q_index][0] <<
             // "\n";
@@ -943,7 +948,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         const unsigned int component_j =
             fe_face_v.get_fe().system_to_component_index(j).first;
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-          if constexpr (flags & TermFlags::advection) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
             // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
             // \phi_j
@@ -1035,7 +1040,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          if constexpr (flags & TermFlags::advection) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // x-direction
             //
             // NOTE: The following if expression is not necessay, because if
@@ -1069,7 +1074,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          if constexpr (flags & TermFlags::advection) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // x-direction
             if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_12(i, j) -=
@@ -1096,7 +1101,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          if constexpr (flags & TermFlags::advection) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // x-direction
             if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_21(i, j) +=
@@ -1121,7 +1126,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          if constexpr (flags & TermFlags::advection) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // x-direction
             if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_22(i, j) -=
