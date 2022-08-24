@@ -85,7 +85,7 @@ void ParameterReader::declare_parameters() {
   //       "Order of expansion", "0", Patterns::Integer(0),
   //       "The order of the expansion of the particel distribution function.");
   // }
-  parameter_handler.leave_subsection();
+  // parameter_handler.leave_subsection();
 
   parameter_handler.enter_subsection("Physical parameters");
   {
@@ -123,7 +123,7 @@ void ParameterReader::read_parameters(const std::string &input_file) {
 template <int dim>
 class BackgroundVelocityField : public TensorFunction<1, dim> {
  public:
-  BackgroundVelocityField(ParameterHandler& prm) : parameter_handler(prm) {
+  BackgroundVelocityField(ParameterHandler &prm) : parameter_handler(prm) {
     parameter_handler.enter_subsection("Physical parameters");
     {
       u_x = parameter_handler.get_double("Plasma velocity x-component");
@@ -149,7 +149,7 @@ class BackgroundVelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  ParameterHandler& parameter_handler;
+  ParameterHandler &parameter_handler;
   double u_x = 0.1;
   double u_y = 0.1;
 };
@@ -158,7 +158,7 @@ class BackgroundVelocityField : public TensorFunction<1, dim> {
 template <int dim>
 class MagneticField : public Function<dim> {
  public:
-  MagneticField(ParameterHandler& prm) : parameter_handler(prm) {
+  MagneticField(ParameterHandler &prm) : parameter_handler(prm) {
     parameter_handler.enter_subsection("Physical parameters");
     {
       B_x = parameter_handler.get_double("Magnetic field x-component");
@@ -166,7 +166,6 @@ class MagneticField : public Function<dim> {
       B_z = parameter_handler.get_double("Magnetic field z-component");
     }
     parameter_handler.leave_subsection();
-
   }
   virtual double value(const Point<dim> &point,
                        const unsigned int component) const override {
