@@ -277,6 +277,7 @@ class VFPEquationSolver {
   void solve_system();
   void theta_method();
   void explicit_runge_kutta();
+  void low_storage_explicit_runge_kutta();
   void output_results() const;
   void output_parameters() const;
   void output_index_order() const;
@@ -401,6 +402,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
     // Time stepping method
     // theta_method();
     explicit_runge_kutta();
+    // low_storage_explicit_runge_kutta();
 
     output_results();
 
@@ -1248,6 +1250,41 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
 
     // empty temp vector
     temp = 0;
+  }
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void VFPEquationSolver<flags, max_degree,
+                       dim>::low_storage_explicit_runge_kutta() {
+  // see Hesthaven p.64
+  Vector<double> a(
+      {0., -567301805773. / 1357537059087, -2404267990393. / 2016746695238,
+       -3550918686646. / 2091501179385, -1275806237668. / 842570457699});
+  Vector<double> b(
+      {1432997174477. / 9575080441755, 5161836677717. / 13612068292357,
+       1720146321549. / 2090206949498, 3134564353537. / 4481467310338,
+       2277821191437. / 14882151754819});
+  // NOTE: I only need c if the velocity field and the magnetic field are time
+  // dependent
+  // Vector<double> c(
+  //     {0., 1432997174477. / 9575080441755, 2526269341429. / 6820363962896,
+  //      2006345519317. / 3224310063776, 2802321613138. / 2924317926251});
+
+  // The mass matrix needs to be "inverted" in every stage
+  SolverControl solver_control(1000, 1e-12);
+  SolverCG<Vector<double>> cg(solver_control);
+
+  Vector<double> k(current_solution.size());
+  Vector<double> temp(current_solution.size());
+  for (unsigned int s = 0; s < 5; ++s) {
+    dg_matrix.vmult(system_rhs, current_solution);
+    cg.solve(mass_matrix, temp, system_rhs, PreconditionIdentity());
+    std::cout << "	Stage s: " << s << "	Solver converged in "
+              << solver_control.last_step() << " iterations."
+              << "\n";
+
+    k.sadd(a[s], -time_step, temp);
+    current_solution.add(b[s], k);
   }
 }
 
