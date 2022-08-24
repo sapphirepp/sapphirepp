@@ -729,13 +729,8 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
 
     // Initial values
     InitialValueFunction<max_degree, dim> initial_value_function;
-    // The Vector<double> inside the standard vector will not have the
-    // correct size when the function vector_value is called by the function
-    // vector_value_list(). Thus I have to create an empty vector of the
-    // correct size and copy it into the standard vector.
-    Vector<double> empty_vector_correct_size(num_exp_coefficients);
-    std::vector<Vector<double>> initial_values(q_points.size(),
-                                               empty_vector_correct_size);
+    std::vector<Vector<double>> initial_values(
+        q_points.size(), Vector<double>(num_exp_coefficients));
     initial_value_function.vector_value_list(q_points, initial_values);
 
     for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
@@ -764,8 +759,6 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
   // Solve the system
   SolverControl solver_control(1000, 1e-12);
   SolverCG<Vector<double>> cg(solver_control);
-  // PreconditionSSOR<SparseMatrix<double>> preconditioner;
-  // preconditioner.initialize(mass_matrix, 1.2);
   cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
 
   // DataOut<dim> data_out;
