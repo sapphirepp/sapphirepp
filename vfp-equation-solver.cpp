@@ -1226,7 +1226,6 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
   SolverControl solver_control(1000, 1e-12);
   SolverCG<Vector<double>> cg(solver_control);
   // k0
-  previous_solution *= -1.;
   dg_matrix.vmult(system_rhs, previous_solution);
   cg.solve(mass_matrix, k[0], system_rhs, PreconditionIdentity());
   std::cout << "	Stage s: " << 0 << "	Solver converged in "
@@ -1239,7 +1238,7 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
     // NOTE: It would be nessary to reassemble the dg matrix twice for
     // (for half a time step and a whole time step) if the velocity field and
     // the magnetic field were time dependent.
-    temp.add(1., previous_solution, -a[s - 1] * time_step, k[s - 1]);
+    temp.add(-1., previous_solution, -a[s - 1] * time_step, k[s - 1]);
     dg_matrix.vmult(system_rhs, temp);
     cg.solve(mass_matrix, k[s], system_rhs, PreconditionIdentity());
     std::cout << "	Stage s: " << s << "	Solver converged in "
