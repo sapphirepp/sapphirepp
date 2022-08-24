@@ -1,5 +1,7 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/patterns.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
@@ -45,6 +47,78 @@
 namespace vfp_equation_solver {
 using namespace dealii;
 // Input data
+class ParameterReader {
+ public:
+  ParameterReader(ParameterHandler &prm);
+  void read_parameters(const std::string &input_file);
+
+ private:
+  void declare_parameters();
+  ParameterHandler &parameter_handler;
+};
+
+ParameterReader::ParameterReader(ParameterHandler &prm)
+    : parameter_handler(prm) {}
+
+void ParameterReader::declare_parameters() {
+  parameter_handler.enter_subsection("Mesh");
+  {  // NOTE: This is a very strange syntax
+    parameter_handler.declare_entry("Number of refinements", "6",
+                                    Patterns::Integer(0),
+                                    "Number of global mesh refinement steps");
+  }
+  parameter_handler.leave_subsection();
+
+  parameter_handler.enter_subsection("Time stepping");
+  {
+    parameter_handler.declare_entry("Time step size", "7.8125e-3",
+                                    Patterns::Double(),
+                                    "Duration of the simulation.");
+    parameter_handler.declare_entry("Final time", "0.4", Patterns::Double(),
+                                    "Duration of the simulation.");
+  }
+  parameter_handler.leave_subsection();
+  // NOTE: The order of the expansion is currently a template parameter
+  // parameter_handler.enter_subsection("Expansion");
+  // {
+  //   parameter_handler.declare_entry(
+  //       "Order of expansion", "0", Patterns::Integer(0),
+  //       "The order of the expansion of the particel distribution function.");
+  // }
+  parameter_handler.leave_subsection();
+
+  parameter_handler.enter_subsection("Physical parameters");
+  {
+    parameter_handler.declare_entry(
+        "Scattering frequency", "1.", Patterns::Double(),
+        "Frequency at which energetic particles are scattered.");
+    parameter_handler.declare_entry("Particle velocity", "1.",
+                                    Patterns::Double(),
+                                    "Velocity of the energetic particles");
+    parameter_handler.declare_entry(
+        "Plasma velocity x-component", ".1", Patterns::Double(),
+        "The x-component of the background plasma's velocity");
+    parameter_handler.declare_entry(
+        "Plasma velocity y-component", ".1", Patterns::Double(),
+        "The y-component of the background plasma's velocity");
+    parameter_handler.declare_entry("Magnetic field x-component", "0.",
+                                    Patterns::Double(),
+                                    "The x-component of the magnetic field");
+    parameter_handler.declare_entry("Magnetic field y-component", "0.",
+                                    Patterns::Double(),
+                                    "The y-component of the magnetic field");
+    parameter_handler.declare_entry("Magnetic field z-component", "1.",
+                                    Patterns::Double(),
+                                    "The z-component of the magnetic field");
+  }
+  parameter_handler.leave_subsection();
+}
+
+void ParameterReader::read_parameters(const std::string &input_file) {
+  declare_parameters();
+  parameter_handler.parse_input(input_file);
+}
+
 // the velocity field field
 template <int dim>
 class BackgroundVelocityField : public TensorFunction<1, dim> {
