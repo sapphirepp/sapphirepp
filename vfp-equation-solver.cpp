@@ -123,6 +123,14 @@ void ParameterReader::read_parameters(const std::string &input_file) {
 template <int dim>
 class BackgroundVelocityField : public TensorFunction<1, dim> {
  public:
+  BackgroundVelocityField(ParameterHandler& prm) : parameter_handler(prm) {
+    parameter_handler.enter_subsection("Physical parameters");
+    {
+      u_x = parameter_handler.get_double("Plasma velocity x-component");
+      u_y = parameter_handler.get_double("Plasma velocity y-component");
+    }
+    parameter_handler.leave_subsection();
+  }
   virtual Tensor<1, dim> value(const Point<dim> &point) const override {
     Assert(dim == 2, ExcNotImplemented());
     (void)point;  // constant velocity field (suppresses the
@@ -141,6 +149,7 @@ class BackgroundVelocityField : public TensorFunction<1, dim> {
   }
 
  private:
+  ParameterHandler& parameter_handler;
   double u_x = 0.1;
   double u_y = 0.1;
 };
@@ -669,7 +678,7 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
   // Multiply the eigenvalues with the particle velocity
   eigenvalues *= particle_velocity;
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
-  BackgroundVelocityField<dim> velocity_field;
+  BackgroundVelocityField<dim> velocity_field(parameter_handler);
   double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)];
   eigenvalues.add(u);
   // std::cout << "eigenvalues plus velocity: "
@@ -856,7 +865,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system(
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-  BackgroundVelocityField<dim> beta;
+  BackgroundVelocityField<dim> beta(parameter_handler);
   beta.set_time(evaluation_time);
   MagneticField<dim> magnetic_field;
   magnetic_field.set_time(evaluation_time);
