@@ -274,7 +274,7 @@ class VFPEquationSolver {
   void setup_system();
   void project_initial_condition();
   void assemble_system();
-  void solve_system();
+  void theta_method_solve_system();
   void theta_method();
   void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
@@ -1164,7 +1164,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::solve_system() {
+void VFPEquationSolver<flags, max_degree, dim>::theta_method_solve_system() {
   SolverControl solver_control(1000, 1e-12);
   SolverRichardson<Vector<double>> solver(solver_control);
 
@@ -1200,7 +1200,7 @@ void VFPEquationSolver<flags, max_degree, dim>::theta_method() {
 
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
-  solve_system();
+  theta_method_solve_system();
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -1336,7 +1336,7 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags = TermFlags::reaction;
+    constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
     VFPEquationSolver<flags, 1, 2> vfp_equation_solver;
     vfp_equation_solver.run();
 
