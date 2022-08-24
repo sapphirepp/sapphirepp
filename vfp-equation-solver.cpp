@@ -276,6 +276,7 @@ class VFPEquationSolver {
   void assemble_system();
   void solve_system();
   void theta_method();
+  void explicit_runge_kutta();
   void output_results() const;
   void output_parameters() const;
   void output_index_order() const;
@@ -399,8 +400,11 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
               << "\n";
     // Time stepping method
     // theta_method();
+    explicit_runge_kutta();
 
     output_results();
+
+    // Update solution
     previous_solution = current_solution;
   }
 }
@@ -1202,6 +1206,49 @@ void VFPEquationSolver<flags, max_degree, dim>::theta_method() {
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
   solve_system();
+}
+
+template <TermFlags flags, int max_degree, int dim>
+void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
+  // RK 4
+  // Butcher's array
+  Vector<double> a({0.5, 0.5, 1.});
+  Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
+  // NOTE: c is only necessary if the velocity field and the magnetic field
+  // are time dependent.
+  // Vector<double> c({0., 0.5, 0.5, 1.});
+
+  // Allocate storage for the four stages
+  std::vector<Vector<double>> k(4, Vector<double>(current_solution.size()));
+  // The mass matrix needs to be "inverted" in every stage
+  SolverControl solver_control(1000, 1e-12);
+  SolverCG<Vector<double>> cg(solver_control);
+  // k0
+  previous_solution *= -1.;
+  dg_matrix.vmult(system_rhs, previous_solution);
+  cg.solve(mass_matrix, k[0], system_rhs, PreconditionIdentity());
+  std::cout << "	Stage s: " << 0 << "	Solver converged in "
+            << solver_control.last_step() << " iterations."
+            << "\n";
+  current_solution.add(b[0] * time_step, k[0]);
+
+  Vector<double> temp(current_solution.size());
+  for (unsigned int s = 1; s < 4; ++s) {
+    // NOTE: It would be nessary to reassemble the dg matrix twice for
+    // (for half a time step and a whole time step) if the velocity field and
+    // the magnetic field were time dependent.
+    temp.add(1., previous_solution, -a[s - 1] * time_step, k[s - 1]);
+    dg_matrix.vmult(system_rhs, temp);
+    cg.solve(mass_matrix, k[s], system_rhs, PreconditionIdentity());
+    std::cout << "	Stage s: " << s << "	Solver converged in "
+              << solver_control.last_step() << " iterations."
+              << "\n";
+
+    current_solution.add(b[s] * time_step, k[s]);
+
+    // empty temp vector
+    temp = 0;
+  }
 }
 
 template <TermFlags flags, int max_degree, int dim>
