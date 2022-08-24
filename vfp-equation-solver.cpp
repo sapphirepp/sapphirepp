@@ -334,9 +334,6 @@ class VFPEquationSolver {
   double time = 0.;
   unsigned int time_step_number = 0;
 
-  // penalty parameter ( for a scalar equation eta = 1 -> upwinding)
-  /* const double eta; */
-
   // scattering frequency
   const double scattering_frequency = 1.;
   // particle velocity
@@ -1320,8 +1317,6 @@ void VFPEquationSolver<flags, max_degree, dim>::output_results() const {
 template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
-  // std::cout << "	Theta: " << theta << "\n";
-  // std::cout << "	Eta: " << eta << "\n";
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n";
   std::cout << "	Scattering frequency: " << scattering_frequency << "\n";
