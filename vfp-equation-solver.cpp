@@ -273,7 +273,7 @@ class VFPEquationSolver {
                              const FluxDirection flux_direction);
   void setup_system();
   void project_initial_condition();
-  void assemble_system();
+  void assemble_system(unsigned int evaluation_time);
   void theta_method_solve_system();
   void theta_method();
   void explicit_runge_kutta();
@@ -394,7 +394,7 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   time += time_step;
   ++time_step_number;
 
-  assemble_system();
+  assemble_system(time);
 
   for (; time <= .8; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
@@ -774,7 +774,8 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
+void VFPEquationSolver<flags, max_degree, dim>::assemble_system(
+    unsigned int evaluation_time) {
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -785,9 +786,12 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   BackgroundVelocityField<dim> beta;
-  beta.set_time(time);
+  beta.set_time(evaluation_time);
   MagneticField<dim> magnetic_field;
-  magnetic_field.set_time(time);
+  magnetic_field.set_time(evaluation_time);
+  // NOTE: The fluxes also depend on the the background velocity and the
+  // particle velocity.
+  // TODO: Adapt upwind_flux to deal with time.
 
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
@@ -1192,7 +1196,7 @@ void VFPEquationSolver<flags, max_degree, dim>::theta_method() {
   // adapts after a specified amount of time steps)
 
   // mass_matrix = 0; dg_matrix = 0;
-  // assemble_system();
+  // assemble_system(time + time_step);
 
   // NOTE: Currently that is not necessary, because the velocity field is
   // constant. And I should check if I cannot update the system matrix without
@@ -1218,7 +1222,7 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
   // The mass matrix needs to be "inverted" in every stage
   SolverControl solver_control(1000, 1e-12);
   SolverCG<Vector<double>> cg(solver_control);
-  // k0
+  // k_0
   dg_matrix.vmult(system_rhs, previous_solution);
   cg.solve(mass_matrix, k[0], system_rhs, PreconditionIdentity());
   std::cout << "	Stage s: " << 0 << "	Solver converged in "
@@ -1232,6 +1236,7 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
     // (for half a time step and a whole time step) if the velocity field and
     // the magnetic field were time dependent.
     temp.add(-1., previous_solution, -a[s - 1] * time_step, k[s - 1]);
+    // assemble_system(time + c[s]*time_step);
     dg_matrix.vmult(system_rhs, temp);
     cg.solve(mass_matrix, k[s], system_rhs, PreconditionIdentity());
     std::cout << "	Stage s: " << s << "	Solver converged in "
@@ -1243,6 +1248,8 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
     // empty temp vector
     temp = 0;
   }
+  // NOTE: It is not necessary to assemble the matrix again, because the last
+  // element of the c vector is 1. (see low_storage_erk())
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -1269,6 +1276,7 @@ void VFPEquationSolver<flags, max_degree,
   Vector<double> k(current_solution.size());
   Vector<double> temp(current_solution.size());
   for (unsigned int s = 0; s < 5; ++s) {
+    // assemble_system(time + c[s]*time_step);
     dg_matrix.vmult(system_rhs, current_solution);
     cg.solve(mass_matrix, temp, system_rhs, PreconditionIdentity());
     std::cout << "	Stage s: " << s << "	Solver converged in "
@@ -1278,6 +1286,7 @@ void VFPEquationSolver<flags, max_degree,
     k.sadd(a[s], -time_step, temp);
     current_solution.add(b[s], k);
   }
+  // assemble_system(time + time_step)
 }
 
 template <TermFlags flags, int max_degree, int dim>
