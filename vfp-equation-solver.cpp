@@ -275,6 +275,7 @@ class VFPEquationSolver {
   void project_initial_condition();
   void assemble_system();
   void solve_system();
+  void theta_method();
   void output_results() const;
   void output_parameters() const;
   void output_index_order() const;
@@ -330,7 +331,6 @@ class VFPEquationSolver {
   const double time_step = 1. / 128;
   double time = 0.;
   unsigned int time_step_number = 0;
-  const double theta = 0.5;
 
   // penalty parameter ( for a scalar equation eta = 1 -> upwinding)
   /* const double eta; */
@@ -394,29 +394,11 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
 
   assemble_system();
 
-  Vector<double> tmp(current_solution.size());
   for (; time <= .8; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
-    mass_matrix.vmult(system_rhs, previous_solution);
-    dg_matrix.vmult(tmp, previous_solution);
-    system_rhs.add(-time_step * (1 - theta), tmp);
-
-    // Since the the dg_matrix depends on the velocity field and the the
-    // velocity field may depend on time, it needs to reassembled every time
-    // step. This is not true for the mass matrix ( but it may if the grid
-    // adapts after a specified amount of time steps)
-
-    // mass_matrix = 0; dg_matrix = 0;
-    // assemble_system();
-
-    // NOTE: Currently that is not necessary, because the velocity field is
-    // constant. And I should check if I cannot update the system matrix without
-    // reassembling in each time step.
-
-    system_matrix.copy_from(mass_matrix);
-    system_matrix.add(time_step * theta, dg_matrix);
-    solve_system();
+    // Time stepping method
+    // theta_method();
 
     output_results();
     previous_solution = current_solution;
@@ -1197,6 +1179,32 @@ void VFPEquationSolver<flags, max_degree, dim>::solve_system() {
 }
 
 template <TermFlags flags, int max_degree, int dim>
+void VFPEquationSolver<flags, max_degree, dim>::theta_method() {
+  const double theta = 0.5;
+  Vector<double> tmp(current_solution.size());
+
+  mass_matrix.vmult(system_rhs, previous_solution);
+  dg_matrix.vmult(tmp, previous_solution);
+  system_rhs.add(-time_step * (1 - theta), tmp);
+
+  // Since the the dg_matrix depends on the velocity field and the the
+  // velocity field may depend on time, it needs to reassembled every time
+  // step. This is not true for the mass matrix ( but it may if the grid
+  // adapts after a specified amount of time steps)
+
+  // mass_matrix = 0; dg_matrix = 0;
+  // assemble_system();
+
+  // NOTE: Currently that is not necessary, because the velocity field is
+  // constant. And I should check if I cannot update the system matrix without
+  // reassembling in each time step.
+
+  system_matrix.copy_from(mass_matrix);
+  system_matrix.add(time_step * theta, dg_matrix);
+  solve_system();
+}
+
+template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::output_results() const {
   DataOut<dim> data_out;
   data_out.attach_dof_handler(dof_handler);
@@ -1227,8 +1235,8 @@ void VFPEquationSolver<flags, max_degree, dim>::output_results() const {
 template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
-  std::cout << "	Theta: " << theta << "\n";
-  /* std::cout << "	Eta: " << eta << "\n"; */
+  // std::cout << "	Theta: " << theta << "\n";
+  // std::cout << "	Eta: " << eta << "\n";
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n";
   std::cout << "	Scattering frequency: " << scattering_frequency << "\n";
