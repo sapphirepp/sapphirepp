@@ -78,14 +78,22 @@ void ParameterReader::declare_parameters() {
                                     "Duration of the simulation.");
   }
   parameter_handler.leave_subsection();
-  // NOTE: The order of the expansion is currently a template parameter
-  // parameter_handler.enter_subsection("Expansion");
-  // {
-  //   parameter_handler.declare_entry(
-  //       "Order of expansion", "0", Patterns::Integer(0),
-  //       "The order of the expansion of the particel distribution function.");
-  // }
-  // parameter_handler.leave_subsection();
+
+  parameter_handler.enter_subsection("Expansion");
+  {
+    parameter_handler.declare_entry(
+        "Expansion order", "0", Patterns::Integer(0),
+        "The order of the expansion of the particel distribution function.");
+  }
+  parameter_handler.leave_subsection();
+
+  parameter_handler.enter_subsection("Finite Element");
+  {
+    parameter_handler.declare_entry(
+        "Polynomial degree", "1", Patterns::Integer(0),
+        "The degree of the polynomials of the finite element.");
+  }
+  parameter_handler.leave_subsection();
 
   parameter_handler.enter_subsection("Physical parameters");
   {
@@ -1465,8 +1473,13 @@ int main() {
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
     parameter_reader.read_parameters("vfp-equation.prm");
+    int expansion_order;
+    parameter_handler.enter_subsection("Expansion");
+    { expansion_order = parameter_handler.get_integer("Expansion order"); }
+    parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 2> vfp_equation_solver(parameter_handler, 1, 1);
+    VFPEquationSolver<flags, 2> vfp_equation_solver(parameter_handler, 1,
+                                                    expansion_order);
     vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
