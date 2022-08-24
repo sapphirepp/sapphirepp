@@ -354,7 +354,7 @@ struct CopyData {
 template <TermFlags flags, int max_degree, int dim>
 class VFPEquationSolver {
  public:
-  VFPEquationSolver();
+  VFPEquationSolver(ParameterHandler &prm);
   void run();
 
  private:
@@ -376,6 +376,7 @@ class VFPEquationSolver {
   void output_parameters() const;
   void output_index_order() const;
 
+  ParameterHandler &parameter_handler;
   Triangulation<dim> triangulation;
   DoFHandler<dim> dof_handler;
 
@@ -420,21 +421,21 @@ class VFPEquationSolver {
 
   Vector<double> system_rhs;
 
-  // number of expansion coefficients
   const unsigned int num_exp_coefficients = (max_degree + 1) * (max_degree + 1);
 
   // parameters of the time stepping method
-  const double time_step = 1. / 128;
+  double time_step = 1. / 128;
   double time = 0.;
+  double final_time = .4;
   unsigned int time_step_number = 0;
 
   // scattering frequency
-  const double scattering_frequency = 1.;
+  double scattering_frequency = 1.;
   // particle velocity
-  const double particle_velocity = 1.;
+  double particle_velocity = 1.;
 
   // Number of refinements
-  const unsigned int num_refinements = 5;
+  unsigned int num_refinements = 5;
   // For the moment, I will use a quadratic domain
   // Rectangular domain
   // Point<dim> left_bottom;
@@ -446,12 +447,15 @@ class VFPEquationSolver {
 };
 
 template <TermFlags flags, int max_degree, int dim>
-VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
-    : dof_handler(triangulation),
+VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver(
+    ParameterHandler &prm)
+    : parameter_handler(prm),
+      dof_handler(triangulation),
       mapping(),
       fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1) {
+  // Create the index order
   for (int s = 0, idx = 0; s <= 1; ++s) {
     for (int l = 0; l <= max_degree; ++l) {
       for (int m = l; m >= s; --m) {
@@ -462,6 +466,21 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver()
       }
     }
   }
+  parameter_handler.enter_subsection("Mesh");
+  { num_refinements = parameter_handler.get_integer("Number of refinements"); }
+  parameter_handler.leave_subsection();
+  parameter_handler.enter_subsection("Time stepping");
+  {
+    time_step = parameter_handler.get_double("Time step size");
+    final_time = parameter_handler.get_double("Final time");
+  }
+  parameter_handler.leave_subsection();
+  parameter_handler.enter_subsection("Physical parameters");
+  {
+    scattering_frequency = parameter_handler.get_double("Scattering frequency");
+    particle_velocity = parameter_handler.get_double("Particle velocity");
+  }
+  parameter_handler.leave_subsection();
 }
 
 template <TermFlags flags, int max_degree, int dim>
@@ -1435,7 +1454,12 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
-    VFPEquationSolver<flags, 1, 2> vfp_equation_solver;
+
+    ParameterHandler parameter_handler;
+    ParameterReader parameter_reader(parameter_handler);
+    parameter_reader.read_parameters("vfp-equation.prm");
+
+    VFPEquationSolver<flags, 1, 2> vfp_equation_solver(parameter_handler);
     vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
