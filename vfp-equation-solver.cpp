@@ -506,13 +506,13 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
 
   assemble_system(time);
 
-  for (; time <= .8; time += time_step, ++time_step_number) {
+  for (; time <= final_time; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     // Time stepping method
     // theta_method();
-    explicit_runge_kutta();
-    // low_storage_explicit_runge_kutta();
+    // explicit_runge_kutta();
+    low_storage_explicit_runge_kutta();
 
     output_results();
 
