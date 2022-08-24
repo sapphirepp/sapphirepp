@@ -202,7 +202,7 @@ class MagneticField : public Function<dim> {
   }
 
  private:
-  ParameterHandler& parameter_handler;
+  ParameterHandler &parameter_handler;
   double B_x = 0.;
   double B_y = 0.;
   double B_z = 1.;
@@ -233,15 +233,16 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
 }
 
 // Initial values
-template <int max_degree, int dim>
+template <int dim>
 class InitialValueFunction : public Function<dim> {
  public:
+  InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
   virtual void vector_value(const Point<dim> &p,
                             Vector<double> &values) const override {
     Assert(dim == 2, ExcNotImplemented());
-    Assert(values.size() == (max_degree + 1) * (max_degree + 1),
+    Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
            ExcDimensionMismatch(values.size(),
-                                (max_degree + 1) * (max_degree + 1)));
+                                (expansion_order + 1) * (expansion_order + 1)));
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
     values[0] =
@@ -254,6 +255,9 @@ class InitialValueFunction : public Function<dim> {
     //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
     //                     0.01)));
   }
+
+ private:
+  const unsigned int expansion_order = 1;
 };
 
 // The mesh_loop function requires helper data types
@@ -351,10 +355,11 @@ struct CopyData {
   }
 };
 
-template <TermFlags flags, int max_degree, int dim>
+template <TermFlags flags, int dim>
 class VFPEquationSolver {
  public:
-  VFPEquationSolver(ParameterHandler &prm);
+  VFPEquationSolver(ParameterHandler &prm, unsigned int polynomial_degree,
+                    int order_expansion);
   void run();
 
  private:
@@ -420,8 +425,8 @@ class VFPEquationSolver {
   Vector<double> previous_solution;
 
   Vector<double> system_rhs;
-
-  const unsigned int num_exp_coefficients = (max_degree + 1) * (max_degree + 1);
+  const int expansion_order = 0.;
+  const unsigned int num_exp_coefficients;
 
   // parameters of the time stepping method
   double time_step = 1. / 128;
@@ -442,22 +447,26 @@ class VFPEquationSolver {
   // Point<dim> right_top;
 
   // Map between i and l,m,s (implemented in constructor)
-  std::array<std::array<unsigned int, 3>, (max_degree + 1) * (max_degree + 1)>
-      lms_indices;
+  std::vector<std::array<unsigned int, 3>> lms_indices;
 };
 
-template <TermFlags flags, int max_degree, int dim>
-VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver(
-    ParameterHandler &prm)
+template <TermFlags flags, int dim>
+VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
+                                                 unsigned int polynomial_degree,
+                                                 int order)
     : parameter_handler(prm),
       dof_handler(triangulation),
       mapping(),
-      fe(FE_DGQ<dim>(1), (max_degree + 1) * (max_degree + 1)),
+      fe(FE_DGQ<dim>(polynomial_degree), (order + 1) * (order + 1)),
       quadrature(fe.tensor_degree() + 1),
-      quadrature_face(fe.tensor_degree() + 1) {
+      quadrature_face(fe.tensor_degree() + 1),
+      expansion_order{order},
+      num_exp_coefficients{
+          static_cast<unsigned int>((order + 1) * (order + 1))},
+      lms_indices((order + 1) * (order + 1)) {
   // Create the index order
   for (int s = 0, idx = 0; s <= 1; ++s) {
-    for (int l = 0; l <= max_degree; ++l) {
+    for (int l = 0; l <= expansion_order; ++l) {
       for (int m = l; m >= s; --m) {
         idx = l * (l + 1) - (s ? -1. : 1.) * m;
         lms_indices[idx][0] = l;
@@ -483,8 +492,8 @@ VFPEquationSolver<flags, max_degree, dim>::VFPEquationSolver(
   parameter_handler.leave_subsection();
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::run() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::run() {
   std::cout << "Start the simulation: "
             << "\n\n";
   output_parameters();
@@ -521,8 +530,8 @@ void VFPEquationSolver<flags, max_degree, dim>::run() {
   }
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::make_grid() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::make_grid() {
   GridGenerator::hyper_cube(triangulation);
   triangulation.refine_global(num_refinements);
 
@@ -535,8 +544,8 @@ void VFPEquationSolver<flags, max_degree, dim>::make_grid() {
             << triangulation.n_active_cells() << "\n";
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::setup_pde_system() {
   Ax.reinit(num_exp_coefficients);
   Ay.reinit(num_exp_coefficients);
   Omega_x.reinit(num_exp_coefficients);
@@ -544,11 +553,11 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   Omega_z.reinit(num_exp_coefficients);
   R.reinit(num_exp_coefficients);
   for (int s = 0; s <= 1; ++s) {
-    for (int l = 0, i = 0; l <= max_degree; ++l) {
+    for (int l = 0, i = 0; l <= expansion_order; ++l) {
       for (int m = l; m >= s; --m) {
         i = l * (l + 1) - (s ? -1. : 1.) * m;  // (-1)^s
         for (int s_prime = 0; s_prime <= 1; ++s_prime) {
-          for (int l_prime = 0, j = 0; l_prime <= max_degree; ++l_prime) {
+          for (int l_prime = 0, j = 0; l_prime <= expansion_order; ++l_prime) {
             for (int m_prime = l_prime; m_prime >= s_prime; --m_prime) {
               j = l_prime * (l_prime + 1) - (s_prime ? -1. : 1.) * m_prime;
               // Ax
@@ -617,8 +626,8 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // NOTE: These corrections were not included in the above loops, because some
   // of them were overwritten. This is an effect of the s loops being outside
   // the l and m loops.
-  if (max_degree > 0) {
-    for (unsigned int l = 0; l <= max_degree; ++l) {
+  if (expansion_order > 0) {
+    for (int l = 0; l <= expansion_order; ++l) {
       // Special cases for Omega
       if (l > 0) {
         // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
@@ -638,11 +647,11 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
       // Special cases for A_y (necessary for every value of l)
       // Above the diagonal
       // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
-      if (l != max_degree)
+      if (l != expansion_order)
         Ay(l * (l + 1), (l + 1) * (l + 2) - 1) =
             std::sqrt(2) * Ay(l * (l + 1), (l + 2) * (l + 1) - 1);
       // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
-      if (l != 0 && l != max_degree)
+      if (l != 0 && l != expansion_order)
         Ay(l * (l + 1) - 1, (l + 1) * (l + 2)) =
             std::sqrt(2) * Ay(l * (l + 1) - 1, (l + 2) * (l + 1));
       // Below the diagonal
@@ -676,8 +685,8 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // R.print(std::cout);
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
     const Point<dim> &p, const Coordinate coordinate,
     const FluxDirection flux_direction) {
   Vector<double> eigenvalues(num_exp_coefficients);
@@ -789,8 +798,8 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
   }
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::setup_system() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::setup_system() {
   dof_handler.distribute_dofs(fe);
   const unsigned int n_dofs = dof_handler.n_dofs();
   std::cout << "	Number of degrees of freedom: " << n_dofs << "\n";
@@ -816,8 +825,8 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_system() {
   constraints.close();
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::project_initial_condition() {
   FEValues<dim> fe_v(
       mapping, fe, quadrature,
       update_values | update_quadrature_points | update_JxW_values);
@@ -838,7 +847,7 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     // Initial values
-    InitialValueFunction<max_degree, dim> initial_value_function;
+    InitialValueFunction<dim> initial_value_function(expansion_order);
     std::vector<Vector<double>> initial_values(
         q_points.size(), Vector<double>(num_exp_coefficients));
     initial_value_function.vector_value_list(q_points, initial_values);
@@ -883,8 +892,8 @@ void VFPEquationSolver<flags, max_degree, dim>::project_initial_condition() {
   system_rhs = 0;
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::assemble_system(
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::assemble_system(
     unsigned int evaluation_time) {
   /*
     What kind of loops are there ?
@@ -1277,8 +1286,8 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system(
                         boundary_worker, face_worker);
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::theta_method_solve_system() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
   SolverControl solver_control(1000, 1e-12);
   SolverRichardson<Vector<double>> solver(solver_control);
 
@@ -1291,8 +1300,8 @@ void VFPEquationSolver<flags, max_degree, dim>::theta_method_solve_system() {
             << "\n";
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::theta_method() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::theta_method() {
   const double theta = 0.5;
   Vector<double> tmp(current_solution.size());
 
@@ -1317,8 +1326,8 @@ void VFPEquationSolver<flags, max_degree, dim>::theta_method() {
   theta_method_solve_system();
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
   // RK 4
   // Butcher's array
   Vector<double> a({0.5, 0.5, 1.});
@@ -1362,9 +1371,8 @@ void VFPEquationSolver<flags, max_degree, dim>::explicit_runge_kutta() {
   // element of the c vector is 1. (see low_storage_erk())
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree,
-                       dim>::low_storage_explicit_runge_kutta() {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
   // see Hesthaven p.64
   Vector<double> a(
       {0., -567301805773. / 1357537059087, -2404267990393. / 2016746695238,
@@ -1399,14 +1407,14 @@ void VFPEquationSolver<flags, max_degree,
   // assemble_system(time + time_step)
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::output_results() const {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::output_results() const {
   DataOut<dim> data_out;
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
-  std::vector<std::string> component_names((max_degree + 1) * (max_degree + 1));
+  std::vector<std::string> component_names(num_exp_coefficients);
 
-  for (unsigned int i = 0; i < (max_degree + 1) * (max_degree + 1); ++i) {
+  for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
     const std::array<unsigned int, 3> lms = lms_indices[i];
     component_names[i] = "f_" + std::to_string(lms[0]) +
                          std::to_string(lms[1]) + std::to_string(lms[2]);
@@ -1427,8 +1435,8 @@ void VFPEquationSolver<flags, max_degree, dim>::output_results() const {
   data_out.write_vtu(output);
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::output_parameters() const {
   std::cout << "	Time step: " << time_step << "\n";
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n";
@@ -1439,8 +1447,8 @@ void VFPEquationSolver<flags, max_degree, dim>::output_parameters() const {
             << "\n";
 }
 
-template <TermFlags flags, int max_degree, int dim>
-void VFPEquationSolver<flags, max_degree, dim>::output_index_order() const {
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::output_index_order() const {
   std::cout << "Ordering of the lms indices: "
             << "\n";
 
@@ -1459,7 +1467,7 @@ int main() {
     ParameterReader parameter_reader(parameter_handler);
     parameter_reader.read_parameters("vfp-equation.prm");
 
-    VFPEquationSolver<flags, 1, 2> vfp_equation_solver(parameter_handler);
+    VFPEquationSolver<flags, 2> vfp_equation_solver(parameter_handler, 1, 1);
     vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
