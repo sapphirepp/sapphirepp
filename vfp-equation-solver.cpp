@@ -158,6 +158,16 @@ class BackgroundVelocityField : public TensorFunction<1, dim> {
 template <int dim>
 class MagneticField : public Function<dim> {
  public:
+  MagneticField(ParameterHandler& prm) : parameter_handler(prm) {
+    parameter_handler.enter_subsection("Physical parameters");
+    {
+      B_x = parameter_handler.get_double("Magnetic field x-component");
+      B_y = parameter_handler.get_double("Magnetic field y-component");
+      B_z = parameter_handler.get_double("Magnetic field z-component");
+    }
+    parameter_handler.leave_subsection();
+
+  }
   virtual double value(const Point<dim> &point,
                        const unsigned int component) const override {
     // Check if a component was picked
@@ -192,6 +202,7 @@ class MagneticField : public Function<dim> {
   }
 
  private:
+  ParameterHandler& parameter_handler;
   double B_x = 0.;
   double B_y = 0.;
   double B_z = 1.;
@@ -867,7 +878,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system(
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   BackgroundVelocityField<dim> beta(parameter_handler);
   beta.set_time(evaluation_time);
-  MagneticField<dim> magnetic_field;
+  MagneticField<dim> magnetic_field(parameter_handler);
   magnetic_field.set_time(evaluation_time);
   // NOTE: The fluxes also depend on the the background velocity and the
   // particle velocity.
