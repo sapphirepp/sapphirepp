@@ -502,8 +502,6 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::run() {
-  std::cout << "Start the simulation: "
-            << "\n\n";
   output_compile_time_parameters();
   output_index_order();
   make_grid();
@@ -523,6 +521,7 @@ void VFPEquationSolver<flags, dim>::run() {
 
   assemble_system(time);
 
+  std::cout << "The time stepping loop is entered: \n";
   for (; time <= final_time; time += time_step, ++time_step_number) {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
@@ -536,6 +535,7 @@ void VFPEquationSolver<flags, dim>::run() {
     // Update solution
     previous_solution = current_solution;
   }
+  std::cout << "The simulation ended. \n";
 }
 
 template <TermFlags flags, int dim>
@@ -548,7 +548,8 @@ void VFPEquationSolver<flags, dim>::make_grid() {
   // grid_out.write_vtk(triangulation, out);
   // std::cout << "	Grid written to grid.vtk"
   //           << "\n";
-  std::cout << "	Number of active cells: "
+  std::cout << "The grid was created: \n"
+            << "	Number of active cells: "
             << triangulation.n_active_cells() << "\n";
 }
 
@@ -810,7 +811,8 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::setup_system() {
   dof_handler.distribute_dofs(fe);
   const unsigned int n_dofs = dof_handler.n_dofs();
-  std::cout << "	Number of degrees of freedom: " << n_dofs << "\n";
+  std::cout << "The degrees of freedom were distributed: \n"
+            << "	Number of degrees of freedom: " << n_dofs << "\n";
 
   DynamicSparsityPattern dsp(n_dofs);
   DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
@@ -903,6 +905,7 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_system(
     unsigned int evaluation_time) {
+  std::cout << "The linear system of equations is assembled. \n";
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -1445,7 +1448,8 @@ void VFPEquationSolver<flags, dim>::output_results() const {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::output_compile_time_parameters() const {
-  std::cout << "Compile-time parameters: " << "\n";
+  std::cout << "Compile-time parameters: "
+            << "\n";
   std::cout << "	" << flags;
   std::cout << "	Dimension: " << dim << "\n\n";
 }
@@ -1470,9 +1474,9 @@ int main() {
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
     parameter_reader.read_parameters("vfp-equation.prm");
-    std::cout << "Run-time parameters: " << "\n";
-    parameter_handler.print_parameters(std::cout,
-                                       ParameterHandler::ShortPRM);
+    std::cout << "Run-time parameters: "
+              << "\n";
+    parameter_handler.print_parameters(std::cout, ParameterHandler::ShortPRM);
     int expansion_order;
     parameter_handler.enter_subsection("Expansion");
     { expansion_order = parameter_handler.get_integer("Expansion order"); }
