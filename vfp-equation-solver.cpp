@@ -87,11 +87,12 @@ void ParameterReader::declare_parameters() {
   }
   parameter_handler.leave_subsection();
 
-  parameter_handler.enter_subsection("Finite Element");
+  parameter_handler.enter_subsection("Finite element");
   {
-    parameter_handler.declare_entry(
-        "Polynomial degree", "1", Patterns::Integer(0),
-        "The degree of the polynomials of the finite element.");
+    parameter_handler.declare_entry("Polynomial degree", "1",
+                                    Patterns::Integer(0),
+                                    "The degree of the shape functions (i.e. "
+                                    "the polynomials) of the finite element.");
   }
   parameter_handler.leave_subsection();
 
@@ -1477,9 +1478,13 @@ int main() {
     parameter_handler.enter_subsection("Expansion");
     { expansion_order = parameter_handler.get_integer("Expansion order"); }
     parameter_handler.leave_subsection();
+    unsigned int polynomial_degree;
+    parameter_handler.enter_subsection("Finite element");
+    { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
+    parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 2> vfp_equation_solver(parameter_handler, 1,
-                                                    expansion_order);
+    VFPEquationSolver<flags, 2> vfp_equation_solver(
+        parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
