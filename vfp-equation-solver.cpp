@@ -379,8 +379,9 @@ class VFPEquationSolver {
   void prepare_upwind_fluxes(const Point<dim> &p, const Coordinate coordinate,
                              const FluxDirection flux_direction);
   void setup_system();
+  void assemble_mass_matrix();
+  void assemble_dg_matrix(unsigned int evaluation_time);
   void project_initial_condition();
-  void assemble_system(unsigned int evaluation_time);
   void theta_method_solve_system();
   void theta_method();
   void explicit_runge_kutta();
@@ -512,14 +513,15 @@ void VFPEquationSolver<flags, dim>::run() {
   prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::positive);
   prepare_upwind_fluxes({0.1, 0.1}, Coordinate::y, FluxDirection::negative);
   setup_system();
+  assemble_mass_matrix();
+  assemble_dg_matrix(time);
   project_initial_condition();
+
   current_solution = previous_solution;
   output_results();
 
   time += time_step;
   ++time_step_number;
-
-  assemble_system(time);
 
   std::cout << "The time stepping loop is entered: \n";
   for (; time <= final_time; time += time_step, ++time_step_number) {
@@ -836,7 +838,7 @@ void VFPEquationSolver<flags, dim>::setup_system() {
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::project_initial_condition() {
+void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
   FEValues<dim> fe_v(
       mapping, fe, quadrature,
       update_values | update_quadrature_points | update_JxW_values);
@@ -844,12 +846,50 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
   const unsigned int n_dofs = fe.n_dofs_per_cell();
 
   FullMatrix<double> cell_mass_matrix(n_dofs, n_dofs);
-  Vector<double> cell_rhs(n_dofs);
 
   std::vector<types::global_dof_index> local_dof_indices(n_dofs);
 
   for (const auto &cell : dof_handler.active_cell_iterators()) {
     cell_mass_matrix = 0;
+    fe_v.reinit(cell);
+
+    const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+      for (unsigned int i : fe_v.dof_indices()) {
+        const unsigned int component_i = fe.system_to_component_index(i).first;
+        for (unsigned int j : fe_v.dof_indices()) {
+          const unsigned int component_j =
+              fe.system_to_component_index(j).first;
+          // mass matrix
+          cell_mass_matrix(i, j) +=
+              (component_i == component_j
+                   ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
+                   : 0) *
+              JxW[q_index];
+        }
+      }
+    }
+    cell->get_dof_indices(local_dof_indices);
+
+    constraints.distribute_local_to_global(cell_mass_matrix, local_dof_indices,
+                                           mass_matrix);
+  }
+}
+
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::project_initial_condition() {
+  // Create right hand side
+  FEValues<dim> fe_v(
+      mapping, fe, quadrature,
+      update_values | update_quadrature_points | update_JxW_values);
+
+  const unsigned int n_dofs = fe.n_dofs_per_cell();
+  Vector<double> cell_rhs(n_dofs);
+
+  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
+
+  for (const auto &cell : dof_handler.active_cell_iterators()) {
     cell_rhs = 0;
     fe_v.reinit(cell);
 
@@ -865,24 +905,14 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
     for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
       for (unsigned int i : fe_v.dof_indices()) {
         const unsigned int component_i = fe.system_to_component_index(i).first;
-        for (unsigned int j : fe_v.dof_indices()) {
-          const unsigned int component_j =
-              fe.system_to_component_index(j).first;
-          // mass matrix
-          cell_mass_matrix(i, j) +=
-              (component_i == component_j
-                   ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
-                   : 0) *
-              JxW[q_index];
-        }
         cell_rhs(i) += fe_v.shape_value(i, q_index) *
                        initial_values[q_index][component_i] * JxW[q_index];
       }
     }
     cell->get_dof_indices(local_dof_indices);
 
-    constraints.distribute_local_to_global(
-        cell_mass_matrix, cell_rhs, local_dof_indices, mass_matrix, system_rhs);
+    constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
+                                           system_rhs);
   }
 
   // Solve the system
@@ -897,13 +927,12 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
   // std::ofstream output("projection.vtu");
   // data_out.write_vtu(output);
 
-  // Reset system RHS, the mass matrix is needed later on
-  // mass_matrix = 0;
+  // Reset system RHS
   system_rhs = 0;
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::assemble_system(
+void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     unsigned int evaluation_time) {
   std::cout << "The linear system of equations is assembled. \n";
   /*
@@ -955,18 +984,6 @@ void VFPEquationSolver<flags, dim>::assemble_system(
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
-          // mass matrix
-          //
-          // NOTE: As long as the grid is constant in time, the mass matrix does
-          // not change and it is already assembled in the method
-          // project_initial_condition
-          //
-          // copy_data.cell_mass_matrix(i, j) +=
-          //     (component_i == component_j
-          //          ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j,
-          //          q_index) : 0) *
-          //     JxW[q_index];
-          // dg matrix
           if constexpr ((flags & TermFlags::reaction) != TermFlags::none) {
             if (component_i == component_j) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
