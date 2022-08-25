@@ -386,7 +386,7 @@ class VFPEquationSolver {
   void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
   void output_results() const;
-  void output_parameters() const;
+  void output_compile_time_parameters() const;
   void output_index_order() const;
 
   ParameterHandler &parameter_handler;
@@ -504,7 +504,7 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::run() {
   std::cout << "Start the simulation: "
             << "\n\n";
-  output_parameters();
+  output_compile_time_parameters();
   output_index_order();
   make_grid();
   setup_pde_system();
@@ -1444,15 +1444,10 @@ void VFPEquationSolver<flags, dim>::output_results() const {
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::output_parameters() const {
-  std::cout << "	Time step: " << time_step << "\n";
+void VFPEquationSolver<flags, dim>::output_compile_time_parameters() const {
+  std::cout << "Compile-time parameters: " << "\n";
   std::cout << "	" << flags;
-  std::cout << "	Dimension: " << dim << "\n";
-  std::cout << "	Scattering frequency: " << scattering_frequency << "\n";
-  std::cout << "	Number of expansion coeffiecients: "
-            << num_exp_coefficients << "\n";
-  std::cout << "	Number of global refinements: " << num_refinements
-            << "\n";
+  std::cout << "	Dimension: " << dim << "\n\n";
 }
 
 template <TermFlags flags, int dim>
@@ -1462,6 +1457,7 @@ void VFPEquationSolver<flags, dim>::output_index_order() const {
 
   for (std::array<unsigned int, 3> lms : lms_indices)
     std::cout << "	" << lms[0] << lms[1] << lms[2] << "\n";
+  std::cout << "\n";
 }
 }  // namespace vfp_equation_solver
 
@@ -1474,6 +1470,9 @@ int main() {
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
     parameter_reader.read_parameters("vfp-equation.prm");
+    std::cout << "Run-time parameters: " << "\n";
+    parameter_handler.print_parameters(std::cout,
+                                       ParameterHandler::ShortPRM);
     int expansion_order;
     parameter_handler.enter_subsection("Expansion");
     { expansion_order = parameter_handler.get_integer("Expansion order"); }
