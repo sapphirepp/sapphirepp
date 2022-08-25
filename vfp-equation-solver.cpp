@@ -1,5 +1,8 @@
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/index_set.h>
+#include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/patterns.h>
 #include <deal.II/base/quadrature.h>
@@ -12,19 +15,26 @@
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/lapack_full_matrix.h>
+#include <deal.II/lac/petsc_precondition.h>
+#include <deal.II/lac/petsc_solver.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/precondition_block.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/lac/vector.h>
 // #include <deal.II/grid/grid_refinement.h>
 
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_interface_values.h>
@@ -36,6 +46,7 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools_project.h>
+#include <mpi.h>
 
 #include <algorithm>
 #include <array>
@@ -383,17 +394,27 @@ class VFPEquationSolver {
   void assemble_mass_matrix();
   void assemble_dg_matrix(unsigned int evaluation_time);
   void project_initial_condition();
-  void theta_method_solve_system();
-  void theta_method(double theta);
-  void explicit_runge_kutta();
+  // void theta_method_solve_system();
+  // void theta_method(double theta);
+  // void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
   void output_results() const;
   void output_compile_time_parameters() const;
   void output_index_order() const;
 
+  MPI_Comm mpi_communicator;
+  const unsigned int n_mpi_processes;
+  const unsigned int rank;
+
+  ConditionalOStream pcout;
+
   ParameterHandler &parameter_handler;
-  Triangulation<dim> triangulation;
+
+  parallel::distributed::Triangulation<dim> triangulation;
   DoFHandler<dim> dof_handler;
+
+  IndexSet locally_owned_dofs;
+  IndexSet locally_relevant_dofs;
 
   // NOTE: The explicit use of a mapping is most likely related to the usage
   // of mesh_loop as well
@@ -427,14 +448,14 @@ class VFPEquationSolver {
   FullMatrix<double> pi_y_negative;
 
   SparsityPattern sparsity_pattern;
-  SparseMatrix<double> mass_matrix;
-  SparseMatrix<double> dg_matrix;
-  SparseMatrix<double> system_matrix;
+  PETScWrappers::MPI::SparseMatrix mass_matrix;
+  PETScWrappers::MPI::SparseMatrix dg_matrix;
+  PETScWrappers::MPI::SparseMatrix system_matrix;
 
-  Vector<double> current_solution;
-  Vector<double> previous_solution;
+  PETScWrappers::MPI::Vector locally_relevant_current_solution;
+  PETScWrappers::MPI::Vector locally_relevant_previous_solution;
+  PETScWrappers::MPI::Vector system_rhs;
 
-  Vector<double> system_rhs;
   const int expansion_order = 0.;
   const unsigned int num_exp_coefficients;
 
@@ -465,7 +486,12 @@ template <TermFlags flags, int dim>
 VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
                                                  unsigned int polynomial_degree,
                                                  int order)
-    : parameter_handler(prm),
+    : mpi_communicator(MPI_COMM_WORLD),
+      n_mpi_processes{Utilities::MPI::n_mpi_processes(mpi_communicator)},
+      rank{Utilities::MPI::this_mpi_process(mpi_communicator)},
+      pcout(std::cout, (rank == 0)),
+      parameter_handler(prm),
+      triangulation(mpi_communicator),
       dof_handler(triangulation),
       mapping(),
       fe(FE_DGQ<dim>(polynomial_degree), (order + 1) * (order + 1)),
@@ -475,7 +501,8 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
       num_exp_coefficients{
           static_cast<unsigned int>((order + 1) * (order + 1))},
       lms_indices((order + 1) * (order + 1)),
-      timer(std::cout, TimerOutput::summary, TimerOutput::wall_times) {
+      timer(mpi_communicator, pcout, TimerOutput::never,
+            TimerOutput::wall_times) {
   // Create the index order
   for (int s = 0, idx = 0; s <= 1; ++s) {
     for (int l = 0; l <= expansion_order; ++l) {
@@ -520,16 +547,15 @@ void VFPEquationSolver<flags, dim>::run() {
   assemble_dg_matrix(time);
   project_initial_condition();
 
-  current_solution = previous_solution;
+  locally_relevant_current_solution = locally_relevant_previous_solution;
   output_results();
 
   time += time_step;
   ++time_step_number;
 
-  std::cout << "The time stepping loop is entered: \n";
+  pcout << "The time stepping loop is entered: \n";
   for (; time <= final_time; time += time_step, ++time_step_number) {
-    std::cout << "	Time step " << time_step_number << " at t = " << time
-              << "\n";
+    pcout << "	Time step " << time_step_number << " at t = " << time << "\n";
     // Time stepping method
     // theta_method(0.5);
     // explicit_runge_kutta();
@@ -541,9 +567,9 @@ void VFPEquationSolver<flags, dim>::run() {
       output_results();
     }
     // Update solution
-    previous_solution = current_solution;
+    locally_relevant_previous_solution = locally_relevant_current_solution;
   }
-  std::cout << "The simulation ended. \n";
+  pcout << "The simulation ended. \n";
 }
 
 template <TermFlags flags, int dim>
@@ -556,11 +582,11 @@ void VFPEquationSolver<flags, dim>::make_grid() {
   // std::ofstream out("grid.vtk");
   // GridOut grid_out;
   // grid_out.write_vtk(triangulation, out);
-  // std::cout << "	Grid written to grid.vtk"
+  // pcout << "	Grid written to grid.vtk"
   //           << "\n";
-  std::cout << "The grid was created: \n"
-            << "	Number of active cells: "
-            << triangulation.n_active_cells() << "\n";
+  pcout << "The grid was created: \n"
+        << "	Number of active cells: " << triangulation.n_active_cells()
+        << "\n";
 }
 
 template <TermFlags flags, int dim>
@@ -686,24 +712,24 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
             std::sqrt(2) * Ay(l * (l + 1) - 1, l * (l - 1));
     }
   }
-  // std::cout << "Ax: " << "\n";
-  // Ax.print_formatted(std::cout);
-  // std::cout << "Ay: "
+  // pcout << "Ax: " << "\n";
+  // Ax.print_formatted(pcout);
+  // pcout << "Ay: "
   //           << "\n";
-  // Ay.print_formatted(std::cout);
-  // std::cout << "Omega_x: "
+  // Ay.print_formatted(pcout);
+  // pcout << "Omega_x: "
   //           << "\n";
-  // Omega_x.print_formatted(std::cout);
-  // std::cout << "Omega_y: "
+  // Omega_x.print_formatted(pcout);
+  // pcout << "Omega_y: "
   //           << "\n";
-  // Omega_y.print_formatted(std::cout);
-  // std::cout << "Omega_z: "
+  // Omega_y.print_formatted(pcout);
+  // pcout << "Omega_z: "
   //           << "\n";
-  // Omega_z.print_formatted(std::cout);
+  // Omega_z.print_formatted(pcout);
 
-  // std::cout << "R: "
+  // pcout << "R: "
   //           << "\n";
-  // R.print(std::cout);
+  // R.print(pcout);
 }
 
 template <TermFlags flags, int dim>
@@ -729,8 +755,8 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
   double tolerance = 1.e-8;
   CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
                                       eigenvectors);
-  // std::cout << "Eigenvectors: " << "\n"
-  // eigenvectors.print_formatted(std::cout);
+  // pcout << "Eigenvectors: " << "\n"
+  // eigenvectors.print_formatted(pcout);
   // Remove eigenvalues, which are smaller than tolerance
   auto smaller_than_tolerance = [&tolerance](double value) {
     return (std::abs(value) < tolerance ? true : false);
@@ -743,9 +769,9 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
   BackgroundVelocityField<dim> velocity_field(parameter_handler);
   double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)];
   eigenvalues.add(u);
-  // std::cout << "eigenvalues plus velocity: "
+  // pcout << "eigenvalues plus velocity: "
   //           << "\n";
-  // eigenvalues.print(std::cout);
+  // eigenvalues.print(pcout);
 
   // Depending on the flux direction extract either the positive or negative
   // eigenvalues
@@ -763,9 +789,9 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
           std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
       break;
   }
-  // std::cout << "positive (or negative) eigenvalues of the flux matrix pi_x/y:
+  // pcout << "positive (or negative) eigenvalues of the flux matrix pi_x/y:
   //           " << "\n";
-  // eigenvalues.print(std::cout);
+  // eigenvalues.print(pcout);
 
   // Create Lambda_+/-
   FullMatrix<double> lambda(num_exp_coefficients, num_exp_coefficients);
@@ -773,8 +799,8 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
   for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
     lambda(i, i) = eigenvalues[i];
   }
-  // std::cout << "positive (or negative) lambda matrix: " << "\n";
-  // lambda.print_formatted(std::cout);
+  // pcout << "positive (or negative) lambda matrix: " << "\n";
+  // lambda.print_formatted(pcout);
 
   // Compute the flux matrices
   switch (coordinate) {
@@ -784,17 +810,17 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
           pi_x_positive.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          // std::cout << "pi_x_positive: "
+          // pcout << "pi_x_positive: "
           //           << "\n";
-          // pi_x_positive.print_formatted(std::cout);
+          // pi_x_positive.print_formatted(pcout);
           break;
         case FluxDirection::negative:
           pi_x_negative.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          // std::cout << "pi_x_negative: "
+          // pcout << "pi_x_negative: "
           //           << "\n";
-          // pi_x_negative.print_formatted(std::cout);
+          // pi_x_negative.print_formatted(pcout);
           break;
       }
       break;
@@ -804,17 +830,17 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
           pi_y_positive.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          // std::cout << "pi_y_positive: "
+          // pcout << "pi_y_positive: "
           //           << "\n";
-          // pi_y_positive.print_formatted(std::cout);
+          // pi_y_positive.print_formatted(pcout);
           break;
         case FluxDirection::negative:
           pi_y_negative.reinit(num_exp_coefficients, num_exp_coefficients);
           pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-          // std::cout << "pi_y_negative: "
+          // pcout << "pi_y_negative: "
           //           << "\n";
-          // pi_y_negative.print_formatted(std::cout);
+          // pi_y_negative.print_formatted(pcout);
           break;
       }
       break;
@@ -826,36 +852,47 @@ void VFPEquationSolver<flags, dim>::setup_system() {
   TimerOutput::Scope timer_section(timer, "FE system");
 
   dof_handler.distribute_dofs(fe);
-  const unsigned int n_dofs = dof_handler.n_dofs();
-  std::cout << "The degrees of freedom were distributed: \n"
-            << "	Number of degrees of freedom: " << n_dofs << "\n";
-
-  DynamicSparsityPattern dsp(n_dofs);
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-  sparsity_pattern.copy_from(dsp);
-
-  dg_matrix.reinit(sparsity_pattern);
-  // NOTE: DealII does not allow to use different sparsity patterns for
-  // matrices, which you would like to add. Even though the the mass matrix
-  // differs from the dg matrix.
-  mass_matrix.reinit(sparsity_pattern);
-  system_matrix.reinit(sparsity_pattern);
+  locally_owned_dofs = dof_handler.locally_owned_dofs();
+  locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
 
   // Vectors
-  current_solution.reinit(n_dofs);
-  previous_solution.reinit(n_dofs);
-  system_rhs.reinit(n_dofs);
+  locally_relevant_current_solution.reinit(
+      locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
+  locally_relevant_previous_solution.reinit(
+      locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
+  system_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
+  constraints.clear();
+  constraints.reinit(locally_relevant_dofs);
   // This is an rather obscure line. I do not know why I need it. (cf. example
   // 23)
   constraints.close();
+
+  // const unsigned int n_dofs = dof_handler.n_dofs();
+  // pcout << "The degrees of freedom were distributed: \n"
+  //           << "	Number of degrees of freedom: " << n_dofs << "\n";
+
+  DynamicSparsityPattern dsp(locally_relevant_dofs);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  SparsityTools::distribute_sparsity_pattern(
+      dsp, locally_owned_dofs, mpi_communicator, locally_relevant_dofs);
+
+  dg_matrix.reinit(locally_owned_dofs, locally_owned_dofs, dsp,
+                   mpi_communicator);
+  // NOTE: DealII does not allow to use different sparsity patterns for
+  // matrices, which you would like to add. Even though the the mass matrix
+  // differs from the dg matrix.
+  mass_matrix.reinit(locally_owned_dofs, locally_owned_dofs, dsp,
+                     mpi_communicator);
+  system_matrix.reinit(locally_owned_dofs, locally_owned_dofs, dsp,
+                       mpi_communicator);
 }
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
   TimerOutput::Scope timer_section(timer, "Mass matrix");
 
-  std::cout << "The mass matrix is assembled. \n";
+  pcout << "The mass matrix is assembled. \n";
   FEValues<dim> fe_v(
       mapping, fe, quadrature,
       update_values | update_quadrature_points | update_JxW_values);
@@ -867,38 +904,43 @@ void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
   std::vector<types::global_dof_index> local_dof_indices(n_dofs);
 
   for (const auto &cell : dof_handler.active_cell_iterators()) {
-    cell_mass_matrix = 0;
-    fe_v.reinit(cell);
+    if (cell->is_locally_owned()) {
+      cell_mass_matrix = 0;
+      fe_v.reinit(cell);
 
-    const std::vector<double> &JxW = fe_v.get_JxW_values();
+      const std::vector<double> &JxW = fe_v.get_JxW_values();
 
-    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
-      for (unsigned int i : fe_v.dof_indices()) {
-        const unsigned int component_i = fe.system_to_component_index(i).first;
-        for (unsigned int j : fe_v.dof_indices()) {
-          const unsigned int component_j =
-              fe.system_to_component_index(j).first;
-          // mass matrix
-          cell_mass_matrix(i, j) +=
-              (component_i == component_j
-                   ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
-                   : 0) *
-              JxW[q_index];
+      for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+        for (unsigned int i : fe_v.dof_indices()) {
+          const unsigned int component_i =
+              fe.system_to_component_index(i).first;
+          for (unsigned int j : fe_v.dof_indices()) {
+            const unsigned int component_j =
+                fe.system_to_component_index(j).first;
+            // mass matrix
+            cell_mass_matrix(i, j) +=
+                (component_i == component_j ? fe_v.shape_value(i, q_index) *
+                                                  fe_v.shape_value(j, q_index)
+                                            : 0) *
+                JxW[q_index];
+          }
         }
       }
-    }
-    cell->get_dof_indices(local_dof_indices);
+      cell->get_dof_indices(local_dof_indices);
 
-    constraints.distribute_local_to_global(cell_mass_matrix, local_dof_indices,
-                                           mass_matrix);
+      constraints.distribute_local_to_global(cell_mass_matrix,
+                                             local_dof_indices, mass_matrix);
+    }
   }
+  mass_matrix.compress(VectorOperation::add);
 }
+
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     unsigned int evaluation_time) {
   TimerOutput::Scope timer_section(timer, "DG matrix");
 
-  std::cout << "The DG matrix is assembled. \n";
+  pcout << "The DG matrix is assembled. \n";
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -990,7 +1032,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           }
           if constexpr ((flags & TermFlags::magnetic) != TermFlags::none) {
             // Omega_x
-            // std::cout << "B_x: " << magnetic_field_values[q_index][0] <<
+            // pcout << "B_x: " << magnetic_field_values[q_index][0] <<
             // "\n";
             copy_data.cell_dg_matrix(i, j) +=
                 fe_v.shape_value(i, q_index) *
@@ -998,7 +1040,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                 Omega_x(component_i, component_j) *
                 fe_v.shape_value(j, q_index) * JxW[q_index];
             // Omega_y
-            // std::cout << "B_y: " << magnetic_field_values[q_index][1] <<
+            // pcout << "B_y: " << magnetic_field_values[q_index][1] <<
             // "\n";
             copy_data.cell_dg_matrix(i, j) +=
                 fe_v.shape_value(i, q_index) *
@@ -1006,7 +1048,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                 Omega_y(component_i, component_j) *
                 fe_v.shape_value(j, q_index) * JxW[q_index];
             // Omega_z
-            // std::cout << "B_z: " << magnetic_field_values[q_index][2] <<
+            // pcout << "B_z: " << magnetic_field_values[q_index][2] <<
             // "\n";
             copy_data.cell_dg_matrix(i, j) +=
                 fe_v.shape_value(i, q_index) *
@@ -1276,6 +1318,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                             MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker, face_worker);
+  dg_matrix.compress(VectorOperation::add);
 }
 
 template <TermFlags flags, int dim>
@@ -1293,36 +1336,51 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
   std::vector<types::global_dof_index> local_dof_indices(n_dofs);
 
   for (const auto &cell : dof_handler.active_cell_iterators()) {
-    cell_rhs = 0;
-    fe_v.reinit(cell);
+    if (cell->is_locally_owned()) {
+      cell_rhs = 0;
+      fe_v.reinit(cell);
 
-    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double> &JxW = fe_v.get_JxW_values();
+      const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+      const std::vector<double> &JxW = fe_v.get_JxW_values();
 
-    // Initial values
-    InitialValueFunction<dim> initial_value_function(expansion_order);
-    std::vector<Vector<double>> initial_values(
-        q_points.size(), Vector<double>(num_exp_coefficients));
-    initial_value_function.vector_value_list(q_points, initial_values);
+      // Initial values
+      InitialValueFunction<dim> initial_value_function(expansion_order);
+      std::vector<Vector<double>> initial_values(
+          q_points.size(), Vector<double>(num_exp_coefficients));
+      initial_value_function.vector_value_list(q_points, initial_values);
 
-    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
-      for (unsigned int i : fe_v.dof_indices()) {
-        const unsigned int component_i = fe.system_to_component_index(i).first;
-        cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                       initial_values[q_index][component_i] * JxW[q_index];
+      for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+        for (unsigned int i : fe_v.dof_indices()) {
+          const unsigned int component_i =
+              fe.system_to_component_index(i).first;
+          cell_rhs(i) += fe_v.shape_value(i, q_index) *
+                         initial_values[q_index][component_i] * JxW[q_index];
+        }
       }
+      cell->get_dof_indices(local_dof_indices);
+
+      constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
+                                             system_rhs);
     }
-    cell->get_dof_indices(local_dof_indices);
-
-    constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
-                                           system_rhs);
   }
-
+  system_rhs.compress(VectorOperation::add);
   // Solve the system
+  PETScWrappers::MPI::Vector completely_distributed_solution(locally_owned_dofs,
+                                                             mpi_communicator);
   SolverControl solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> cg(solver_control);
-  cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
+  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
 
+  // PETScWrappers::PreconditionBoomerAMG preconditioner;
+  // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
+  // data.symmetric_operator = true;
+  PETScWrappers::PreconditionNone preconditioner;
+  preconditioner.initialize(mass_matrix);
+  cg.solve(mass_matrix, completely_distributed_solution, system_rhs,
+           preconditioner);
+  pcout << "	Solved in " << solver_control.last_step() << " iterations."
+        << std::endl;
+  constraints.distribute(completely_distributed_solution);
+  locally_relevant_previous_solution = completely_distributed_solution;
   // DataOut<dim> data_out;
   // data_out.attach_dof_handler(dof_handler);
   // data_out.add_data_vector(previous_solution, "projection");
@@ -1334,93 +1392,98 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
   system_rhs = 0;
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
-  SolverControl solver_control(1000, 1e-12);
-  SolverRichardson<Vector<double>> solver(solver_control);
+// template <TermFlags flags, int dim>
+// void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
+//   SolverControl solver_control(1000, 1e-12);
+//   SolverRichardson<Vector<double>> solver(solver_control);
 
-  PreconditionBlockSSOR<SparseMatrix<double>> preconditioner;
-  preconditioner.initialize(system_matrix, fe.n_dofs_per_cell());
-  solver.solve(system_matrix, current_solution, system_rhs, preconditioner);
+//   PreconditionBlockSSOR<SparseMatrix<double>> preconditioner;
+//   preconditioner.initialize(system_matrix, fe.n_dofs_per_cell());
+//   solver.solve(system_matrix, locally_relevant_current_solution, system_rhs,
+//                preconditioner);
 
-  std::cout << "	Solver converged in " << solver_control.last_step()
-            << " iterations."
-            << "\n";
-}
+//   pcout << "	Solver converged in " << solver_control.last_step()
+//         << " iterations."
+//         << "\n";
+// }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::theta_method(double theta) {
-  TimerOutput::Scope timer_section(timer, "Theta method");
+// template <TermFlags flags, int dim>
+// void VFPEquationSolver<flags, dim>::theta_method(double theta) {
+//   TimerOutput::Scope timer_section(timer, "Theta method");
 
-  Vector<double> tmp(current_solution.size());
+//   Vector<double> tmp(locally_relevant_current_solution.size());
 
-  mass_matrix.vmult(system_rhs, previous_solution);
-  dg_matrix.vmult(tmp, previous_solution);
-  system_rhs.add(-time_step * (1 - theta), tmp);
+//   mass_matrix.vmult(system_rhs, locally_relevant_previous_solution);
+//   dg_matrix.vmult(tmp, locally_relevant_previous_solution);
+//   system_rhs.add(-time_step * (1 - theta), tmp);
 
-  // Since the the dg_matrix depends on the velocity field and the the
-  // velocity field may depend on time, it needs to reassembled every time
-  // step. This is not true for the mass matrix ( but it may if the grid
-  // adapts after a specified amount of time steps)
+//   // Since the the dg_matrix depends on the velocity field and the the
+//   // velocity field may depend on time, it needs to reassembled every time
+//   // step. This is not true for the mass matrix ( but it may if the grid
+//   // adapts after a specified amount of time steps)
 
-  // mass_matrix = 0; dg_matrix = 0;
-  // assemble_system(time + time_step);
+//   // mass_matrix = 0; dg_matrix = 0;
+//   // assemble_system(time + time_step);
 
-  // NOTE: Currently that is not necessary, because the velocity field is
-  // constant. And I should check if I cannot update the system matrix without
-  // reassembling in each time step.
+//   // NOTE: Currently that is not necessary, because the velocity field is
+//   // constant. And I should check if I cannot update the system matrix
+//   without
+//   // reassembling in each time step.
 
-  system_matrix.copy_from(mass_matrix);
-  system_matrix.add(time_step * theta, dg_matrix);
-  theta_method_solve_system();
-}
+//   system_matrix.copy_from(mass_matrix);
+//   system_matrix.add(time_step * theta, dg_matrix);
+//   theta_method_solve_system();
+// }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
-  TimerOutput::Scope timer_section(timer, "ERK4");
+// template <TermFlags flags, int dim>
+// void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
+//   TimerOutput::Scope timer_section(timer, "ERK4");
 
-  // ERK 4
-  // Butcher's array
-  Vector<double> a({0.5, 0.5, 1.});
-  Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
-  // NOTE: c is only necessary if the velocity field and the magnetic field
-  // are time dependent.
-  // Vector<double> c({0., 0.5, 0.5, 1.});
+//   // ERK 4
+//   // Butcher's array
+//   Vector<double> a({0.5, 0.5, 1.});
+//   Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
+//   // NOTE: c is only necessary if the velocity field and the magnetic field
+//   // are time dependent.
+//   // Vector<double> c({0., 0.5, 0.5, 1.});
 
-  // Allocate storage for the four stages
-  std::vector<Vector<double>> k(4, Vector<double>(current_solution.size()));
-  // The mass matrix needs to be "inverted" in every stage
-  SolverControl solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> cg(solver_control);
-  // k_0
-  dg_matrix.vmult(system_rhs, previous_solution);
-  cg.solve(mass_matrix, k[0], system_rhs, PreconditionIdentity());
-  std::cout << "	Stage s: " << 0 << "	Solver converged in "
-            << solver_control.last_step() << " iterations."
-            << "\n";
-  current_solution.add(b[0] * time_step, k[0]);
+//   // Allocate storage for the four stages
+//   // PETScWrappers::MPI::Vector k0;
+//   std::vector<Vector<double>> k(
+//       4, Vector<double>(locally_relevant_current_solution.size()));
+//   // The mass matrix needs to be "inverted" in every stage
+//   SolverControl solver_control(1000, 1e-12);
+//   SolverCG<Vector<double>> cg(solver_control);
+//   // k_0
+//   dg_matrix.vmult(system_rhs, locally_relevant_previous_solution);
+//   cg.solve(mass_matrix, k[0], system_rhs, PreconditionIdentity());
+//   pcout << "	Stage s: " << 0 << "	Solver converged in "
+//         << solver_control.last_step() << " iterations."
+//         << "\n";
+//   locally_relevant_current_solution.add(b[0] * time_step, k[0]);
 
-  Vector<double> temp(current_solution.size());
-  for (unsigned int s = 1; s < 4; ++s) {
-    // NOTE: It would be nessary to reassemble the dg matrix twice for
-    // (for half a time step and a whole time step) if the velocity field and
-    // the magnetic field were time dependent.
-    temp.add(-1., previous_solution, -a[s - 1] * time_step, k[s - 1]);
-    // assemble_system(time + c[s]*time_step);
-    dg_matrix.vmult(system_rhs, temp);
-    cg.solve(mass_matrix, k[s], system_rhs, PreconditionIdentity());
-    std::cout << "	Stage s: " << s << "	Solver converged in "
-              << solver_control.last_step() << " iterations."
-              << "\n";
+//   Vector<double> temp(locally_relevant_current_solution.size());
+//   for (unsigned int s = 1; s < 4; ++s) {
+//     // NOTE: It would be nessary to reassemble the dg matrix twice for
+//     // (for half a time step and a whole time step) if the velocity field and
+//     // the magnetic field were time dependent.
+//     temp.add(-1., locally_relevant_previous_solution, -a[s - 1] * time_step,
+//              k[s - 1]);
+//     // assemble_system(time + c[s]*time_step);
+//     dg_matrix.vmult(system_rhs, temp);
+//     cg.solve(mass_matrix, k[s], system_rhs, PreconditionIdentity());
+//     pcout << "	Stage s: " << s << "	Solver converged in "
+//           << solver_control.last_step() << " iterations."
+//           << "\n";
 
-    current_solution.add(b[s] * time_step, k[s]);
+//     locally_relevant_current_solution.add(b[s] * time_step, k[s]);
 
-    // empty temp vector
-    temp = 0;
-  }
-  // NOTE: It is not necessary to assemble the matrix again, because the last
-  // element of the c vector is 1. (see low_storage_erk())
-}
+//     // empty temp vector
+//     temp = 0;
+//   }
+//   // NOTE: It is not necessary to assemble the matrix again, because the last
+//   // element of the c vector is 1. (see low_storage_erk())
+// }
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
@@ -1441,22 +1504,30 @@ void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
   //      2006345519317. / 3224310063776, 2802321613138. / 2924317926251});
 
   // The mass matrix needs to be "inverted" in every stage
+  // Solve the system
   SolverControl solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> cg(solver_control);
+  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
 
-  Vector<double> k(current_solution.size());
-  Vector<double> temp(current_solution.size());
+  // PETScWrappers::PreconditionBoomerAMG preconditioner;
+  // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
+  // data.symmetric_operator = true;
+  PETScWrappers::PreconditionNone preconditioner;
+  preconditioner.initialize(mass_matrix);
+  PETScWrappers::MPI::Vector k(locally_owned_dofs, mpi_communicator);
+
+  PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
+
   for (unsigned int s = 0; s < 5; ++s) {
     // assemble_system(time + c[s]*time_step);
-    dg_matrix.vmult(system_rhs, current_solution);
-    cg.solve(mass_matrix, temp, system_rhs, PreconditionIdentity());
-    std::cout << "	Stage s: " << s << "	Solver converged in "
-              << solver_control.last_step() << " iterations."
-              << "\n";
-
+    dg_matrix.vmult(system_rhs, locally_relevant_current_solution);
+    cg.solve(mass_matrix, temp, system_rhs, preconditioner);
+    pcout << "	Stage s: " << s << "	Solver converged in "
+          << solver_control.last_step() << " iterations."
+          << "\n";
     k.sadd(a[s], -time_step, temp);
-    current_solution.add(b[s], k);
+    locally_relevant_current_solution.add(b[s], k);
   }
+  constraints.distribute(locally_relevant_current_solution);
   // assemble_system(time + time_step)
 }
 
@@ -1473,52 +1544,57 @@ void VFPEquationSolver<flags, dim>::output_results() const {
                          std::to_string(lms[1]) + std::to_string(lms[2]);
   }
 
-  data_out.add_data_vector(current_solution, component_names);
-
+  data_out.add_data_vector(locally_relevant_current_solution, component_names);
+  Vector<float> subdomain(triangulation.n_active_cells());
+  for (unsigned int i = 0; i < subdomain.size(); ++i)
+    subdomain(i) = triangulation.locally_owned_subdomain();
+  data_out.add_data_vector(subdomain, "subdomain");
   data_out.build_patches();
-  const std::string file_path = "results/solution" +
-                                Utilities::int_to_string(time_step_number, 3) +
-                                ".vtu";
+  // const std::string file_path = "results/solution" +
+  //                               Utilities::int_to_string(time_step_number, 3)
+  //                               +
+  //                               ".vtu";
 
   DataOutBase::VtkFlags vtk_flags;
   vtk_flags.compression_level = DataOutBase::VtkFlags::best_speed;
   data_out.set_flags(vtk_flags);
 
-  std::ofstream output(file_path);
-  data_out.write_vtu(output);
+  // std::ofstream output(file_path);
+  data_out.write_vtu_with_pvtu_record("./results", "solution", time_step_number,
+                                      mpi_communicator, 3, 8);
 }
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::output_compile_time_parameters() const {
-  std::cout << "Compile-time parameters: "
-            << "\n";
-  std::cout << "	" << flags;
-  std::cout << "	Dimension: " << dim << "\n\n";
+  pcout << "Compile-time parameters: "
+        << "\n";
+  // pcout << "	" << flags;
+  pcout << "	Dimension: " << dim << "\n\n";
 }
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::output_index_order() const {
-  std::cout << "Ordering of the lms indices: "
-            << "\n";
+  pcout << "Ordering of the lms indices: "
+        << "\n";
 
   for (std::array<unsigned int, 3> lms : lms_indices)
-    std::cout << "	" << lms[0] << lms[1] << lms[2] << "\n";
-  std::cout << "\n";
+    pcout << "	" << lms[0] << lms[1] << lms[2] << "\n";
+  pcout << "\n";
 }
 }  // namespace vfp_equation_solver
 
-int main() {
+int main(int argc, char *argv[]) {
   try {
     using namespace vfp_equation_solver;
-
+    Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
     constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
     parameter_reader.read_parameters("vfp-equation.prm");
-    std::cout << "Run-time parameters: "
-              << "\n";
-    parameter_handler.print_parameters(std::cout, ParameterHandler::ShortPRM);
+    // pcout << "Run-time parameters: "
+    //       << "\n";
+    // parameter_handler.print_parameters(pcout, ParameterHandler::ShortPRM);
     int expansion_order;
     parameter_handler.enter_subsection("Expansion");
     { expansion_order = parameter_handler.get_integer("Expansion order"); }
