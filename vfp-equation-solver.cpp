@@ -5,6 +5,7 @@
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/base/types.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
@@ -457,6 +458,7 @@ class VFPEquationSolver {
 
   // Map between i and l,m,s (implemented in constructor)
   std::vector<std::array<unsigned int, 3>> lms_indices;
+  TimerOutput timer;
 };
 
 template <TermFlags flags, int dim>
@@ -472,7 +474,8 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
       expansion_order{order},
       num_exp_coefficients{
           static_cast<unsigned int>((order + 1) * (order + 1))},
-      lms_indices((order + 1) * (order + 1)) {
+      lms_indices((order + 1) * (order + 1)),
+      timer(std::cout, TimerOutput::summary, TimerOutput::wall_times) {
   // Create the index order
   for (int s = 0, idx = 0; s <= 1; ++s) {
     for (int l = 0; l <= expansion_order; ++l) {
@@ -531,9 +534,12 @@ void VFPEquationSolver<flags, dim>::run() {
     // theta_method(0.5);
     // explicit_runge_kutta();
     low_storage_explicit_runge_kutta();
-
-    output_results();
-
+    // NOTE: I cannot create TimerOutput::Scope inside output_results(), because
+    // it is declared const.
+    {
+      TimerOutput::Scope timer_section(timer, "Output");
+      output_results();
+    }
     // Update solution
     previous_solution = current_solution;
   }
@@ -542,6 +548,8 @@ void VFPEquationSolver<flags, dim>::run() {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::make_grid() {
+  TimerOutput::Scope timer_section(timer, "Grid setup");
+
   GridGenerator::hyper_cube(triangulation);
   triangulation.refine_global(num_refinements);
 
@@ -557,6 +565,8 @@ void VFPEquationSolver<flags, dim>::make_grid() {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::setup_pde_system() {
+  TimerOutput::Scope timer_section(timer, "PDE system");
+
   Ax.reinit(num_exp_coefficients);
   Ay.reinit(num_exp_coefficients);
   Omega_x.reinit(num_exp_coefficients);
@@ -700,6 +710,8 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
     const Point<dim> &p, const Coordinate coordinate,
     const FluxDirection flux_direction) {
+  TimerOutput::Scope timer_section(timer, "Upwind flux");
+
   Vector<double> eigenvalues(num_exp_coefficients);
   FullMatrix<double> eigenvectors(num_exp_coefficients);
   // The matrix gets destroyed, when the eigenvalues are computed. This requires
@@ -811,6 +823,8 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::setup_system() {
+  TimerOutput::Scope timer_section(timer, "FE system");
+
   dof_handler.distribute_dofs(fe);
   const unsigned int n_dofs = dof_handler.n_dofs();
   std::cout << "The degrees of freedom were distributed: \n"
@@ -839,6 +853,9 @@ void VFPEquationSolver<flags, dim>::setup_system() {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
+  TimerOutput::Scope timer_section(timer, "Mass matrix");
+
+  std::cout << "The mass matrix is assembled. \n";
   FEValues<dim> fe_v(
       mapping, fe, quadrature,
       update_values | update_quadrature_points | update_JxW_values);
@@ -1355,7 +1372,9 @@ void VFPEquationSolver<flags, dim>::theta_method(double theta) {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
-  // RK 4
+  TimerOutput::Scope timer_section(timer, "ERK4");
+
+  // ERK 4
   // Butcher's array
   Vector<double> a({0.5, 0.5, 1.});
   Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
@@ -1400,6 +1419,8 @@ void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
+  TimerOutput::Scope timer_section(timer, "LSERK");
+
   // see Hesthaven p.64
   Vector<double> a(
       {0., -567301805773. / 1357537059087, -2404267990393. / 2016746695238,
