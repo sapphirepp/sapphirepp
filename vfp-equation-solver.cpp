@@ -893,65 +893,12 @@ void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
                                            mass_matrix);
   }
 }
-
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::project_initial_condition() {
-  // Create right hand side
-  FEValues<dim> fe_v(
-      mapping, fe, quadrature,
-      update_values | update_quadrature_points | update_JxW_values);
-
-  const unsigned int n_dofs = fe.n_dofs_per_cell();
-  Vector<double> cell_rhs(n_dofs);
-
-  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
-
-  for (const auto &cell : dof_handler.active_cell_iterators()) {
-    cell_rhs = 0;
-    fe_v.reinit(cell);
-
-    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double> &JxW = fe_v.get_JxW_values();
-
-    // Initial values
-    InitialValueFunction<dim> initial_value_function(expansion_order);
-    std::vector<Vector<double>> initial_values(
-        q_points.size(), Vector<double>(num_exp_coefficients));
-    initial_value_function.vector_value_list(q_points, initial_values);
-
-    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
-      for (unsigned int i : fe_v.dof_indices()) {
-        const unsigned int component_i = fe.system_to_component_index(i).first;
-        cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                       initial_values[q_index][component_i] * JxW[q_index];
-      }
-    }
-    cell->get_dof_indices(local_dof_indices);
-
-    constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
-                                           system_rhs);
-  }
-
-  // Solve the system
-  SolverControl solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> cg(solver_control);
-  cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
-
-  // DataOut<dim> data_out;
-  // data_out.attach_dof_handler(dof_handler);
-  // data_out.add_data_vector(previous_solution, "projection");
-  // data_out.build_patches();
-  // std::ofstream output("projection.vtu");
-  // data_out.write_vtu(output);
-
-  // Reset system RHS
-  system_rhs = 0;
-}
-
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     unsigned int evaluation_time) {
-  std::cout << "The linear system of equations is assembled. \n";
+  TimerOutput::Scope timer_section(timer, "DG matrix");
+
+  std::cout << "The DG matrix is assembled. \n";
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -1332,6 +1279,62 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
 }
 
 template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::project_initial_condition() {
+  TimerOutput::Scope timer_section(timer, "Intial condition");
+
+  // Create right hand side
+  FEValues<dim> fe_v(
+      mapping, fe, quadrature,
+      update_values | update_quadrature_points | update_JxW_values);
+
+  const unsigned int n_dofs = fe.n_dofs_per_cell();
+  Vector<double> cell_rhs(n_dofs);
+
+  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
+
+  for (const auto &cell : dof_handler.active_cell_iterators()) {
+    cell_rhs = 0;
+    fe_v.reinit(cell);
+
+    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+    // Initial values
+    InitialValueFunction<dim> initial_value_function(expansion_order);
+    std::vector<Vector<double>> initial_values(
+        q_points.size(), Vector<double>(num_exp_coefficients));
+    initial_value_function.vector_value_list(q_points, initial_values);
+
+    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+      for (unsigned int i : fe_v.dof_indices()) {
+        const unsigned int component_i = fe.system_to_component_index(i).first;
+        cell_rhs(i) += fe_v.shape_value(i, q_index) *
+                       initial_values[q_index][component_i] * JxW[q_index];
+      }
+    }
+    cell->get_dof_indices(local_dof_indices);
+
+    constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
+                                           system_rhs);
+  }
+
+  // Solve the system
+  SolverControl solver_control(1000, 1e-12);
+  SolverCG<Vector<double>> cg(solver_control);
+  cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
+
+  // DataOut<dim> data_out;
+  // data_out.attach_dof_handler(dof_handler);
+  // data_out.add_data_vector(previous_solution, "projection");
+  // data_out.build_patches();
+  // std::ofstream output("projection.vtu");
+  // data_out.write_vtu(output);
+
+  // Reset system RHS
+  system_rhs = 0;
+}
+
+template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
   SolverControl solver_control(1000, 1e-12);
   SolverRichardson<Vector<double>> solver(solver_control);
@@ -1347,6 +1350,8 @@ void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::theta_method(double theta) {
+  TimerOutput::Scope timer_section(timer, "Theta method");
+
   Vector<double> tmp(current_solution.size());
 
   mass_matrix.vmult(system_rhs, previous_solution);
