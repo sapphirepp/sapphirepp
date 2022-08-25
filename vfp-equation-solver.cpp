@@ -383,7 +383,7 @@ class VFPEquationSolver {
   void assemble_dg_matrix(unsigned int evaluation_time);
   void project_initial_condition();
   void theta_method_solve_system();
-  void theta_method();
+  void theta_method(double theta);
   void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
   void output_results() const;
@@ -528,7 +528,7 @@ void VFPEquationSolver<flags, dim>::run() {
     std::cout << "	Time step " << time_step_number << " at t = " << time
               << "\n";
     // Time stepping method
-    // theta_method();
+    // theta_method(0.5);
     // explicit_runge_kutta();
     low_storage_explicit_runge_kutta();
 
@@ -1329,8 +1329,7 @@ void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::theta_method() {
-  const double theta = 0.5;
+void VFPEquationSolver<flags, dim>::theta_method(double theta) {
   Vector<double> tmp(current_solution.size());
 
   mass_matrix.vmult(system_rhs, previous_solution);
