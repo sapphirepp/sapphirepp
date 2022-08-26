@@ -1312,7 +1312,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
 
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
+  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(),
                         cell_worker, copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
                             MeshWorker::assemble_boundary_faces |
