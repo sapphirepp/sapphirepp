@@ -554,22 +554,22 @@ void VFPEquationSolver<flags, dim>::run() {
   time += time_step;
   ++time_step_number;
 
-  // pcout << "The time stepping loop is entered: \n";
-  // for (; time <= final_time; time += time_step, ++time_step_number) {
-  //   pcout << "	Time step " << time_step_number << " at t = " << time << "\n";
-  //   // Time stepping method
-  //   // theta_method(0.5);
-  //   // explicit_runge_kutta();
-  //   low_storage_explicit_runge_kutta();
-  //   // NOTE: I cannot create TimerOutput::Scope inside output_results(), because
-  //   // it is declared const.
-  //   {
-  //     TimerOutput::Scope timer_section(timer, "Output");
-  //     output_results();
-  //   }
-  //   // Update solution
-  //   locally_relevant_previous_solution = locally_relevant_current_solution;
-  // }
+  pcout << "The time stepping loop is entered: \n";
+  for (; time <= final_time; time += time_step, ++time_step_number) {
+    pcout << "	Time step " << time_step_number << " at t = " << time << "\n";
+    // Time stepping method
+    // theta_method(0.5);
+    // explicit_runge_kutta();
+    low_storage_explicit_runge_kutta();
+    // NOTE: I cannot create TimerOutput::Scope inside output_results(), because
+    // it is declared const.
+    {
+      TimerOutput::Scope timer_section(timer, "Output");
+      output_results();
+    }
+    // Update solution
+    locally_relevant_previous_solution = locally_relevant_current_solution;
+  }
   pcout << "The simulation ended. \n";
 }
 
@@ -1316,11 +1316,11 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   MeshWorker::mesh_loop(dof_handler.active_cell_iterators(),
                         cell_worker, copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
-                            MeshWorker::assemble_boundary_faces |
+			MeshWorker::assemble_boundary_faces | MeshWorker::assemble_ghost_faces_both |
                             MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker, face_worker);
   dg_matrix.compress(VectorOperation::add);
-  dg_matrix.print(std::cout);
+  // dg_matrix.print(std::cout);
 }
 
 template <TermFlags flags, int dim>
