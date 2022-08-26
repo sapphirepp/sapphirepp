@@ -1560,7 +1560,7 @@ void VFPEquationSolver<flags, dim>::output_results() const {
   data_out.set_flags(vtk_flags);
 
   // std::ofstream output(file_path);
-  data_out.write_vtu_with_pvtu_record("./results", "solution", time_step_number,
+  data_out.write_vtu_with_pvtu_record("./results/", "solution", time_step_number,
                                       mpi_communicator, 3, 8);
 }
 
