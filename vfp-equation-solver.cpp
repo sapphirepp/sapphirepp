@@ -1323,13 +1323,6 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
   SolverCG<Vector<double>> cg(solver_control);
   cg.solve(mass_matrix, previous_solution, system_rhs, PreconditionIdentity());
 
-  // DataOut<dim> data_out;
-  // data_out.attach_dof_handler(dof_handler);
-  // data_out.add_data_vector(previous_solution, "projection");
-  // data_out.build_patches();
-  // std::ofstream output("projection.vtu");
-  // data_out.write_vtu(output);
-
   // Reset system RHS
   system_rhs = 0;
 }
