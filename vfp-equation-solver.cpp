@@ -41,6 +41,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q1.h>
+#include <deal.II/lac/vector_operation.h>
 #include <deal.II/meshworker/assemble_flags.h>
 #include <deal.II/meshworker/mesh_loop.h>
 #include <deal.II/numerics/data_out.h>
@@ -553,22 +554,22 @@ void VFPEquationSolver<flags, dim>::run() {
   time += time_step;
   ++time_step_number;
 
-  pcout << "The time stepping loop is entered: \n";
-  for (; time <= final_time; time += time_step, ++time_step_number) {
-    pcout << "	Time step " << time_step_number << " at t = " << time << "\n";
-    // Time stepping method
-    // theta_method(0.5);
-    // explicit_runge_kutta();
-    low_storage_explicit_runge_kutta();
-    // NOTE: I cannot create TimerOutput::Scope inside output_results(), because
-    // it is declared const.
-    {
-      TimerOutput::Scope timer_section(timer, "Output");
-      output_results();
-    }
-    // Update solution
-    locally_relevant_previous_solution = locally_relevant_current_solution;
-  }
+  // pcout << "The time stepping loop is entered: \n";
+  // for (; time <= final_time; time += time_step, ++time_step_number) {
+  //   pcout << "	Time step " << time_step_number << " at t = " << time << "\n";
+  //   // Time stepping method
+  //   // theta_method(0.5);
+  //   // explicit_runge_kutta();
+  //   low_storage_explicit_runge_kutta();
+  //   // NOTE: I cannot create TimerOutput::Scope inside output_results(), because
+  //   // it is declared const.
+  //   {
+  //     TimerOutput::Scope timer_section(timer, "Output");
+  //     output_results();
+  //   }
+  //   // Update solution
+  //   locally_relevant_previous_solution = locally_relevant_current_solution;
+  // }
   pcout << "The simulation ended. \n";
 }
 
@@ -1319,6 +1320,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                             MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker, face_worker);
   dg_matrix.compress(VectorOperation::add);
+  dg_matrix.print(std::cout);
 }
 
 template <TermFlags flags, int dim>
@@ -1381,12 +1383,6 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
         << std::endl;
   constraints.distribute(completely_distributed_solution);
   locally_relevant_previous_solution = completely_distributed_solution;
-  // DataOut<dim> data_out;
-  // data_out.attach_dof_handler(dof_handler);
-  // data_out.add_data_vector(previous_solution, "projection");
-  // data_out.build_patches();
-  // std::ofstream output("projection.vtu");
-  // data_out.write_vtu(output);
 
   // Reset system RHS
   system_rhs = 0;
@@ -1507,6 +1503,15 @@ void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
   // Solve the system
   SolverControl solver_control(1000, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  // NOTE: The locally_relevant_current_solution is a "ghosted" vector and it
+  // cannot be written to. It is necessary to create a
+  // completely_distributed_vector (cf. project_initial_condition), i.e. a
+  // vector does not contain ghost cells. We extract the locally owned part with
+  // the equal sign operator.
+  PETScWrappers::MPI::Vector locally_owned_current_solution(locally_owned_dofs,
+                                                            mpi_communicator);
+  locally_owned_current_solution = locally_relevant_current_solution;
+  // constraints.set_zero(locally_owned_current_solution);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
   // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
@@ -1514,20 +1519,22 @@ void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
   PETScWrappers::MPI::Vector k(locally_owned_dofs, mpi_communicator);
-
   PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
 
   for (unsigned int s = 0; s < 5; ++s) {
     // assemble_system(time + c[s]*time_step);
-    dg_matrix.vmult(system_rhs, locally_relevant_current_solution);
+    dg_matrix.vmult(system_rhs, locally_owned_current_solution);
     cg.solve(mass_matrix, temp, system_rhs, preconditioner);
     pcout << "	Stage s: " << s << "	Solver converged in "
           << solver_control.last_step() << " iterations."
           << "\n";
     k.sadd(a[s], -time_step, temp);
-    locally_relevant_current_solution.add(b[s], k);
+    locally_owned_current_solution.add(b[s], k);
   }
-  constraints.distribute(locally_relevant_current_solution);
+
+  locally_relevant_current_solution = locally_owned_current_solution;
+
+  // constraints.distribute(locally_relevant_current_solution);
   // assemble_system(time + time_step)
 }
 
@@ -1560,8 +1567,8 @@ void VFPEquationSolver<flags, dim>::output_results() const {
   data_out.set_flags(vtk_flags);
 
   // std::ofstream output(file_path);
-  data_out.write_vtu_with_pvtu_record("./results/", "solution", time_step_number,
-                                      mpi_communicator, 3, 8);
+  data_out.write_vtu_with_pvtu_record("./results/", "solution",
+                                      time_step_number, mpi_communicator, 3, 8);
 }
 
 template <TermFlags flags, int dim>
