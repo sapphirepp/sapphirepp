@@ -54,7 +54,7 @@ class VelocityField : public TensorFunction<1, dim> {
     (void)point;  // constant velocity field (suppresses the
                   // compiler warning unused variable)
     // constant velocity
-    Tensor<1, dim> velocity({u_y});
+    Tensor<1, dim> velocity({u_x});
     return velocity;
   }
 
@@ -67,7 +67,7 @@ class VelocityField : public TensorFunction<1, dim> {
   }
 
  private:
-  double u_y = 0.1;
+  double u_x = 0.1;
 };
 
 enum TermFlags { advection = 1 << 0, reaction = 1 << 1 };
@@ -513,12 +513,12 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
   // to copy it
   LAPACKFullMatrix<double> CopyA;
   switch (coordinate) {
-    /* case Coordinate::x: */
-    /*   CopyA = Ax; */
-    /*   break; */
-    case Coordinate::y:
-      CopyA = Ay;
+    case Coordinate::x:
+      CopyA = Ax;
       break;
+    // case Coordinate::y:
+    //   CopyA = Ay;
+    //   break;
   }
   CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
                                       eigenvectors);
@@ -570,42 +570,42 @@ void VFPEquationSolver<flags, max_degree, dim>::prepare_upwind_fluxes(
 
   // Compute the flux matrices
   switch (coordinate) {
-    /* case Coordinate::x: */
-    /*   switch (flux_direction) { */
-    /*     case FluxDirection::positive: */
-    /*       pi_x_positive.reinit(num_modes, num_modes); */
-    /*       pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors, */
-    /*                                    false, true); */
-    /* 	  std::cout << "pi_x_positive: " << "\n"; */
-    /*       pi_x_positive.print_formatted(std::cout); */
-    /*       break; */
-    /*     case FluxDirection::negative: */
-    /*       pi_x_negative.reinit(num_modes, num_modes); */
-    /*       pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors, */
-    /*                                    false, true); */
-    /* 	  std::cout << "pi_x_negative: " << "\n"; */
-    /*       pi_x_negative.print_formatted(std::cout); */
-    /*       break; */
-    /*   } */
-    /*   break; */
-    case Coordinate::y:
+    case Coordinate::x:
       switch (flux_direction) {
         case FluxDirection::positive:
-          pi_y_positive.reinit(num_modes, num_modes);
-          pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
+          pi_x_positive.reinit(num_modes, num_modes);
+          pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_y_positive: " << "\n";
-          pi_y_positive.print_formatted(std::cout);
+	  std::cout << "pi_x_positive: " << "\n";
+          pi_x_positive.print_formatted(std::cout);
           break;
         case FluxDirection::negative:
-          pi_y_negative.reinit(num_modes, num_modes);
-          pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
+          pi_x_negative.reinit(num_modes, num_modes);
+          pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
                                        false, true);
-	  std::cout << "pi_y_negative: " << "\n";
-          pi_y_negative.print_formatted(std::cout);
+	  std::cout << "pi_x_negative: " << "\n";
+          pi_x_negative.print_formatted(std::cout);
           break;
       }
       break;
+   //  case Coordinate::y:
+  //     switch (flux_direction) {
+  //       case FluxDirection::positive:
+  //         pi_y_positive.reinit(num_modes, num_modes);
+  //         pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
+  //                                      false, true);
+  // 	  std::cout << "pi_y_positive: " << "\n";
+  //         pi_y_positive.print_formatted(std::cout);
+  //         break;
+  //       case FluxDirection::negative:
+  //         pi_y_negative.reinit(num_modes, num_modes);
+  //         pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
+  //                                      false, true);
+  // 	  std::cout << "pi_y_negative: " << "\n";
+  //         pi_y_negative.print_formatted(std::cout);
+  //         break;
+  //     }
+  //     break;
   }
 }
 
@@ -786,7 +786,7 @@ void VFPEquationSolver<flags, max_degree, dim>::assemble_system() {
             // strategy, which was used in v0.6.5
             // Ax
             copy_data.cell_dg_matrix(i, j) -=
-                fe_v.shape_grad(i, q_index)[0] * Ay(component_i, component_j) *
+                fe_v.shape_grad(i, q_index)[0] * Ax(component_i, component_j) *
                 fe_v.shape_value(j, q_index) * JxW[q_index];
 	    }
           }
