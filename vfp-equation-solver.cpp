@@ -243,7 +243,9 @@ class VFPEquationSolver {
   LAPACKFullMatrix<double> Ax;
   LAPACKFullMatrix<double> Ay;
   // Magnetic field terms
-  LAPACKFullMatrix<double> Omega;
+  LAPACKFullMatrix<double> Omega_x;
+  LAPACKFullMatrix<double> Omega_y;
+  LAPACKFullMatrix<double> Omega_z;
   // Reaction term
   Vector<double> R;
 
@@ -416,20 +418,28 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
                 Ay.set(i, j,
                        -0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
                                         ((2. * l + 1.) * (2. * l - 1.))));
-              // Omega
+	      // Omega_x
               if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
-                Omega.set(i, j, -1. * m);
-                Omega.set(j, i, 1. * m);  // Omega is anti-symmetric
+                Omega_x.set(i, j, -1. * m);
+                Omega_x.set(j, i, 1. * m);  // Omega matrices are anti-symmetric
               }
+              // Omega_y
               if (l == l_prime && (m + 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                Omega.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
-                Omega.set(j, i, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_y.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_y.set(j, i, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
               }
               if (l == l_prime && (m - 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                Omega.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
-                Omega.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_y.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_y.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+              }
+              // Omega_z
+              if (l == l_prime && (m + 1) == m_prime && s == s_prime) {
+                Omega_z.set(i, j, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+              }
+              if (l == l_prime && (m - 1) == m_prime && s == s_prime) {
+                Omega_z.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // R
               if (l == l_prime && m == m_prime && s == s_prime) {
