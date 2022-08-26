@@ -380,9 +380,11 @@ void VFPEquationSolver<flags, max_degree, dim>::make_grid() {
 
 template <TermFlags flags, int max_degree, int dim>
 void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
-  Ax.reinit(num_modes);
-  Ay.reinit(num_modes);
-  Omega.reinit(num_modes);
+  Ax.reinit(num_modes, num_modes);
+  Ay.reinit(num_modes, num_modes);
+  Omega_x.reinit(num_modes, num_modes);
+  Omega_y.reinit(num_modes, num_modes);
+  Omega_z.reinit(num_modes, num_modes);
   R.reinit(num_modes);
   for (int s = 0; s <= 1; ++s) {
     for (int l = 0, i = 0; l <= max_degree; ++l) {
@@ -459,14 +461,23 @@ void VFPEquationSolver<flags, max_degree, dim>::setup_pde_system() {
   // of them were overwritten. This is an effect of the s loops being outside
   // the l and m loops.
   if (max_degree > 0) {
-    for (unsigned int l = 0; l <= max_degree; ++l) {
+    for (int l = 0; l <= max_degree; ++l) {
       // Special cases for Omega
-      // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
-      Omega(l * (l + 1), l * (l + 1) + 1) =
-          std::sqrt(2) * Omega(l * (l + 1), l * (l + 1) + 1);
-      // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
-      Omega(l * (l + 1) + 1, l * (l + 1)) =
-          std::sqrt(2) * Omega(l * (l + 1) + 1, l * (l + 1));
+      if (l > 0) {
+        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
+        Omega_y(l * (l + 1), l * (l + 1) + 1) =
+            std::sqrt(2) * Omega_y(l * (l + 1), l * (l + 1) + 1);
+        // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
+        Omega_y(l * (l + 1) + 1, l * (l + 1)) =
+            std::sqrt(2) * Omega_y(l * (l + 1) + 1, l * (l + 1));
+
+        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
+        Omega_z(l * (l + 1), l * (l + 1) - 1) =
+            std::sqrt(2) * Omega_z(l * (l + 1), l * (l + 1) - 1);
+        // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
+        Omega_z(l * (l + 1) - 1, l * (l + 1)) =
+            std::sqrt(2) * Omega_z(l * (l + 1) - 1, l * (l + 1));
+      }
       // Special cases for A_y (necessary for every value of l)
       // Above the diagonal
       // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
