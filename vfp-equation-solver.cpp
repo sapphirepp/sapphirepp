@@ -131,7 +131,7 @@ void ParameterReader::read_parameters(const std::string &input_file) {
 
 // the velocity field field
 template <int dim>
-class BackgroundVelocityField : public TensorFunction<1, dim> {
+class BackgroundVelocityField : public Function<dim> {
  public:
   BackgroundVelocityField(ParameterHandler &prm) : parameter_handler(prm) {
     parameter_handler.enter_subsection("Physical parameters");
@@ -141,18 +141,19 @@ class BackgroundVelocityField : public TensorFunction<1, dim> {
     }
     parameter_handler.leave_subsection();
   }
-  virtual Tensor<1, dim> value(const Point<dim> &point) const override {
-    Assert(dim == 2, ExcNotImplemented());
-    (void)point;  // constant velocity field (suppresses the
-                  // compiler warning unused variable)
-    // constant velocity
-    Tensor<1, dim> velocity({u_x, u_y});
-    return velocity;
+
+  virtual void vector_value(const Point<dim> &point,
+                            Vector<double> &value) const override {
+    Assert(dim <= 2, ExcNotImplemented());
+    // constant velocity field
+    (void)point;
+    value[0] = u_x;
+    value[1] = u_y;
   }
 
   void divergence_list(const std::vector<Point<dim>> &points,
                        std::vector<double> &values) {
-    Assert(dim == 2, ExcNotImplemented());
+    Assert(dim <= 2, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
@@ -741,7 +742,9 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
   eigenvalues *= particle_velocity;
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
   BackgroundVelocityField<dim> velocity_field(parameter_handler);
-  double u = velocity_field.value(p)[static_cast<unsigned int>(coordinate)];
+  Vector<double> velocity(2);
+  velocity_field.vector_value(p, velocity);
+  double u = velocity[static_cast<unsigned int>(coordinate)];
   eigenvalues.add(u);
   // std::cout << "eigenvalues plus velocity: "
   //           << "\n";
@@ -908,14 +911,11 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-  BackgroundVelocityField<dim> beta(parameter_handler);
-  beta.set_time(evaluation_time);
+  BackgroundVelocityField<dim> background_velocity_field(parameter_handler);
+  background_velocity_field.set_time(evaluation_time);
   MagneticField<dim> magnetic_field(parameter_handler);
   magnetic_field.set_time(evaluation_time);
   // NOTE: The fluxes also depend on the the background velocity and the
-  // particle velocity.
-  // TODO: Adapt upwind_flux to deal with time.
-
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
                                ScratchData<dim> &scratch_data,
@@ -931,12 +931,13 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
-    std::vector<Tensor<1, dim>> velocities(q_points.size());
-    beta.value_list(q_points, velocities);
+    // NOTE: Second argument constructs empty vectors with 2 values. They are
+    // copied q_points.size() times.
+    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(2));
+    background_velocity_field.vector_value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
-    beta.divergence_list(q_points, div_velocities);
-    // Second argument constructs empty vectors with 3 values. They are copied
-    // q_points.size() times
+    background_velocity_field.divergence_list(q_points, div_velocities);
+
     std::vector<Vector<double>> magnetic_field_values(q_points.size(),
                                                       Vector<double>(3));
     magnetic_field.vector_value_list(q_points, magnetic_field_values);
@@ -1030,12 +1031,16 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
     // NOTE: copy_data is not reinitialised, the cell_workers contribution to
     // the cell_dg_matrix should not be deleted
-    const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
+
+    // NOTE: Currently I do not the velocity field here. The upwind flux may
+    // depend on the quadrature point in the future.
+    // const std::vector<Point<dim>> &q_points =
+    // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
+    // velocities(q_points.size(), Vector<double>(2));
+    // background_velocity_field.vector_value_list(q_points, velocities);
+
     const std::vector<double> &JxW = fe_face_v.get_JxW_values();
     const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
-
-    std::vector<Tensor<1, dim>> velocities(q_points.size());
-    beta.value_list(q_points, velocities);
 
     for (unsigned int i = 0; i < n_facet_dofs; ++i) {
       const unsigned int component_i =
@@ -1124,9 +1129,11 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
 
     const std::vector<double> &JxW = fe_v_face.get_JxW_values();
     const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
-    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
-    std::vector<Tensor<1, dim>> velocities(q_points.size());
-    beta.value_list(q_points, velocities);
+    // NOTE: See comment in the boundary worker
+    // const std::vector<Point<dim>> &q_points =
+    // fe_v_face.get_quadrature_points(); std::vector<Vector<double>>
+    // velocities(q_points.size(), Vector<double>(2));
+    // background_velocity_field.vector_value_list(q_points, velocities);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices()) {
       // cell_dg_matrix_11
