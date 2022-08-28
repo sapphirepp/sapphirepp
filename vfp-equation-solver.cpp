@@ -261,15 +261,19 @@ class InitialValueFunction : public Function<dim> {
   InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
   virtual void vector_value(const Point<dim> &p,
                             Vector<double> &values) const override {
-    Assert(dim == 2, ExcNotImplemented());
+    Assert(dim <= 2, ExcNotImplemented());
     Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
            ExcDimensionMismatch(values.size(),
                                 (expansion_order + 1) * (expansion_order + 1)));
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
-    values[0] =
-        1. *
-        std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) / 0.01));
+    if constexpr (dim == 1)
+      values[0] = 1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.01));
+
+    if constexpr (dim == 2)
+      values[0] =
+          1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
+                          0.01));
 
     // Fill all components with the same values
     // std::fill(
