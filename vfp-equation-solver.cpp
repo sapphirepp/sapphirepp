@@ -1670,7 +1670,9 @@ int main(int argc, char *argv[]) {
   try {
     using namespace vfp_equation_solver;
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-    constexpr TermFlags flags = TermFlags::advection | TermFlags::reaction;
+    constexpr TermFlags flags =
+        TermFlags::advection | TermFlags::magnetic | TermFlags::reaction;
+
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
@@ -1687,7 +1689,7 @@ int main(int argc, char *argv[]) {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 2> vfp_equation_solver(
+    VFPEquationSolver<flags, 1> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
