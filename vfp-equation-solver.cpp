@@ -310,7 +310,7 @@ class InitialValueFunction : public Function<dim> {
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
     if constexpr (dim == 1)
-      values[0] = 1. * std::exp(-(std::pow(p[0] - 0.5, 2) / 0.01));
+      values[0] = 1. * std::exp(-(std::pow(p[0] - 1.5, 2) / 0.01));
 
     if constexpr (dim == 2)
       values[0] =
@@ -620,7 +620,7 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
 
-  GridGenerator::hyper_cube(triangulation);
+  GridGenerator::hyper_cube(triangulation, 0., 3.);
   triangulation.refine_global(num_refinements);
 
   // std::ofstream out("grid.vtk");
