@@ -102,9 +102,9 @@ void ParameterReader::declare_parameters() {
     parameter_handler.declare_entry(
         "Scattering frequency", "1.", Patterns::Double(),
         "Frequency at which energetic particles are scattered.");
-    parameter_handler.declare_entry("Particle velocity", "1.",
-                                    Patterns::Double(),
-                                    "Velocity of the energetic particles");
+    parameter_handler.declare_entry(
+        "Particle energy", "1.", Patterns::Double(),
+        "The energy of the particle in units of 10 Gev");
     parameter_handler.declare_entry(
         "Plasma velocity x-component", ".1", Patterns::Double(),
         "The x-component of the background plasma's velocity");
@@ -127,6 +127,48 @@ void ParameterReader::declare_parameters() {
 void ParameterReader::read_parameters(const std::string &input_file) {
   declare_parameters();
   parameter_handler.parse_input(input_file);
+}
+
+struct ParticleProperties {
+  ParticleProperties(ParameterHandler &prm) : parameter_handler(prm) {
+    parameter_handler.enter_subsection("Physical parameters");
+    {
+      particle_energy = parameter_handler.get_double("Particle energy");
+      particle_velocity = 1. / (beta_0 * gamma_0) *
+                          std::sqrt(gamma_0 * gamma_0 -
+                                    1. / (particle_energy * particle_energy));
+    }
+    parameter_handler.leave_subsection();
+  }
+  // dimensionless units
+  double particle_energy;
+  double particle_velocity;
+  // reference values
+  const double energy_scale = 10;        // GeV
+  const double proton_mass = 0.9382721;  // GeV/c^2
+  const double gamma_0 = energy_scale / proton_mass;
+  const double beta_0 = std::sqrt(1 - 1. / (gamma_0 * gamma_0));
+
+ private:
+  ParameterHandler &parameter_handler;
+};
+
+std::ostream &operator<<(std::ostream &os,
+                         const ParticleProperties &particle_properties) {
+  os << "Particle properties: \n"
+     << " Dimensionless units: \n"
+     << "	Particle energy: " << particle_properties.particle_energy
+     << "\n"
+     << "	Particle velocity: " << particle_properties.particle_velocity
+     << "\n"
+     << " Reference values: \n"
+     << "	Energy scale (E_0): " << particle_properties.energy_scale
+     << " GeV \n"
+     << "	Proton_mass (m_p): " << particle_properties.proton_mass
+     << " GeV/c^2 \n"
+     << "	beta_0: " << particle_properties.beta_0 << "\n"
+     << "	gamma_0: " << particle_properties.gamma_0 << "\n\n";
+  return os;
 }
 
 // the velocity field field
@@ -451,8 +493,8 @@ class VFPEquationSolver {
 
   // scattering frequency
   double scattering_frequency = 1.;
-  // particle velocity
-  double particle_velocity = 1.;
+  // particle
+  ParticleProperties particle_properties;
 
   // Number of refinements
   unsigned int num_refinements = 5;
@@ -479,6 +521,7 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
       expansion_order{order},
       num_exp_coefficients{
           static_cast<unsigned int>((order + 1) * (order + 1))},
+      particle_properties(prm),
       lms_indices((order + 1) * (order + 1)),
       timer(std::cout, TimerOutput::summary, TimerOutput::wall_times) {
   // Create the index order
@@ -504,13 +547,13 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
   parameter_handler.enter_subsection("Physical parameters");
   {
     scattering_frequency = parameter_handler.get_double("Scattering frequency");
-    particle_velocity = parameter_handler.get_double("Particle velocity");
   }
   parameter_handler.leave_subsection();
 }
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::run() {
+  std::cout << particle_properties;
   output_compile_time_parameters();
   output_index_order();
   make_grid();
@@ -738,7 +781,7 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
   std::replace_if(eigenvalues.begin(), eigenvalues.end(),
                   smaller_than_tolerance, 0.);
   // Multiply the eigenvalues with the particle velocity
-  eigenvalues *= particle_velocity;
+  eigenvalues *= particle_properties.particle_velocity;
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
   BackgroundVelocityField<dim> velocity_field(parameter_handler);
   Vector<double> velocity(2);
@@ -976,11 +1019,11 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             // -[partial_x \phi_i * (u_x \delta_ij + Ax_ij)
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
-	      // u_x
+              // u_x
               copy_data.cell_dg_matrix(i, j) -=
                   fe_v.shape_grad(i, q_index)[0] * velocities[q_index][0] *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
-	      // u_y
+              // u_y
               if constexpr (dim == 2)
                 copy_data.cell_dg_matrix(i, j) -=
                     fe_v.shape_grad(i, q_index)[1] * velocities[q_index][1] *
@@ -992,13 +1035,15 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
               // strategy, which was used in v0.6.5
               // Ax
               copy_data.cell_dg_matrix(i, j) -=
-                  fe_v.shape_grad(i, q_index)[0] * particle_velocity *
+                  fe_v.shape_grad(i, q_index)[0] *
+                  particle_properties.particle_velocity *
                   Ax(component_i, component_j) * fe_v.shape_value(j, q_index) *
                   JxW[q_index];
               // Ay
               if constexpr (dim == 2)
                 copy_data.cell_dg_matrix(i, j) -=
-                    fe_v.shape_grad(i, q_index)[1] * particle_velocity *
+                    fe_v.shape_grad(i, q_index)[1] *
+                    particle_properties.particle_velocity *
                     Ay(component_i, component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
             }
