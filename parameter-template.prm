@@ -20,7 +20,7 @@ end
 
 subsection Physical parameters
   set Scattering frequency = 1.
-  set Particle velocity = 1.
+  set Particle energy = 1.
   set Plasma velocity x-component = 0.1
   set Plasma velocity y-component = 0.1
   set Magnetic field x-component = 0.
