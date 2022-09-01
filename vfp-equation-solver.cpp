@@ -596,7 +596,7 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
 
-  GridGenerator::hyper_cube(triangulation, 0., 3.);
+  GridGenerator::hyper_cube(triangulation, -5., 5.);
   triangulation.refine_global(num_refinements);
 
   // std::ofstream out("grid.vtk");
