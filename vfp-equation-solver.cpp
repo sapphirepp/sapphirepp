@@ -894,7 +894,7 @@ void VFPEquationSolver<flags, dim>::setup_system() {
 
   constraints.clear();
   DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
-  
+
   DynamicSparsityPattern dsp(n_dofs);
   DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
   sparsity_pattern.copy_from(dsp);
@@ -1099,72 +1099,72 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     }
   };
   // assemble boundary face terms
-  const auto boundary_worker = [&](const Iterator &cell,
-                                   const unsigned int &face_no,
-                                   ScratchData<dim> &scratch_data,
-                                   CopyData &copy_data) {
-    scratch_data.fe_values_face.reinit(cell, face_no);
-    const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
-    // Every shape function on the cell could contribute to the face integral,
-    // hence n_facet_dofs = n_dofs_per_cell
-    const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
-    // NOTE: copy_data is not reinitialised, the cell_workers contribution to
-    // the cell_dg_matrix should not be deleted
+  // const auto boundary_worker = [&](const Iterator &cell,
+  //                                  const unsigned int &face_no,
+  //                                  ScratchData<dim> &scratch_data,
+  //                                  CopyData &copy_data) {
+  //   scratch_data.fe_values_face.reinit(cell, face_no);
+  //   const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
+  //   // Every shape function on the cell could contribute to the face integral,
+  //   // hence n_facet_dofs = n_dofs_per_cell
+  //   const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
+  //   // NOTE: copy_data is not reinitialised, the cell_workers contribution to
+  //   // the cell_dg_matrix should not be deleted
 
-    // NOTE: Currently I do not the velocity field here. The upwind flux may
-    // depend on the quadrature point in the future.
-    // const std::vector<Point<dim>> &q_points =
-    // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
-    // velocities(q_points.size(), Vector<double>(2));
-    // background_velocity_field.vector_value_list(q_points, velocities);
+  //   // NOTE: Currently I do not the velocity field here. The upwind flux may
+  //   // depend on the quadrature point in the future.
+  //   // const std::vector<Point<dim>> &q_points =
+  //   // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
+  //   // velocities(q_points.size(), Vector<double>(2));
+  //   // background_velocity_field.vector_value_list(q_points, velocities);
 
-    const std::vector<double> &JxW = fe_face_v.get_JxW_values();
-    const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
+  //   const std::vector<double> &JxW = fe_face_v.get_JxW_values();
+  //   const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
 
-    for (unsigned int i = 0; i < n_facet_dofs; ++i) {
-      const unsigned int component_i =
-          fe_face_v.get_fe().system_to_component_index(i).first;
-      for (unsigned int j = 0; j < n_facet_dofs; ++j) {
-        const unsigned int component_j =
-            fe_face_v.get_fe().system_to_component_index(j).first;
-        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-            // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
-            // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
-            // \phi_j
-            // Ax
-            if (normals[q_index][0] == 1.) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                  pi_x_positive(component_i, component_j) *
-                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            if (normals[q_index][0] == -1.) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                  pi_x_negative(component_i, component_j) *
-                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            // Ay
-            if constexpr (dim == 2) {
-              if (normals[q_index][1] == 1.) {
-                copy_data.cell_dg_matrix(i, j) +=
-                    normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-                    pi_y_positive(component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-              }
-              if (normals[q_index][1] == -1.) {
-                copy_data.cell_dg_matrix(i, j) +=
-                    normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-                    pi_y_negative(component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-              }
-            }
-          }
-        }
-      }
-    }
-  };
+  //   for (unsigned int i = 0; i < n_facet_dofs; ++i) {
+  //     const unsigned int component_i =
+  //         fe_face_v.get_fe().system_to_component_index(i).first;
+  //     for (unsigned int j = 0; j < n_facet_dofs; ++j) {
+  //       const unsigned int component_j =
+  //           fe_face_v.get_fe().system_to_component_index(j).first;
+  //       for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+  //         if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
+  //           // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
+  //           // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
+  //           // \phi_j
+  //           // Ax
+  //           if (normals[q_index][0] == 1.) {
+  //             copy_data.cell_dg_matrix(i, j) +=
+  //                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+  //                 pi_x_positive(component_i, component_j) *
+  //                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
+  //           }
+  //           if (normals[q_index][0] == -1.) {
+  //             copy_data.cell_dg_matrix(i, j) +=
+  //                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+  //                 pi_x_negative(component_i, component_j) *
+  //                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
+  //           }
+  //           // Ay
+  //           if constexpr (dim == 2) {
+  //             if (normals[q_index][1] == 1.) {
+  //               copy_data.cell_dg_matrix(i, j) +=
+  //                   normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
+  //                   pi_y_positive(component_i, component_j) *
+  //                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
+  //             }
+  //             if (normals[q_index][1] == -1.) {
+  //               copy_data.cell_dg_matrix(i, j) +=
+  //                   normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
+  //                   pi_y_negative(component_i, component_j) *
+  //                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // };
 
   // assemble interior face terms
   // NOTE: The face worker assumes a grid consisting of rectangular cells with
