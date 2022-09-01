@@ -12,6 +12,7 @@
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
@@ -595,8 +596,8 @@ void VFPEquationSolver<flags, dim>::run() {
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
-
-  GridGenerator::hyper_cube(triangulation, -5., 5.);
+  // Colorize = true means to set boundary ids (default for 1D)
+  GridGenerator::hyper_cube(triangulation, -5., 5., true);
   triangulation.refine_global(num_refinements);
 
   // std::ofstream out("grid.vtk");
@@ -878,8 +879,24 @@ void VFPEquationSolver<flags, dim>::setup_system() {
   std::cout << "The degrees of freedom were distributed: \n"
             << "	Number of degrees of freedom: " << n_dofs << "\n";
 
+  // Periodic boundary conditions with MeshWorker. Mailinglist
+  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+  //
+  // "If you call add_periodicity() on a Triangulation object, the periodic
+  // faces are treated as internal faces in MeshWorker. This means that you will
+  // not access them in a "integrate_boundary_term" function but in a
+  // "integrate_face_term" function. "
+  std::vector<
+      GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      matched_pairs;
+  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
+  triangulation.add_periodicity(matched_pairs);
+
+  constraints.clear();
+  DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
+  
   DynamicSparsityPattern dsp(n_dofs);
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
   sparsity_pattern.copy_from(dsp);
 
   dg_matrix.reinit(sparsity_pattern);
@@ -1221,6 +1238,13 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                   pi_x_positive(component_i, component_j) *
                   fe_v_face.shape_value(j, q_index) * JxW[q_index];
             }
+            if (normals[q_index][0] == -1.) {
+              copy_data_face.cell_dg_matrix_11(i, j) +=
+                  normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
+                  pi_x_negative(component_i, component_j) *
+                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            }
+
             // NOTE: For interior faces the normal vector is always positive
             // (see comment above face_worker).
             //
@@ -1252,6 +1276,13 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                   pi_x_positive(component_i, component_j) *
                   fe_v_face.shape_value(j, q_index) * JxW[q_index];
             }
+            if (normals[q_index][0] == -1.) {
+              copy_data_face.cell_dg_matrix_12(i, j) -=
+                  normals[q_index][0] *
+                  fe_v_face_neighbor.shape_value(i, q_index) *
+                  pi_x_negative(component_i, component_j) *
+                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+            }
             // y-direction
             if constexpr (dim == 2) {
               if (normals[q_index][1] == 1.) {
@@ -1280,6 +1311,13 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                   pi_x_negative(component_i, component_j) *
                   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
             }
+            if (normals[q_index][0] == -1.) {
+              copy_data_face.cell_dg_matrix_21(i, j) +=
+                  normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
+                  pi_x_positive(component_i, component_j) *
+                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            }
+
             // y-direction
             if constexpr (dim == 2) {
               if (normals[q_index][1] == 1.) {
@@ -1308,6 +1346,14 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                   pi_x_negative(component_i, component_j) *
                   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
             }
+            if (normals[q_index][0] == -1.) {
+              copy_data_face.cell_dg_matrix_22(i, j) -=
+                  normals[q_index][0] *
+                  fe_v_face_neighbor.shape_value(i, q_index) *
+                  pi_x_positive(component_i, component_j) *
+                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+            }
+
             // y-direction
             if constexpr (dim == 2) {
               if (normals[q_index][1] == 1.) {
@@ -1352,9 +1398,8 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
                         cell_worker, copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
-                            MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
-                        boundary_worker, face_worker);
+                        nullptr, face_worker);
 }
 
 template <TermFlags flags, int dim>
