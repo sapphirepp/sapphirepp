@@ -298,13 +298,16 @@ class InitialValueFunction : public Function<dim> {
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
     if constexpr (dim == 1)
-      values[0] = 1. * std::exp(-(std::pow(p[0] - 1.5, 2) / 0.01));
+      // values[0] = 1. * std::exp(-(std::pow(p[0] - 1.5, 2) / 0.01));
+      values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
-    if constexpr (dim == 2)
-      values[0] =
-          1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
-                          0.01));
-
+    if constexpr (dim == 2) {
+      // values[0] =
+      //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2))
+      //     /
+      //                     0.01));
+      if (p.norm() <= 1.) values[0]  = 1.;
+    }
     // Fill all components with the same values
     // std::fill(
     //     values.begin(), values.end(),
