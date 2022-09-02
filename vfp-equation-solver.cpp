@@ -1392,10 +1392,11 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
 
-  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(),
-                        cell_worker, copier, scratch_data, copy_data,
+  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
+                        copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
-			MeshWorker::assemble_boundary_faces | MeshWorker::assemble_ghost_faces_both |
+                            MeshWorker::assemble_boundary_faces |
+                            MeshWorker::assemble_ghost_faces_both |
                             MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker, face_worker);
   dg_matrix.compress(VectorOperation::add);
@@ -1676,7 +1677,6 @@ int main(int argc, char *argv[]) {
     constexpr TermFlags flags =
         TermFlags::advection | TermFlags::magnetic | TermFlags::reaction;
 
-
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
     parameter_reader.read_parameters("vfp-equation.prm");
@@ -1692,7 +1692,7 @@ int main(int argc, char *argv[]) {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 1> vfp_equation_solver(
+    VFPEquationSolver<flags, 2> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
