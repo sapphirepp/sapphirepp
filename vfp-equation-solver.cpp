@@ -12,6 +12,7 @@
 #include <deal.II/base/types.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
@@ -539,7 +540,9 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
       rank{Utilities::MPI::this_mpi_process(mpi_communicator)},
       pcout(std::cout, (rank == 0)),
       parameter_handler(prm),
-      triangulation(mpi_communicator),
+      triangulation(mpi_communicator,
+                    typename Triangulation<dim>::MeshSmoothing(
+                        Triangulation<dim>::smoothing_on_refinement)),
       dof_handler(triangulation),
       mapping(),
       fe(FE_DGQ<dim>(polynomial_degree), (order + 1) * (order + 1)),
@@ -919,7 +922,7 @@ void VFPEquationSolver<flags, dim>::setup_system() {
   //           << "	Number of degrees of freedom: " << n_dofs << "\n";
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
   SparsityTools::distribute_sparsity_pattern(
       dsp, locally_owned_dofs, mpi_communicator, locally_relevant_dofs);
 
