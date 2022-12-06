@@ -463,6 +463,7 @@ class VFPEquationSolver {
   // Spatial advection
   LAPACKFullMatrix<double> Ax;
   LAPACKFullMatrix<double> Ay;
+  LAPACKFullMatrix<double> Az;
   // Magnetic field
   LAPACKFullMatrix<double> Omega_x;
   LAPACKFullMatrix<double> Omega_y;
@@ -615,6 +616,8 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
 
   Ax.reinit(num_exp_coefficients);
   Ay.reinit(num_exp_coefficients);
+  Az.reinit(num_exp_coefficients);
+
   Omega_x.reinit(num_exp_coefficients);
   Omega_y.reinit(num_exp_coefficients);
   Omega_z.reinit(num_exp_coefficients);
@@ -653,6 +656,104 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
                 Ay.set(i, j,
                        -0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
                                         ((2. * l + 1.) * (2. * l - 1.))));
+              // Az
+              // l + 1 = l_prime and s = 1 and s_prime = 0
+              if (l + 1 == l_prime && m + 1 == m_prime && s == 1 &&
+                  s_prime == 0)
+                Az.set(i, j,
+                       0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l + m + 1.) * (l + m + 2.)) /
+                                     ((2 * l + 3.) * (2 * l + 1.))));
+              if (l + 1 == l_prime && m - 1 == m_prime && s == 1 &&
+                  s_prime == 0)
+                Az.set(i, j,
+                       0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                     ((2 * l + 3.) * (2 * l + 1.))));
+              // NOTE: The correction are now directly included (-> new way to
+              // compute the real matrices)
+              if (l + 1 == l_prime && m == 0 && m_prime == 1 && s == 1 &&
+                  s_prime == 0)
+                Az(i, j) -= 0.5 * std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                            ((2 * l + 3.) * (2 * l + 1.)));
+              if (l + 1 == l_prime && m == 1 && m_prime == 0 && s == 1 &&
+                  s_prime == 0)
+                Az(i, j) += 0.5 * 1. / std::sqrt(2) *
+                            std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                      ((2 * l + 3.) * (2 * l + 1.)));
+
+              // l+ 1 = l_prime and s = 0 and s_prime = 1
+              if (l + 1 == l_prime && m + 1 == m_prime && s == 0 &&
+                  s_prime == 1)
+                Az.set(i, j,
+                       -0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l + m + 1.) * (l + m + 2.)) /
+                                     ((2 * l + 3.) * (2 * l + 1.))));
+              if (l + 1 == l_prime && m - 1 == m_prime && s == 0 &&
+                  s_prime == 1)
+                Az.set(i, j,
+                       -0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                     ((2 * l + 3.) * (2 * l + 1.))));
+              // Corrections
+              if (l + 1 == l_prime && m == 0 && m_prime == 1 && s == 0 &&
+                  s_prime == 1)
+                Az(i, j) -= 0.5 * 1. / std::sqrt(2) *
+                            std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                      ((2 * l + 3.) * (2 * l + 1.)));
+              if (l + 1 == l_prime && m == 1 && m_prime == 0 && s == 0 &&
+                  s_prime == 1)
+                Az(i, j) += 0.5 * std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                                            ((2 * l + 3.) * (2 * l + 1.)));
+
+              // l - 1 = l_prime and s = 1 and s_prime = 0
+              if (l - 1 == l_prime && m + 1 == m_prime && s == 1 &&
+                  s_prime == 0)
+                Az.set(i, j,
+                       -0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l - m - 1.) * (l - m)) /
+                                     ((2 * l + 1.) * (2 * l - 1.))));
+              if (l - 1 == l_prime && m - 1 == m_prime && s == 1 &&
+                  s_prime == 0)
+                Az.set(i, j,
+                       -0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l + m - 1.) * (l + m)) /
+                                     ((2 * l + 1.) * (2 * l - 1.))));
+              // Corrections
+              if (l - 1 == l_prime && m == 0 && m_prime == 1 && s == 1 &&
+                  s_prime == 0)
+                Az(i, j) += 0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
+                                            ((2 * l + 1.) * (2 * l - 1.)));
+              if (l - 1 == l_prime && m == 1 && m_prime == 0 && s == 1 &&
+                  s_prime == 0)
+                Az(i, j) -= 0.5 * 1. / std::sqrt(2) *
+                            std::sqrt(((l + m - 1.) * (l + m)) /
+                                      ((2 * l + 1.) * (2 * l - 1.)));
+
+              // l - 1 = l_prime and s = 0 and s_prime = 1
+              if (l - 1 == l_prime && m + 1 == m_prime && s == 0 &&
+                  s_prime == 1)
+                Az.set(i, j,
+                       0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l - m - 1.) * (l - m)) /
+                                     ((2 * l + 1.) * (2 * l - 1.))));
+              if (l - 1 == l_prime && m - 1 == m_prime && s == 0 &&
+                  s_prime == 1)
+                Az.set(i, j,
+                       0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
+                           std::sqrt(((l + m - 1.) * (l + m)) /
+                                     ((2 * l + 1.) * (2 * l - 1.))));
+              // Corrections
+              if (l - 1 == l_prime && m == 0 && m_prime == 1 && s == 0 &&
+                  s_prime == 1)
+                Az(i, j) += 0.5 * 1. / std::sqrt(2) *
+                            std::sqrt(((l + m - 1.) * (l + m)) /
+                                      ((2 * l + 1.) * (2 * l - 1.)));
+              if (l - 1 == l_prime && m == 1 && m_prime == 0 && s == 0 &&
+                  s_prime == 1)
+                Az(i, j) -= 0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
+                                            ((2 * l + 1.) * (2 * l - 1.)));
+
               // Omega_x
               if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
                 Omega_x.set(i, j, -1. * m);
@@ -737,6 +838,10 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   // std::cout << "Ay: "
   //           << "\n";
   // Ay.print_formatted(std::cout);
+  std::cout << "Az: "
+            << "\n";
+  Az.print_formatted(std::cout);
+
   // std::cout << "Omega_x: "
   //           << "\n";
   // Omega_x.print_formatted(std::cout);
