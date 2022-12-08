@@ -426,7 +426,7 @@ class VFPEquationSolver {
   void setup_pde_system();
   // Enum to determine if positive or negative upwind flux should be computed
   enum class FluxDirection { positive, negative };
-  enum class Coordinate { x, y };
+  enum class Coordinate { x, y, z };
   void prepare_upwind_fluxes(const Point<dim> &p, const Coordinate coordinate,
                              const FluxDirection flux_direction);
   void setup_system();
@@ -840,9 +840,9 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   // std::cout << "Ay: "
   //           << "\n";
   // Ay.print_formatted(std::cout);
-  std::cout << "Az: "
-            << "\n";
-  A_z.print_formatted(std::cout);
+  // std::cout << "Az: "
+  //           << "\n";
+  // A_z.print_formatted(std::cout);
 
   // std::cout << "Omega_x: "
   //           << "\n";
@@ -867,20 +867,24 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
 
   Vector<double> eigenvalues(num_exp_coefficients);
   FullMatrix<double> eigenvectors(num_exp_coefficients);
-  // The matrix gets destroyed, when the eigenvalues are computed. This requires
-  // to copy it
-  LAPACKFullMatrix<double> CopyA;
+
+  // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
+  // requires to copy it
+  LAPACKFullMatrix<double> matrix_copy;
   switch (coordinate) {
     case Coordinate::x:
-      CopyA = A_x;
+      matrix_copy = A_x;
       break;
     case Coordinate::y:
-      CopyA = A_y;
+      matrix_copy = A_y;
+      break;
+  case Coordinate::z:
+      matrix_copy = A_z;
       break;
   }
 
   double tolerance = 1.e-8;
-  CopyA.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
+  matrix_copy.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
                                       eigenvectors);
   // std::cout << "Eigenvectors: " << "\n"
   // eigenvectors.print_formatted(std::cout);
@@ -892,9 +896,11 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
                   smaller_than_tolerance, 0.);
   // Multiply the eigenvalues with the particle velocity
   eigenvalues *= particle_properties.particle_velocity;
+  // NOTE: This might be wrong. Maybe I have divide by the particle velocity.
+
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
   BackgroundVelocityField<dim> velocity_field(parameter_handler);
-  Vector<double> velocity(2);
+  Vector<double> velocity(dim);
   velocity_field.vector_value(p, velocity);
   double u = velocity[static_cast<unsigned int>(coordinate)];
   eigenvalues.add(u);
