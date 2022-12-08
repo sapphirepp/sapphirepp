@@ -84,7 +84,7 @@ void ParameterReader::declare_parameters() {
   {
     parameter_handler.declare_entry(
         "Expansion order", "0", Patterns::Integer(0),
-        "The order of the expansion of the particel distribution function.");
+        "The order of the expansion of the particle distribution function.");
   }
   parameter_handler.leave_subsection();
 
@@ -140,7 +140,7 @@ struct ParticleProperties {
     }
     parameter_handler.leave_subsection();
   }
-  // dimensionless units
+  // dimensionless values
   double particle_energy;
   double particle_velocity;
   // reference values
@@ -171,7 +171,7 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-// the velocity field field
+// the background velocity field
 template <int dim>
 class BackgroundVelocityField : public Function<dim> {
  public:
@@ -200,7 +200,7 @@ class BackgroundVelocityField : public Function<dim> {
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
   }
-
+  // TODO: Time derivative and total derivative
  private:
   ParameterHandler &parameter_handler;
   double u_x = 0.1;
@@ -306,7 +306,7 @@ class InitialValueFunction : public Function<dim> {
       //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2))
       //     /
       //                     0.01));
-      if (p.norm() <= 1.) values[0]  = 1.;
+      if (p.norm() <= 1.) values[0] = 1.;
     }
     // Fill all components with the same values
     // std::fill(
@@ -486,7 +486,7 @@ class VFPEquationSolver {
   Vector<double> previous_solution;
 
   Vector<double> system_rhs;
-  const int expansion_order = 0.;
+  const int expansion_order = 0;
   const unsigned int num_exp_coefficients;
 
   // parameters of the time stepping method
@@ -787,6 +787,8 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
       }
     }
   }
+  // TODO: Remove the correction part and derive formulas as you did for Az
+
   // Edit entries of the matrices around m=0 and s=0. After the transformation
   // they fall out of the pattern of the matrix elements, namely they differ by
   // a factor of 2^(1/2).
