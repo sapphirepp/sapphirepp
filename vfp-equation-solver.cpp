@@ -459,14 +459,22 @@ class VFPEquationSolver {
   // element space
 
   // PDE System data
-  // Spatial advection
+  // Spatial advection/(magnitude) p advection
   LAPACKFullMatrix<double> A_x;
   LAPACKFullMatrix<double> A_y;
   LAPACKFullMatrix<double> A_z;
-  // Magnetic field
+  // Rotataion matrices (due to the magnetic field)
   LAPACKFullMatrix<double> Omega_x;
   LAPACKFullMatrix<double> Omega_y;
   LAPACKFullMatrix<double> Omega_z;
+  // (magnitude) p advection
+  LAPACKFullMatrix<double> Ap_xx;
+  LAPACKFullMatrix<double> Ap_xy;
+  LAPACKFullMatrix<double> Ap_xz;
+  LAPACKFullMatrix<double> Ap_yy;
+  LAPACKFullMatrix<double> Ap_yz;
+  LAPACKFullMatrix<double> Ap_zz;
+
   // Reaction term
   Vector<double> R;
 
@@ -613,20 +621,26 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::setup_pde_system() {
   TimerOutput::Scope timer_section(timer, "PDE system");
 
-  A_x.reinit(num_exp_coefficients);
-  A_y.reinit(num_exp_coefficients);
-  A_z.reinit(num_exp_coefficients);
+  // The matrix products (e.g. A_x * A_y) only yield the correct system if we
+  // compute the matrices for expansion_order + 1 and later shrink them to
+  // expansion_order
+  unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
+  A_x.reinit(matrix_size);
+  A_y.reinit(matrix_size);
+  A_z.reinit(matrix_size);
 
-  Omega_x.reinit(num_exp_coefficients);
-  Omega_y.reinit(num_exp_coefficients);
-  Omega_z.reinit(num_exp_coefficients);
+  Omega_x.reinit(matrix_size);
+  Omega_y.reinit(matrix_size);
+  Omega_z.reinit(matrix_size);
+
   R.reinit(num_exp_coefficients);
   for (int s = 0; s <= 1; ++s) {
-    for (int l = 0, i = 0; l <= expansion_order; ++l) {
+    for (int l = 0, i = 0; l <= expansion_order + 1; ++l) {
       for (int m = l; m >= s; --m) {
         i = l * (l + 1) - (s ? -1. : 1.) * m;  // (-1)^s
         for (int s_prime = 0; s_prime <= 1; ++s_prime) {
-          for (int l_prime = 0, j = 0; l_prime <= expansion_order; ++l_prime) {
+          for (int l_prime = 0, j = 0; l_prime <= expansion_order + 1;
+               ++l_prime) {
             for (int m_prime = l_prime; m_prime >= s_prime; --m_prime) {
               j = l_prime * (l_prime + 1) - (s_prime ? -1. : 1.) * m_prime;
               // Ax
@@ -778,7 +792,8 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
                 Omega_z.set(i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // R
-              if (l == l_prime && m == m_prime && s == s_prime) {
+              if (l != expansion_order + 1 && l == l_prime && m == m_prime &&
+                  s == s_prime) {
                 R[i] = 0.5 * scattering_frequency * l * (l + 1.);
               }
             }
@@ -797,7 +812,7 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   // of them were overwritten. This is an effect of the s loops being outside
   // the l and m loops.
   if (expansion_order > 0) {
-    for (int l = 0; l <= expansion_order; ++l) {
+    for (int l = 0; l <= expansion_order + 1; ++l) {
       // Special cases for Omega
       if (l > 0) {
         // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
@@ -817,11 +832,11 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
       // Special cases for A_y (necessary for every value of l)
       // Above the diagonal
       // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
-      if (l != expansion_order)
+      if (l != expansion_order + 1)
         A_y(l * (l + 1), (l + 1) * (l + 2) - 1) =
             std::sqrt(2) * A_y(l * (l + 1), (l + 2) * (l + 1) - 1);
       // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
-      if (l != 0 && l != expansion_order)
+      if (l != 0 && l != expansion_order + 1)
         A_y(l * (l + 1) - 1, (l + 1) * (l + 2)) =
             std::sqrt(2) * A_y(l * (l + 1) - 1, (l + 2) * (l + 1));
       // Below the diagonal
@@ -835,14 +850,49 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
             std::sqrt(2) * A_y(l * (l + 1) - 1, l * (l - 1));
     }
   }
-  // std::cout << "Ax: " << "\n";
-  // Ax.print_formatted(std::cout);
-  // std::cout << "Ay: "
-  //           << "\n";
-  // Ay.print_formatted(std::cout);
-  // std::cout << "Az: "
-  //           << "\n";
-  // A_z.print_formatted(std::cout);
+
+  // Compute the matrix products
+  Ap_xx.reinit(matrix_size);
+  A_x.mmult(Ap_xx, A_x);
+  Ap_xy.reinit(matrix_size);
+  A_x.mmult(Ap_xy, A_y);
+  Ap_xz.reinit(matrix_size);
+  A_x.mmult(Ap_xz, A_z);
+
+  Ap_yy.reinit(matrix_size);
+  A_y.mmult(Ap_yy, A_y);
+  Ap_yz.reinit(matrix_size);
+  A_y.mmult(Ap_yz, A_z);
+
+  Ap_zz.reinit(matrix_size);
+  A_z.mmult(Ap_zz, A_z);
+
+  // Shrink the matrices such that they agree with order of the expansion
+  A_x.grow_or_shrink(num_exp_coefficients);
+  A_y.grow_or_shrink(num_exp_coefficients);
+  A_z.grow_or_shrink(num_exp_coefficients);
+
+  Omega_x.grow_or_shrink(num_exp_coefficients);
+  Omega_y.grow_or_shrink(num_exp_coefficients);
+  Omega_z.grow_or_shrink(num_exp_coefficients);
+
+  Ap_xx.grow_or_shrink(num_exp_coefficients);
+  Ap_xy.grow_or_shrink(num_exp_coefficients);
+  Ap_xz.grow_or_shrink(num_exp_coefficients);
+
+  Ap_yy.grow_or_shrink(num_exp_coefficients);
+  Ap_yz.grow_or_shrink(num_exp_coefficients);
+
+  Ap_zz.grow_or_shrink(num_exp_coefficients);
+
+  std::cout << "A_x: \n";
+  A_x.print_formatted(std::cout);
+
+  std::cout << "A_y: \n";
+  A_y.print_formatted(std::cout);
+
+  std::cout << "A_z: \n";
+  A_z.print_formatted(std::cout);
 
   std::cout << "Omega_x: "
             << "\n";
@@ -854,9 +904,27 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
             << "\n";
   Omega_z.print_formatted(std::cout);
 
-  // std::cout << "R: "
-  //           << "\n";
-  // R.print(std::cout);
+  std::cout << "Ap_xx: \n";
+  Ap_xx.print_formatted(std::cout);
+
+  std::cout << "Ap_xy: \n";
+  Ap_xy.print_formatted(std::cout);
+
+  std::cout << "Ap_xz: \n";
+  Ap_xz.print_formatted(std::cout);
+
+  std::cout << "Ap_yy: \n";
+  Ap_yy.print_formatted(std::cout);
+
+  std::cout << "Ap_yz: \n";
+  Ap_yz.print_formatted(std::cout);
+
+  std::cout << "Ap_zz: \n";
+  Ap_zz.print_formatted(std::cout);
+
+  std::cout << "R: "
+            << "\n";
+  R.print(std::cout);
 }
 
 template <TermFlags flags, int dim>
