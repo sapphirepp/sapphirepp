@@ -756,26 +756,27 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
 
               // Omega_x
               if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
-                Omega_x.set(i, j, -1. * m);
-                Omega_x.set(j, i, 1. * m);  // Omega matrices are anti-symmetric
+                Omega_x.set(i, j, 1. * m);
+                Omega_x.set(j, i,
+                            -1. * m);  // Omega matrices are anti-symmetric
               }
               // Omega_y
               if (l == l_prime && (m + 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                Omega_y.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
-                Omega_y.set(j, i, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_y.set(i, j, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_y.set(j, i, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
               }
               if (l == l_prime && (m - 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                Omega_y.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
-                Omega_y.set(j, i, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_y.set(i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_y.set(j, i, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // Omega_z
               if (l == l_prime && (m + 1) == m_prime && s == s_prime) {
-                Omega_z.set(i, j, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                Omega_z.set(i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
               }
               if (l == l_prime && (m - 1) == m_prime && s == s_prime) {
-                Omega_z.set(i, j, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                Omega_z.set(i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // R
               if (l == l_prime && m == m_prime && s == s_prime) {
@@ -1168,7 +1169,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             // Omega_x
             // std::cout << "B_x: " << magnetic_field_values[q_index][0] <<
             // "\n";
-            copy_data.cell_dg_matrix(i, j) +=
+            copy_data.cell_dg_matrix(i, j) -=
                 fe_v.shape_value(i, q_index) *
                 magnetic_field_values[q_index][0] *
                 Omega_x(component_i, component_j) *
@@ -1176,7 +1177,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             // Omega_y
             // std::cout << "B_y: " << magnetic_field_values[q_index][1] <<
             // "\n";
-            copy_data.cell_dg_matrix(i, j) +=
+            copy_data.cell_dg_matrix(i, j) -=
                 fe_v.shape_value(i, q_index) *
                 magnetic_field_values[q_index][1] *
                 Omega_y(component_i, component_j) *
@@ -1184,7 +1185,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             // Omega_z
             // std::cout << "B_z: " << magnetic_field_values[q_index][2] <<
             // "\n";
-            copy_data.cell_dg_matrix(i, j) +=
+            copy_data.cell_dg_matrix(i, j) -=
                 fe_v.shape_value(i, q_index) *
                 magnetic_field_values[q_index][2] *
                 Omega_z(component_i, component_j) *
