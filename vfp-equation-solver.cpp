@@ -647,7 +647,7 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   Omega_y.reinit(matrix_size);
   Omega_z.reinit(matrix_size);
 
-  R.reinit(num_exp_coefficients);
+  R.reinit(matrix_size);
   for (int s = 0; s <= 1; ++s) {
     for (int l = 0, i = 0; l <= expansion_order + 1; ++l) {
       for (int m = l; m >= s; --m) {
@@ -806,8 +806,7 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
                 Omega_z.set(i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // R
-              if (l != expansion_order + 1 && l == l_prime && m == m_prime &&
-                  s == s_prime) {
+              if (l == l_prime && m == m_prime && s == s_prime) {
                 R[i] = 0.5 * scattering_frequency * l * (l + 1.);
               }
             }
@@ -889,6 +888,8 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   Omega_x.grow_or_shrink(num_exp_coefficients);
   Omega_y.grow_or_shrink(num_exp_coefficients);
   Omega_z.grow_or_shrink(num_exp_coefficients);
+
+  R.grow_or_shrink(num_exp_coefficients);
 
   Ap_xx.grow_or_shrink(num_exp_coefficients);
   Ap_xy.grow_or_shrink(num_exp_coefficients);
