@@ -429,8 +429,12 @@ class VFPEquationSolver {
   // Enum to determine if positive or negative upwind flux should be computed
   enum class FluxDirection { positive, negative };
   enum class Coordinate { x, y, z };
-  void prepare_upwind_fluxes(const Point<dim> &p, const Coordinate coordinate,
-                             const FluxDirection flux_direction);
+  void prepare_upwind_fluxes();
+  // NOTE: The LAPACKFullMatrix class does not implement a move constructor,
+  // this is why the output argument is an input argument
+  void compute_upwind_flux(const Point<dim> &p, const Coordinate coordinate,
+                           const FluxDirection flux_direction,
+                           LAPACKFullMatrix<double> &flux_matrix);
   void setup_system();
   void assemble_mass_matrix();
   void assemble_dg_matrix(unsigned int evaluation_time);
@@ -482,6 +486,13 @@ class VFPEquationSolver {
   Vector<double> R;
 
   // Upwind flux matrices
+  // Eigenvectors
+  LAPACKFullMatrix<double> eigenvectors_A_x_trans;
+  LAPACKFullMatrix<double> eigenvectors_A_y_trans;
+  LAPACKFullMatrix<double> eigenvectors_A_z_trans;
+  // Eigenvalues
+  Vector<double> eigenvalues;
+
   FullMatrix<double> pi_x_positive;
   FullMatrix<double> pi_x_negative;
   FullMatrix<double> pi_y_positive;
@@ -931,124 +942,132 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes(
-    const Point<dim> &p, const Coordinate coordinate,
-    const FluxDirection flux_direction) {
+void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes() {
   TimerOutput::Scope timer_section(timer, "Upwind flux");
-
-  Vector<double> eigenvalues(num_exp_coefficients);
+  // switch (coordinate) {
+  //   case Coordinate::x:
+  //     matrix_copy = A_x;
+  //     break;
+  //   case Coordinate::y:
+  //     matrix_copy = A_y;
+  //     break;
+  //   case Coordinate::z:
+  //     matrix_copy = A_z;
+  //     break;
+  // }
   FullMatrix<double> eigenvectors(num_exp_coefficients);
-
   // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
   // requires to copy it
   LAPACKFullMatrix<double> matrix_copy;
-  switch (coordinate) {
-    case Coordinate::x:
-      matrix_copy = A_x;
-      break;
-    case Coordinate::y:
-      matrix_copy = A_y;
-      break;
-    case Coordinate::z:
-      matrix_copy = A_z;
-      break;
-  }
-
   double tolerance = 1.e-8;
-  matrix_copy.compute_eigenvalues_symmetric(-2., 2., tolerance, eigenvalues,
+  // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
+  // eigenvalues of A_x are the roots of the associated legendre polynomials.
+  // Since the associated Legendre Polynomials are orthogonal polynomials, it
+  // can be shown that all roots are contained in in the intervall [-1., 1.].
+  // Physically this makes sense, because c = 1 and the eigenvalues encode the
+  // speed of 'information' transport.
+  matrix_copy = A_x;
+  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
                                             eigenvectors);
-  // std::cout << "Eigenvectors: " << "\n"
-  // eigenvectors.print_formatted(std::cout);
+  eigenvectors.copy_transposed(
+      eigenvectors_A_x_trans);  // NOTE: This an uncessary copy operation due
+                                // to the implementation of the function
+                                // compute_eigenvalues_symmetric. It requires
+                                // a FullMatrix as an output for the
+                                // eigenvectors and not a LAPACKFullMatrix.
+                                // But I need a LAPACKFullMatrix to compute
+                                // the fluxes with the function Tmmult()
+  // NOTE: The eigenvalues of A_x can computed very efficiently because A_x is
+  // (when ordered correctly) a tridiagonal symmetric matrix, i.e. it is in
+  // Hessenberg-Form. It seems that Lapack has function for this implemented but
+  // there is no dealii interface to it.
+
+  // NOTE: Tmmult() requires me to store the transposed of the eigenvector
+  // matrix
+  matrix_copy = A_y;
+  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
+                                            eigenvectors);
+  eigenvectors.copy_transposed(eigenvectors_A_y_trans);
+
+  matrix_copy = A_z;
+  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
+                                            eigenvectors);
+  eigenvectors.copy_transposed(eigenvectors_A_z_trans);
+
+  // TODO: Rotate the eigenvectors of A_x to get the eigenvectors of A_y and
+  // A_z, i.e. implement the rotation matrices e^{-i\Omega_x pi/2} and e^{-i
+  // \Omega_z pi/2} For now we will three times compute the same eigenvalues to
+  // get the eigenvectors of A_y and A_z
+
   // Remove eigenvalues, which are smaller than tolerance
   auto smaller_than_tolerance = [&tolerance](double value) {
     return (std::abs(value) < tolerance ? true : false);
   };
   std::replace_if(eigenvalues.begin(), eigenvalues.end(),
                   smaller_than_tolerance, 0.);
-  // Multiply the eigenvalues with the particle velocity
-  eigenvalues *= particle_properties.particle_velocity;
-  // NOTE: This might be wrong. Maybe I have divide by the particle velocity.
+}
+
+template <TermFlags flags, int dim>
+void VFPEquationSolver<flags, dim>::compute_upwind_flux(
+    const Point<dim> &p, const Coordinate coordinate,
+    const FluxDirection flux_direction, LAPACKFullMatrix<double> &flux_matrix) {
+  // TODO: Check if it makes sense to call reinit here
+  flux_matrix.reinit(num_exp_coefficients);
+
+  // Create a copy of the eigenvalues to compute the flux at the phase-space
+  // point at time tableofcontents
+  Vector<double> lambda(eigenvalues);
+  // Multiply the eigenvalues of A_i with the particle velocity
+  lambda *= particle_properties.particle_velocity;
+  // TODO: Write an if constexpr for the transport only case (fixed velocity),
+  // else compute the particle velocity from the Point p in phase space
 
   // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
   BackgroundVelocityField<dim> velocity_field(parameter_handler);
   Vector<double> velocity(dim);
   velocity_field.vector_value(p, velocity);
   double u = velocity[static_cast<unsigned int>(coordinate)];
-  eigenvalues.add(u);
-  // std::cout << "eigenvalues plus velocity: "
-  //           << "\n";
-  // eigenvalues.print(std::cout);
+  lambda.add(u);
+  std::cout << "eigenvalues plus velocity: "
+            << "\n";
+  lambda.print(std::cout);
 
-  // Depending on the flux direction extract either the positive or negative
-  // eigenvalues
+  // Remove negative or positive eigenvalues
   switch (flux_direction) {
-      // Replace all values smaller than zero with 0
     case FluxDirection::positive:
-      std::replace_if(eigenvalues.begin(), eigenvalues.end(),
+      std::replace_if(lambda.begin(), lambda.end(),
                       std::bind(std::less<double>(), std::placeholders::_1, 0.),
                       0.);
+      // std::cout << "positive eigenvalues: \n";
+      // lambda.print(std::cout);
       break;
-      // Replace all values greater than zero with 0
     case FluxDirection::negative:
       std::replace_if(
-          eigenvalues.begin(), eigenvalues.end(),
+          lambda.begin(), lambda.end(),
           std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
+      // std::cout << "negative eigenvalues: \n";
+      // lambda.print(std::cout);
       break;
   }
-  // std::cout << "positive (or negative) eigenvalues of the flux matrix pi_x/y:
-  //           " << "\n";
-  // eigenvalues.print(std::cout);
-
-  // Create Lambda_+/-
-  FullMatrix<double> lambda(num_exp_coefficients, num_exp_coefficients);
-  // Fill diagonal
-  for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    lambda(i, i) = eigenvalues[i];
-  }
-  // std::cout << "positive (or negative) lambda matrix: " << "\n";
-  // lambda.print_formatted(std::cout);
-
   // Compute the flux matrices
   switch (coordinate) {
     case Coordinate::x:
-      switch (flux_direction) {
-        case FluxDirection::positive:
-          pi_x_positive.reinit(num_exp_coefficients, num_exp_coefficients);
-          pi_x_positive.triple_product(lambda, eigenvectors, eigenvectors,
-                                       false, true);
-          // std::cout << "pi_x_positive: "
-          //           << "\n";
-          // pi_x_positive.print_formatted(std::cout);
-          break;
-        case FluxDirection::negative:
-          pi_x_negative.reinit(num_exp_coefficients, num_exp_coefficients);
-          pi_x_negative.triple_product(lambda, eigenvectors, eigenvectors,
-                                       false, true);
-          // std::cout << "pi_x_negative: "
-          //           << "\n";
-          // pi_x_negative.print_formatted(std::cout);
-          break;
-      }
+      eigenvectors_A_x_trans.Tmmult(flux_matrix, eigenvectors_A_x_trans,
+                                    lambda);
+      // std::cout << "n_x, flux_matrix: \n"
+      // flux_matrix.print_formatted(std::cout);
       break;
     case Coordinate::y:
-      switch (flux_direction) {
-        case FluxDirection::positive:
-          pi_y_positive.reinit(num_exp_coefficients, num_exp_coefficients);
-          pi_y_positive.triple_product(lambda, eigenvectors, eigenvectors,
-                                       false, true);
-          // std::cout << "pi_y_positive: "
-          //           << "\n";
-          // pi_y_positive.print_formatted(std::cout);
-          break;
-        case FluxDirection::negative:
-          pi_y_negative.reinit(num_exp_coefficients, num_exp_coefficients);
-          pi_y_negative.triple_product(lambda, eigenvectors, eigenvectors,
-                                       false, true);
-          // std::cout << "pi_y_negative: "
-          //           << "\n";
-          // pi_y_negative.print_formatted(std::cout);
-          break;
-      }
+      eigenvectors_A_y_trans.Tmmult(flux_matrix, eigenvectors_A_y_trans,
+                                    lambda);
+      // std::cout << "n_y, flux_matrix: \n"
+      // flux_matrix.print_formatted(std::cout);
+      break;
+    case Coordinate::z:
+      eigenvectors_A_z_trans.Tmmult(flux_matrix, eigenvectors_A_z_trans,
+                                    lambda);
+      // std::cout << "n_z, flux_matrix: \n"
+      // flux_matrix.print_formatted(std::cout);
       break;
   }
 }
@@ -1144,18 +1163,6 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   background_velocity_field.set_time(evaluation_time);
   MagneticField<dim> magnetic_field(parameter_handler);
   magnetic_field.set_time(evaluation_time);
-  // NOTE: The fluxes also depend on the the background velocity and the
-  // particle velocity. TODO: Adapt upwind_flux to deal with time. And the
-  // prepare upwind fluxes, will be included in the face_worker. Compute upwind
-  // fluxes
-  Point<dim> p;
-  std::cout << "Point: " << p << "\n";
-  prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::positive);
-  prepare_upwind_fluxes(p, Coordinate::x, FluxDirection::negative);
-  if constexpr (dim == 2) {
-    prepare_upwind_fluxes(p, Coordinate::y, FluxDirection::positive);
-    prepare_upwind_fluxes(p, Coordinate::y, FluxDirection::negative);
-  }
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
                                ScratchData<dim> &scratch_data,
@@ -1284,6 +1291,18 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
     // velocities(q_points.size(), Vector<double>(2));
     // background_velocity_field.vector_value_list(q_points, velocities);
+    Point<dim> p;
+    std::cout << "Point: " << p << "\n";
+    compute_upwind_flux(p, Coordinate::x, FluxDirection::positive,
+                        pi_x_positive);
+    compute_upwind_flux(p, Coordinate::x, FluxDirection::negative,
+                        pi_x_negative);
+    if constexpr (dim == 2) {
+      compute_upwind_flux(p, Coordinate::y, FluxDirection::positive,
+                          pi_y_positive);
+      compute_upwind_flux(p, Coordinate::y, FluxDirection::negative,
+                          pi_y_negative);
+    }
 
     const std::vector<double> &JxW = fe_face_v.get_JxW_values();
     const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
@@ -1382,6 +1401,23 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     // fe_v_face.get_quadrature_points(); std::vector<Vector<double>>
     // velocities(q_points.size(), Vector<double>(2));
     // background_velocity_field.vector_value_list(q_points, velocities);
+
+    // NOTE: The fluxes also depend on the the background velocity and the
+    // particle velocity. TODO: Adapt upwind_flux to deal with time. And the
+    // prepare upwind fluxes, will be included in the face_worker. Compute
+    // upwind fluxes
+    Point<dim> p;
+    std::cout << "Point: " << p << "\n";
+    compute_upwind_flux(p, Coordinate::x, FluxDirection::positive,
+                        pi_x_positive);
+    compute_upwind_flux(p, Coordinate::x, FluxDirection::negative,
+                        pi_x_negative);
+    if constexpr (dim == 2) {
+      compute_upwind_flux(p, Coordinate::y, FluxDirection::positive,
+                          pi_y_positive);
+      compute_upwind_flux(p, Coordinate::y, FluxDirection::negative,
+                          pi_y_negative);
+    }
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices()) {
       // cell_dg_matrix_11
