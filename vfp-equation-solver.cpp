@@ -900,46 +900,44 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
 
   Ap_zz.grow_or_shrink(num_exp_coefficients);
 
-  std::cout << "A_x: \n";
-  A_x.print_formatted(std::cout);
+  // std::cout << "A_x: \n";
+  // A_x.print_formatted(std::cout);
 
-  std::cout << "A_y: \n";
-  A_y.print_formatted(std::cout);
+  // std::cout << "A_y: \n";
+  // A_y.print_formatted(std::cout);
 
-  std::cout << "A_z: \n";
-  A_z.print_formatted(std::cout);
+  // std::cout << "A_z: \n";
+  // A_z.print_formatted(std::cout);
 
-  std::cout << "Omega_x: "
-            << "\n";
-  Omega_x.print_formatted(std::cout);
-  std::cout << "Omega_y: "
-            << "\n";
-  Omega_y.print_formatted(std::cout);
-  std::cout << "Omega_z: "
-            << "\n";
-  Omega_z.print_formatted(std::cout);
+  // std::cout << "Omega_x: \n";
+  // Omega_x.print_formatted(std::cout);
 
-  std::cout << "Ap_xx: \n";
-  Ap_xx.print_formatted(std::cout);
+  // std::cout << "Omega_y: \n";
+  // Omega_y.print_formatted(std::cout);
 
-  std::cout << "Ap_xy: \n";
-  Ap_xy.print_formatted(std::cout);
+  // std::cout << "Omega_z: \n";
+  // Omega_z.print_formatted(std::cout);
 
-  std::cout << "Ap_xz: \n";
-  Ap_xz.print_formatted(std::cout);
+  // std::cout << "Ap_xx: \n";
+  // Ap_xx.print_formatted(std::cout);
 
-  std::cout << "Ap_yy: \n";
-  Ap_yy.print_formatted(std::cout);
+  // std::cout << "Ap_xy: \n";
+  // Ap_xy.print_formatted(std::cout);
 
-  std::cout << "Ap_yz: \n";
-  Ap_yz.print_formatted(std::cout);
+  // std::cout << "Ap_xz: \n";
+  // Ap_xz.print_formatted(std::cout);
 
-  std::cout << "Ap_zz: \n";
-  Ap_zz.print_formatted(std::cout);
+  // std::cout << "Ap_yy: \n";
+  // Ap_yy.print_formatted(std::cout);
 
-  std::cout << "R: "
-            << "\n";
-  R.print(std::cout);
+  // std::cout << "Ap_yz: \n";
+  // Ap_yz.print_formatted(std::cout);
+
+  // std::cout << "Ap_zz: \n";
+  // Ap_zz.print_formatted(std::cout);
+
+  // std::cout << "R: \n";
+  // R.print(std::cout);
 }
 
 template <TermFlags flags, int dim>
