@@ -189,8 +189,11 @@ class BackgroundVelocityField : public Function<dim> {
     Assert(dim <= 2, ExcNotImplemented());
     // constant velocity field
     (void)point;
-    value[0] = u_x;
-    // value[1] = u_y;
+    if constexpr (dim == 1) value[0] = u_x;
+    if constexpr (dim == 2) {
+      value[0] = u_x;
+      value[1] = u_y;
+    }
   }
 
   void divergence_list(const std::vector<Point<dim>> &points,
