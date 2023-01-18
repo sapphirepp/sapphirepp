@@ -106,12 +106,12 @@ void ParameterReader::declare_parameters() {
     parameter_handler.declare_entry(
         "Particle energy", "1.", Patterns::Double(),
         "The energy of the particle in units of 10 Gev");
-    parameter_handler.declare_entry(
-        "Plasma velocity x-component", ".1", Patterns::Double(),
-        "The x-component of the background plasma's velocity");
-    parameter_handler.declare_entry(
-        "Plasma velocity y-component", ".1", Patterns::Double(),
-        "The y-component of the background plasma's velocity");
+    // parameter_handler.declare_entry(
+    //     "Plasma velocity x-component", ".1", Patterns::Double(),
+    //     "The x-component of the background plasma's velocity");
+    // parameter_handler.declare_entry(
+    //     "Plasma velocity y-component", ".1", Patterns::Double(),
+    //     "The y-component of the background plasma's velocity");
     parameter_handler.declare_entry("Magnetic field x-component", "0.",
                                     Patterns::Double(),
                                     "The x-component of the magnetic field");
@@ -176,24 +176,15 @@ std::ostream &operator<<(std::ostream &os,
 template <int dim>
 class BackgroundVelocityField : public Function<dim> {
  public:
-  BackgroundVelocityField(ParameterHandler &prm) : parameter_handler(prm) {
-    parameter_handler.enter_subsection("Physical parameters");
-    {
-      u_x = parameter_handler.get_double("Plasma velocity x-component");
-      u_y = parameter_handler.get_double("Plasma velocity y-component");
-    }
-    parameter_handler.leave_subsection();
-  }
-
   virtual void vector_value(const Point<dim> &point,
                             Vector<double> &value) const override {
     Assert(dim <= 2, ExcNotImplemented());
     // constant velocity field
     (void)point;
-    if constexpr (dim == 1) value[0] = u_x;
+    if constexpr (dim == 1) value[0] = 0.2;
     if constexpr (dim == 2) {
-      value[0] = u_x;
-      value[1] = u_y;
+      value[0] = 0.2;
+      value[1] = 0.2;
     }
   }
 
@@ -203,12 +194,11 @@ class BackgroundVelocityField : public Function<dim> {
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
+    // for (unsigned int q_index = 0; q_index < points.size(); ++q_index) {
+    //   values[q_index] = points[q_index][0]*0.5;
+    // }
   }
   // TODO: Time derivative and total derivative
- private:
-  ParameterHandler &parameter_handler;
-  double u_x;
-  double u_y;
 };
 
 // the magnetic field
@@ -1011,7 +1001,7 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
   // TODO: Insert a if constexpr for the p case
 
   // Get the value of the velocity field at every quadrature point
-  BackgroundVelocityField<dim> velocity_field(parameter_handler);
+  BackgroundVelocityField<dim> velocity_field;
   std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(dim));
   velocity_field.vector_value_list(q_points, velocities);
 
@@ -1172,7 +1162,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-  BackgroundVelocityField<dim> background_velocity_field(parameter_handler);
+  BackgroundVelocityField<dim> background_velocity_field;
   background_velocity_field.set_time(evaluation_time);
   MagneticField<dim> magnetic_field(parameter_handler);
   magnetic_field.set_time(evaluation_time);
