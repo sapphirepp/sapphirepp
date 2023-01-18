@@ -42,6 +42,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -426,15 +427,14 @@ class VFPEquationSolver {
  private:
   void make_grid();
   void setup_pde_system();
-  // Enum to determine if positive or negative upwind flux should be computed
-  enum class FluxDirection { positive, negative };
-  enum class Coordinate { x, y, z };
   void prepare_upwind_fluxes();
   // NOTE: The LAPACKFullMatrix class does not implement a move constructor,
   // this is why the output argument is an input argument
-  void compute_upwind_flux(const Point<dim> &p, const Coordinate coordinate,
-                           const FluxDirection flux_direction,
-                           LAPACKFullMatrix<double> &flux_matrix);
+  void compute_upwind_fluxes(
+      const std::vector<Point<dim>> &q_points,
+      const std::vector<Tensor<1, dim>> &normals,
+      std::vector<FullMatrix<double>> &positive_flux_matrices,
+      std::vector<FullMatrix<double>> &negative_flux_matrices);
   void setup_system();
   void assemble_mass_matrix();
   void assemble_dg_matrix(unsigned int evaluation_time);
@@ -487,9 +487,9 @@ class VFPEquationSolver {
 
   // Upwind flux matrices
   // Eigenvectors
-  LAPACKFullMatrix<double> eigenvectors_A_x_trans;
-  LAPACKFullMatrix<double> eigenvectors_A_y_trans;
-  LAPACKFullMatrix<double> eigenvectors_A_z_trans;
+  FullMatrix<double> eigenvectors_A_x;
+  FullMatrix<double> eigenvectors_A_y;
+  FullMatrix<double> eigenvectors_A_z;
   // Eigenvalues
   Vector<double> eigenvalues;
 
@@ -942,18 +942,7 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes() {
-  TimerOutput::Scope timer_section(timer, "Upwind flux");
-  // switch (coordinate) {
-  //   case Coordinate::x:
-  //     matrix_copy = A_x;
-  //     break;
-  //   case Coordinate::y:
-  //     matrix_copy = A_y;
-  //     break;
-  //   case Coordinate::z:
-  //     matrix_copy = A_z;
-  //     break;
-  // }
+  TimerOutput::Scope timer_section(timer, "Prepare Upwind flux");
   FullMatrix<double> eigenvectors(num_exp_coefficients);
   // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
   // requires to copy it
@@ -967,37 +956,24 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes() {
   // speed of 'information' transport.
   matrix_copy = A_x;
   matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
-                                            eigenvectors);
-  eigenvectors.copy_transposed(
-      eigenvectors_A_x_trans);  // NOTE: This an uncessary copy operation due
-                                // to the implementation of the function
-                                // compute_eigenvalues_symmetric. It requires
-                                // a FullMatrix as an output for the
-                                // eigenvectors and not a LAPACKFullMatrix.
-                                // But I need a LAPACKFullMatrix to compute
-                                // the fluxes with the function Tmmult()
+                                            eigenvectors_A_x);
   // NOTE: The eigenvalues of A_x can computed very efficiently because A_x is
   // (when ordered correctly) a tridiagonal symmetric matrix, i.e. it is in
   // Hessenberg-Form. It seems that Lapack has function for this implemented but
   // there is no dealii interface to it.
 
-  // NOTE: Tmmult() requires me to store the transposed of the eigenvector
-  // matrix
   matrix_copy = A_y;
   matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
-                                            eigenvectors);
-  eigenvectors.copy_transposed(eigenvectors_A_y_trans);
-
+                                            eigenvectors_A_y);
   matrix_copy = A_z;
   matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
-                                            eigenvectors);
-  eigenvectors.copy_transposed(eigenvectors_A_z_trans);
-
+                                            eigenvectors_A_z);
   // TODO: Rotate the eigenvectors of A_x to get the eigenvectors of A_y and
   // A_z, i.e. implement the rotation matrices e^{-i\Omega_x pi/2} and e^{-i
   // \Omega_z pi/2} For now we will three times compute the same eigenvalues to
   // get the eigenvectors of A_y and A_z
 
+  // NOTE: I actually thinkt that the next clean up step is not necessary
   // Remove eigenvalues, which are smaller than tolerance
   auto smaller_than_tolerance = [&tolerance](double value) {
     return (std::abs(value) < tolerance ? true : false);
@@ -1007,67 +983,105 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes() {
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::compute_upwind_flux(
-    const Point<dim> &p, const Coordinate coordinate,
-    const FluxDirection flux_direction, LAPACKFullMatrix<double> &flux_matrix) {
-  // TODO: Check if it makes sense to call reinit here
-  flux_matrix.reinit(num_exp_coefficients);
-
-  // Create a copy of the eigenvalues to compute the flux at the phase-space
-  // point at time tableofcontents
+void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
+    const std::vector<Point<dim>> &q_points,
+    const std::vector<Tensor<1, dim>> &normals,
+    std::vector<FullMatrix<double>> &positive_flux_matrices,
+    std::vector<FullMatrix<double>> &negative_flux_matrices) {
+  // Create a copy of the eigenvalues to compute the positive and negative
+  // fluxes at interface point q at time t
   Vector<double> lambda(eigenvalues);
-  // Multiply the eigenvalues of A_i with the particle velocity
-  lambda *= particle_properties.particle_velocity;
-  // TODO: Write an if constexpr for the transport only case (fixed velocity),
-  // else compute the particle velocity from the Point p in phase space
 
-  // Add the velocities to the eigenvalues (u_k \delta_ij + a_k,ij)
-  BackgroundVelocityField<dim> velocity_field(parameter_handler);
-  Vector<double> velocity(dim);
-  velocity_field.vector_value(p, velocity);
-  double u = velocity[static_cast<unsigned int>(coordinate)];
-  lambda.add(u);
-  std::cout << "eigenvalues plus velocity: "
-            << "\n";
-  lambda.print(std::cout);
-
-  // Remove negative or positive eigenvalues
-  switch (flux_direction) {
-    case FluxDirection::positive:
-      std::replace_if(lambda.begin(), lambda.end(),
-                      std::bind(std::less<double>(), std::placeholders::_1, 0.),
-                      0.);
-      // std::cout << "positive eigenvalues: \n";
-      // lambda.print(std::cout);
-      break;
-    case FluxDirection::negative:
-      std::replace_if(
-          lambda.begin(), lambda.end(),
-          std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
-      // std::cout << "negative eigenvalues: \n";
-      // lambda.print(std::cout);
-      break;
+  Vector<double> positive_lambda(eigenvalues.size());
+  Vector<double> negative_lambda(eigenvalues.size());
+  // Determine if we are computing the flux of an interior face whose normal
+  // points into the x,y,z or p direction. Since we are using a rectangular
+  // grid, the normal is the same for all quadrature points and it points either
+  // in the x, y, z or p direction. Hence it can determined outside the loop
+  // over the quadrature points
+  enum Coordinate { x, y, z, p, none = 1000 };
+  Coordinate component = none;  // Produces an error if not overwritten
+  if (normals[0][x] == 1.) component = x;
+  if constexpr (dim >= 2) {
+    if (normals[0][y] == 1.) component = y;
   }
-  // Compute the flux matrices
-  switch (coordinate) {
-    case Coordinate::x:
-      eigenvectors_A_x_trans.Tmmult(flux_matrix, eigenvectors_A_x_trans,
-                                    lambda);
-      // std::cout << "n_x, flux_matrix: \n"
-      // flux_matrix.print_formatted(std::cout);
-      break;
-    case Coordinate::y:
-      eigenvectors_A_y_trans.Tmmult(flux_matrix, eigenvectors_A_y_trans,
-                                    lambda);
-      // std::cout << "n_y, flux_matrix: \n"
-      // flux_matrix.print_formatted(std::cout);
-      break;
-    case Coordinate::z:
-      eigenvectors_A_z_trans.Tmmult(flux_matrix, eigenvectors_A_z_trans,
-                                    lambda);
-      // std::cout << "n_z, flux_matrix: \n"
-      // flux_matrix.print_formatted(std::cout);
-      break;
+  if constexpr (dim == 3) {
+    if (normals[0][z] == 1.) component = z;
+  }
+  // TODO: Insert a if constexpr for the p case
+
+  // Get the value of the velocity field at every quadrature point
+  BackgroundVelocityField<dim> velocity_field(parameter_handler);
+  std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(dim));
+  velocity_field.vector_value_list(q_points, velocities);
+
+  for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
+    // Multiply the eigenvalues of A_i with the particle velocity
+    lambda *= particle_properties.particle_velocity;
+    // TODO: Write an if constexpr for the transport only case (fixed velocity),
+    // else compute the particle velocity from the Point p in phase space
+
+    // Add the velocities to the eigenvalues
+    lambda.add(velocities[q_index][component]);
+    // std::cout << "eigenvalues plus velocity: "
+    //           << "\n";
+    // lambda.print(std::cout);
+    //
+    std::replace_copy_if(
+        lambda.begin(), lambda.end(), positive_lambda.begin(),
+        std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
+    std::replace_copy_if(
+        lambda.begin(), lambda.end(), negative_lambda.begin(),
+        std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
+
+    FullMatrix<double> lambda_plus_matrix(num_exp_coefficients);
+    FullMatrix<double> lambda_minus_matrix(num_exp_coefficients);
+
+    for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
+      lambda_plus_matrix(i, i) = positive_lambda[i];
+      lambda_minus_matrix(i, i) = negative_lambda[i];
+    }
+
+    // Compute the flux matrices
+    switch (component) {
+      case none:
+        break;
+
+      case x:
+        positive_flux_matrices[q_index].triple_product(
+            lambda_plus_matrix, eigenvectors_A_x, eigenvectors_A_x, false,
+            true);
+
+        negative_flux_matrices[q_index].triple_product(
+            lambda_minus_matrix, eigenvectors_A_x, eigenvectors_A_x, false,
+            true);
+        // std::cout << "n_x, flux_matrix: \n"
+        // flux_matrix.print_formatted(std::cout);
+        break;
+      case y:
+        positive_flux_matrices[q_index].triple_product(
+            lambda_plus_matrix, eigenvectors_A_y, eigenvectors_A_y, false,
+            true);
+
+        negative_flux_matrices[q_index].triple_product(
+            lambda_minus_matrix, eigenvectors_A_y, eigenvectors_A_y, false,
+            true);
+        // std::cout << "n_y, flux_matrix: \n"
+        // flux_matrix.print_formatted(std::cout);
+        break;
+      case z:
+        positive_flux_matrices[q_index].triple_product(
+            lambda_plus_matrix, eigenvectors_A_z, eigenvectors_A_z, false,
+            true);
+        negative_flux_matrices[q_index].triple_product(
+            lambda_minus_matrix, eigenvectors_A_z, eigenvectors_A_z, false,
+            true);
+        // std::cout << "n_z, flux_matrix: \n"
+        // flux_matrix.print_formatted(std::cout);
+        break;
+      case p:
+        break;
+    }
   }
 }
 
@@ -1290,22 +1304,17 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
     // velocities(q_points.size(), Vector<double>(2));
     // background_velocity_field.vector_value_list(q_points, velocities);
-    Point<dim> p;
-    std::cout << "Point: " << p << "\n";
-    compute_upwind_flux(p, Coordinate::x, FluxDirection::positive,
-                        pi_x_positive);
-    compute_upwind_flux(p, Coordinate::x, FluxDirection::negative,
-                        pi_x_negative);
-    if constexpr (dim == 2) {
-      compute_upwind_flux(p, Coordinate::y, FluxDirection::positive,
-                          pi_y_positive);
-      compute_upwind_flux(p, Coordinate::y, FluxDirection::negative,
-                          pi_y_negative);
-    }
 
+    const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_face_v.get_JxW_values();
     const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
+    std::vector<FullMatrix<double>> positive_flux_matrices(
+        q_points.size(), FullMatrix<double>(num_exp_coefficients));
+    std::vector<FullMatrix<double>> negative_flux_matrices(
+        q_points.size(), FullMatrix<double>(num_exp_coefficients));
 
+    compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
+                          negative_flux_matrices);
     for (unsigned int i = 0; i < n_facet_dofs; ++i) {
       const unsigned int component_i =
           fe_face_v.get_fe().system_to_component_index(i).first;
@@ -1315,35 +1324,26 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
-            // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
-            // \phi_j
-            // Ax
-            if (normals[q_index][0] == 1.) {
+            // positive_flux_matrix_ij \phi_j, else n_k * \phi_i *
+            // negative_flux_matrix_ij \phi_j
+            //
+            // To determine wether we n_k >0 or < 0, we sum the elements of the
+            // normal vector. NOTE: The logic which decides whethter it is a
+            // face pointing into x, y, z or p direction is inside
+            // compute_upwind_fluxes()
+            if (std::accumulate(normals[q_index].begin_raw(),
+                                normals[q_index].end_raw(), 0) == 1.) {
               copy_data.cell_dg_matrix(i, j) +=
                   normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                  pi_x_positive(component_i, component_j) *
+                  positive_flux_matrices[q_index](component_i, component_j) *
                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
             }
-            if (normals[q_index][0] == -1.) {
+            if (std::accumulate(normals[q_index].begin_raw(),
+                                normals[q_index].end_raw(), 0) == -1.) {
               copy_data.cell_dg_matrix(i, j) +=
                   normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                  pi_x_negative(component_i, component_j) *
+                  negative_flux_matrices[q_index](component_i, component_j) *
                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            // Ay
-            if constexpr (dim == 2) {
-              if (normals[q_index][1] == 1.) {
-                copy_data.cell_dg_matrix(i, j) +=
-                    normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-                    pi_y_positive(component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-              }
-              if (normals[q_index][1] == -1.) {
-                copy_data.cell_dg_matrix(i, j) +=
-                    normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-                    pi_y_negative(component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-              }
             }
           }
         }
@@ -1393,30 +1393,18 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     const unsigned int n_dofs = fe_v_face.get_fe().n_dofs_per_cell();
     copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
+    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
     const std::vector<double> &JxW = fe_v_face.get_JxW_values();
     const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
-    // NOTE: See comment in the boundary worker
-    // const std::vector<Point<dim>> &q_points =
-    // fe_v_face.get_quadrature_points(); std::vector<Vector<double>>
-    // velocities(q_points.size(), Vector<double>(2));
-    // background_velocity_field.vector_value_list(q_points, velocities);
+    // For every interior face there is an in- and outflow represented by the
+    // corresponding flux matrices
+    std::vector<FullMatrix<double>> positive_flux_matrices(
+        q_points.size(), FullMatrix<double>(num_exp_coefficients));
+    std::vector<FullMatrix<double>> negative_flux_matrices(
+        q_points.size(), FullMatrix<double>(num_exp_coefficients));
 
-    // NOTE: The fluxes also depend on the the background velocity and the
-    // particle velocity. TODO: Adapt upwind_flux to deal with time. And the
-    // prepare upwind fluxes, will be included in the face_worker. Compute
-    // upwind fluxes
-    Point<dim> p;
-    std::cout << "Point: " << p << "\n";
-    compute_upwind_flux(p, Coordinate::x, FluxDirection::positive,
-                        pi_x_positive);
-    compute_upwind_flux(p, Coordinate::x, FluxDirection::negative,
-                        pi_x_negative);
-    if constexpr (dim == 2) {
-      compute_upwind_flux(p, Coordinate::y, FluxDirection::positive,
-                          pi_y_positive);
-      compute_upwind_flux(p, Coordinate::y, FluxDirection::negative,
-                          pi_y_negative);
-    }
+    compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
+                          negative_flux_matrices);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices()) {
       // cell_dg_matrix_11
@@ -1427,31 +1415,10 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-            // x-direction
-            //
-            // NOTE: The following if expression is not necessay, because if
-            // normals[q_index][0] is unequal to 1. it is equal to zero and the
-            // matrix entry is zero as well. It is there to remember that the
-            // upwind flux depends on the direction of the normal (see
-            // boundary_worker).
-            if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                  pi_x_positive(component_i, component_j) *
+                  fe_v_face.shape_value(i, q_index) *
+                  positive_flux_matrices[q_index](component_i, component_j) *
                   fe_v_face.shape_value(j, q_index) * JxW[q_index];
-            }
-            // NOTE: For interior faces the normal vector is always positive
-            // (see comment above face_worker).
-            //
-            // y-direction
-            if constexpr (dim == 2) {
-              if (normals[q_index][1] == 1.) {
-                copy_data_face.cell_dg_matrix_11(i, j) +=
-                    normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
-                    pi_y_positive(component_i, component_j) *
-                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
-              }
-            }
           }
         }
       }
@@ -1463,27 +1430,13 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-            // x-direction
-            if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_12(i, j) -=
-                  normals[q_index][0] *
                   fe_v_face_neighbor.shape_value(i, q_index) *
-                  pi_x_positive(component_i, component_j) *
+                  positive_flux_matrices[q_index](component_i, component_j) *
                   fe_v_face.shape_value(j, q_index) * JxW[q_index];
-            }
-            // y-direction
-            if constexpr (dim == 2) {
-              if (normals[q_index][1] == 1.) {
-                copy_data_face.cell_dg_matrix_12(i, j) -=
-                    normals[q_index][1] *
-                    fe_v_face_neighbor.shape_value(i, q_index) *
-                    pi_y_positive(component_i, component_j) *
-                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
-              }
             }
           }
         }
-      }
       // cell_dg_matrix_21
       for (unsigned int i : fe_v_face_neighbor.dof_indices()) {
         const unsigned int component_i =
@@ -1492,22 +1445,10 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-            // x-direction
-            if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_21(i, j) +=
-                  normals[q_index][0] * fe_v_face.shape_value(i, q_index) *
-                  pi_x_negative(component_i, component_j) *
+                  fe_v_face.shape_value(i, q_index) *
+                  negative_flux_matrices[q_index](component_i, component_j) *
                   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-            }
-            // y-direction
-            if constexpr (dim == 2) {
-              if (normals[q_index][1] == 1.) {
-                copy_data_face.cell_dg_matrix_21(i, j) +=
-                    normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
-                    pi_y_negative(component_i, component_j) *
-                    fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-              }
-            }
           }
         }
       }
@@ -1519,24 +1460,10 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-            // x-direction
-            if (normals[q_index][0] == 1.) {
               copy_data_face.cell_dg_matrix_22(i, j) -=
-                  normals[q_index][0] *
                   fe_v_face_neighbor.shape_value(i, q_index) *
-                  pi_x_negative(component_i, component_j) *
+                  negative_flux_matrices[q_index](component_i, component_j) *
                   fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-            }
-            // y-direction
-            if constexpr (dim == 2) {
-              if (normals[q_index][1] == 1.) {
-                copy_data_face.cell_dg_matrix_22(i, j) -=
-                    normals[q_index][1] *
-                    fe_v_face_neighbor.shape_value(i, q_index) *
-                    pi_y_negative(component_i, component_j) *
-                    fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-              }
-            }
           }
         }
       }
