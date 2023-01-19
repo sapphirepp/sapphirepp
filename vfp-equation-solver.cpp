@@ -1012,6 +1012,7 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
     //           << "\n";
     // lambda.print(std::cout);
     //
+    lambda *= normals[q_index][component];
     Vector<double> positive_lambda(eigenvalues.size());
     Vector<double> negative_lambda(eigenvalues.size());
 
@@ -1313,28 +1314,12 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             fe_face_v.get_fe().system_to_component_index(j).first;
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-            // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
-            // positive_flux_matrix_ij \phi_j, else n_k * \phi_i *
-            // negative_flux_matrix_ij \phi_j
-            //
-            // To determine wether we n_k >0 or < 0, we sum the elements of the
-            // normal vector. NOTE: The logic which decides whethter it is a
-            // face pointing into x, y, z or p direction is inside
-            // compute_upwind_fluxes()
-            if (std::accumulate(normals[q_index].begin_raw(),
-                                normals[q_index].end_raw(), 0) == 1.) {
+	    // Outflow boundary: Everyhing with a positive flux along the
+	    // direction of the normal leaves the boundary
               copy_data.cell_dg_matrix(i, j) +=
-                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                  fe_face_v.shape_value(i, q_index) *
                   positive_flux_matrices[q_index](component_i, component_j) *
                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
-            if (std::accumulate(normals[q_index].begin_raw(),
-                                normals[q_index].end_raw(), 0) == -1.) {
-              copy_data.cell_dg_matrix(i, j) +=
-                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-                  negative_flux_matrices[q_index](component_i, component_j) *
-                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
-            }
           }
         }
       }
