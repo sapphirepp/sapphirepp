@@ -300,17 +300,14 @@ class InitialValueFunction : public Function<dim> {
 
     if constexpr (dim == 2) {
       // Gaussian
-      // values[0] =
-      //     1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
 
       // constant disc
       // if (p.norm() <= 1.) values[0] = 1.;
 
       // Rigid rotator
-      if (std::abs(p[0]) <= 3 && std::abs(p[1]) <=0.5 )
-	values[0] = 1.;
-      if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <=3 )
-	values[0] = 1.;
+      // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) values[0] = 1.;
+      // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) values[0] = 1.;
     }
     // Fill all components with the same values
     // std::fill(
@@ -1292,12 +1289,12 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             fe_face_v.get_fe().system_to_component_index(j).first;
         for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-	    // Outflow boundary: Everyhing with a positive flux along the
-	    // direction of the normal leaves the boundary
-              copy_data.cell_dg_matrix(i, j) +=
-                  fe_face_v.shape_value(i, q_index) *
-                  positive_flux_matrices[q_index](component_i, component_j) *
-                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            // Outflow boundary: Everyhing with a positive flux along the
+            // direction of the normal leaves the boundary
+            copy_data.cell_dg_matrix(i, j) +=
+                fe_face_v.shape_value(i, q_index) *
+                positive_flux_matrices[q_index](component_i, component_j) *
+                fe_face_v.shape_value(j, q_index) * JxW[q_index];
           }
         }
       }
@@ -1682,7 +1679,8 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags = TermFlags::advection /* | TermFlags::magnetic | TermFlags::reaction */;
+    constexpr TermFlags flags =
+        TermFlags::advection /* | TermFlags::magnetic | TermFlags::reaction */;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
