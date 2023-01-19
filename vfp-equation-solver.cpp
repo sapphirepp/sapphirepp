@@ -183,8 +183,8 @@ class BackgroundVelocityField : public Function<dim> {
     (void)point;
     if constexpr (dim == 1) value[0] = 0.2;
     if constexpr (dim == 2) {
-      value[0] = 0.2;
-      value[1] = 0.2;
+      value[0] = 0.;
+      value[1] = 0.;
     }
   }
 
@@ -295,11 +295,9 @@ class InitialValueFunction : public Function<dim> {
     // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
     if constexpr (dim == 2) {
-      // values[0] =
-      //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2))
-      //     /
-      //                     0.01));
-      if (p.norm() <= 1.) values[0] = 1.;
+      values[0] =
+          1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+      // if (p.norm() <= 1.) values[0] = 1.;
     }
     // Fill all components with the same values
     // std::fill(
@@ -1721,8 +1719,7 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags = TermFlags::advection;
-    // | TermFlags::magnetic | TermFlags::reaction;
+    constexpr TermFlags flags = TermFlags::advection /* | TermFlags::magnetic | TermFlags::reaction */;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
