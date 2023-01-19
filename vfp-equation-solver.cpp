@@ -972,12 +972,6 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
     const std::vector<Tensor<1, dim>> &normals,
     std::vector<FullMatrix<double>> &positive_flux_matrices,
     std::vector<FullMatrix<double>> &negative_flux_matrices) {
-  // Create a copy of the eigenvalues to compute the positive and negative
-  // fluxes at interface point q at time t
-  Vector<double> lambda(eigenvalues);
-
-  Vector<double> positive_lambda(eigenvalues.size());
-  Vector<double> negative_lambda(eigenvalues.size());
   // Determine if we are computing the flux of an interior face whose normal
   // points into the x,y,z or p direction. Since we are using a rectangular
   // grid, the normal is the same for all quadrature points and it points either
@@ -1004,6 +998,9 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
   velocity_field.vector_value_list(q_points, velocities);
 
   for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
+    // Create a copy of the eigenvalues to compute the positive and negative
+    // fluxes at interface point q at time t
+    Vector<double> lambda(eigenvalues);
     // Multiply the eigenvalues of A_i with the particle velocity
     lambda *= particle_properties.particle_velocity;
     // TODO: Write an if constexpr for the transport only case (fixed velocity),
@@ -1015,6 +1012,9 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
     //           << "\n";
     // lambda.print(std::cout);
     //
+    Vector<double> positive_lambda(eigenvalues.size());
+    Vector<double> negative_lambda(eigenvalues.size());
+
     std::replace_copy_if(
         lambda.begin(), lambda.end(), positive_lambda.begin(),
         std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
