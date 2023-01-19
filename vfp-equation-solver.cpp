@@ -183,8 +183,12 @@ class BackgroundVelocityField : public Function<dim> {
     (void)point;
     if constexpr (dim == 1) value[0] = 0.2;
     if constexpr (dim == 2) {
-      value[0] = 0.;
-      value[1] = 0.;
+      // constant velocity
+      // value[0] = 0.1;
+      // value[1] = 0.1;
+      // rigid rotator
+      value[0] = -point[1];
+      value[1] = point[0];
     }
   }
 
@@ -295,9 +299,18 @@ class InitialValueFunction : public Function<dim> {
     // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
     if constexpr (dim == 2) {
-      values[0] =
-          1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+      // Gaussian
+      // values[0] =
+      //     1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+
+      // constant disc
       // if (p.norm() <= 1.) values[0] = 1.;
+
+      // Rigid rotator
+      if (std::abs(p[0]) <= 3 && std::abs(p[1]) <=0.5 )
+	values[0] = 1.;
+      if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <=3 )
+	values[0] = 1.;
     }
     // Fill all components with the same values
     // std::fill(
