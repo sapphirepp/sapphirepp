@@ -184,12 +184,22 @@ class BackgroundVelocityField : public Function<dim> {
     if constexpr (dim == 1) value[0] = 0.2;
     if constexpr (dim == 2) {
       // constant velocity
-      // value[0] = 0.1;
-      // value[1] = 0.1;
+      value[0] = 0.1;
+      value[1] = 0.1;
       // rigid rotator
-      value[0] = -point[1];
-      value[1] = point[0];
+      // value[0] = -point[1];
+      // value[1] = point[0];
     }
+    if constexpr (dim == 3) {
+      // constant velocity
+      value[0] = 0.;
+      value[1] = 0.;
+      value[2] = 0.;
+      // rigid rotator
+      // value[0] = -point[1];
+      // value[1] = point[0];
+    }
+
   }
 
   void divergence_list(const std::vector<Point<dim>> &points,
@@ -309,6 +319,9 @@ class InitialValueFunction : public Function<dim> {
       // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) values[0] = 1.;
       // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) values[0] = 1.;
     }
+    if constexpr (dim == 3) 
+      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) + std::pow(p[0], 2))));
+
     // Fill all components with the same values
     // std::fill(
     //     values.begin(), values.end(),
@@ -1240,7 +1253,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             }
           }
           if constexpr ((flags & TermFlags::magnetic) != TermFlags::none) {
-            for (unsigned int coordinate; coordinate < dim; ++coordinate)
+            for (unsigned int coordinate = 0; coordinate < dim; ++coordinate)
               copy_data.cell_dg_matrix(i, j) -=
                   fe_v.shape_value(i, q_index) *
                   magnetic_field_values[q_index][coordinate] *
@@ -1680,7 +1693,7 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags =
-        TermFlags::advection /* | TermFlags::magnetic | TermFlags::reaction */;
+        TermFlags::advection | TermFlags::magnetic | TermFlags::reaction;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
@@ -1697,7 +1710,7 @@ int main() {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 2> vfp_equation_solver(
+    VFPEquationSolver<flags, 3> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
