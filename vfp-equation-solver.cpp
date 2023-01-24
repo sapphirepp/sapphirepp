@@ -178,7 +178,7 @@ class BackgroundVelocityField : public Function<dim> {
  public:
   virtual void vector_value(const Point<dim> &point,
                             Vector<double> &value) const override {
-    Assert(dim <= 2, ExcNotImplemented());
+    Assert(dim <= 3, ExcNotImplemented());
     // constant velocity field
     (void)point;
     if constexpr (dim == 1) value[0] = 0.2;
@@ -199,12 +199,11 @@ class BackgroundVelocityField : public Function<dim> {
       // value[0] = -point[1];
       // value[1] = point[0];
     }
-
   }
 
   void divergence_list(const std::vector<Point<dim>> &points,
                        std::vector<double> &values) {
-    Assert(dim <= 2, ExcNotImplemented());
+    Assert(dim <= 3, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
@@ -299,7 +298,7 @@ class InitialValueFunction : public Function<dim> {
   InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
   virtual void vector_value(const Point<dim> &p,
                             Vector<double> &values) const override {
-    Assert(dim <= 2, ExcNotImplemented());
+    Assert(dim <= 3, ExcNotImplemented());
     Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
            ExcDimensionMismatch(values.size(),
                                 (expansion_order + 1) * (expansion_order + 1)));
@@ -319,8 +318,9 @@ class InitialValueFunction : public Function<dim> {
       // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) values[0] = 1.;
       // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) values[0] = 1.;
     }
-    if constexpr (dim == 3) 
-      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) + std::pow(p[0], 2))));
+    if constexpr (dim == 3)
+      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) +
+                                   std::pow(p[2], 2))));
 
     // Fill all components with the same values
     // std::fill(
@@ -579,7 +579,7 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
 
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::run() {
-  // std::cout << particle_properties;
+  std::cout << particle_properties;
   output_compile_time_parameters();
   output_index_order();
   make_grid();
@@ -1032,16 +1032,20 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
   // over the quadrature points
   enum Coordinate { x, y, z, p, none = 1000 };
   Coordinate component = none;  // Produces an error if not overwritten
-  if (std::abs(normals[0][x]) == 1.)
+  // NOTE: Such a simple comparison of doubles is only possible, because I know
+  // that I am comparing 0. with 1. or something very close to one with one. If
+  // this ever fails a more sophisticated comparison is needed, e.g.
+  // https://floating-point-gui.de/errors/comparison/
+  if (std::abs(1. - std::abs(normals[0][x])) < 1e-5)
     component = x;  // std::abs is nessecary
                     // because of the boundary
                     // faces, i.e. <-| n_k = -1
                     // for some faces.
   if constexpr (dim >= 2) {
-    if (std::abs(normals[0][y]) == 1.) component = y;
+    if (std::abs(1. - std::abs(normals[0][y])) < 1e-5) component = y;
   }
   if constexpr (dim == 3) {
-    if (std::abs(normals[0][z]) == 1.) component = z;
+    if (std::abs(1. - std::abs(normals[0][z])) < 1e-5) component = z;
   }
   // TODO: Insert a if constexpr for the p case
 
@@ -1701,7 +1705,8 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags =
-        TermFlags::advection | TermFlags::magnetic | TermFlags::reaction;
+        TermFlags::advection // | TermFlags::magnetic | TermFlags::reaction
+		  ;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
