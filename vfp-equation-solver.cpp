@@ -481,7 +481,7 @@ class VFPEquationSolver {
   std::vector<LAPACKFullMatrix<double>> advection_matrices;
 
   // Rotataion matrices (due to the magnetic field)
-  std::vector<LAPACKFullMatrix<double>> omega_matrices;
+  std::vector<LAPACKFullMatrix<double>> generator_rotation_matrices;
   // (magnitude) p advection
   LAPACKFullMatrix<double> Ap_xx;
   LAPACKFullMatrix<double> Ap_xy;
@@ -490,8 +490,8 @@ class VFPEquationSolver {
   LAPACKFullMatrix<double> Ap_yz;
   LAPACKFullMatrix<double> Ap_zz;
 
-  // Reaction term
-  Vector<double> R;
+  // Collision term (essentially a reaction term)
+  Vector<double> collision_matrix;
 
   // Upwind flux matrices
   // Eigenvectors
@@ -646,10 +646,11 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   for (auto &advection_matrix : advection_matrices)
     advection_matrix.reinit(matrix_size);
 
-  omega_matrices.resize(3);
-  for (auto &omega_matrix : omega_matrices) omega_matrix.reinit(matrix_size);
+  generator_rotation_matrices.resize(3);
+  for (auto &generator_matrix : generator_rotation_matrices)
+    generator_matrix.reinit(matrix_size);
 
-  R.reinit(matrix_size);
+  collision_matrix.reinit(matrix_size);
   for (int s = 0; s <= 1; ++s) {
     for (int l = 0, i = 0; l <= expansion_order + 1; ++l) {
       for (int m = l; m >= s; --m) {
@@ -807,38 +808,38 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
 
               // Omega_x
               if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
-                omega_matrices[0].set(i, j, 1. * m);
-                omega_matrices[0].set(
+                generator_rotation_matrices[0].set(i, j, 1. * m);
+                generator_rotation_matrices[0].set(
                     j, i,
                     -1. * m);  // Omega matrices are anti-symmetric
               }
               // Omega_y
               if (l == l_prime && (m + 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                omega_matrices[1].set(i, j,
-                                      0.5 * std::sqrt((l + m + 1.) * (l - m)));
-                omega_matrices[1].set(j, i,
-                                      -0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                generator_rotation_matrices[1].set(
+                    i, j, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                generator_rotation_matrices[1].set(
+                    j, i, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
               }
               if (l == l_prime && (m - 1) == m_prime && s == 0 &&
                   s_prime == 1) {
-                omega_matrices[1].set(i, j,
-                                      0.5 * std::sqrt((l - m + 1.) * (l + m)));
-                omega_matrices[1].set(j, i,
-                                      -0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                generator_rotation_matrices[1].set(
+                    i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                generator_rotation_matrices[1].set(
+                    j, i, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
               // Omega_z
               if (l == l_prime && (m + 1) == m_prime && s == s_prime) {
-                omega_matrices[2].set(i, j,
-                                      -0.5 * std::sqrt((l + m + 1.) * (l - m)));
+                generator_rotation_matrices[2].set(
+                    i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
               }
               if (l == l_prime && (m - 1) == m_prime && s == s_prime) {
-                omega_matrices[2].set(i, j,
-                                      0.5 * std::sqrt((l - m + 1.) * (l + m)));
+                generator_rotation_matrices[2].set(
+                    i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
               }
-              // R
+              // C
               if (l == l_prime && m == m_prime && s == s_prime) {
-                R[i] = 0.5 * scattering_frequency * l * (l + 1.);
+                collision_matrix[i] = 0.5 * scattering_frequency * l * (l + 1.);
               }
             }
           }
@@ -860,18 +861,22 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
       // Special cases for Omega
       if (l > 0) {
         // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
-        omega_matrices[1](l * (l + 1), l * (l + 1) + 1) =
-            std::sqrt(2) * omega_matrices[1](l * (l + 1), l * (l + 1) + 1);
+        generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1) =
+            std::sqrt(2) *
+            generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1);
         // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
-        omega_matrices[1](l * (l + 1) + 1, l * (l + 1)) =
-            std::sqrt(2) * omega_matrices[1](l * (l + 1) + 1, l * (l + 1));
+        generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1)) =
+            std::sqrt(2) *
+            generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1));
 
         // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
-        omega_matrices[2](l * (l + 1), l * (l + 1) - 1) =
-            std::sqrt(2) * omega_matrices[2](l * (l + 1), l * (l + 1) - 1);
+        generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1) =
+            std::sqrt(2) *
+            generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1);
         // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
-        omega_matrices[2](l * (l + 1) - 1, l * (l + 1)) =
-            std::sqrt(2) * omega_matrices[2](l * (l + 1) - 1, l * (l + 1));
+        generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1)) =
+            std::sqrt(2) *
+            generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1));
       }
       // Special cases for A_y (necessary for every value of l)
       // Above the diagonal
@@ -917,10 +922,10 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   for (auto &advection_matrix : advection_matrices)
     advection_matrix.grow_or_shrink(num_exp_coefficients);
 
-  for (auto &omega_matrix : omega_matrices)
-    omega_matrix.grow_or_shrink(num_exp_coefficients);
+  for (auto &generator_matrix : generator_rotation_matrices)
+    generator_matrix.grow_or_shrink(num_exp_coefficients);
 
-  R.grow_or_shrink(num_exp_coefficients);
+  collision_matrix.grow_or_shrink(num_exp_coefficients);
 
   Ap_xx.grow_or_shrink(num_exp_coefficients);
   Ap_xy.grow_or_shrink(num_exp_coefficients);
@@ -1217,7 +1222,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             if constexpr ((flags & TermFlags::reaction) != TermFlags::none) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_dg_matrix(i, j) +=
-                  R[component_i] * fe_v.shape_value(i, q_index) *
+                  collision_matrix[component_i] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
             if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
@@ -1259,7 +1264,8 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
               copy_data.cell_dg_matrix(i, j) -=
                   fe_v.shape_value(i, q_index) *
                   magnetic_field_values[q_index][coordinate] *
-                  omega_matrices[coordinate](component_i, component_j) *
+                  generator_rotation_matrices[coordinate](component_i,
+                                                          component_j) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
           }
         }
