@@ -1253,7 +1253,9 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             }
           }
           if constexpr ((flags & TermFlags::magnetic) != TermFlags::none) {
-            for (unsigned int coordinate = 0; coordinate < dim; ++coordinate)
+            // NOTE: All three components of the B-Field are included not
+            // matter, which dimension of the configuration space is considered
+            for (unsigned int coordinate = 0; coordinate < 3; ++coordinate)
               copy_data.cell_dg_matrix(i, j) -=
                   fe_v.shape_value(i, q_index) *
                   magnetic_field_values[q_index][coordinate] *
