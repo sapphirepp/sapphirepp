@@ -1202,7 +1202,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
 
     // NOTE: Second argument constructs empty vectors with 2 values. They are
     // copied q_points.size() times.
-    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(2));
+    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(dim));
     background_velocity_field.vector_value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
     background_velocity_field.divergence_list(q_points, div_velocities);
