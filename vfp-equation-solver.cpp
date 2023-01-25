@@ -181,7 +181,12 @@ class BackgroundVelocityField : public Function<dim> {
     Assert(dim <= 3, ExcNotImplemented());
     // constant velocity field
     (void)point;
-    if constexpr (dim == 1) value[0] = 0.2;
+    if constexpr (dim == 1) {
+      // constant velocity
+      value[0] = 0.2;
+      // time dependent velocity
+      // value[0] = std::sin(this->get_time())/10.;
+    }
     if constexpr (dim == 2) {
       // constant velocity
       value[0] = 0.1;
@@ -446,7 +451,7 @@ class VFPEquationSolver {
       std::vector<FullMatrix<double>> &negative_flux_matrices);
   void setup_system();
   void assemble_mass_matrix();
-  void assemble_dg_matrix(unsigned int evaluation_time);
+  void assemble_dg_matrix();
   void project_initial_condition();
   void theta_method_solve_system();
   void theta_method(double theta);
@@ -585,7 +590,7 @@ void VFPEquationSolver<flags, dim>::run() {
   setup_system();
   prepare_upwind_fluxes();
   assemble_mass_matrix();
-  assemble_dg_matrix(time);
+  assemble_dg_matrix();
   project_initial_condition();
 
   current_solution = previous_solution;
@@ -608,6 +613,10 @@ void VFPEquationSolver<flags, dim>::run() {
       TimerOutput::Scope timer_section(timer, "Output");
       output_results();
     }
+    // If the B-field and the velocity field are time dependent
+    // Update the DG matrix
+    // dg_matrix = 0;
+    // assemble_dg_matrix();
     // Update solution
     previous_solution = current_solution;
   }
@@ -1049,6 +1058,7 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
 
   // Get the value of the velocity field at every quadrature point
   BackgroundVelocityField<dim> velocity_field;
+  velocity_field.set_time(time);
   std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(dim));
   velocity_field.vector_value_list(q_points, velocities);
 
@@ -1174,8 +1184,7 @@ void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
 }
 
 template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
-    unsigned int evaluation_time) {
+void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
   TimerOutput::Scope timer_section(timer, "DG matrix");
   /*
     What kind of loops are there ?
@@ -1187,9 +1196,9 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   */
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   BackgroundVelocityField<dim> background_velocity_field;
-  background_velocity_field.set_time(evaluation_time);
+  background_velocity_field.set_time(time);
   MagneticField<dim> magnetic_field(parameter_handler);
-  magnetic_field.set_time(evaluation_time);
+  magnetic_field.set_time(time);
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
                                ScratchData<dim> &scratch_data,
