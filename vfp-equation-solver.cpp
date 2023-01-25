@@ -410,8 +410,7 @@ struct CopyDataFace {
 };
 
 struct CopyData {
-  FullMatrix<double> cell_dg_matrix;
-  FullMatrix<double> cell_mass_matrix;
+  FullMatrix<double> cell_matrix;
   Vector<double> cell_rhs;
   std::vector<types::global_dof_index> local_dof_indices;
   std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -419,8 +418,7 @@ struct CopyData {
 
   template <typename Iterator>
   void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
-    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
     cell_rhs.reinit(dofs_per_cell);
 
     local_dof_indices.resize(dofs_per_cell);
@@ -1132,31 +1130,27 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
   TimerOutput::Scope timer_section(timer, "Mass matrix");
 
-  std::cout << "The mass matrix is assembled. \n";
-  FEValues<dim> fe_v(
-      mapping, fe, quadrature,
-      update_values | update_quadrature_points | update_JxW_values);
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
 
-  const unsigned int n_dofs = fe.n_dofs_per_cell();
-
-  FullMatrix<double> cell_mass_matrix(n_dofs, n_dofs);
-
-  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
-
-  for (const auto &cell : dof_handler.active_cell_iterators()) {
-    cell_mass_matrix = 0;
+  const auto cell_worker = [](const Iterator &cell,
+                              ScratchData<dim> &scratch_data,
+                              CopyData &copy_data) {
+    FEValues<dim> &fe_v = scratch_data.fe_values;
     fe_v.reinit(cell);
-
+    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
+    // reinit the cell_matrix
+    copy_data.reinit(cell, n_dofs);
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
       for (unsigned int i : fe_v.dof_indices()) {
-        const unsigned int component_i = fe.system_to_component_index(i).first;
+        const unsigned int component_i =
+            fe_v.get_fe().system_to_component_index(i).first;
         for (unsigned int j : fe_v.dof_indices()) {
           const unsigned int component_j =
-              fe.system_to_component_index(j).first;
+              fe_v.get_fe().system_to_component_index(j).first;
           // mass matrix
-          cell_mass_matrix(i, j) +=
+          copy_data.cell_matrix(i, j) +=
               (component_i == component_j
                    ? fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index)
                    : 0) *
@@ -1164,18 +1158,25 @@ void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
         }
       }
     }
-    cell->get_dof_indices(local_dof_indices);
+  };
 
-    constraints.distribute_local_to_global(cell_mass_matrix, local_dof_indices,
+  const auto copier = [&](const CopyData &c) {
+    constraints.distribute_local_to_global(c.cell_matrix, c.local_dof_indices,
                                            mass_matrix);
-  }
+  };
+  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
+  CopyData copy_data;
+  std::cout << "Begin the assembly of the mass matrix. \n";
+  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
+                        copier, scratch_data, copy_data,
+                        MeshWorker::assemble_own_cells);
+  std::cout << "The mass matrix was assembled. \n";
 }
+
 template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     unsigned int evaluation_time) {
   TimerOutput::Scope timer_section(timer, "DG matrix");
-
-  std::cout << "The DG matrix is assembled. \n";
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -1198,7 +1199,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     fe_v.reinit(cell);
 
     const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
-    // reinit the matrices cell_matrix_dg, cell_mass_matrix
+    // reinit the cell_matrix
     copy_data.reinit(cell, n_dofs);
 
     const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
@@ -1206,7 +1207,8 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
 
     // NOTE: Second argument constructs empty vectors with 2 values. They are
     // copied q_points.size() times.
-    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(dim));
+    std::vector<Vector<double>> velocities(q_points.size(),
+                                           Vector<double>(dim));
     background_velocity_field.vector_value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
     background_velocity_field.divergence_list(q_points, div_velocities);
@@ -1225,14 +1227,14 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           if (component_i == component_j) {
             if constexpr ((flags & TermFlags::reaction) != TermFlags::none) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
-              copy_data.cell_dg_matrix(i, j) +=
+              copy_data.cell_matrix(i, j) +=
                   collision_matrix[component_i] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
             if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
               // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
               // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
-              copy_data.cell_dg_matrix(i, j) -=
+              copy_data.cell_matrix(i, j) -=
                   div_velocities[q_index] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
@@ -1243,7 +1245,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             if (component_i == component_j) {
               for (unsigned int coordinate = 0; coordinate < dim;
                    ++coordinate) {
-                copy_data.cell_dg_matrix(i, j) -=
+                copy_data.cell_matrix(i, j) -=
                     fe_v.shape_grad(i, q_index)[coordinate] *
                     velocities[q_index][coordinate] *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -1254,7 +1256,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
               // and A_z are sparse. TODO: Performance check. If too bad, return
               // to the strategy, which was used in v0.6.5
               for (unsigned int coordinate = 0; coordinate < dim; ++coordinate)
-                copy_data.cell_dg_matrix(i, j) -=
+                copy_data.cell_matrix(i, j) -=
                     fe_v.shape_grad(i, q_index)[coordinate] *
                     particle_properties.particle_velocity *
                     advection_matrices[coordinate](component_i, component_j) *
@@ -1265,7 +1267,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
             // NOTE: All three components of the B-Field are included not
             // matter, which dimension of the configuration space is considered
             for (unsigned int coordinate = 0; coordinate < 3; ++coordinate)
-              copy_data.cell_dg_matrix(i, j) -=
+              copy_data.cell_matrix(i, j) -=
                   fe_v.shape_value(i, q_index) *
                   magnetic_field_values[q_index][coordinate] *
                   generator_rotation_matrices[coordinate](component_i,
@@ -1316,7 +1318,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
           if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
             // Outflow boundary: Everyhing with a positive flux along the
             // direction of the normal leaves the boundary
-            copy_data.cell_dg_matrix(i, j) +=
+            copy_data.cell_matrix(i, j) +=
                 fe_face_v.shape_value(i, q_index) *
                 positive_flux_matrices[q_index](component_i, component_j) *
                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
@@ -1446,10 +1448,8 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   };
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
-    constraints.distribute_local_to_global(c.cell_dg_matrix,
-                                           c.local_dof_indices, dg_matrix);
-    constraints.distribute_local_to_global(c.cell_mass_matrix,
-                                           c.local_dof_indices, mass_matrix);
+    constraints.distribute_local_to_global(c.cell_matrix, c.local_dof_indices,
+                                           dg_matrix);
     for (auto &cdf : c.face_data) {
       for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
         for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
@@ -1469,13 +1469,14 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
 
   ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
-
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-                        cell_worker, copier, scratch_data, copy_data,
+  std::cout << "Begin the assembly of the DG matrix. \n";
+  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
+                        copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
                             MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker, face_worker);
+  std::cout << "The DG matrix was assembled. \n";
 }
 
 template <TermFlags flags, int dim>
