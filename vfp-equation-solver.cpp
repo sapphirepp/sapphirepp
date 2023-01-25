@@ -249,8 +249,8 @@ enum class TermFlags {
   none = 0,
   spatial_advection = 1 << 0,
   collision = 1 << 1,
-  magnetic = 1 << 2
-
+  magnetic = 1 << 2,
+  momentum = 1 << 3
 };
 
 constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
@@ -268,11 +268,12 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
     s << "	 - Spatial Advection\n";
   if ((f & TermFlags::collision) != TermFlags::none) s << "	 - Collision\n";
   if ((f & TermFlags::magnetic) != TermFlags::none) s << "	 - Magnetic\n";
+  if ((f & TermFlags::momentum) != TermFlags::none) s << "	 - Momentum\n";
   return s;
 }
 
 // Initial values
-template <int dim>
+template <TermFlags flags, int dim>
 class InitialValueFunction : public Function<dim> {
  public:
   InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
@@ -412,8 +413,12 @@ class VFPEquationSolver {
   VFPEquationSolver(ParameterHandler &prm, unsigned int polynomial_degree,
                     int order_expansion);
   void run();
-
+  void print_dim() const {
+    std::cout << "phase space dim: " << phase_space_dim << std::endl;
+  }
+ 
  private:
+  const int phase_space_dim = ((flags & TermFlags::momentum) != TermFlags::none) ? dim + 1 : dim;
   void make_grid();
   void setup_pde_system();
   void prepare_upwind_fluxes();
@@ -1485,7 +1490,7 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     // Initial values
-    InitialValueFunction<dim> initial_value_function(expansion_order);
+    InitialValueFunction<flags,dim> initial_value_function(expansion_order);
     std::vector<Vector<double>> initial_values(
         q_points.size(), Vector<double>(num_exp_coefficients));
     initial_value_function.vector_value_list(q_points, initial_values);
@@ -1690,7 +1695,8 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::spatial_advection |
-                                TermFlags::magnetic | TermFlags::collision;
+                                TermFlags::magnetic | TermFlags::collision | TermFlags::momentum;
+  
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
@@ -1707,9 +1713,10 @@ int main() {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 3> vfp_equation_solver(
+    VFPEquationSolver<flags, 1> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
-    vfp_equation_solver.run();
+    vfp_equation_solver.print_dim();
+    // vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
     std::cerr << std::endl
