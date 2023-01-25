@@ -106,21 +106,6 @@ void ParameterReader::declare_parameters() {
     parameter_handler.declare_entry(
         "Particle energy", "1.", Patterns::Double(),
         "The energy of the particle in units of 10 Gev");
-    // parameter_handler.declare_entry(
-    //     "Plasma velocity x-component", ".1", Patterns::Double(),
-    //     "The x-component of the background plasma's velocity");
-    // parameter_handler.declare_entry(
-    //     "Plasma velocity y-component", ".1", Patterns::Double(),
-    //     "The y-component of the background plasma's velocity");
-    parameter_handler.declare_entry("Magnetic field x-component", "0.",
-                                    Patterns::Double(),
-                                    "The x-component of the magnetic field");
-    parameter_handler.declare_entry("Magnetic field y-component", "0.",
-                                    Patterns::Double(),
-                                    "The y-component of the magnetic field");
-    parameter_handler.declare_entry("Magnetic field z-component", "1.",
-                                    Patterns::Double(),
-                                    "The z-component of the magnetic field");
   }
   parameter_handler.leave_subsection();
 }
@@ -220,15 +205,7 @@ class BackgroundVelocityField : public Function<dim> {
 template <int dim>
 class MagneticField : public Function<dim> {
  public:
-  MagneticField(ParameterHandler &prm) : parameter_handler(prm) {
-    parameter_handler.enter_subsection("Physical parameters");
-    {
-      B_x = parameter_handler.get_double("Magnetic field x-component");
-      B_y = parameter_handler.get_double("Magnetic field y-component");
-      B_z = parameter_handler.get_double("Magnetic field z-component");
-    }
-    parameter_handler.leave_subsection();
-  }
+  MagneticField() {}
   virtual double value(const Point<dim> &point,
                        const unsigned int component) const override {
     // Check if a component was picked
@@ -263,7 +240,6 @@ class MagneticField : public Function<dim> {
   }
 
  private:
-  ParameterHandler &parameter_handler;
   double B_x = 0.;
   double B_y = 0.;
   double B_z = 1.;
@@ -1195,7 +1171,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   BackgroundVelocityField<dim> background_velocity_field;
   background_velocity_field.set_time(time);
-  MagneticField<dim> magnetic_field(parameter_handler);
+  MagneticField<dim> magnetic_field;
   magnetic_field.set_time(time);
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
