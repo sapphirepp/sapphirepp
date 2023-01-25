@@ -200,9 +200,6 @@ class BackgroundVelocityField : public Function<dim> {
       value[0] = 0.;
       value[1] = 0.;
       value[2] = 0.;
-      // rigid rotator
-      // value[0] = -point[1];
-      // value[1] = point[0];
     }
   }
 
@@ -1299,13 +1296,6 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
     const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
     // NOTE: copy_data is not reinitialised, the cell_workers contribution to
     // the cell_dg_matrix should not be deleted
-
-    // NOTE: Currently I do not the velocity field here. The upwind flux may
-    // depend on the quadrature point in the future.
-    // const std::vector<Point<dim>> &q_points =
-    // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
-    // velocities(q_points.size(), Vector<double>(2));
-    // background_velocity_field.vector_value_list(q_points, velocities);
 
     const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_face_v.get_JxW_values();
