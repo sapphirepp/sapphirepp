@@ -272,8 +272,9 @@ class MagneticField : public Function<dim> {
 enum class TermFlags {
   none = 0,
   advection = 1 << 0,
-  reaction = 1 << 1,
+  collision = 1 << 1,
   magnetic = 1 << 2
+
 };
 
 constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
@@ -288,7 +289,7 @@ template <typename StreamType>
 inline StreamType &operator<<(StreamType &s, TermFlags f) {
   s << "Term flags: \n";
   if ((f & TermFlags::advection) != TermFlags::none) s << "	 - Advection\n";
-  if ((f & TermFlags::reaction) != TermFlags::none) s << "	 - Reaction\n";
+  if ((f & TermFlags::collision) != TermFlags::none) s << "	 - Collision\n";
   if ((f & TermFlags::magnetic) != TermFlags::none) s << "	 - Magnetic\n";
   return s;
 }
@@ -1231,7 +1232,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
             fe_v.get_fe().system_to_component_index(j).first;
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
           if (component_i == component_j) {
-            if constexpr ((flags & TermFlags::reaction) != TermFlags::none) {
+            if constexpr ((flags & TermFlags::collision) != TermFlags::none) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_matrix(i, j) +=
                   collision_matrix[component_i] * fe_v.shape_value(i, q_index) *
@@ -1705,8 +1706,8 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags =
-        TermFlags::advection // | TermFlags::magnetic | TermFlags::reaction
-		  ;
+        TermFlags::advection  // | TermFlags::magnetic | TermFlags::collision
+        ;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
