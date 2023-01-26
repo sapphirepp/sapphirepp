@@ -48,6 +48,42 @@
 
 namespace vfp_equation_solver {
 using namespace dealii;
+// Functions to compute the velocity and gamma when p is given
+template <int dim_ps>
+class ParticleVelocity : public Function<dim_ps> {
+ public:
+  void value_list(const std::vector<Point<dim_ps>> &points,
+                  Vector<double> &values,
+                  unsigned int component = 0) const override {
+    Assert(values.size() == points.size(),
+           ExcDimensionMismatch(values.size(), points.size()));
+    static_cast<void>(component);
+
+    // NOTE: It is assumed that magnitude p is always the last component in
+    // points (i.e. the coordinates of the phase space are x,(y,z), p)
+    for (auto p : points) {
+      p[dim_ps - 1];
+    }
+  }
+};
+
+template <int dim_ps>
+class Gamma : public Function<dim_ps> {
+  void value_list(const std::vector<Point<dim_ps>> &points,
+                  Vector<double> &values,
+                  unsigned int component = 0) const override {
+    Assert(values.size() == points.size(),
+           ExcDimensionMismatch(values.size(), points.size()));
+    static_cast<void>(component);
+
+    // NOTE: It is assumed that magnitude p is always the last component in
+    // points (i.e. the coordinates of the phase space are x,(y,z), p)
+    for (auto p : points) {
+      p[dim_ps - 1];
+    }
+  }
+};
+
 // Input data
 class ParameterReader {
  public:
