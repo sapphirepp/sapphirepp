@@ -158,21 +158,21 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 // the background velocity field
-template <int dim>
-class BackgroundVelocityField : public Function<dim> {
+template <int cs_dim, bool momentum>
+class BackgroundVelocityField : public Function<cs_dim + momentum> {
  public:
-  virtual void vector_value(const Point<dim> &point,
+  virtual void vector_value(const Point<cs_dim + momentum> &point,
                             Vector<double> &value) const override {
-    Assert(dim <= 3, ExcNotImplemented());
+    Assert(cs_dim <= 3, ExcNotImplemented());
     // constant velocity field
     (void)point;
-    if constexpr (dim == 1) {
+    if constexpr (cs_dim == 1) {
       // constant velocity
-      value[0] = 0.2;
+      value[0] = 0.0;
       // time dependent velocity
       // value[0] = std::sin(this->get_time())/10.;
     }
-    if constexpr (dim == 2) {
+    if constexpr (cs_dim == 2) {
       // constant velocity
       value[0] = 0.1;
       value[1] = 0.1;
@@ -180,7 +180,7 @@ class BackgroundVelocityField : public Function<dim> {
       // value[0] = -point[1];
       // value[1] = point[0];
     }
-    if constexpr (dim == 3) {
+    if constexpr (cs_dim == 3) {
       // constant velocity
       value[0] = 0.;
       value[1] = 0.;
@@ -188,9 +188,9 @@ class BackgroundVelocityField : public Function<dim> {
     }
   }
 
-  void divergence_list(const std::vector<Point<dim>> &points,
+  void divergence_list(const std::vector<Point<cs_dim + momentum>> &points,
                        std::vector<double> &values) {
-    Assert(dim <= 3, ExcNotImplemented());
+    Assert(cs_dim <= 3, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
     std::fill(values.begin(), values.end(), 0.);
@@ -202,11 +202,11 @@ class BackgroundVelocityField : public Function<dim> {
 };
 
 // the magnetic field
-template <int dim>
-class MagneticField : public Function<dim> {
+template <int dim_cs, bool momentum>
+class MagneticField : public Function<dim_cs + momentum> {
  public:
   MagneticField() {}
-  virtual double value(const Point<dim> &point,
+  virtual double value(const Point<dim_cs + momentum> &point,
                        const unsigned int component) const override {
     // Check if a component was picked
     Assert(component == 0 || component == 1 || component == 2,
@@ -231,7 +231,7 @@ class MagneticField : public Function<dim> {
     }
   }
 
-  virtual void vector_value(const Point<dim> &point,
+  virtual void vector_value(const Point<dim_cs + momentum> &point,
                             Vector<double> &value) const override {
     (void)point;
     value[0] = B_x;
@@ -273,22 +273,22 @@ inline StreamType &operator<<(StreamType &s, TermFlags f) {
 }
 
 // Initial values
-template <TermFlags flags, int dim>
-class InitialValueFunction : public Function<dim> {
+template <int dim_cs, bool momentum>
+class InitialValueFunction : public Function<dim_cs + momentum> {
  public:
   InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
-  virtual void vector_value(const Point<dim> &p,
+  virtual void vector_value(const Point<dim_cs + momentum> &p,
                             Vector<double> &values) const override {
-    Assert(dim <= 3, ExcNotImplemented());
+    Assert(dim_cs <= 3, ExcNotImplemented());
     Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
            ExcDimensionMismatch(values.size(),
                                 (expansion_order + 1) * (expansion_order + 1)));
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
-    if constexpr (dim == 1) values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+    if constexpr (dim_cs == 1) values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
     // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
-    if constexpr (dim == 2) {
+    if constexpr (dim_cs == 2) {
       // Gaussian
       values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
 
@@ -299,7 +299,7 @@ class InitialValueFunction : public Function<dim> {
       // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) values[0] = 1.;
       // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) values[0] = 1.;
     }
-    if constexpr (dim == 3)
+    if constexpr (dim_cs == 3)
       values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) +
                                    std::pow(p[2], 2))));
 
@@ -315,13 +315,13 @@ class InitialValueFunction : public Function<dim> {
 };
 
 // The mesh_loop function requires helper data types
-template <int dim>
+template <int dim_ps>
 class ScratchData {
  public:
   // Constructor
-  ScratchData(const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
-              const Quadrature<dim> &quadrature,
-              const Quadrature<dim - 1> &quadrature_face,
+  ScratchData(const Mapping<dim_ps> &mapping, const FiniteElement<dim_ps> &fe,
+              const Quadrature<dim_ps> &quadrature,
+              const Quadrature<dim_ps - 1> &quadrature_face,
               const UpdateFlags update_flags = update_values |
                                                update_gradients |
                                                update_quadrature_points |
@@ -339,7 +339,7 @@ class ScratchData {
                                    neighbor_face_update_flags) {}
 
   // Copy Constructor
-  ScratchData(const ScratchData<dim> &scratch_data)
+  ScratchData(const ScratchData<dim_ps> &scratch_data)
       : fe_values(scratch_data.fe_values.get_mapping(),
                   scratch_data.fe_values.get_fe(),
                   scratch_data.fe_values.get_quadrature(),
@@ -359,10 +359,10 @@ class ScratchData {
             scratch_data.fe_values_subface_neighbor.get_quadrature(),
             scratch_data.fe_values_subface_neighbor.get_update_flags()) {}
 
-  FEValues<dim> fe_values;
-  FEFaceValues<dim> fe_values_face;
-  FEFaceValues<dim> fe_values_face_neighbor;
-  FESubfaceValues<dim> fe_values_subface_neighbor;
+  FEValues<dim_ps> fe_values;
+  FEFaceValues<dim_ps> fe_values_face;
+  FEFaceValues<dim_ps> fe_values_face_neighbor;
+  FESubfaceValues<dim_ps> fe_values_subface_neighbor;
 };
 
 struct CopyDataFace {
@@ -407,26 +407,34 @@ struct CopyData {
   }
 };
 
-template <TermFlags flags, int dim>
+template <TermFlags flags, int dim_cs>
 class VFPEquationSolver {
  public:
   VFPEquationSolver(ParameterHandler &prm, unsigned int polynomial_degree,
                     int order_expansion);
   void run();
-  void print_dim() const {
-    std::cout << "phase space dim: " << phase_space_dim << std::endl;
-  }
- 
+
  private:
-  const int phase_space_dim = ((flags & TermFlags::momentum) != TermFlags::none) ? dim + 1 : dim;
+  // Increase the dimension by one if momentum terms are included
+  //
+  // NOTE: Member variable needs be constexpr to be used as template argument.
+  // But it can only be constexpr if it is static ,i.e. if it is the same for
+  // all class instances. If it was not static, it would be determined when
+  // constructing an instance, which happens at run time.
+  //
+  // Alternative implementaion: Introduce an additional template parameter, e.g.
+  // bool momentum (see InitialValueFunction).
+  static constexpr int dim_ps =
+      ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
+
   void make_grid();
   void setup_pde_system();
   void prepare_upwind_fluxes();
   // NOTE: The LAPACKFullMatrix class does not implement a move constructor,
   // this is why the output argument is an input argument
   void compute_upwind_fluxes(
-      const std::vector<Point<dim>> &q_points,
-      const std::vector<Tensor<1, dim>> &normals,
+      const std::vector<Point<dim_ps>> &q_points,
+      const std::vector<Tensor<1, dim_ps>> &normals,
       std::vector<FullMatrix<double>> &positive_flux_matrices,
       std::vector<FullMatrix<double>> &negative_flux_matrices);
   void setup_system();
@@ -442,18 +450,18 @@ class VFPEquationSolver {
   void output_index_order() const;
 
   ParameterHandler &parameter_handler;
-  Triangulation<dim> triangulation;
-  DoFHandler<dim> dof_handler;
+  Triangulation<dim_ps> triangulation;
+  DoFHandler<dim_ps> dof_handler;
 
   // NOTE: The explicit use of a mapping is most likely related to the usage
   // of mesh_loop as well
-  const MappingQ1<dim> mapping;
-  const FESystem<dim> fe;  // TODO: const is probably wrong
+  const MappingQ1<dim_ps> mapping;
+  const FESystem<dim_ps> fe;  // TODO: const is probably wrong
 
   // NOTE: Quadratures are members of this class (and not e.g. part of the
   // assemble_system method), because I am using the mesh_loop function
-  const QGauss<dim> quadrature;
-  const QGauss<dim - 1> quadrature_face;
+  const QGauss<dim_ps> quadrature;
+  const QGauss<dim_ps - 1> quadrature_face;
 
   AffineConstraints<double> constraints;  // used in the L_2 projection of the
   // intial condition onto the finite
@@ -517,14 +525,13 @@ class VFPEquationSolver {
   TimerOutput timer;
 };
 
-template <TermFlags flags, int dim>
-VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
-                                                 unsigned int polynomial_degree,
-                                                 int order)
+template <TermFlags flags, int dim_cs>
+VFPEquationSolver<flags, dim_cs>::VFPEquationSolver(
+    ParameterHandler &prm, unsigned int polynomial_degree, int order)
     : parameter_handler(prm),
       dof_handler(triangulation),
       mapping(),
-      fe(FE_DGQ<dim>(polynomial_degree), (order + 1) * (order + 1)),
+      fe(FE_DGQ<dim_ps>(polynomial_degree), (order + 1) * (order + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
       expansion_order{order},
@@ -560,8 +567,8 @@ VFPEquationSolver<flags, dim>::VFPEquationSolver(ParameterHandler &prm,
   parameter_handler.leave_subsection();
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::run() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::run() {
   std::cout << particle_properties;
   output_compile_time_parameters();
   output_index_order();
@@ -603,8 +610,8 @@ void VFPEquationSolver<flags, dim>::run() {
   std::cout << "The simulation ended. \n";
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::make_grid() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
 
   GridGenerator::hyper_cube(triangulation, -5., 5.);
@@ -620,8 +627,8 @@ void VFPEquationSolver<flags, dim>::make_grid() {
             << triangulation.n_active_cells() << "\n";
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::setup_pde_system() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
   TimerOutput::Scope timer_section(timer, "PDE system");
 
   // The matrix products (e.g. A_x * A_y) only yield the correct system if we
@@ -963,8 +970,8 @@ void VFPEquationSolver<flags, dim>::setup_pde_system() {
   // R.print(std::cout);
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
   TimerOutput::Scope timer_section(timer, "Prepare Upwind flux");
   // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
   // requires to copy it
@@ -1006,10 +1013,10 @@ void VFPEquationSolver<flags, dim>::prepare_upwind_fluxes() {
                   smaller_than_tolerance, 0.);
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
-    const std::vector<Point<dim>> &q_points,
-    const std::vector<Tensor<1, dim>> &normals,
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
+    const std::vector<Point<dim_ps>> &q_points,
+    const std::vector<Tensor<1, dim_ps>> &normals,
     std::vector<FullMatrix<double>> &positive_flux_matrices,
     std::vector<FullMatrix<double>> &negative_flux_matrices) {
   // Determine if we are computing the flux of an interior face whose normal
@@ -1028,18 +1035,22 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
                     // because of the boundary
                     // faces, i.e. <-| n_k = -1
                     // for some faces.
-  if constexpr (dim >= 2) {
+  if constexpr (dim_cs >= 2) {
     if (std::abs(1. - std::abs(normals[0][y])) < 1e-5) component = y;
   }
-  if constexpr (dim == 3) {
+  if constexpr (dim_cs == 3) {
     if (std::abs(1. - std::abs(normals[0][z])) < 1e-5) component = z;
   }
   // TODO: Insert a if constexpr for the p case
 
   // Get the value of the velocity field at every quadrature point
-  BackgroundVelocityField<dim> velocity_field;
+  BackgroundVelocityField<dim_cs,
+                          (flags & TermFlags::momentum) != TermFlags::none>
+      velocity_field;
   velocity_field.set_time(time);
-  std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(dim));
+  // TODO: Value list for a specific component would be faster.
+  std::vector<Vector<double>> velocities(q_points.size(),
+                                         Vector<double>(dim_cs));
   velocity_field.vector_value_list(q_points, velocities);
 
   for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
@@ -1086,8 +1097,8 @@ void VFPEquationSolver<flags, dim>::compute_upwind_fluxes(
   }
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::setup_system() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::setup_system() {
   TimerOutput::Scope timer_section(timer, "FE system");
 
   dof_handler.distribute_dofs(fe);
@@ -1116,16 +1127,16 @@ void VFPEquationSolver<flags, dim>::setup_system() {
   constraints.close();
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::assemble_mass_matrix() {
   TimerOutput::Scope timer_section(timer, "Mass matrix");
 
-  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
+  using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
 
   const auto cell_worker = [](const Iterator &cell,
-                              ScratchData<dim> &scratch_data,
+                              ScratchData<dim_ps> &scratch_data,
                               CopyData &copy_data) {
-    FEValues<dim> &fe_v = scratch_data.fe_values;
+    FEValues<dim_ps> &fe_v = scratch_data.fe_values;
     fe_v.reinit(cell);
     const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
     // reinit the cell_matrix
@@ -1154,7 +1165,7 @@ void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
     constraints.distribute_local_to_global(c.cell_matrix, c.local_dof_indices,
                                            mass_matrix);
   };
-  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
+  ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
   std::cout << "Begin the assembly of the mass matrix. \n";
   MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
@@ -1163,8 +1174,8 @@ void VFPEquationSolver<flags, dim>::assemble_mass_matrix() {
   std::cout << "The mass matrix was assembled. \n";
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   TimerOutput::Scope timer_section(timer, "DG matrix");
   /*
     What kind of loops are there ?
@@ -1174,16 +1185,19 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
     component of the vector-valued shape function which corresponds to the
     indices (l,m,s)
   */
-  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-  BackgroundVelocityField<dim> background_velocity_field;
+  using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
+  BackgroundVelocityField<dim_cs,
+                          (flags & TermFlags::momentum) != TermFlags::none>
+      background_velocity_field;
   background_velocity_field.set_time(time);
-  MagneticField<dim> magnetic_field;
+  MagneticField<dim_cs, (flags & TermFlags::momentum) != TermFlags::none>
+      magnetic_field;
   magnetic_field.set_time(time);
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
-                               ScratchData<dim> &scratch_data,
+                               ScratchData<dim_ps> &scratch_data,
                                CopyData &copy_data) {
-    FEValues<dim> &fe_v = scratch_data.fe_values;
+    FEValues<dim_ps> &fe_v = scratch_data.fe_values;
     // reinit cell
     fe_v.reinit(cell);
 
@@ -1191,13 +1205,13 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
     // reinit the cell_matrix
     copy_data.reinit(cell, n_dofs);
 
-    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<Point<dim_ps>> &q_points = fe_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     // NOTE: Second argument constructs empty vectors with 2 values. They are
     // copied q_points.size() times.
     std::vector<Vector<double>> velocities(q_points.size(),
-                                           Vector<double>(dim));
+                                           Vector<double>(dim_cs));
     background_velocity_field.vector_value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
     background_velocity_field.divergence_list(q_points, div_velocities);
@@ -1220,33 +1234,31 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
                   collision_matrix[component_i] * fe_v.shape_value(i, q_index) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
-            if constexpr ((flags & TermFlags::spatial_advection) !=
-                          TermFlags::none) {
-              // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
-              // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
-              copy_data.cell_matrix(i, j) -=
-                  div_velocities[q_index] * fe_v.shape_value(i, q_index) *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
-            }
           }
           if constexpr ((flags & TermFlags::spatial_advection) !=
                         TermFlags::none) {
             // -[partial_x \phi_i * (u_x \delta_ij + Ax_ij)
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
-              for (unsigned int coordinate = 0; coordinate < dim;
+              for (unsigned int coordinate = 0; coordinate < dim_cs;
                    ++coordinate) {
                 copy_data.cell_matrix(i, j) -=
                     fe_v.shape_grad(i, q_index)[coordinate] *
                     velocities[q_index][coordinate] *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
               }
+              // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
+              // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
+              copy_data.cell_matrix(i, j) -=
+                  div_velocities[q_index] * fe_v.shape_value(i, q_index) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
 
             } else {
               // NOTE: Many zerso are added here, because the matrices Ax, Ay
               // and A_z are sparse. TODO: Performance check. If too bad, return
               // to the strategy, which was used in v0.6.5
-              for (unsigned int coordinate = 0; coordinate < dim; ++coordinate)
+              for (unsigned int coordinate = 0; coordinate < dim_cs;
+                   ++coordinate)
                 copy_data.cell_matrix(i, j) -=
                     fe_v.shape_grad(i, q_index)[coordinate] *
                     particle_properties.particle_velocity *
@@ -1255,7 +1267,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
             }
           }
           if constexpr ((flags & TermFlags::magnetic) != TermFlags::none) {
-            // NOTE: All three components of the B-Field are included not
+            // NOTE: All three components of the B-Field are included no
             // matter, which dimension of the configuration space is considered
             for (unsigned int coordinate = 0; coordinate < 3; ++coordinate)
               copy_data.cell_matrix(i, j) -=
@@ -1265,53 +1277,57 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
                                                           component_j) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
           }
-        }
-      }
-    }
-  };
-  // assemble boundary face terms
-  const auto boundary_worker = [&](const Iterator &cell,
-                                   const unsigned int &face_no,
-                                   ScratchData<dim> &scratch_data,
-                                   CopyData &copy_data) {
-    scratch_data.fe_values_face.reinit(cell, face_no);
-    const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
-    // Every shape function on the cell could contribute to the face integral,
-    // hence n_facet_dofs = n_dofs_per_cell
-    const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
-    // NOTE: copy_data is not reinitialised, the cell_workers contribution to
-    // the cell_dg_matrix should not be deleted
-
-    const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
-    const std::vector<double> &JxW = fe_face_v.get_JxW_values();
-    const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
-    std::vector<FullMatrix<double>> positive_flux_matrices(
-        q_points.size(), FullMatrix<double>(num_exp_coefficients));
-    std::vector<FullMatrix<double>> negative_flux_matrices(
-        q_points.size(), FullMatrix<double>(num_exp_coefficients));
-
-    compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
-                          negative_flux_matrices);
-    for (unsigned int i = 0; i < n_facet_dofs; ++i) {
-      const unsigned int component_i =
-          fe_face_v.get_fe().system_to_component_index(i).first;
-      for (unsigned int j = 0; j < n_facet_dofs; ++j) {
-        const unsigned int component_j =
-            fe_face_v.get_fe().system_to_component_index(j).first;
-        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-          if constexpr ((flags & TermFlags::spatial_advection) !=
-                        TermFlags::none) {
-            // Outflow boundary: Everyhing with a positive flux along the
-            // direction of the normal leaves the boundary
-            copy_data.cell_matrix(i, j) +=
-                fe_face_v.shape_value(i, q_index) *
-                positive_flux_matrices[q_index](component_i, component_j) *
-                fe_face_v.shape_value(j, q_index) * JxW[q_index];
+          if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
+            // Momentum part
           }
         }
       }
     }
   };
+  // assemble boundary face terms
+  const auto boundary_worker =
+      [&](const Iterator &cell, const unsigned int &face_no,
+          ScratchData<dim_ps> &scratch_data, CopyData &copy_data) {
+        scratch_data.fe_values_face.reinit(cell, face_no);
+        const FEFaceValuesBase<dim_ps> &fe_face_v = scratch_data.fe_values_face;
+        // Every shape function on the cell could contribute to the face
+        // integral, hence n_facet_dofs = n_dofs_per_cell
+        const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
+        // NOTE: copy_data is not reinitialised, the cell_workers contribution
+        // to the cell_dg_matrix should not be deleted
+
+        const std::vector<Point<dim_ps>> &q_points =
+            fe_face_v.get_quadrature_points();
+        const std::vector<double> &JxW = fe_face_v.get_JxW_values();
+        const std::vector<Tensor<1, dim_ps>> &normals =
+            fe_face_v.get_normal_vectors();
+        std::vector<FullMatrix<double>> positive_flux_matrices(
+            q_points.size(), FullMatrix<double>(num_exp_coefficients));
+        std::vector<FullMatrix<double>> negative_flux_matrices(
+            q_points.size(), FullMatrix<double>(num_exp_coefficients));
+
+        compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
+                              negative_flux_matrices);
+        for (unsigned int i = 0; i < n_facet_dofs; ++i) {
+          const unsigned int component_i =
+              fe_face_v.get_fe().system_to_component_index(i).first;
+          for (unsigned int j = 0; j < n_facet_dofs; ++j) {
+            const unsigned int component_j =
+                fe_face_v.get_fe().system_to_component_index(j).first;
+            for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+              if constexpr ((flags & TermFlags::spatial_advection) !=
+                            TermFlags::none) {
+                // Outflow boundary: Everyhing with a positive flux along the
+                // direction of the normal leaves the boundary
+                copy_data.cell_matrix(i, j) +=
+                    fe_face_v.shape_value(i, q_index) *
+                    positive_flux_matrices[q_index](component_i, component_j) *
+                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
+              }
+            }
+          }
+        }
+      };
 
   // assemble interior face terms
   // NOTE: The face worker assumes a grid consisting of rectangular cells with
@@ -1329,14 +1345,14 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
                                const Iterator &neighbor_cell,
                                const unsigned int &neighbor_face_no,
                                const unsigned int &neighbor_subface_no,
-                               ScratchData<dim> &scratch_data,
+                               ScratchData<dim_ps> &scratch_data,
                                CopyData &copy_data) {
     // NOTE: The flag MeshWorker::assemble_own_interior_faces_both will not
     // work for this face_worker. It implicitly assumes that faces are only
     // assembled once. And hence subface_no, can be ignored
     (void)subface_no;  // suppress compiler warning
 
-    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
+    FEFaceValues<dim_ps> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
 
     // NOTE: I do not know how to initialise this reference whose value
@@ -1346,7 +1362,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
     // so no subfaces exist and I just ignore this case. Hence
     // neighbor_subface_no can be ignored
     (void)neighbor_subface_no;
-    FEFaceValues<dim> &fe_v_face_neighbor =
+    FEFaceValues<dim_ps> &fe_v_face_neighbor =
         scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
     // Create an element at the end of the vector containig the face data
@@ -1355,9 +1371,11 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
     const unsigned int n_dofs = fe_v_face.get_fe().n_dofs_per_cell();
     copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
-    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
+    const std::vector<Point<dim_ps>> &q_points =
+        fe_v_face.get_quadrature_points();
     const std::vector<double> &JxW = fe_v_face.get_JxW_values();
-    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
+    const std::vector<Tensor<1, dim_ps>> &normals =
+        fe_v_face.get_normal_vectors();
     // For every interior face there is an in- and outflow represented by the
     // corresponding flux matrices
     std::vector<FullMatrix<double>> positive_flux_matrices(
@@ -1456,7 +1474,7 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
     }
   };
 
-  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
+  ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
   std::cout << "Begin the assembly of the DG matrix. \n";
   MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
@@ -1468,12 +1486,12 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix() {
   std::cout << "The DG matrix was assembled. \n";
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::project_initial_condition() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::project_initial_condition() {
   TimerOutput::Scope timer_section(timer, "Intial condition");
 
   // Create right hand side
-  FEValues<dim> fe_v(
+  FEValues<dim_ps> fe_v(
       mapping, fe, quadrature,
       update_values | update_quadrature_points | update_JxW_values);
 
@@ -1486,11 +1504,13 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
     cell_rhs = 0;
     fe_v.reinit(cell);
 
-    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<Point<dim_ps>> &q_points = fe_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_v.get_JxW_values();
 
     // Initial values
-    InitialValueFunction<flags,dim> initial_value_function(expansion_order);
+    InitialValueFunction<dim_cs,
+                         (flags & TermFlags::momentum) != TermFlags::none>
+        initial_value_function(expansion_order);
     std::vector<Vector<double>> initial_values(
         q_points.size(), Vector<double>(num_exp_coefficients));
     initial_value_function.vector_value_list(q_points, initial_values);
@@ -1517,8 +1537,8 @@ void VFPEquationSolver<flags, dim>::project_initial_condition() {
   system_rhs = 0;
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::theta_method_solve_system() {
   SolverControl solver_control(1000, 1e-12);
   SolverRichardson<Vector<double>> solver(solver_control);
 
@@ -1531,8 +1551,8 @@ void VFPEquationSolver<flags, dim>::theta_method_solve_system() {
             << "\n";
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::theta_method(double theta) {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::theta_method(double theta) {
   TimerOutput::Scope timer_section(timer, "Theta method");
 
   Vector<double> tmp(current_solution.size());
@@ -1558,8 +1578,8 @@ void VFPEquationSolver<flags, dim>::theta_method(double theta) {
   theta_method_solve_system();
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::explicit_runge_kutta() {
   TimerOutput::Scope timer_section(timer, "ERK4");
 
   // ERK 4
@@ -1605,8 +1625,8 @@ void VFPEquationSolver<flags, dim>::explicit_runge_kutta() {
   // element of the c vector is 1. (see low_storage_erk())
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::low_storage_explicit_runge_kutta() {
   TimerOutput::Scope timer_section(timer, "LSERK");
 
   // see Hesthaven p.64
@@ -1643,9 +1663,9 @@ void VFPEquationSolver<flags, dim>::low_storage_explicit_runge_kutta() {
   // assemble_system(time + time_step)
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::output_results() const {
-  DataOut<dim> data_out;
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::output_results() const {
+  DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
   std::vector<std::string> component_names(num_exp_coefficients);
@@ -1671,16 +1691,16 @@ void VFPEquationSolver<flags, dim>::output_results() const {
   data_out.write_vtu(output);
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::output_compile_time_parameters() const {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::output_compile_time_parameters() const {
   std::cout << "Compile-time parameters: "
             << "\n";
   std::cout << "	" << flags;
-  std::cout << "	Dimension: " << dim << "\n\n";
+  std::cout << "	Dimension Configuration Space: " << dim_cs << "\n\n";
 }
 
-template <TermFlags flags, int dim>
-void VFPEquationSolver<flags, dim>::output_index_order() const {
+template <TermFlags flags, int dim_cs>
+void VFPEquationSolver<flags, dim_cs>::output_index_order() const {
   std::cout << "Ordering of the lms indices: "
             << "\n";
 
@@ -1713,10 +1733,9 @@ int main() {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 1> vfp_equation_solver(
+    VFPEquationSolver<flags, 2> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
-    vfp_equation_solver.print_dim();
-    // vfp_equation_solver.run();
+    vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
     std::cerr << std::endl
