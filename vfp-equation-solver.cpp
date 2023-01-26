@@ -158,21 +158,21 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 // the background velocity field
-template <int cs_dim, bool momentum>
-class BackgroundVelocityField : public Function<cs_dim + momentum> {
+template <int dim_cs, bool momentum>
+class BackgroundVelocityField : public Function<dim_cs + momentum> {
  public:
-  virtual void vector_value(const Point<cs_dim + momentum> &point,
-                            Vector<double> &value) const override {
-    Assert(cs_dim <= 3, ExcNotImplemented());
+  void vector_value(const Point<dim_cs + momentum> &point,
+                    Vector<double> &value) const override {
+    Assert(dim_cs <= 3, ExcNotImplemented());
     // constant velocity field
     (void)point;
-    if constexpr (cs_dim == 1) {
+    if constexpr (dim_cs == 1) {
       // constant velocity
       value[0] = 0.0;
       // time dependent velocity
       // value[0] = std::sin(this->get_time())/10.;
     }
-    if constexpr (cs_dim == 2) {
+    if constexpr (dim_cs == 2) {
       // constant velocity
       value[0] = 0.1;
       value[1] = 0.1;
@@ -180,7 +180,7 @@ class BackgroundVelocityField : public Function<cs_dim + momentum> {
       // value[0] = -point[1];
       // value[1] = point[0];
     }
-    if constexpr (cs_dim == 3) {
+    if constexpr (dim_cs == 3) {
       // constant velocity
       value[0] = 0.;
       value[1] = 0.;
@@ -188,17 +188,62 @@ class BackgroundVelocityField : public Function<cs_dim + momentum> {
     }
   }
 
-  void divergence_list(const std::vector<Point<cs_dim + momentum>> &points,
+  void divergence_list(const std::vector<Point<dim_cs + momentum>> &points,
                        std::vector<double> &values) {
-    Assert(cs_dim <= 3, ExcNotImplemented());
+    Assert(dim_cs <= 3, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
-    std::fill(values.begin(), values.end(), 0.);
-    // for (unsigned int q_index = 0; q_index < points.size(); ++q_index) {
-    //   values[q_index] = points[q_index][0]*0.5;
-    // }
+    if constexpr (dim_cs == 1)
+      std::fill(values.begin(), values.end(), 0.);  // \partial u_x / partial_x
+    if constexpr (dim_cs == 2)
+      // \partial u_x / partial_x + \partial u_y / partial_y
+      std::fill(values.begin(), values.end(), 0.);
+    if constexpr (dim_cs == 3)
+      // \partial u_x / partial_x + \partial u_y / partial_y  + \partial u_z /
+      // partial_z
+      std::fill(values.begin(), values.end(), 0.);
   }
-  // TODO: Time derivative and total derivative
+
+  // Jacobians at the quadrature points
+  void vector_gradient_list(
+      const std::vector<Point<dim_cs + momentum>> &points,
+      std::vector<std::vector<Tensor<1, dim_cs>>> &gradients) const override {
+    Assert(dim_cs <= 2, ExcNotImplemented());
+    Assert(gradients.size() == points.size(),
+           ExcDimensionMismatch(gradients.size(), points.size()));
+    Assert(gradients[0].size() == dim_cs,
+           ExcDimensionMismatch(gradients[0].size(), dim_cs));
+    for (unsigned int i = 0; i < points.size(); ++i) {
+      if constexpr (dim_cs == 1)
+        gradients[i][0][0] = 0.;  // \partial u_x / \partial x
+
+      if constexpr (dim_cs == 2) {
+        gradients[i][0][0] = 0.;  // \partial u_x / \partial x
+        gradients[i][0][1] = 0.;  // \partial u_x / \partial y
+
+        gradients[i][1][0] = 0.;  // \partial u_y / \partial x
+        gradients[i][1][1] = 0.;  // \partial u_y / \partial y
+      }
+    }
+  }
+
+  // Material derivative at quadrature points
+  void material_derivative_list(
+      const std::vector<Point<dim_cs + momentum>> &points,
+      std::vector<Vector<double>> &material_derivatives) {
+    Assert(dim_cs <= 2, ExcNotImplemented());
+    Assert(material_derivatives.size() == points.size(),
+           ExcDimensionMismatch(material_derivatives.size(), points.size()));
+    Assert(material_derivatives[0].size() == dim_cs,
+           ExcDimensionMismatch(material_derivatives.size(), dim_cs));
+    for (unsigned int i = 0; i < points.size(); ++i) {
+      if constexpr (dim_cs == 1) material_derivatives[i][0] = 0.;  // d\dt u_x
+      if constexpr (dim_cs == 2) {
+        material_derivatives[i][0] = 0.;  // d\dt u_x
+        material_derivatives[i][1] = 0.;  // d\dt u_y
+      }
+    }
+  }
 };
 
 // the magnetic field
