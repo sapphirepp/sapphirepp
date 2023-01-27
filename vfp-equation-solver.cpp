@@ -253,29 +253,6 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       std::fill(values.begin(), values.end(), 0.);
   }
 
-  // Jacobians at the quadrature points
-  void vector_gradient_list(
-      const std::vector<Point<dim_cs + momentum>> &points,
-      std::vector<std::vector<Tensor<1, dim_cs>>> &gradients) const override {
-    Assert(dim_cs <= 2, ExcNotImplemented());
-    Assert(gradients.size() == points.size(),
-           ExcDimensionMismatch(gradients.size(), points.size()));
-    Assert(gradients[0].size() == dim_cs,
-           ExcDimensionMismatch(gradients[0].size(), dim_cs));
-    for (unsigned int i = 0; i < points.size(); ++i) {
-      if constexpr (dim_cs == 1)
-        gradients[i][0][0] = 0.;  // \partial u_x / \partial x
-
-      if constexpr (dim_cs == 2) {
-        gradients[i][0][0] = 0.;  // \partial u_x / \partial x
-        gradients[i][0][1] = 0.;  // \partial u_x / \partial y
-
-        gradients[i][1][0] = 0.;  // \partial u_y / \partial x
-        gradients[i][1][1] = 0.;  // \partial u_y / \partial y
-      }
-    }
-  }
-
   // Material derivative at quadrature points
   void material_derivative_list(
       const std::vector<Point<dim_cs + momentum>> &points,
@@ -290,6 +267,29 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       if constexpr (dim_cs == 2) {
         material_derivatives[i][0] = 0.;  // d\dt u_x
         material_derivatives[i][1] = 0.;  // d\dt u_y
+      }
+    }
+  }
+
+  // Jacobians at the quadrature points
+  void jacobian_list(
+      const std::vector<Point<dim_cs + momentum>> &points,
+      std::vector<std::vector<Vector<double>>> &jacobians) const {
+    Assert(dim_cs <= 2, ExcNotImplemented());
+    Assert(jacobians.size() == points.size(),
+           ExcDimensionMismatch(jacobians.size(), points.size()));
+    Assert(jacobians[0].size() == dim_cs,
+           ExcDimensionMismatch(jacobians[0].size(), dim_cs));
+    for (unsigned int i = 0; i < points.size(); ++i) {
+      if constexpr (dim_cs == 1)
+        jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
+
+      if constexpr (dim_cs == 2) {
+        jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
+        jacobians[i][0][1] = 0.;  // \partial u_x / \partial y
+
+        jacobians[i][1][0] = 0.;  // \partial u_y / \partial x
+        jacobians[i][1][1] = 0.;  // \partial u_y / \partial y
       }
     }
   }
