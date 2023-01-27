@@ -568,12 +568,7 @@ class VFPEquationSolver {
   // Rotataion matrices (due to the magnetic field)
   std::vector<LAPACKFullMatrix<double>> generator_rotation_matrices;
   // (magnitude) p advection
-  LAPACKFullMatrix<double> Ap_xx;
-  LAPACKFullMatrix<double> Ap_xy;
-  LAPACKFullMatrix<double> Ap_xz;
-  LAPACKFullMatrix<double> Ap_yy;
-  LAPACKFullMatrix<double> Ap_yz;
-  LAPACKFullMatrix<double> Ap_zz;
+  std::vector<LAPACKFullMatrix<double>> adv_mat_products;
 
   // Collision term (essentially a reaction term)
   Vector<double> collision_matrix;
@@ -1008,20 +1003,15 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
   }
 
   // Compute the matrix products
-  Ap_xx.reinit(matrix_size);
-  advection_matrices[0].mmult(Ap_xx, advection_matrices[0]);
-  Ap_xy.reinit(matrix_size);
-  advection_matrices[0].mmult(Ap_xy, advection_matrices[1]);
-  Ap_xz.reinit(matrix_size);
-  advection_matrices[0].mmult(Ap_xz, advection_matrices[2]);
+  adv_mat_products.resize(6);
+  for (auto &adv_mat_product : adv_mat_products)
+    adv_mat_product.reinit(matrix_size);
 
-  Ap_yy.reinit(matrix_size);
-  advection_matrices[1].mmult(Ap_yy, advection_matrices[1]);
-  Ap_yz.reinit(matrix_size);
-  advection_matrices[1].mmult(Ap_yz, advection_matrices[2]);
-
-  Ap_zz.reinit(matrix_size);
-  advection_matrices[2].mmult(Ap_zz, advection_matrices[2]);
+  // row-major order, i.e. A_xx, A_xy, A_xz, Ayy, Ayz, Azz
+  for (unsigned int i = 0; i < 3; ++i)
+    for (unsigned int j = i; j < 3; ++j)
+      advection_matrices[i].mmult(adv_mat_products[3 * i - i * (i + 1) / 2 + j],
+                                  advection_matrices[j]);
 
   // Shrink the matrices such that they agree with order of the expansion
   for (auto &advection_matrix : advection_matrices)
@@ -1031,15 +1021,8 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
     generator_matrix.grow_or_shrink(num_exp_coefficients);
 
   collision_matrix.grow_or_shrink(num_exp_coefficients);
-
-  Ap_xx.grow_or_shrink(num_exp_coefficients);
-  Ap_xy.grow_or_shrink(num_exp_coefficients);
-  Ap_xz.grow_or_shrink(num_exp_coefficients);
-
-  Ap_yy.grow_or_shrink(num_exp_coefficients);
-  Ap_yz.grow_or_shrink(num_exp_coefficients);
-
-  Ap_zz.grow_or_shrink(num_exp_coefficients);
+  for (auto &adv_mat_product : adv_mat_products)
+    adv_mat_product.grow_or_shrink(num_exp_coefficients);
 
   // std::cout << "A_x: \n";
   // advection_matrices[0].print_formatted(std::cout);
@@ -1060,22 +1043,22 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
   // omega_matrices[2].print_formatted(std::cout);
 
   // std::cout << "Ap_xx: \n";
-  // Ap_xx.print_formatted(std::cout);
+  // adv_mat_products[0].print_formatted(std::cout);
 
   // std::cout << "Ap_xy: \n";
-  // Ap_xy.print_formatted(std::cout);
+  // adv_mat_products[1].print_formatted(std::cout);
 
   // std::cout << "Ap_xz: \n";
-  // Ap_xz.print_formatted(std::cout);
+  // adv_mat_products[2].print_formatted(std::cout);
 
   // std::cout << "Ap_yy: \n";
-  // Ap_yy.print_formatted(std::cout);
+  // adv_mat_products[3].print_formatted(std::cout);
 
   // std::cout << "Ap_yz: \n";
-  // Ap_yz.print_formatted(std::cout);
+  // adv_mat_products[4].print_formatted(std::cout);
 
   // std::cout << "Ap_zz: \n";
-  // Ap_zz.print_formatted(std::cout);
+  // adv_mat_products[5].print_formatted(std::cout);
 
   // std::cout << "R: \n";
   // R.print(std::cout);
