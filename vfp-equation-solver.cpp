@@ -1304,6 +1304,10 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   MagneticField<dim_cs, (flags & TermFlags::momentum) != TermFlags::none>
       magnetic_field;
   magnetic_field.set_time(time);
+
+  ParticleVelocity<dim_ps> particle_velocity(particle_properties.gamma_0);
+  ParticleGamma<dim_ps> particle_gamma(particle_properties.gamma_0);
+
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
                                ScratchData<dim_ps> &scratch_data,
@@ -1318,7 +1322,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
 
     const std::vector<Point<dim_ps>> &q_points = fe_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_v.get_JxW_values();
-
+    // Background Plasma
     // NOTE: Second argument constructs empty vectors with 2 values. They are
     // copied q_points.size() times.
     std::vector<Vector<double>> velocities(q_points.size(),
@@ -1326,10 +1330,26 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
     background_velocity_field.vector_value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
     background_velocity_field.divergence_list(q_points, div_velocities);
+    std::vector<Vector<double>> material_derivative_vel(q_points.size(),
+                                                        Vector<double>(dim_cs));
+    background_velocity_field.material_derivative_list(q_points,
+                                                       material_derivative_vel);
+    std::vector<std::vector<Vector<double>>> jacobians_vel(
+        q_points.size(),
+        std::vector<Vector<double>>(dim_cs, Vector<double>(dim_cs)));
+    background_velocity_field.jacobian_list(q_points, jacobians_vel);
 
+    // Magnetic field
     std::vector<Vector<double>> magnetic_field_values(q_points.size(),
                                                       Vector<double>(3));
     magnetic_field.vector_value_list(q_points, magnetic_field_values);
+
+    // Particle
+    std::vector<double> particle_velocities(q_points.size());
+    particle_velocity.value_list(q_points, particle_velocities);
+
+    std::vector<double> particle_gammas(q_points.size());
+    particle_gamma.value_list(q_points, particle_gammas);
 
     for (unsigned int i : fe_v.dof_indices()) {
       const unsigned int component_i =
