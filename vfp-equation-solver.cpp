@@ -707,9 +707,26 @@ void VFPEquationSolver<flags, dim_cs>::run() {
 template <TermFlags flags, int dim_cs>
 void VFPEquationSolver<flags, dim_cs>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
-
-  GridGenerator::hyper_cube(triangulation, -5., 5.);
-  triangulation.refine_global(num_refinements);
+  if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
+    if constexpr (dim_cs == 1) {
+      unsigned int n_cells = 1 << num_refinements;
+      std::vector<unsigned int> repititions{n_cells, n_cells};
+      Point<dim_ps> p1{-5., 0.};
+      Point<dim_ps> p2{5., 5.};
+      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
+                                                p2);
+    }
+    if constexpr (dim_cs == 2) {
+      // std::vector<unsigned int> repititions {20,10};
+      // Point<dim_ps> p1 {-5., -5.,};
+      // Point<dim_ps> p2 {5., 5.};
+      // GridGenerator::subdivided_hyper_rectangle(triangulation, repititions,
+      // p1, p2);
+    }
+  } else {
+    GridGenerator::hyper_cube(triangulation, -5., 5.);
+    triangulation.refine_global(num_refinements);
+  }
 
   // std::ofstream out("grid.vtk");
   // GridOut grid_out;
