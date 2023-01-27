@@ -52,36 +52,49 @@ using namespace dealii;
 template <int dim_ps>
 class ParticleVelocity : public Function<dim_ps> {
  public:
-  void value_list(const std::vector<Point<dim_ps>> &points,
-                  Vector<double> &values,
-                  unsigned int component = 0) const override {
-    Assert(values.size() == points.size(),
-           ExcDimensionMismatch(values.size(), points.size()));
-    static_cast<void>(component);
+  ParticleVelocity(double gamma) : gamma_0{gamma} {}
 
+  void value_list(const std::vector<Point<dim_ps>> &points,
+                  std::vector<double> &velocities,
+                  unsigned int component = 0) const override {
+    Assert(velocities.size() == points.size(),
+           ExcDimensionMismatch(velocities.size(), points.size()));
+    static_cast<void>(component);
     // NOTE: It is assumed that magnitude p is always the last component in
     // points (i.e. the coordinates of the phase space are x,(y,z), p)
-    for (auto p : points) {
-      p[dim_ps - 1];
+    for (unsigned int i = 0; i < points.size(); ++i) {
+      velocities[i] = points[i][dim_ps - 1] /
+                      std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] -
+                                1 / (gamma_0 * gamma_0));
     }
   }
+
+ private:
+  double gamma_0;
 };
 
 template <int dim_ps>
-class Gamma : public Function<dim_ps> {
+class ParticleGamma : public Function<dim_ps> {
+ public:
+  ParticleGamma(double gamma) : gamma_0{gamma} {}
+
   void value_list(const std::vector<Point<dim_ps>> &points,
-                  Vector<double> &values,
+                  std::vector<double> &gammas,
                   unsigned int component = 0) const override {
-    Assert(values.size() == points.size(),
-           ExcDimensionMismatch(values.size(), points.size()));
+    Assert(gammas.size() == points.size(),
+           ExcDimensionMismatch(gammas.size(), points.size()));
     static_cast<void>(component);
 
     // NOTE: It is assumed that magnitude p is always the last component in
     // points (i.e. the coordinates of the phase space are x,(y,z), p)
-    for (auto p : points) {
-      p[dim_ps - 1];
+    for (unsigned int i = 0; i < points.size(); ++i) {
+      gammas[i] = std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] +
+                            1 / (gamma_0 * gamma_0));
     }
   }
+
+ private:
+  double gamma_0;
 };
 
 // Input data
