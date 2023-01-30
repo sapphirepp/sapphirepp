@@ -1207,7 +1207,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
     x,
     y,
     z,
-    p = dim_ps - 1,
+    p,
     none = 1000
   };                            // p is always the
                                 // last component
@@ -1228,7 +1228,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
     if (std::abs(1. - std::abs(normals[0][z])) < 1e-5) component = z;
   }
   if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
-    if (std::abs(1. - std::abs(normals[0][p])) < 1e-5) component = p;
+    if (std::abs(1. - std::abs(normals[0][dim_ps - 1])) < 1e-5) component = p;
   }
 
   Vector<double> positive_lambda(num_exp_coefficients);
@@ -1310,10 +1310,10 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
 
     for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
       // first part
-      for (unsigned int i = 0; i < 3; ++i) {
+      for (unsigned int i = 0; i < dim_cs; ++i) {
         Vector<double> lambda(eigenvalues_adv);
         // Update the eigenvalue
-        lambda *= -normals[q_index][component] * particle_gammas[q_index] *
+        lambda *= -normals[q_index][dim_ps - 1] * particle_gammas[q_index] *
                   material_derivative_vel[q_index][i];
         // Create Lambda_plus/minus
         std::replace_copy_if(
@@ -1339,12 +1339,12 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
             eigenvectors_advection_matrices[i], false, true);
       }
       // second part
-      for (unsigned int i = 0; i < 3; ++i) {
-        for (unsigned int j = i; j < 3; ++j) {
+      for (unsigned int i = 0; i < dim_cs; ++i) {
+        for (unsigned int j = i; j < dim_cs; ++j) {
           if (i == j) {
             Vector<double> lambda(eigenvalues_adv_mat_prod[0]);
-            lambda *= -normals[q_index][component] *
-                      q_points[q_index][component] *
+            lambda *= -normals[q_index][dim_ps - 1] *
+                      q_points[q_index][dim_ps - 1] *
                       jacobians_vel[q_index][i][j];
             // Create Lambda_plus/minus
             std::replace_copy_if(
@@ -1376,11 +1376,11 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
             // Symmetry A_xA_y| = A_yA_x|
             Vector<double> lambda_ij(eigenvalues_adv_mat_prod[1]);
             Vector<double> lambda_ji(eigenvalues_adv_mat_prod[1]);
-            lambda_ij *= -normals[q_index][component] *
-                         q_points[q_index][component] *
+            lambda_ij *= -normals[q_index][dim_ps - 1] *
+                         q_points[q_index][dim_ps - 1] *
                          jacobians_vel[q_index][i][j];
-            lambda_ji *= -normals[q_index][component] *
-                         q_points[q_index][component] *
+            lambda_ji *= -normals[q_index][dim_ps - 1] *
+                         q_points[q_index][dim_ps - 1] *
                          jacobians_vel[q_index][j][i];
 
             // ij
