@@ -569,6 +569,10 @@ class VFPEquationSolver {
   std::vector<LAPACKFullMatrix<double>> generator_rotation_matrices;
   // (magnitude) p advection
   std::vector<LAPACKFullMatrix<double>> adv_mat_products;
+  // A corss Omega matrices
+  std::vector<LAPACKFullMatrix<double>> adv_x_gen_matrices;
+  // T matrices
+  std::vector<LAPACKFullMatrix<double>> t_matrices;
 
   // Collision term (essentially a reaction term)
   Vector<double> collision_matrix;
@@ -1013,6 +1017,44 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
       advection_matrices[i].mmult(adv_mat_products[3 * i - i * (i + 1) / 2 + j],
                                   advection_matrices[j]);
 
+  // A cross Omega
+  adv_x_gen_matrices.resize(4);  // The last element is a temporary storage
+                                 // needed to add the two matrix products (the
+                                 // interface of dealii of LAPACKFULLMatrix is
+                                 // not well suited to compute the cross product
+                                 // of matrices)
+  for (auto &adv_x_gen_mat : adv_x_gen_matrices)
+    adv_x_gen_mat.reinit(matrix_size);
+
+  // A_y * Omega_z - A_z * Omega_y
+  advection_matrices[1].mmult(adv_x_gen_matrices[0],
+                              generator_rotation_matrices[2]);
+  advection_matrices[2].mmult(adv_x_gen_matrices[3],
+                              generator_rotation_matrices[1]);
+  adv_x_gen_matrices[0].add(-1., adv_x_gen_matrices[3]);
+  // A_z * Omega_x - A_x * Omega_z
+  advection_matrices[2].mmult(adv_x_gen_matrices[1],
+                              generator_rotation_matrices[0]);
+  advection_matrices[0].mmult(adv_x_gen_matrices[3],
+                              generator_rotation_matrices[2]);
+  adv_x_gen_matrices[1].add(-1., adv_x_gen_matrices[3]);
+  // A_x * Omega_y - A_y * Omega_x
+  advection_matrices[0].mmult(adv_x_gen_matrices[2],
+                              generator_rotation_matrices[1]);
+  advection_matrices[1].mmult(adv_x_gen_matrices[3],
+                              generator_rotation_matrices[0]);
+  adv_x_gen_matrices[2].add(-1., adv_x_gen_matrices[3]);
+  // Free the intermediate storage
+  adv_x_gen_matrices.resize(3);
+
+  // t matrices
+  t_matrices.resize(9);
+  for (auto &t_mat : t_matrices) t_mat.reinit(matrix_size);
+  // the T matrices are stored in row-major order
+  for (unsigned int i = 0; i < 3; ++i)
+    for (unsigned int j = 0; j < 3; ++j)
+      advection_matrices[j].mmult(t_matrices[3 * i + j], adv_x_gen_matrices[i]);
+
   // Shrink the matrices such that they agree with order of the expansion
   for (auto &advection_matrix : advection_matrices)
     advection_matrix.grow_or_shrink(num_exp_coefficients);
@@ -1021,8 +1063,14 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
     generator_matrix.grow_or_shrink(num_exp_coefficients);
 
   collision_matrix.grow_or_shrink(num_exp_coefficients);
+
   for (auto &adv_mat_product : adv_mat_products)
     adv_mat_product.grow_or_shrink(num_exp_coefficients);
+
+  for (auto &adv_x_gen_mat : adv_x_gen_matrices)
+    adv_x_gen_mat.grow_or_shrink(num_exp_coefficients);
+
+  for (auto &t_mat : t_matrices) t_mat.grow_or_shrink(num_exp_coefficients);
 
   // std::cout << "A_x: \n";
   // advection_matrices[0].print_formatted(std::cout);
@@ -1042,6 +1090,9 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
   // std::cout << "Omega_z: \n";
   // omega_matrices[2].print_formatted(std::cout);
 
+  // std::cout << "Collision matrix: \n";
+  // collision_matrix.print(std::cout);
+
   // std::cout << "Ap_xx: \n";
   // adv_mat_products[0].print_formatted(std::cout);
 
@@ -1060,8 +1111,12 @@ void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
   // std::cout << "Ap_zz: \n";
   // adv_mat_products[5].print_formatted(std::cout);
 
-  // std::cout << "R: \n";
-  // R.print(std::cout);
+  // std::cout << "A cross Omega \n";
+  // for (auto &adv_x_gen_mat : adv_x_gen_matrices)
+  //   adv_x_gen_mat.print_formatted(std::cout);
+
+  // std::cout << "T matrices \n";
+  // for (auto &t_mat : t_matrices) t_mat.print_formatted(std::cout);
 }
 
 template <TermFlags flags, int dim_cs>
