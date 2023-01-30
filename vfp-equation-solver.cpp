@@ -580,8 +580,11 @@ class VFPEquationSolver {
   // Upwind flux matrices
   // Eigenvectors
   std::vector<FullMatrix<double>> eigenvectors_advection_matrices;
+  std::vector<FullMatrix<double>> eigenvectors_adv_mat_prod_matrices;
+
   // Eigenvalues
-  Vector<double> eigenvalues;
+  Vector<double> eigenvalues_adv;
+  std::vector<Vector<double>> eigenvalues_adv_mat_prod;
 
   SparsityPattern sparsity_pattern;
   SparseMatrix<double> mass_matrix;
@@ -1125,7 +1128,7 @@ void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
   // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
   // requires to copy it
   LAPACKFullMatrix<double> matrix_copy;
-  double tolerance = 1.e-15;
+  double tolerance = 1.e-16;
   eigenvectors_advection_matrices.resize(3);
 
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
@@ -1135,7 +1138,8 @@ void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
   // Physically this makes sense, because c = 1 and the eigenvalues encode the
   // speed of 'information' transport.
   matrix_copy = advection_matrices[0];  // A_x
-  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
+  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance,
+                                            eigenvalues_adv,
                                             eigenvectors_advection_matrices[0]);
   // NOTE: The eigenvalues of A_x can computed very efficiently because A_x is
   // (when ordered correctly) a tridiagonal symmetric matrix, i.e. it is in
@@ -1143,10 +1147,12 @@ void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
   // there is no dealii interface to it.
 
   matrix_copy = advection_matrices[1];
-  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
+  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance,
+                                            eigenvalues_adv,
                                             eigenvectors_advection_matrices[1]);
   matrix_copy = advection_matrices[2];
-  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance, eigenvalues,
+  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance,
+                                            eigenvalues_adv,
                                             eigenvectors_advection_matrices[2]);
   // TODO: Rotate the eigenvectors of A_x to get the eigenvectors of A_y and
   // A_z, i.e. implement the rotation matrices e^{-i\Omega_x pi/2} and e^{-i
@@ -1158,8 +1164,32 @@ void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
   auto smaller_than_tolerance = [&tolerance](double value) {
     return (std::abs(value) < tolerance ? true : false);
   };
-  std::replace_if(eigenvalues.begin(), eigenvalues.end(),
+  std::replace_if(eigenvalues_adv.begin(), eigenvalues_adv.end(),
                   smaller_than_tolerance, 0.);
+
+  // The computation of upwind flux in p-direction requires the eigenvalues and
+  // eigenvectors of all adv_mat_products. Unfortunately, I did not find a way
+  // to construct them from the eigenvectors and eigenvalues of the advection
+  // matrices A_x, A_y and A_z. For finite expansion the operatos represented by
+  // A_x, A_y and A_z do not commute. In infinite case, they do. If they
+  // commuted, then it would be possible to compute the eigenvalues and
+  // eigenvectors of adv_mat_products from the ones of A_x, A_y and A_z.
+  //
+  // NOTE: The eigenvalues of Ap_xx, Ap_yy and Ap_zz are the same. Moreover the
+  // eigenvalues for of Ap_xy, Ap_xz and Ap_yz are the same as well. The
+  // matrices can be obtained from each other by rotations which are similarity
+  // transformations, i.e. the eigenvalues do not change.
+  eigenvectors_adv_mat_prod_matrices.resize(6);
+  eigenvalues_adv_mat_prod.resize(2);
+
+  for (unsigned int i = 0; i < 3; ++i) {
+    for (unsigned int j = i; j < 3; ++j) {
+      matrix_copy = adv_mat_products[3 * i - i * (i + 1) / 2 + j];
+      matrix_copy.compute_eigenvalues_symmetric(
+          -1.2, 1.2, tolerance, eigenvalues_adv_mat_prod[i == j ? 0 : 1],
+          eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j]);
+    }
+  }
 }
 
 template <TermFlags flags, int dim_cs>
