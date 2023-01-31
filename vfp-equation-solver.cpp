@@ -64,7 +64,7 @@ class ParticleVelocity : public Function<dim_ps> {
     // points (i.e. the coordinates of the phase space are x,(y,z), p)
     for (unsigned int i = 0; i < points.size(); ++i) {
       velocities[i] = points[i][dim_ps - 1] /
-                      std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] -
+                      std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] +
                                 1 / (gamma_0 * gamma_0));
     }
   }
