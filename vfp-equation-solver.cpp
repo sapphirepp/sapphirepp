@@ -217,9 +217,9 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     (void)point;
     if constexpr (dim_cs == 1) {
       // constant velocity
-      value[0] = 0.0;
-      // time dependent velocity
-      // value[0] = std::sin(this->get_time())/10.;
+      // value[0] = 0.0;
+      // time- and space dependent velocity
+      value[0] = -std::sin(3 * this->get_time()) * std::cos(pi / 2 * point[0]);
     }
     if constexpr (dim_cs == 2) {
       // constant velocity
@@ -242,8 +242,17 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     Assert(dim_cs <= 3, ExcNotImplemented());
     Assert(values.size() == points.size(),
            ExcDimensionMismatch(values.size(), points.size()));
-    if constexpr (dim_cs == 1)
-      std::fill(values.begin(), values.end(), 0.);  // \partial u_x / partial_x
+    if constexpr (dim_cs == 1) {
+      // \partial u_x / partial_x
+
+      // constant velocity
+      // std::fill(values.begin(), values.end(), 0.);
+
+      // time- and space-dependent velocity field
+      for (unsigned int i = 0; i < points.size(); ++i)
+        values[i] = pi / 2 * std::sin(3 * this->get_time()) *
+                    std::sin(pi / 2 * points[i][0]);
+    }
     if constexpr (dim_cs == 2)
       // \partial u_x / partial_x + \partial u_y / partial_y
       std::fill(values.begin(), values.end(), 0.);
@@ -263,7 +272,18 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     Assert(material_derivatives[0].size() == dim_cs,
            ExcDimensionMismatch(material_derivatives.size(), dim_cs));
     for (unsigned int i = 0; i < points.size(); ++i) {
-      if constexpr (dim_cs == 1) material_derivatives[i][0] = 0.;  // d\dt u_x
+      if constexpr (dim_cs == 1) {
+        // d\dt u_x
+        // constant velocity
+        // material_derivatives[i][0] = 0.;
+
+        // time- and space-dependent velocity field
+        material_derivatives[i][0] = -std::cos((pi / 2 * points[i][0])) *
+                                     (3 * std::cos(3 * this->get_time()) +
+                                      pi / 2 * std::sin(3 * this->get_time()) *
+                                          std::sin(3 * this->get_time()) *
+                                          std::sin(pi / 2 * points[i][0]));
+      }
       if constexpr (dim_cs == 2) {
         material_derivatives[i][0] = 0.;  // d\dt u_x
         material_derivatives[i][1] = 0.;  // d\dt u_y
@@ -281,8 +301,15 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     Assert(jacobians[0].size() == dim_cs,
            ExcDimensionMismatch(jacobians[0].size(), dim_cs));
     for (unsigned int i = 0; i < points.size(); ++i) {
-      if constexpr (dim_cs == 1)
-        jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
+      if constexpr (dim_cs == 1) {
+        // \partial u_x / \partial x
+        // constant velocity field
+        // jacobians[i][0][0] = 0.;
+
+        // time- and space dependent velocity field
+        jacobians[i][0][0] = pi / 2 * std::sin(3 * this->get_time()) *
+                             std::sin(pi / 2 * points[i][0]);
+      }
 
       if constexpr (dim_cs == 2) {
         jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
@@ -293,6 +320,9 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       }
     }
   }
+
+ private:
+  double pi = 2 * std::acos(0.);
 };
 
 // the magnetic field
