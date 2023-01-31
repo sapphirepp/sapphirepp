@@ -2258,9 +2258,8 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags = TermFlags::spatial_advection |
-                                TermFlags::magnetic | TermFlags::collision |
-                                TermFlags::momentum;
+    constexpr TermFlags flags =
+        TermFlags::spatial_advection | TermFlags::momentum;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
