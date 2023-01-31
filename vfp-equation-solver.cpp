@@ -445,6 +445,9 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
     //     values.begin(), values.end(),
     //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
     //                     0.01)));
+    if constexpr (momentum)
+      values[0] *=
+          std::exp(-(std::pow(p[dim_cs + momentum - 1] - 2.5, 2) / 0.5));
   }
 
  private:
