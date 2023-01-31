@@ -1669,27 +1669,160 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
               // and A_z are sparse. TODO: Performance check. If too bad, return
               // to the strategy, which was used in v0.6.5
               for (unsigned int coordinate = 0; coordinate < dim_cs;
-                   ++coordinate)
-                copy_data.cell_matrix(i, j) -=
-                    fe_v.shape_grad(i, q_index)[coordinate] *
-                    particle_properties.particle_velocity *
-                    advection_matrices[coordinate](component_i, component_j) *
-                    fe_v.shape_value(j, q_index) * JxW[q_index];
+                   ++coordinate) {
+                if ((flags & TermFlags::momentum) != TermFlags::none) {
+                  copy_data.cell_matrix(i, j) -=
+                      fe_v.shape_grad(i, q_index)[coordinate] *
+                      particle_velocities[q_index] *
+                      advection_matrices[coordinate](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                } else {
+                  // fixed energy case (i.e. transport only)
+                  copy_data.cell_matrix(i, j) -=
+                      fe_v.shape_grad(i, q_index)[coordinate] *
+                      particle_properties.particle_velocity *
+                      advection_matrices[coordinate](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                }
+              }
             }
           }
           if constexpr ((flags & TermFlags::magnetic) != TermFlags::none) {
             // NOTE: All three components of the B-Field are included no
             // matter, which dimension of the configuration space is considered
-            for (unsigned int coordinate = 0; coordinate < 3; ++coordinate)
-              copy_data.cell_matrix(i, j) -=
-                  fe_v.shape_value(i, q_index) *
-                  magnetic_field_values[q_index][coordinate] *
-                  generator_rotation_matrices[coordinate](component_i,
-                                                          component_j) *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
+            for (unsigned int coordinate = 0; coordinate < 3; ++coordinate) {
+              if ((flags & TermFlags::momentum) != TermFlags::none) {
+                copy_data.cell_matrix(i, j) -=
+                    fe_v.shape_value(i, q_index) *
+                    magnetic_field_values[q_index][coordinate] /
+                    particle_gammas[q_index] *
+                    generator_rotation_matrices[coordinate](component_i,
+                                                            component_j) *
+                    fe_v.shape_value(j, q_index) * JxW[q_index];
+
+              } else {
+                // fixed energy case (i.e. transport only)
+                copy_data.cell_matrix(i, j) -=
+                    fe_v.shape_value(i, q_index) *
+                    magnetic_field_values[q_index][coordinate] *
+                    generator_rotation_matrices[coordinate](component_i,
+                                                            component_j) *
+                    fe_v.shape_value(j, q_index) * JxW[q_index];
+              }
+            }
           }
           if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
             // Momentum part
+            for (unsigned int coordinate = 0; coordinate < dim_cs;
+                 ++coordinate) {
+              // \grad_phi * \gamma du^k/ dt * A_k \phi
+              copy_data.cell_matrix(i, j) +=
+                  fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                  particle_gammas[q_index] *
+                  material_derivative_vel[q_index][coordinate] *
+                  advection_matrices[coordinate](component_i, component_j) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+              // \phi v * du^k/dt * A_k * \phi
+              copy_data.cell_matrix(i, j) +=
+                  fe_v.shape_value(i, q_index) * particle_velocities[q_index] *
+                  material_derivative_vel[q_index][coordinate] *
+                  advection_matrices[coordinate](component_i, component_j) *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+              // \phi 1/v * du^k \ dt (A x \Omega)_k \phi
+              copy_data.cell_matrix(i, j) +=
+                  fe_v.shape_value(i, q_index) * 1 /
+                  particle_velocities[q_index] *
+                  material_derivative_vel[q_index][coordinate] *
+                  adv_x_gen_matrices[coordinate](component_i, component_j) *
+                  fe_v.shape_value(j, q_index);
+            }
+            for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
+                 ++coordinate_1) {
+              for (unsigned int coordinate_2 = coordinate_1;
+                   coordinate_2 < dim_cs; ++coordinate_2) {
+                if (coordinate_1 == coordinate_2) {
+                  // \grad_phi p \jacobian[coordinate_1][coordinate_2]
+                  // Ap_coordinate_1,coordinate_2 * \phi
+                  copy_data.cell_matrix(i, j) +=
+                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                      q_points[q_index][dim_ps - 1] *
+                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
+                      adv_mat_products[3 * coordinate_1 -
+                                       coordinate_1 * (coordinate_1 + 1) / 2 +
+                                       coordinate_2](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                  // \phi * jacobian[coordinate_1][coordinate_2] *
+                  // Ap_coordinate_1, coordinate_2 * \phi
+                  copy_data.cell_matrix(i, j) +=
+                      fe_v.shape_value(i, q_index) *
+                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
+                      adv_mat_products[3 * coordinate_1 -
+                                       coordinate_1 * (coordinate_1 + 1) / 2 +
+                                       coordinate_2](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                } else {
+                  // symmetry
+                  // component_1, component_2
+                  // \grad_phi p \jacobian[coordinate_1][coordinate_2]
+                  // Ap_coordinate_1,coordinate_2 * \phi
+                  copy_data.cell_matrix(i, j) +=
+                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                      q_points[q_index][dim_ps - 1] *
+                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
+                      adv_mat_products[3 * coordinate_1 -
+                                       coordinate_1 * (coordinate_1 + 1) / 2 +
+                                       coordinate_2](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                  // \phi * jacobian[coordinate_1][coordinate_2] *
+                  // Ap_coordinate_1, coordinate_2 * \phi
+                  copy_data.cell_matrix(i, j) +=
+                      fe_v.shape_value(i, q_index) *
+                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
+                      adv_mat_products[3 * coordinate_1 -
+                                       coordinate_1 * (coordinate_1 + 1) / 2 +
+                                       coordinate_2](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                  // component_2, component_1
+                  // \grad_phi p \jacobian[coordinate_1][coordinate_2]
+                  // Ap_coordinate_1,coordinate_2 * \phi
+                  copy_data.cell_matrix(i, j) +=
+                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                      q_points[q_index][dim_ps - 1] *
+                      jacobians_vel[q_index][coordinate_2][coordinate_1] *
+                      adv_mat_products[3 * coordinate_1 -
+                                       coordinate_1 * (coordinate_1 + 1) / 2 +
+                                       coordinate_2](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                  // \phi * jacobian[coordinate_1][coordinate_2] *
+                  // Ap_coordinate_1, coordinate_2 * \phi
+                  copy_data.cell_matrix(i, j) +=
+                      fe_v.shape_value(i, q_index) *
+                      jacobians_vel[q_index][coordinate_2][coordinate_1] *
+                      adv_mat_products[3 * coordinate_1 -
+                                       coordinate_1 * (coordinate_1 + 1) / 2 +
+                                       coordinate_2](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                }
+              }
+            }
+            for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
+                 ++coordinate_1) {
+              for (unsigned int coordinate_2 = 0; coordinate_2 < dim_cs;
+                   ++coordinate_2) {
+                // \phi * jacobian[coordinate_1][coordinate_2] *
+                // T_coordinate_2,coordinate_1 * \phi
+                copy_data.cell_matrix(i, j) +=
+                    fe_v.shape_value(i, q_index) *
+                    jacobians_vel[q_index][coordinate_1][coordinate_2] *
+                    t_matrices[coordinate_2 * 3 + coordinate_1](component_i,
+                                                                component_j) *
+                    fe_v.shape_value(j, q_index);
+              }
+            }
           }
         }
       }
@@ -2126,8 +2259,8 @@ int main() {
     using namespace vfp_equation_solver;
 
     constexpr TermFlags flags = TermFlags::spatial_advection |
-                                TermFlags::magnetic | TermFlags::collision | TermFlags::momentum;
-  
+                                TermFlags::magnetic | TermFlags::collision |
+                                TermFlags::momentum;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
@@ -2144,7 +2277,7 @@ int main() {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 2> vfp_equation_solver(
+    VFPEquationSolver<flags, 1> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
