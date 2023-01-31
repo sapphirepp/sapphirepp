@@ -218,8 +218,11 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     if constexpr (dim_cs == 1) {
       // constant velocity
       // value[0] = 0.0;
+      // time-dependent velocity-field
+      value[0] = 1. / 10 * this->get_time();
       // time- and space dependent velocity
-      value[0] = -std::sin(3 * this->get_time()) * std::cos(pi / 2 * point[0]);
+      // value[0] = -0.1 * std::sin(3 * this->get_time()) * std::cos(pi / 2 *
+      // point[0]);
     }
     if constexpr (dim_cs == 2) {
       // constant velocity
@@ -247,11 +250,14 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
 
       // constant velocity
       // std::fill(values.begin(), values.end(), 0.);
+      //
+      // time-dependent velocity field
+      std::fill(values.begin(), values.end(), 0.);
 
       // time- and space-dependent velocity field
-      for (unsigned int i = 0; i < points.size(); ++i)
-        values[i] = pi / 2 * std::sin(3 * this->get_time()) *
-                    std::sin(pi / 2 * points[i][0]);
+      // for (unsigned int i = 0; i < points.size(); ++i)
+      //   values[i] = 0.1 * pi / 2 * std::sin(3 * this->get_time()) *
+      //               std::sin(pi / 2 * points[i][0]);
     }
     if constexpr (dim_cs == 2)
       // \partial u_x / partial_x + \partial u_y / partial_y
@@ -277,12 +283,17 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // constant velocity
         // material_derivatives[i][0] = 0.;
 
+        // time-dependent velocity field
+        material_derivatives[i][0] = 1. / 10;
+
         // time- and space-dependent velocity field
-        material_derivatives[i][0] = -std::cos((pi / 2 * points[i][0])) *
-                                     (3 * std::cos(3 * this->get_time()) +
-                                      pi / 2 * std::sin(3 * this->get_time()) *
-                                          std::sin(3 * this->get_time()) *
-                                          std::sin(pi / 2 * points[i][0]));
+        // material_derivatives[i][0] = -0.1 * std::cos((pi / 2 * points[i][0]))
+        // *
+        //                              (3 * std::cos(3 * this->get_time()) +
+        //                               pi / 2 * std::sin(3 * this->get_time())
+        //                               *
+        //                                   std::sin(3 * this->get_time()) *
+        //                                   std::sin(pi / 2 * points[i][0]));
       }
       if constexpr (dim_cs == 2) {
         material_derivatives[i][0] = 0.;  // d\dt u_x
@@ -306,9 +317,11 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // constant velocity field
         // jacobians[i][0][0] = 0.;
 
+        // time-dependent velocity field
+        jacobians[i][0][0] = 0.;
         // time- and space dependent velocity field
-        jacobians[i][0][0] = pi / 2 * std::sin(3 * this->get_time()) *
-                             std::sin(pi / 2 * points[i][0]);
+        // jacobians[i][0][0] = 0.1 * pi / 2 * std::sin(3 * this->get_time()) *
+        //                      std::sin(pi / 2 * points[i][0]);
       }
 
       if constexpr (dim_cs == 2) {
