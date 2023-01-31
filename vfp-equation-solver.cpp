@@ -379,7 +379,7 @@ class MagneticField : public Function<dim_cs + momentum> {
  private:
   double B_x = 0.;
   double B_y = 0.;
-  double B_z = 1.;
+  double B_z = 0.;
 };
 
 enum class TermFlags {
