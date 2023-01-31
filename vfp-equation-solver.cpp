@@ -744,8 +744,8 @@ void VFPEquationSolver<flags, dim_cs>::run() {
     }
     // If the B-field and the velocity field are time dependent
     // Update the DG matrix
-    // dg_matrix = 0;
-    // assemble_dg_matrix();
+    dg_matrix = 0;
+    assemble_dg_matrix();
     // Update solution
     previous_solution = current_solution;
   }
