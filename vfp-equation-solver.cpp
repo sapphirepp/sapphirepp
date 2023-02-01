@@ -1756,12 +1756,10 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
                   fe_v.shape_value(j, q_index) * JxW[q_index];
               // \phi 1/v * du^k \ dt (A x \Omega)_k \phi
               copy_data.cell_matrix(i, j) +=
-                  fe_v.shape_value(i, q_index) * 1 /
-                  particle_velocities[q_index] *
+                  fe_v.shape_value(i, q_index) / particle_velocities[q_index] *
                   material_derivative_vel[q_index][coordinate] *
                   adv_x_gen_matrices[coordinate](component_i, component_j) *
-                  fe_v.shape_value(j, q_index);
-            }
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
             }
             // for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
             //      ++coordinate_1) {
