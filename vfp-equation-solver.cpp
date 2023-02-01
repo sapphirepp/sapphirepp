@@ -218,8 +218,18 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     if constexpr (dim_cs == 1) {
       // constant velocity
       // value[0] = 0.0;
+
+      // space dependent velocity
+      // value[0] = 5*point[0];
+
       // time-dependent velocity-field
-      value[0] = 1. / 10 * this->get_time();
+      // if (point[0] >= 0.)
+      //   value[0] = 1. / 10 * this->get_time();
+      // else
+      //   value[0] = -1. / 10 * this->get_time();
+      // value[0] = 1. / 10 * this->get_time();
+      value[0] = 1. / 10 * std::sin(this->get_time());
+
       // time- and space dependent velocity
       // value[0] = -0.1 * std::sin(3 * this->get_time()) * std::cos(pi / 2 *
       // point[0]);
@@ -249,10 +259,13 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // \partial u_x / partial_x
 
       // constant velocity
-      // std::fill(values.begin(), values.end(), 0.);
-      //
-      // time-dependent velocity field
       std::fill(values.begin(), values.end(), 0.);
+
+      // space-dependent velocity field
+      // std::fill(values.begin(), values.end(), 5.);
+
+      // time-dependent velocity field
+      // std::fill(values.begin(), values.end(), 0.);
 
       // time- and space-dependent velocity field
       // for (unsigned int i = 0; i < points.size(); ++i)
@@ -283,8 +296,13 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // constant velocity
         // material_derivatives[i][0] = 0.;
 
-        // time-dependent velocity field
-        material_derivatives[i][0] = 1. / 10;
+        // time-dependent velocity fiel
+        // if (points[i][0] >= 0.)
+        //   material_derivatives[i][0] = 1. / 10;
+        // else if (points[i][0] < 0.)
+        //   material_derivatives[i][0] = -1. / 10;
+        // material_derivatives[i][0] = 1. / 10;
+        material_derivatives[i][0] = 1. / 10 * std::cos(this->get_time());
 
         // time- and space-dependent velocity field
         // material_derivatives[i][0] = -0.1 * std::cos((pi / 2 * points[i][0]))
