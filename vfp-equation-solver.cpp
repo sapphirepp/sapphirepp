@@ -440,7 +440,11 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
                                 (expansion_order + 1) * (expansion_order + 1)));
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
-    if constexpr (dim_cs == 1) values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+    if constexpr (dim_cs == 1) {
+      values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+      // if (std::abs(p[0]) < 1.) values[0] = 1.;
+      // values[0] = 1.;
+    }
     // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
     if constexpr (dim_cs == 2) {
