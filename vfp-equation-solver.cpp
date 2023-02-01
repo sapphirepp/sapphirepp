@@ -465,7 +465,7 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
     //                     0.01)));
     if constexpr (momentum)
       values[0] *=
-          std::exp(-(std::pow(p[dim_cs + momentum - 1] - 2.5, 2) / 0.5));
+          std::exp(-(std::pow(p[dim_cs + momentum - 1] - 3.5, 2) / 0.5));
   }
 
  private:
@@ -777,8 +777,8 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
     if constexpr (dim_cs == 1) {
       unsigned int n_cells = 1 << num_refinements;
       std::vector<unsigned int> repititions{n_cells, n_cells};
-      Point<dim_ps> p1{-5., 0.};
-      Point<dim_ps> p2{5., 5.};
+      Point<dim_ps> p1{-5., 1.};
+      Point<dim_ps> p2{5., 6.};
       GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
                                                 p2);
     }
