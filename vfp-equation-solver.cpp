@@ -12,6 +12,7 @@
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/grid_tools.h>  // neeed for periodic boundary conditions (collect_periodic_faces)
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
@@ -779,12 +780,16 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
     if constexpr (dim_cs == 1) {
-      unsigned int n_cells = 1 << num_refinements;
-      std::vector<unsigned int> repititions{n_cells, n_cells};
-      Point<dim_ps> p1{-5., 1.};
-      Point<dim_ps> p2{5., 6.};
-      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
-                                                p2);
+      // unsigned int n_cells = 1 << num_refinements;
+      // std::vector<unsigned int> repititions{n_cells, n_cells};
+      // Point<dim_ps> p1{-5., 1.};
+      // Point<dim_ps> p2{5., 6.};
+      // // Colorize = true means to set boundary ids (default for 1D)
+      // GridGenerator::subdivided_hyper_rectangle(triangulation, repititions,
+      // p1,
+      //                                           p2, true);
+      GridGenerator::hyper_cube(triangulation, 1., 6., true);
+      triangulation.refine_global(num_refinements);
     }
     if constexpr (dim_cs == 2) {
       // std::vector<unsigned int> repititions {20,10};
@@ -1522,8 +1527,27 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
   std::cout << "The degrees of freedom were distributed: \n"
             << "	Number of degrees of freedom: " << n_dofs << "\n";
 
+  // Periodic boundary conditions with MeshWorker. Mailinglist
+  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+  //
+  // "If you call add_periodicity() on a Triangulation object, the periodic
+  // faces are treated as internal faces in MeshWorker. This means that you will
+  // not access them in a "integrate_boundary_term" function but in a
+  // "integrate_face_term" function. "
+  std::vector<GridTools::PeriodicFacePair<
+      typename Triangulation<dim_ps>::cell_iterator>>
+      matched_pairs;
+  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
+  triangulation.add_periodicity(matched_pairs);
+
+  constraints.clear();
+  DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
+
   DynamicSparsityPattern dsp(n_dofs);
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  // NON-PERIODIC
+  // DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  // PERIODIC
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
   sparsity_pattern.copy_from(dsp);
 
   dg_matrix.reinit(sparsity_pattern);
@@ -2055,9 +2079,9 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
                         copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
-                            MeshWorker::assemble_boundary_faces |
+                            // MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
-                        boundary_worker, face_worker);
+                        nullptr, face_worker);
   std::cout << "The DG matrix was assembled. \n";
 }
 
