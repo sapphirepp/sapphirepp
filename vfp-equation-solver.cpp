@@ -1407,103 +1407,106 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
             eigenvectors_advection_matrices[i], false, true);
       }
       // second part
-      for (unsigned int i = 0; i < dim_cs; ++i) {
-        for (unsigned int j = i; j < dim_cs; ++j) {
-          if (i == j) {
-            Vector<double> lambda(eigenvalues_adv_mat_prod[0]);
-            lambda *= -normals[q_index][dim_ps - 1] *
-                      q_points[q_index][dim_ps - 1] *
-                      jacobians_vel[q_index][i][j];
-            // Create Lambda_plus/minus
-            std::replace_copy_if(
-                lambda.begin(), lambda.end(), positive_lambda.begin(),
-                std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
-            std::replace_copy_if(
-                lambda.begin(), lambda.end(), negative_lambda.begin(),
-                std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-                0.);
+      // for (unsigned int i = 0; i < dim_cs; ++i) {
+      //   for (unsigned int j = i; j < dim_cs; ++j) {
+      //     if (i == j) {
+      //       Vector<double> lambda(eigenvalues_adv_mat_prod[0]);
+      //       lambda *= -normals[q_index][dim_ps - 1] *
+      //                 q_points[q_index][dim_ps - 1] *
+      //                 jacobians_vel[q_index][i][j];
+      //       // Create Lambda_plus/minus
+      //       std::replace_copy_if(
+      //           lambda.begin(), lambda.end(), positive_lambda.begin(),
+      //           std::bind(std::less<double>(), std::placeholders::_1, 0.),
+      //           0.);
+      //       std::replace_copy_if(
+      //           lambda.begin(), lambda.end(), negative_lambda.begin(),
+      //           std::bind(std::greater<double>(), std::placeholders::_1, 0.),
+      //           0.);
 
-            for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-              lambda_plus_matrix(i, i) = positive_lambda[i];
-              lambda_minus_matrix(i, i) = negative_lambda[i];
-            }
+      //       for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
+      //         lambda_plus_matrix(i, i) = positive_lambda[i];
+      //         lambda_minus_matrix(i, i) = negative_lambda[i];
+      //       }
 
-            positive_flux_matrices[q_index].triple_product(
-                lambda_plus_matrix,
-                eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j],
-                eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j],
-                false, true);
+      //       positive_flux_matrices[q_index].triple_product(
+      //           lambda_plus_matrix,
+      //           eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 +
+      //           j], eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) /
+      //           2 + j], false, true);
 
-            negative_flux_matrices[q_index].triple_product(
-                lambda_minus_matrix,
-                eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-                eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-                false, true);
+      //       negative_flux_matrices[q_index].triple_product(
+      //           lambda_minus_matrix,
+      //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
+      //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
+      //           false, true);
 
-          } else {
-            // Symmetry A_xA_y| = A_yA_x|
-            Vector<double> lambda_ij(eigenvalues_adv_mat_prod[1]);
-            Vector<double> lambda_ji(eigenvalues_adv_mat_prod[1]);
-            lambda_ij *= -normals[q_index][dim_ps - 1] *
-                         q_points[q_index][dim_ps - 1] *
-                         jacobians_vel[q_index][i][j];
-            lambda_ji *= -normals[q_index][dim_ps - 1] *
-                         q_points[q_index][dim_ps - 1] *
-                         jacobians_vel[q_index][j][i];
+      //     } else {
+      //       // Symmetry A_xA_y| = A_yA_x|
+      //       Vector<double> lambda_ij(eigenvalues_adv_mat_prod[1]);
+      //       Vector<double> lambda_ji(eigenvalues_adv_mat_prod[1]);
+      //       lambda_ij *= -normals[q_index][dim_ps - 1] *
+      //                    q_points[q_index][dim_ps - 1] *
+      //                    jacobians_vel[q_index][i][j];
+      //       lambda_ji *= -normals[q_index][dim_ps - 1] *
+      //                    q_points[q_index][dim_ps - 1] *
+      //                    jacobians_vel[q_index][j][i];
 
-            // ij
-            std::replace_copy_if(
-                lambda_ij.begin(), lambda_ij.end(), positive_lambda.begin(),
-                std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
-            std::replace_copy_if(
-                lambda_ij.begin(), lambda_ij.end(), negative_lambda.begin(),
-                std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-                0.);
+      //       // ij
+      //       std::replace_copy_if(
+      //           lambda_ij.begin(), lambda_ij.end(), positive_lambda.begin(),
+      //           std::bind(std::less<double>(), std::placeholders::_1, 0.),
+      //           0.);
+      //       std::replace_copy_if(
+      //           lambda_ij.begin(), lambda_ij.end(), negative_lambda.begin(),
+      //           std::bind(std::greater<double>(), std::placeholders::_1, 0.),
+      //           0.);
 
-            for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-              lambda_plus_matrix(i, i) = positive_lambda[i];
-              lambda_minus_matrix(i, i) = negative_lambda[i];
-            }
+      //       for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
+      //         lambda_plus_matrix(i, i) = positive_lambda[i];
+      //         lambda_minus_matrix(i, i) = negative_lambda[i];
+      //       }
 
-            positive_flux_matrices[q_index].triple_product(
-                lambda_plus_matrix,
-                eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j],
-                eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j],
-                false, true);
+      //       positive_flux_matrices[q_index].triple_product(
+      //           lambda_plus_matrix,
+      //           eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 +
+      //           j], eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) /
+      //           2 + j], false, true);
 
-            negative_flux_matrices[q_index].triple_product(
-                lambda_minus_matrix,
-                eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-                eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-                false, true);
-            // ji
-            std::replace_copy_if(
-                lambda_ji.begin(), lambda_ji.end(), positive_lambda.begin(),
-                std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
-            std::replace_copy_if(
-                lambda_ji.begin(), lambda_ji.end(), negative_lambda.begin(),
-                std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-                0.);
+      //       negative_flux_matrices[q_index].triple_product(
+      //           lambda_minus_matrix,
+      //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
+      //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
+      //           false, true);
+      //       // ji
+      //       std::replace_copy_if(
+      //           lambda_ji.begin(), lambda_ji.end(), positive_lambda.begin(),
+      //           std::bind(std::less<double>(), std::placeholders::_1, 0.),
+      //           0.);
+      //       std::replace_copy_if(
+      //           lambda_ji.begin(), lambda_ji.end(), negative_lambda.begin(),
+      //           std::bind(std::greater<double>(), std::placeholders::_1, 0.),
+      //           0.);
 
-            for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-              lambda_plus_matrix(i, i) = positive_lambda[i];
-              lambda_minus_matrix(i, i) = negative_lambda[i];
-            }
+      //       for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
+      //         lambda_plus_matrix(i, i) = positive_lambda[i];
+      //         lambda_minus_matrix(i, i) = negative_lambda[i];
+      //       }
 
-            positive_flux_matrices[q_index].triple_product(
-                lambda_plus_matrix,
-                eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j],
-                eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j],
-                false, true);
+      //       positive_flux_matrices[q_index].triple_product(
+      //           lambda_plus_matrix,
+      //           eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 +
+      //           j], eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) /
+      //           2 + j], false, true);
 
-            negative_flux_matrices[q_index].triple_product(
-                lambda_minus_matrix,
-                eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-                eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-                false, true);
-          }
-        }
-      }
+      //       negative_flux_matrices[q_index].triple_product(
+      //           lambda_minus_matrix,
+      //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
+      //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
+      //           false, true);
+      //     }
+      //   }
+      // }
     }
   } else {
     Assert(component != none, ExcInternalError());
@@ -1759,92 +1762,100 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
                   adv_x_gen_matrices[coordinate](component_i, component_j) *
                   fe_v.shape_value(j, q_index);
             }
-            for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
-                 ++coordinate_1) {
-              for (unsigned int coordinate_2 = coordinate_1;
-                   coordinate_2 < dim_cs; ++coordinate_2) {
-                if (coordinate_1 == coordinate_2) {
-                  // \grad_phi p \jacobian[coordinate_1][coordinate_2]
-                  // Ap_coordinate_1,coordinate_2 * \phi
-                  copy_data.cell_matrix(i, j) +=
-                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
-                      q_points[q_index][dim_ps - 1] *
-                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
-                      adv_mat_products[3 * coordinate_1 -
-                                       coordinate_1 * (coordinate_1 + 1) / 2 +
-                                       coordinate_2](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-                  // \phi * jacobian[coordinate_1][coordinate_2] *
-                  // Ap_coordinate_1, coordinate_2 * \phi
-                  copy_data.cell_matrix(i, j) +=
-                      fe_v.shape_value(i, q_index) *
-                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
-                      adv_mat_products[3 * coordinate_1 -
-                                       coordinate_1 * (coordinate_1 + 1) / 2 +
-                                       coordinate_2](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-                } else {
-                  // symmetry
-                  // component_1, component_2
-                  // \grad_phi p \jacobian[coordinate_1][coordinate_2]
-                  // Ap_coordinate_1,coordinate_2 * \phi
-                  copy_data.cell_matrix(i, j) +=
-                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
-                      q_points[q_index][dim_ps - 1] *
-                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
-                      adv_mat_products[3 * coordinate_1 -
-                                       coordinate_1 * (coordinate_1 + 1) / 2 +
-                                       coordinate_2](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-
-                  // \phi * jacobian[coordinate_1][coordinate_2] *
-                  // Ap_coordinate_1, coordinate_2 * \phi
-                  copy_data.cell_matrix(i, j) +=
-                      fe_v.shape_value(i, q_index) *
-                      jacobians_vel[q_index][coordinate_1][coordinate_2] *
-                      adv_mat_products[3 * coordinate_1 -
-                                       coordinate_1 * (coordinate_1 + 1) / 2 +
-                                       coordinate_2](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-
-                  // component_2, component_1
-                  // \grad_phi p \jacobian[coordinate_1][coordinate_2]
-                  // Ap_coordinate_1,coordinate_2 * \phi
-                  copy_data.cell_matrix(i, j) +=
-                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
-                      q_points[q_index][dim_ps - 1] *
-                      jacobians_vel[q_index][coordinate_2][coordinate_1] *
-                      adv_mat_products[3 * coordinate_1 -
-                                       coordinate_1 * (coordinate_1 + 1) / 2 +
-                                       coordinate_2](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-
-                  // \phi * jacobian[coordinate_1][coordinate_2] *
-                  // Ap_coordinate_1, coordinate_2 * \phi
-                  copy_data.cell_matrix(i, j) +=
-                      fe_v.shape_value(i, q_index) *
-                      jacobians_vel[q_index][coordinate_2][coordinate_1] *
-                      adv_mat_products[3 * coordinate_1 -
-                                       coordinate_1 * (coordinate_1 + 1) / 2 +
-                                       coordinate_2](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-                }
-              }
             }
-            for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
-                 ++coordinate_1) {
-              for (unsigned int coordinate_2 = 0; coordinate_2 < dim_cs;
-                   ++coordinate_2) {
-                // \phi * jacobian[coordinate_1][coordinate_2] *
-                // T_coordinate_2,coordinate_1 * \phi
-                copy_data.cell_matrix(i, j) +=
-                    fe_v.shape_value(i, q_index) *
-                    jacobians_vel[q_index][coordinate_1][coordinate_2] *
-                    t_matrices[coordinate_2 * 3 + coordinate_1](component_i,
-                                                                component_j) *
-                    fe_v.shape_value(j, q_index);
-              }
-            }
+            // for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
+            //      ++coordinate_1) {
+            //   for (unsigned int coordinate_2 = coordinate_1;
+            //        coordinate_2 < dim_cs; ++coordinate_2) {
+            //     if (coordinate_1 == coordinate_2) {
+            //       // \grad_phi p \jacobian[coordinate_1][coordinate_2]
+            //       // Ap_coordinate_1,coordinate_2 * \phi
+            //       copy_data.cell_matrix(i, j) +=
+            //           fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+            //           q_points[q_index][dim_ps - 1] *
+            //           jacobians_vel[q_index][coordinate_1][coordinate_2] *
+            //           adv_mat_products[3 * coordinate_1 -
+            //                            coordinate_1 * (coordinate_1 + 1) / 2
+            //                            + coordinate_2](component_i,
+            //                            component_j) *
+            //           fe_v.shape_value(j, q_index) * JxW[q_index];
+            //       // \phi * jacobian[coordinate_1][coordinate_2] *
+            //       // Ap_coordinate_1, coordinate_2 * \phi
+            //       copy_data.cell_matrix(i, j) +=
+            //           fe_v.shape_value(i, q_index) *
+            //           jacobians_vel[q_index][coordinate_1][coordinate_2] *
+            //           adv_mat_products[3 * coordinate_1 -
+            //                            coordinate_1 * (coordinate_1 + 1) / 2
+            //                            + coordinate_2](component_i,
+            //                            component_j) *
+            //           fe_v.shape_value(j, q_index) * JxW[q_index];
+            //     } else {
+            //       // symmetry
+            //       // component_1, component_2
+            //       // \grad_phi p \jacobian[coordinate_1][coordinate_2]
+            //       // Ap_coordinate_1,coordinate_2 * \phi
+            //       copy_data.cell_matrix(i, j) +=
+            //           fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+            //           q_points[q_index][dim_ps - 1] *
+            //           jacobians_vel[q_index][coordinate_1][coordinate_2] *
+            //           adv_mat_products[3 * coordinate_1 -
+            //                            coordinate_1 * (coordinate_1 + 1) / 2
+            //                            + coordinate_2](component_i,
+            //                            component_j) *
+            //           fe_v.shape_value(j, q_index) * JxW[q_index];
+
+            //       // \phi * jacobian[coordinate_1][coordinate_2] *
+            //       // Ap_coordinate_1, coordinate_2 * \phi
+            //       copy_data.cell_matrix(i, j) +=
+            //           fe_v.shape_value(i, q_index) *
+            //           jacobians_vel[q_index][coordinate_1][coordinate_2] *
+            //           adv_mat_products[3 * coordinate_1 -
+            //                            coordinate_1 * (coordinate_1 + 1) / 2
+            //                            + coordinate_2](component_i,
+            //                            component_j) *
+            //           fe_v.shape_value(j, q_index) * JxW[q_index];
+
+            //       // component_2, component_1
+            //       // \grad_phi p \jacobian[coordinate_1][coordinate_2]
+            //       // Ap_coordinate_1,coordinate_2 * \phi
+            //       copy_data.cell_matrix(i, j) +=
+            //           fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+            //           q_points[q_index][dim_ps - 1] *
+            //           jacobians_vel[q_index][coordinate_2][coordinate_1] *
+            //           adv_mat_products[3 * coordinate_1 -
+            //                            coordinate_1 * (coordinate_1 + 1) / 2
+            //                            + coordinate_2](component_i,
+            //                            component_j) *
+            //           fe_v.shape_value(j, q_index) * JxW[q_index];
+
+            //       // \phi * jacobian[coordinate_1][coordinate_2] *
+            //       // Ap_coordinate_1, coordinate_2 * \phi
+            //       copy_data.cell_matrix(i, j) +=
+            //           fe_v.shape_value(i, q_index) *
+            //           jacobians_vel[q_index][coordinate_2][coordinate_1] *
+            //           adv_mat_products[3 * coordinate_1 -
+            //                            coordinate_1 * (coordinate_1 + 1) / 2
+            //                            + coordinate_2](component_i,
+            //                            component_j) *
+            //           fe_v.shape_value(j, q_index) * JxW[q_index];
+            //     }
+            //   }
+            // }
+            // for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
+            //      ++coordinate_1) {
+            //   for (unsigned int coordinate_2 = 0; coordinate_2 < dim_cs;
+            //        ++coordinate_2) {
+            //     // \phi * jacobian[coordinate_1][coordinate_2] *
+            //     // T_coordinate_2,coordinate_1 * \phi
+            //     copy_data.cell_matrix(i, j) +=
+            //         fe_v.shape_value(i, q_index) *
+            //         jacobians_vel[q_index][coordinate_1][coordinate_2] *
+            //         t_matrices[coordinate_2 * 3 + coordinate_1](component_i,
+            //                                                     component_j)
+            //                                                     *
+            //         fe_v.shape_value(j, q_index);
+            //   }
+            // }
           }
         }
       }
