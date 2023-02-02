@@ -1875,7 +1875,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
             //         t_matrices[coordinate_2 * 3 + coordinate_1](component_i,
             //                                                     component_j)
             //                                                     *
-            //         fe_v.shape_value(j, q_index);
+            //         fe_v.shape_value(j, q_index) * JxW[q_index];
             //   }
             // }
           }
