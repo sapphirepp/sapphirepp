@@ -1555,20 +1555,21 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
   // faces are treated as internal faces in MeshWorker. This means that you will
   // not access them in a "integrate_boundary_term" function but in a
   // "integrate_face_term" function. "
-  std::vector<GridTools::PeriodicFacePair<
-      typename Triangulation<dim_ps>::cell_iterator>>
-      matched_pairs;
-  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
-  triangulation.add_periodicity(matched_pairs);
+  // std::vector<GridTools::PeriodicFacePair<
+  //     typename Triangulation<dim_ps>::cell_iterator>>
+  //     matched_pairs;
+  // GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
+  // triangulation.add_periodicity(matched_pairs);
 
-  constraints.clear();
-  DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
+  // constraints.clear();
+  // DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
 
   DynamicSparsityPattern dsp(n_dofs);
   // NON-PERIODIC
-  // DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   // PERIODIC
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
+  // DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
+  
   sparsity_pattern.copy_from(dsp);
 
   dg_matrix.reinit(sparsity_pattern);
@@ -2104,9 +2105,9 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
                         copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
-                            // MeshWorker::assemble_boundary_faces |
+                            MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
-                        nullptr, face_worker);
+                        boundary_worker, face_worker);
   std::cout << "The DG matrix was assembled. \n";
 }
 
