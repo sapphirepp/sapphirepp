@@ -237,11 +237,15 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     }
     if constexpr (dim_cs == 2) {
       // constant velocity
-      value[0] = 0.1;
-      value[1] = 0.1;
+      // value[0] = 0.1;
+      // value[1] = 0.1;
       // rigid rotator
       // value[0] = -point[1];
       // value[1] = point[0];
+
+      // time_dependent
+      value[0] = 0.5 * this->get_time();
+      value[1] = 0.5 * this->get_time();
     }
     if constexpr (dim_cs == 3) {
       // constant velocity
@@ -275,6 +279,7 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     }
     if constexpr (dim_cs == 2)
       // \partial u_x / partial_x + \partial u_y / partial_y
+      // time dependent velocityf field
       std::fill(values.begin(), values.end(), 0.);
     if constexpr (dim_cs == 3)
       // \partial u_x / partial_x + \partial u_y / partial_y  + \partial u_z /
@@ -318,8 +323,13 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         //                                   std::sin(pi / 2 * points[i][0]));
       }
       if constexpr (dim_cs == 2) {
-        material_derivatives[i][0] = 0.;  // d\dt u_x
-        material_derivatives[i][1] = 0.;  // d\dt u_y
+	// constant
+        // material_derivatives[i][0] = 0.;  // d\dt u_x
+        // material_derivatives[i][1] = 0.;  // d\dt u_y
+
+	// time-dependent
+	material_derivatives[i][0] = 0.5;  // d\dt u_x
+        material_derivatives[i][1] = 0.5;  // d\dt u_y
       }
     }
   }
@@ -458,8 +468,10 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
 
     if constexpr (dim_cs == 2) {
       // Gaussian
-      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
-
+      // values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+      
+      // constant
+      values[0] = 1.;
       // constant disc
       // if (p.norm() <= 1.) values[0] = 1.;
 
@@ -800,11 +812,12 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
       triangulation.refine_global(num_refinements);
     }
     if constexpr (dim_cs == 2) {
-      // std::vector<unsigned int> repititions {20,10};
-      // Point<dim_ps> p1 {-5., -5.,};
-      // Point<dim_ps> p2 {5., 5.};
-      // GridGenerator::subdivided_hyper_rectangle(triangulation, repititions,
-      // p1, p2);
+      unsigned int n_cells = 1 << num_refinements;
+      std::vector<unsigned int> repititions {n_cells, n_cells, n_cells};
+      Point<dim_ps> p1 {-5., -5., 1.};
+      Point<dim_ps> p2 {5., 5., 6.};
+      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions,
+      p1, p2);
     }
   } else {
     GridGenerator::hyper_cube(triangulation, -5., 5.);
