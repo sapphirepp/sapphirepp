@@ -218,10 +218,10 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     (void)point;
     if constexpr (dim_cs == 1) {
       // constant velocity
-      // value[0] = 0.0;
+      // value[0] = .3;
 
       // space dependent velocity
-      // value[0] = 5*point[0];
+      // value[0] = 1./10 * point[0];
 
       // time-dependent velocity-field
       // if (point[0] >= 0.)
@@ -229,7 +229,7 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // else
       //   value[0] = -1. / 10 * this->get_time();
       // value[0] = 1. / 10 * this->get_time();
-      value[0] = 1. / 10 * std::sin(this->get_time());
+      // value[0] = 1. / 2 * std::sin(this->get_time());
 
       // time- and space dependent velocity
       // value[0] = -0.1 * std::sin(3 * this->get_time()) * std::cos(pi / 2 *
@@ -260,10 +260,10 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // \partial u_x / partial_x
 
       // constant velocity
-      std::fill(values.begin(), values.end(), 0.);
+      // std::fill(values.begin(), values.end(), 0.);
 
       // space-dependent velocity field
-      // std::fill(values.begin(), values.end(), 5.);
+      // std::fill(values.begin(), values.end(), 1./10);
 
       // time-dependent velocity field
       // std::fill(values.begin(), values.end(), 0.);
@@ -303,7 +303,10 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // else if (points[i][0] < 0.)
         //   material_derivatives[i][0] = -1. / 10;
         // material_derivatives[i][0] = 1. / 10;
-        material_derivatives[i][0] = 1. / 10 * std::cos(this->get_time());
+        // material_derivatives[i][0] = 1. / 2 * std::cos(this->get_time());
+
+	// space dependent
+	 // material_derivatives[i][0] = 1./100 * points[i][0];
 
         // time- and space-dependent velocity field
         // material_derivatives[i][0] = -0.1 * std::cos((pi / 2 * points[i][0]))
@@ -337,7 +340,10 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // jacobians[i][0][0] = 0.;
 
         // time-dependent velocity field
-        jacobians[i][0][0] = 0.;
+        // jacobians[i][0][0] = 0.;
+
+	// space dependent velocity field
+        // jacobians[i][0][0] = 1./10;
         // time- and space dependent velocity field
         // jacobians[i][0][0] = 0.1 * pi / 2 * std::sin(3 * this->get_time()) *
         //                      std::sin(pi / 2 * points[i][0]);
