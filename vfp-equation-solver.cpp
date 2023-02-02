@@ -221,7 +221,7 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // value[0] = .3;
 
       // space dependent velocity
-      // value[0] = 1./10 * point[0];
+      value[0] = 1./2 * point[0];
 
       // time-dependent velocity-field
       // if (point[0] >= 0.)
@@ -267,7 +267,7 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // std::fill(values.begin(), values.end(), 0.);
 
       // space-dependent velocity field
-      // std::fill(values.begin(), values.end(), 1./10);
+      std::fill(values.begin(), values.end(), 1./2);
 
       // time-dependent velocity field
       // std::fill(values.begin(), values.end(), 0.);
@@ -460,9 +460,9 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
     if constexpr (dim_cs == 1) {
       // values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
       // if (std::abs(p[0]) < 1.) values[0] = 1.;
-      // values[0] = 1. + 0.2 * p[0];
+      values[0] = 1. + 0.2 * p[0];
       // constant
-      values[0] = 1.;
+      // values[0] = 1.;
     }
     // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
