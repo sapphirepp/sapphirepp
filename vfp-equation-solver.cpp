@@ -218,10 +218,11 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     (void)point;
     if constexpr (dim_cs == 1) {
       // constant velocity
-      // value[0] = .3;
+      // value[0] = .0;
 
       // space dependent velocity
-      value[0] = 1./2 * point[0];
+      // value[0] = 1. / 5 * point[0];
+      // value[0] = 0.1 * std::cos(pi / 2 * point[0]);
 
       // time-dependent velocity-field
       // if (point[0] >= 0.)
@@ -232,20 +233,21 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // value[0] = 1. / 2 * std::sin(this->get_time());
 
       // time- and space dependent velocity
-      // value[0] = -0.1 * std::sin(3 * this->get_time()) * std::cos(pi / 2 *
-      // point[0]);
+      // value[0] =
+      //     -0.1 * std::sin(this->get_time()) * std::cos(pi / 2 * point[0]);
+      // value[0] = 0.1 * point[0] * (1 - std::exp(-this->get_time()));
     }
     if constexpr (dim_cs == 2) {
       // constant velocity
-      // value[0] = 0.1;
-      // value[1] = 0.1;
+      value[0] = 0.;
+      value[1] = 0.;
       // rigid rotator
       // value[0] = -point[1];
       // value[1] = point[0];
 
       // time_dependent
-      value[0] = 0.5 * this->get_time();
-      value[1] = 0.5 * this->get_time();
+      value[0] = 0.25 * this->get_time();
+      value[1] = 0.;
     }
     if constexpr (dim_cs == 3) {
       // constant velocity
@@ -267,15 +269,18 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
       // std::fill(values.begin(), values.end(), 0.);
 
       // space-dependent velocity field
-      std::fill(values.begin(), values.end(), 1./2);
-
+      // std::fill(values.begin(), values.end(), 1. / 5);
+      // for (unsigned int i = 0; i < points.size(); ++i)
+      //   values[i] = 0.1 * pi / 2 * std::sin(pi / 2 * points[i][0]);
       // time-dependent velocity field
       // std::fill(values.begin(), values.end(), 0.);
 
       // time- and space-dependent velocity field
       // for (unsigned int i = 0; i < points.size(); ++i)
-      //   values[i] = 0.1 * pi / 2 * std::sin(3 * this->get_time()) *
+      //   values[i] = 0.1 * pi / 2 * std::sin(this->get_time()) *
       //               std::sin(pi / 2 * points[i][0]);
+      std::fill(values.begin(), values.end(),
+                0.1 * (1 - std::exp(-this->get_time())));
     }
     if constexpr (dim_cs == 2)
       // \partial u_x / partial_x + \partial u_y / partial_y
@@ -310,27 +315,35 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // material_derivatives[i][0] = 1. / 10;
         // material_derivatives[i][0] = 1. / 2 * std::cos(this->get_time());
 
-	// space dependent
-	 // material_derivatives[i][0] = 1./100 * points[i][0];
+        // space dependent
+        // material_derivatives[i][0] = 1./25 * points[i][0];
+        // material_derivatives[i][0] = 1. / 100 * pi / 2 *
+        //                              std::sin(pi / 2 * points[i][0]) *
+        //                              std::cos(pi / 2 * points[i][0]);
 
         // time- and space-dependent velocity field
         // material_derivatives[i][0] = -0.1 * std::cos((pi / 2 * points[i][0]))
         // *
-        //                              (3 * std::cos(3 * this->get_time()) +
-        //                               pi / 2 * std::sin(3 * this->get_time())
-        //                               *
-        //                                   std::sin(3 * this->get_time()) *
+        //                              (std::cos(this->get_time()) +
+        //                               0.1 * pi / 2 *
+        //                               std::sin(this->get_time()) *
+        //                                   std::sin(this->get_time()) *
         //                                   std::sin(pi / 2 * points[i][0]));
+
+        material_derivatives[i][0] = 0.1 * points[i][0] *
+                                     (std::exp(-this->get_time()) +
+                                      0.1 * (1 - std::exp(-this->get_time())) *
+                                          (1 - std::exp(-this->get_time())));
       }
       if constexpr (dim_cs == 2) {
-	// constant
+        // constant
         // material_derivatives[i][0] = 0.;  // d\dt u_x
         // material_derivatives[i][1] = 0.;  // d\dt u_y
 
-	// time-dependent
-	material_derivatives[i][0] = 0.5;  // d\dt u_x
-        material_derivatives[i][1] = 0.5;  // d\dt u_y
-      }
+        // time-dependent
+        material_derivatives[i][0] = 0.25;  // d\dt u_x
+        material_derivatives[i][1] = 0.;  // d\dt u_y
+      }	
     }
   }
 
@@ -352,11 +365,14 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // time-dependent velocity field
         // jacobians[i][0][0] = 0.;
 
-	// space dependent velocity field
-        // jacobians[i][0][0] = 1./10;
+        // space dependent velocity fiel-d
+        // jacobians[i][0][0] = 1./5;
+        // jacobians[i][0][0] = 0.1 * pi/2 * std::sin(pi/2 * points[i][0]);
+
         // time- and space dependent velocity field
-        // jacobians[i][0][0] = 0.1 * pi / 2 * std::sin(3 * this->get_time()) *
+        // jacobians[i][0][0] = 0.1 * pi / 2 * std::sin(this->get_time()) *
         //                      std::sin(pi / 2 * points[i][0]);
+        jacobians[i][0][0] = 0.1 * (1 - std::exp(-this->get_time()));
       }
 
       if constexpr (dim_cs == 2) {
@@ -414,7 +430,7 @@ class MagneticField : public Function<dim_cs + momentum> {
  private:
   double B_x = 0.;
   double B_y = 0.;
-  double B_z = 0.;
+  double B_z = 3.;
 };
 
 enum class TermFlags {
@@ -460,18 +476,19 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
     if constexpr (dim_cs == 1) {
       // values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
       // if (std::abs(p[0]) < 1.) values[0] = 1.;
-      values[0] = 1. + 0.2 * p[0];
+      // values[0] = 1. + 0.2 * p[0];
       // constant
-      // values[0] = 1.;
+      values[0] = 1.;
     }
     // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
     if constexpr (dim_cs == 2) {
       // Gaussian
-      // values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
-      
+      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+
       // constant
-      values[0] = 1.;
+      // values[0] = 1.;
+    
       // constant disc
       // if (p.norm() <= 1.) values[0] = 1.;
 
@@ -490,7 +507,7 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
     //                     0.01)));
     if constexpr (momentum)
       values[0] *=
-          std::exp(-(std::pow(p[dim_cs + momentum - 1] - 3.5, 2) / 0.5));
+          std::exp(-(std::pow(p[dim_cs + momentum - 1] - 5.5, 2) / 0.5));
   }
 
  private:
