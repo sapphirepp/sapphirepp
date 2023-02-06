@@ -817,24 +817,23 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
     if constexpr (dim_cs == 1) {
-      // unsigned int n_cells = 1 << num_refinements;
-      // std::vector<unsigned int> repititions{n_cells, n_cells};
-      // Point<dim_ps> p1{-5., 1.};
-      // Point<dim_ps> p2{5., 6.};
+      unsigned int n_cells = 1 << num_refinements;
+      std::vector<unsigned int> repititions{n_cells, n_cells};
+      Point<dim_ps> p1{-3., 1.};
+      Point<dim_ps> p2{3., 10.};
       // // Colorize = true means to set boundary ids (default for 1D)
-      // GridGenerator::subdivided_hyper_rectangle(triangulation, repititions,
-      // p1,
-      //                                           p2, true);
-      GridGenerator::hyper_cube(triangulation, 1., 6., true);
-      triangulation.refine_global(num_refinements);
+      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
+                                                p2, false);
+      // GridGenerator::hyper_cube(triangulation, 1., 6., true);
+      // triangulation.refine_global(num_refinements);
     }
     if constexpr (dim_cs == 2) {
       unsigned int n_cells = 1 << num_refinements;
-      std::vector<unsigned int> repititions {n_cells, n_cells, n_cells};
-      Point<dim_ps> p1 {-5., -5., 1.};
-      Point<dim_ps> p2 {5., 5., 6.};
-      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions,
-      p1, p2);
+      std::vector<unsigned int> repititions{n_cells, n_cells, n_cells};
+      Point<dim_ps> p1{-5., -5., 1.};
+      Point<dim_ps> p2{5., 5., 10.};
+      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
+                                                p2);
     }
   } else {
     GridGenerator::hyper_cube(triangulation, -5., 5.);
