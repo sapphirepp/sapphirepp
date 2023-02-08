@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 # endif()   
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. to recognise the include libraries)
 
-SET(DEAL_II_DIR "/home/schween/.local/lib/dealii")
+SET(DEAL_II_DIR "~/.local/lib/dealii")
 
 FIND_PACKAGE(deal.II 9.3.0 REQUIRED
   HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
