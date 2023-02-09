@@ -1390,13 +1390,14 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
 
-  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
-                        copier, scratch_data, copy_data,
-                        MeshWorker::assemble_own_cells |
-                            MeshWorker::assemble_boundary_faces |
-                            MeshWorker::assemble_ghost_faces_both |
-                            MeshWorker::assemble_own_interior_faces_once,
-                        boundary_worker, face_worker);
+  const auto filtered_iterator_range = filter_iterators(
+      dof_handler.active_cell_iterators(), IteratorFilters::LocallyOwnedCell());
+  MeshWorker::mesh_loop(
+      filtered_iterator_range, cell_worker, copier, scratch_data, copy_data,
+      MeshWorker::assemble_own_cells | MeshWorker::assemble_boundary_faces |
+          MeshWorker::assemble_ghost_faces_both |
+          MeshWorker::assemble_own_interior_faces_once,
+      boundary_worker, face_worker);
   dg_matrix.compress(VectorOperation::add);
   // dg_matrix.print(std::cout);
 }
