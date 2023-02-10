@@ -27,7 +27,6 @@
 #include <deal.II/lac/lapack_full_matrix.h>
 // PetscWrappers
 #include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_renumbering.h>  // needed to renumber the local dofs
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/petsc_solver.h>
