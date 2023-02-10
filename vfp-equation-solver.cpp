@@ -860,11 +860,23 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
       Point<dim_ps> p1{-5., -5., 1.};
       Point<dim_ps> p2{5., 5., 10.};
       GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
-                                                p2);
+                                                p2, true);
     }
   } else {
-    GridGenerator::hyper_cube(triangulation, -5., 5.);
-    triangulation.refine_global(num_refinements);
+    GridGenerator::hyper_cube(triangulation, -5., 5., true);
+    // Periodic boundary conditions with MeshWorker. Mailinglist
+  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+  //
+  // "If you call add_periodicity() on a Triangulation object, the periodic
+  // faces are treated as internal faces in MeshWorker. This means that you will
+  // not access them in a "integrate_boundary_term" function but in a
+  // "integrate_face_term" function. "
+  std::vector<GridTools::PeriodicFacePair<
+      typename Triangulation<dim_ps>::cell_iterator>>
+      matched_pairs;
+  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
+  triangulation.add_periodicity(matched_pairs);
+  triangulation.refine_global(num_refinements);
   }
 
   // std::ofstream out("grid.vtk");
@@ -1662,21 +1674,8 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
   locally_owned_dofs = dof_handler.locally_owned_dofs();
   locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
 
-  // Periodic boundary conditions with MeshWorker. Mailinglist
-  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
-  //
-  // "If you call add_periodicity() on a Triangulation object, the periodic
-  // faces are treated as internal faces in MeshWorker. This means that you will
-  // not access them in a "integrate_boundary_term" function but in a
-  // "integrate_face_term" function. "
-  // std::vector<GridTools::PeriodicFacePair<
-  //     typename Triangulation<dim_ps>::cell_iterator>>
-  //     matched_pairs;
-  // GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
-  // triangulation.add_periodicity(matched_pairs);
-
-  // constraints.clear();
-  // DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
+   // constraints.clear();
+  // DoFTools::make_periodicity_constraints(matched_pairs, constraints);
 
   // Let me see if I have to initialise the constraint object
   // constraints.clear();
