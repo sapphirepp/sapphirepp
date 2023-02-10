@@ -1700,7 +1700,7 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
   // NOTE: DealII does not allow to use different sparsity patterns for
   // matrices, which you would like to add. Even though the the mass matrix
   // differs from the dg matrix.
-  mass_matrix.reinit(locally_owned_dofs, locally_relevant_dofs, dsp,
+  mass_matrix.reinit(locally_owned_dofs, locally_owned_dofs, dsp,
                      mpi_communicator);
   system_matrix.reinit(locally_owned_dofs, locally_owned_dofs, dsp,
                        mpi_communicator);
