@@ -2222,7 +2222,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   MeshWorker::mesh_loop(
       filtered_iterator_range, cell_worker, copier, scratch_data, copy_data,
       MeshWorker::assemble_own_cells | MeshWorker::assemble_boundary_faces |
-          MeshWorker::assemble_ghost_faces_both |
+          MeshWorker::assemble_ghost_faces_once |
           MeshWorker::assemble_own_interior_faces_once,
       boundary_worker, face_worker);
   dg_matrix.compress(VectorOperation::add);
@@ -2435,16 +2435,22 @@ void VFPEquationSolver<flags, dim_cs>::low_storage_explicit_runge_kutta() {
     // assemble_system(time + c[s]*time_step);
     dg_matrix.vmult(system_rhs, locally_owned_current_solution);
     cg.solve(mass_matrix, temp, system_rhs, preconditioner);
-    std::cout << "	Stage s: " << s << "	Solver converged in "
-              << solver_control.last_step() << " iterations."
-              << "\n";
+    pcout << "	Stage s: " << s << "	Solver converged in "
+          << solver_control.last_step() << " iterations."
+          << "\n";
 
     k.sadd(a[s], -time_step, temp);
     locally_owned_current_solution.add(b[s], k);
   }
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);
+  // std::cout << "Rank: " << rank << "\n";
+  // std::cout << "Locally owned current solution: \n";
+  // locally_owned_current_solution.print(std::cout);
+
   locally_relevant_current_solution = locally_owned_current_solution;
+  // std::cout << "Locally relevant current solution: \n";
+  // locally_relevant_current_solution.print(std::cout);
 }
 
 template <TermFlags flags, int dim_cs>
