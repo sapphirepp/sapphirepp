@@ -56,7 +56,7 @@
 #include <string>
 #include <vector>
 
-namespace vfp_equation_solver {
+namespace VFPEquation {
 using namespace dealii;
 // Functions to compute the velocity and gamma when p is given
 template <int dim_ps>
@@ -174,47 +174,6 @@ void ParameterReader::read_parameters(const std::string &input_file) {
   parameter_handler.parse_input(input_file);
 }
 
-struct ParticleProperties {
-  ParticleProperties(ParameterHandler &prm) : parameter_handler(prm) {
-    parameter_handler.enter_subsection("Physical parameters");
-    {
-      particle_energy = parameter_handler.get_double("Particle energy");
-      particle_velocity = 1. / (beta_0 * gamma_0) *
-                          std::sqrt(gamma_0 * gamma_0 -
-                                    1. / (particle_energy * particle_energy));
-    }
-    parameter_handler.leave_subsection();
-  }
-  // dimensionless values
-  double particle_energy;
-  double particle_velocity;
-  // reference values
-  const double energy_scale = 10;        // GeV
-  const double proton_mass = 0.9382721;  // GeV/c^2
-  const double gamma_0 = energy_scale / proton_mass;
-  const double beta_0 = std::sqrt(1 - 1. / (gamma_0 * gamma_0));
-
- private:
-  ParameterHandler &parameter_handler;
-};
-
-std::ostream &operator<<(std::ostream &os,
-                         const ParticleProperties &particle_properties) {
-  os << "Particle properties: \n"
-     << " Dimensionless units: \n"
-     << "	Particle energy: " << particle_properties.particle_energy
-     << "\n"
-     << "	Particle velocity: " << particle_properties.particle_velocity
-     << "\n"
-     << " Reference values: \n"
-     << "	Energy scale (E_0): " << particle_properties.energy_scale
-     << " GeV \n"
-     << "	Proton_mass (m_p): " << particle_properties.proton_mass
-     << " GeV/c^2 \n"
-     << "	beta_0: " << particle_properties.beta_0 << "\n"
-     << "	gamma_0: " << particle_properties.gamma_0 << "\n\n";
-  return os;
-}
 
 // the background velocity field
 template <int dim_cs, bool momentum>
@@ -249,14 +208,14 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
     if constexpr (dim_cs == 2) {
       // constant velocity
       value[0] = 0.;
-      value[1] = 0.;
+      value[1] = 0.25;
       // rigid rotator
       // value[0] = -point[1];
       // value[1] = point[0];
 
       // time_dependent
-      value[0] = 0.25 * this->get_time();
-      value[1] = 0.;
+      // value[0] = 0.25 * this->get_time();
+      // value[1] = 0.;
     }
     if constexpr (dim_cs == 3) {
       // constant velocity
@@ -350,7 +309,7 @@ class BackgroundVelocityField : public Function<dim_cs + momentum> {
         // material_derivatives[i][1] = 0.;  // d\dt u_y
 
         // time-dependent
-        material_derivatives[i][0] = 0.25;  // d\dt u_x
+        material_derivatives[i][0] = 0.;  // d\dt u_x
         material_derivatives[i][1] = 0.;    // d\dt u_y
       }
     }
@@ -2516,7 +2475,7 @@ void VFPEquationSolver<flags, dim_cs>::output_index_order() const {
 
 int main(int argc, char *argv[]) {
   try {
-    using namespace vfp_equation_solver;
+    using namespace VFPEquation;
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
     constexpr TermFlags flags = TermFlags::spatial_advection;
     ConditionalOStream pcout(
@@ -2537,7 +2496,7 @@ int main(int argc, char *argv[]) {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 1> vfp_equation_solver(
+    VFPEquationSolver<flags, 2> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 

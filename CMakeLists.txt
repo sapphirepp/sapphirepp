@@ -17,6 +17,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES() # CMAKE_BUILD_TYPE is set to the whatever 
 PROJECT(VFP-Equation)
 option(vfp-equation-solver "Compile the pure advection system" ON )
 if(vfp-equation-solver)
+  add_subdirectory(src)
   ADD_EXECUTABLE(vfp-equation-solver vfp-equation-solver.cpp)
   DEAL_II_SETUP_TARGET(vfp-equation-solver)
 endif(vfp-equation-solver)
