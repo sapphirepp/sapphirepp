@@ -13,6 +13,7 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
 #include <deal.II/fe/fe_update_flags.h>
+#include <deal.II/grid/filtered_iterator.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/grid_tools.h>  // neeed for periodic boundary conditions
@@ -865,18 +866,19 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
   } else {
     GridGenerator::hyper_cube(triangulation, -5., 5., true);
     // Periodic boundary conditions with MeshWorker. Mailinglist
-  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
-  //
-  // "If you call add_periodicity() on a Triangulation object, the periodic
-  // faces are treated as internal faces in MeshWorker. This means that you will
-  // not access them in a "integrate_boundary_term" function but in a
-  // "integrate_face_term" function. "
-  std::vector<GridTools::PeriodicFacePair<
-      typename Triangulation<dim_ps>::cell_iterator>>
-      matched_pairs;
-  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
-  triangulation.add_periodicity(matched_pairs);
-  triangulation.refine_global(num_refinements);
+    // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+    //
+    // "If you call add_periodicity() on a Triangulation object, the periodic
+    // faces are treated as internal faces in MeshWorker. This means that you
+    // will not access them in a "integrate_boundary_term" function but in a
+    // "integrate_face_term" function. "
+    // std::vector<GridTools::PeriodicFacePair<
+    //     typename Triangulation<dim_ps>::cell_iterator>>
+    //     matched_pairs;
+    // GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
+    // GridTools::collect_periodic_faces(triangulation, 2, 3, 1, matched_pairs);
+    // triangulation.add_periodicity(matched_pairs);
+    triangulation.refine_global(num_refinements);
   }
 
   // std::ofstream out("grid.vtk");
@@ -1750,8 +1752,8 @@ void VFPEquationSolver<flags, dim_cs>::assemble_mass_matrix() {
   ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
   // Perfom the integration loop only over the locally owned cells
-  const auto filtered_iterator_range = filter_iterators(
-      dof_handler.active_cell_iterators(), IteratorFilters::LocallyOwnedCell());
+  const auto filtered_iterator_range =
+      dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
 
   pcout << "Begin the assembly of the mass matrix. \n";
   MeshWorker::mesh_loop(filtered_iterator_range, cell_worker, copier,
@@ -2220,8 +2222,8 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
   pcout << "Begin the assembly of the DG matrix. \n";
-  const auto filtered_iterator_range = filter_iterators(
-      dof_handler.active_cell_iterators(), IteratorFilters::LocallyOwnedCell());
+  const auto filtered_iterator_range =
+      dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
   MeshWorker::mesh_loop(
       filtered_iterator_range, cell_worker, copier, scratch_data, copy_data,
       MeshWorker::assemble_own_cells | MeshWorker::assemble_boundary_faces |
