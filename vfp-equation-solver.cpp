@@ -688,7 +688,7 @@ class VFPEquationSolver {
   // The constraints object is used for the distribute_local_to_global()
   // function, (maybe for the periodic boundary conditions) and, in the future,
   // for AMR
-  AffineConstraints<double> constraints;
+  const AffineConstraints<double> constraints;
 
   // PDE System data
   // Spatial advection/(magnitude) p advection
@@ -1676,7 +1676,7 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
   locally_owned_dofs = dof_handler.locally_owned_dofs();
   locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
 
-   // constraints.clear();
+  // constraints.clear();
   // DoFTools::make_periodicity_constraints(matched_pairs, constraints);
 
   // Let me see if I have to initialise the constraint object
@@ -1684,7 +1684,7 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
   // constraints.reinit(locally_relevant_dofs);
   // This is an rather obscure line. I do not know why I need it. (cf. example
   // 23)
-  constraints.close();
+  // constraints.close();
 
   // Vectors
   locally_relevant_current_solution.reinit(
