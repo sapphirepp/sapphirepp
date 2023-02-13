@@ -107,10 +107,10 @@ void ParameterReader::declare_parameters() {
         "Particle energy", "1.", Patterns::Double(),
         "The energy of the particle in units of 10 Gev");
     parameter_handler.declare_entry(
-        "Plasma velocity x-component", ".1", Patterns::Double(),
+        "Plasma velocity x-component", ".5", Patterns::Double(),
         "The x-component of the background plasma's velocity");
     parameter_handler.declare_entry(
-        "Plasma velocity y-component", ".1", Patterns::Double(),
+        "Plasma velocity y-component", "0.", Patterns::Double(),
         "The y-component of the background plasma's velocity");
     parameter_handler.declare_entry("Magnetic field x-component", "0.",
                                     Patterns::Double(),
@@ -204,8 +204,8 @@ class BackgroundVelocityField : public Function<dim> {
 
  private:
   ParameterHandler &parameter_handler;
-  double u_x = 0.1;
-  double u_y = 0.1;
+  double u_x = 1.;
+  double u_y = 0.;
 };
 
 // the magnetic field
@@ -299,15 +299,13 @@ class InitialValueFunction : public Function<dim> {
     // The zeroth component of values corresponds to f_000, the first component
     // to f_110 etc.
     if constexpr (dim == 1)
-      // values[0] = 1. * std::exp(-(std::pow(p[0], 2) / 1.));
-      values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
+      values[0] = 1. * std::exp(-(std::pow(p[0], 2) / 1.));
+    // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
 
     if constexpr (dim == 2) {
-      // values[0] =
-      //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2))
-      //     /
-      //                     0.01));
-      if (p.norm() <= 1.) values[0] = 1.;
+      values[0] =
+          1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2)) / 1.));
+      // if (p.norm() <= 1.) values[0] = 1.;
     }
     // Fill all components with the same values
     // std::fill(
@@ -456,7 +454,8 @@ class VFPEquationSolver {
   const QGauss<dim> quadrature;
   const QGauss<dim - 1> quadrature_face;
 
-  AffineConstraints<double> constraints;  // used in the L_2 projection of the
+  const AffineConstraints<double>
+      constraints;  // used in the L_2 projection of the
   // intial condition onto the finite
   // element space
 
@@ -597,7 +596,20 @@ template <TermFlags flags, int dim>
 void VFPEquationSolver<flags, dim>::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   // Colorize = true means to set boundary ids (default for 1D)
-  GridGenerator::hyper_cube(triangulation, -5., 3., true);
+  GridGenerator::hyper_cube(triangulation, -5., 5., true);
+  // Periodic boundary conditions with MeshWorker. Mailinglist
+  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+  //
+  // "If you call add_periodicity() on a Triangulation object, the periodic
+  // faces are treated as internal faces in MeshWorker. This means that you will
+  // not access them in a "integrate_boundary_term" function but in a
+  // "integrate_face_term" function. "
+  std::vector<
+      GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      periodicity_vector;
+  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, periodicity_vector);
+  // GridTools::collect_periodic_faces(dof_handler, 2, 3, 1, matched_pairs);
+  triangulation.add_periodicity(periodicity_vector);
   triangulation.refine_global(num_refinements);
 
   // std::ofstream out("grid.vtk");
@@ -879,24 +891,20 @@ void VFPEquationSolver<flags, dim>::setup_system() {
   std::cout << "The degrees of freedom were distributed: \n"
             << "	Number of degrees of freedom: " << n_dofs << "\n";
 
-  // Periodic boundary conditions with MeshWorker. Mailinglist
-  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
-  //
-  // "If you call add_periodicity() on a Triangulation object, the periodic
-  // faces are treated as internal faces in MeshWorker. This means that you will
-  // not access them in a "integrate_boundary_term" function but in a
-  // "integrate_face_term" function. "
-  std::vector<
-      GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      matched_pairs;
-  GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
-  triangulation.add_periodicity(matched_pairs);
+  // std::vector<
+  //     GridTools::PeriodicFacePair<typename DoFHandler<dim>::cell_iterator>>
+  //     matched_pairs;
+  // GridTools::collect_periodic_faces(dof_handler, 0, 1, 0, matched_pairs);
+  // GridTools::collect_periodic_faces(dof_handler, 2, 3, 1, matched_pairs);
+  // triangulation.add_periodicity(matched_pairs);
 
-  constraints.clear();
-  DoFTools::make_periodicity_constraints(dof_handler, 0, 1, 0, constraints);
+  // constraints.clear();
+  // DoFTools::make_periodicity_constraints<dim, dim>(dof_handler, 0, 1, 0,
+  // constraints);
 
   DynamicSparsityPattern dsp(n_dofs);
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
+  // DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints, false);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   sparsity_pattern.copy_from(dsp);
 
   dg_matrix.reinit(sparsity_pattern);
@@ -913,7 +921,7 @@ void VFPEquationSolver<flags, dim>::setup_system() {
 
   // This is an rather obscure line. I do not know why I need it. (cf. example
   // 23)
-  constraints.close();
+  // constraints.close();
 }
 
 template <TermFlags flags, int dim>
@@ -1099,72 +1107,73 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
     }
   };
   // assemble boundary face terms
-  // const auto boundary_worker = [&](const Iterator &cell,
-  //                                  const unsigned int &face_no,
-  //                                  ScratchData<dim> &scratch_data,
-  //                                  CopyData &copy_data) {
-  //   scratch_data.fe_values_face.reinit(cell, face_no);
-  //   const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
-  //   // Every shape function on the cell could contribute to the face integral,
-  //   // hence n_facet_dofs = n_dofs_per_cell
-  //   const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
-  //   // NOTE: copy_data is not reinitialised, the cell_workers contribution to
-  //   // the cell_dg_matrix should not be deleted
+  const auto boundary_worker = [&](const Iterator &cell,
+                                   const unsigned int &face_no,
+                                   ScratchData<dim> &scratch_data,
+                                   CopyData &copy_data) {
+    scratch_data.fe_values_face.reinit(cell, face_no);
+    const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
+    // Every shape function on the cell could contribute to the face
+    // integral,
+    // hence n_facet_dofs = n_dofs_per_cell
+    const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
+    // NOTE: copy_data is not reinitialised, the cell_workers contribution to
+    // the cell_dg_matrix should not be deleted
 
-  //   // NOTE: Currently I do not the velocity field here. The upwind flux may
-  //   // depend on the quadrature point in the future.
-  //   // const std::vector<Point<dim>> &q_points =
-  //   // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
-  //   // velocities(q_points.size(), Vector<double>(2));
-  //   // background_velocity_field.vector_value_list(q_points, velocities);
+    // NOTE: Currently I do not the velocity field here. The upwind flux may
+    // depend on the quadrature point in the future.
+    // const std::vector<Point<dim>> &q_points =
+    // fe_face_v.get_quadrature_points(); std::vector<Vector<double>>
+    // velocities(q_points.size(), Vector<double>(2));
+    // background_velocity_field.vector_value_list(q_points, velocities);
 
-  //   const std::vector<double> &JxW = fe_face_v.get_JxW_values();
-  //   const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
+    const std::vector<double> &JxW = fe_face_v.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_face_v.get_normal_vectors();
 
-  //   for (unsigned int i = 0; i < n_facet_dofs; ++i) {
-  //     const unsigned int component_i =
-  //         fe_face_v.get_fe().system_to_component_index(i).first;
-  //     for (unsigned int j = 0; j < n_facet_dofs; ++j) {
-  //       const unsigned int component_j =
-  //           fe_face_v.get_fe().system_to_component_index(j).first;
-  //       for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-  //         if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
-  //           // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
-  //           // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
-  //           // \phi_j
-  //           // Ax
-  //           if (normals[q_index][0] == 1.) {
-  //             copy_data.cell_dg_matrix(i, j) +=
-  //                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-  //                 pi_x_positive(component_i, component_j) *
-  //                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
-  //           }
-  //           if (normals[q_index][0] == -1.) {
-  //             copy_data.cell_dg_matrix(i, j) +=
-  //                 normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
-  //                 pi_x_negative(component_i, component_j) *
-  //                 fe_face_v.shape_value(j, q_index) * JxW[q_index];
-  //           }
-  //           // Ay
-  //           if constexpr (dim == 2) {
-  //             if (normals[q_index][1] == 1.) {
-  //               copy_data.cell_dg_matrix(i, j) +=
-  //                   normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-  //                   pi_y_positive(component_i, component_j) *
-  //                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
-  //             }
-  //             if (normals[q_index][1] == -1.) {
-  //               copy_data.cell_dg_matrix(i, j) +=
-  //                   normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
-  //                   pi_y_negative(component_i, component_j) *
-  //                   fe_face_v.shape_value(j, q_index) * JxW[q_index];
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // };
+    for (unsigned int i = 0; i < n_facet_dofs; ++i) {
+      const unsigned int component_i =
+          fe_face_v.get_fe().system_to_component_index(i).first;
+      for (unsigned int j = 0; j < n_facet_dofs; ++j) {
+        const unsigned int component_j =
+            fe_face_v.get_fe().system_to_component_index(j).first;
+        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+          if constexpr ((flags & TermFlags::advection) != TermFlags::none) {
+            // for outflow boundary: if n_k > 0 , then n_k * \phi_i *
+            // pi_k_positive_ij \phi_j, else n_k * \phi_i * pi_k_negative_ij
+            // \phi_j
+            // Ax
+            if (normals[q_index][0] == 1.) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                  pi_x_positive(component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+            if (normals[q_index][0] == -1.) {
+              copy_data.cell_dg_matrix(i, j) +=
+                  normals[q_index][0] * fe_face_v.shape_value(i, q_index) *
+                  pi_x_negative(component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            }
+            // Ay
+            if constexpr (dim == 2) {
+              if (normals[q_index][1] == 1.) {
+                copy_data.cell_dg_matrix(i, j) +=
+                    normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
+                    pi_y_positive(component_i, component_j) *
+                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
+              }
+              if (normals[q_index][1] == -1.) {
+                copy_data.cell_dg_matrix(i, j) +=
+                    normals[q_index][1] * fe_face_v.shape_value(i, q_index) *
+                    pi_y_negative(component_i, component_j) *
+                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
+              }
+            }
+          }
+        }
+      }
+    }
+  };
 
   // assemble interior face terms
   // NOTE: The face worker assumes a grid consisting of rectangular cells with
@@ -1254,6 +1263,12 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
                 copy_data_face.cell_dg_matrix_11(i, j) +=
                     normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
                     pi_y_positive(component_i, component_j) *
+                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
+              }
+              if (normals[q_index][1] == -1.) {
+                copy_data_face.cell_dg_matrix_11(i, j) +=
+                    normals[q_index][1] * fe_v_face.shape_value(i, q_index) *
+                    pi_y_negative(component_i, component_j) *
                     fe_v_face.shape_value(j, q_index) * JxW[q_index];
               }
             }
@@ -1395,11 +1410,12 @@ void VFPEquationSolver<flags, dim>::assemble_dg_matrix(
   ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
 
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-                        cell_worker, copier, scratch_data, copy_data,
+  MeshWorker::mesh_loop(dof_handler.active_cell_iterators(), cell_worker,
+                        copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells |
+                            MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
-                        nullptr, face_worker);
+                        boundary_worker, face_worker);
 }
 
 template <TermFlags flags, int dim>
@@ -1628,8 +1644,8 @@ int main() {
   try {
     using namespace vfp_equation_solver;
 
-    constexpr TermFlags flags =
-        TermFlags::advection | TermFlags::magnetic | TermFlags::reaction;
+    constexpr TermFlags flags = TermFlags::advection;
+    // | TermFlags::magnetic | TermFlags::reaction;
 
     ParameterHandler parameter_handler;
     ParameterReader parameter_reader(parameter_handler);
@@ -1646,7 +1662,7 @@ int main() {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 1> vfp_equation_solver(
+    VFPEquationSolver<flags, 2> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
