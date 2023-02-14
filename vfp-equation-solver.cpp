@@ -56,13 +56,16 @@
 #include <string>
 #include <vector>
 
+// own header files
+#include "reference-values.h"
+
 namespace VFPEquation {
 using namespace dealii;
 // Functions to compute the velocity and gamma when p is given
 template <int dim_ps>
 class ParticleVelocity : public Function<dim_ps> {
  public:
-  ParticleVelocity(double gamma) : gamma_0{gamma} {}
+  ParticleVelocity(double gamma) : reference_gamma{gamma} {}
 
   void value_list(const std::vector<Point<dim_ps>> &points,
                   std::vector<double> &velocities,
@@ -75,18 +78,18 @@ class ParticleVelocity : public Function<dim_ps> {
     for (unsigned int i = 0; i < points.size(); ++i) {
       velocities[i] = points[i][dim_ps - 1] /
                       std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] +
-                                1 / (gamma_0 * gamma_0));
+                                1 / (reference_gamma * reference_gamma));
     }
   }
 
  private:
-  double gamma_0;
+  double reference_gamma;
 };
 
 template <int dim_ps>
 class ParticleGamma : public Function<dim_ps> {
  public:
-  ParticleGamma(double gamma) : gamma_0{gamma} {}
+  ParticleGamma(double gamma) : reference_gamma{gamma} {}
 
   void value_list(const std::vector<Point<dim_ps>> &points,
                   std::vector<double> &gammas,
@@ -99,12 +102,12 @@ class ParticleGamma : public Function<dim_ps> {
     // points (i.e. the coordinates of the phase space are x,(y,z), p)
     for (unsigned int i = 0; i < points.size(); ++i) {
       gammas[i] = std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] +
-                            1 / (gamma_0 * gamma_0));
+                            1 / (reference_gamma * reference_gamma));
     }
   }
 
  private:
-  double gamma_0;
+  double reference_gamma;
 };
 
 // Input data
@@ -695,7 +698,7 @@ class VFPEquationSolver {
   // scattering frequency
   double scattering_frequency = 1.;
   // particle
-  ParticleProperties particle_properties;
+  ReferenceValues reference_values;
 
   // Number of refinements
   unsigned int num_refinements = 5;
@@ -726,7 +729,6 @@ VFPEquationSolver<flags, dim_cs>::VFPEquationSolver(
       expansion_order{order},
       num_exp_coefficients{
           static_cast<unsigned int>((order + 1) * (order + 1))},
-      particle_properties(prm),
       lms_indices((order + 1) * (order + 1)),
       timer(mpi_communicator, pcout, TimerOutput::never,
             TimerOutput::wall_times) {
@@ -759,7 +761,7 @@ VFPEquationSolver<flags, dim_cs>::VFPEquationSolver(
 
 template <TermFlags flags, int dim_cs>
 void VFPEquationSolver<flags, dim_cs>::run() {
-  pcout << particle_properties;
+  pcout << reference_values;
   output_compile_time_parameters();
   output_index_order();
   make_grid();
@@ -1363,7 +1365,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
     velocity_field.vector_value_list(q_points, velocities);
 
     // Particle
-    ParticleVelocity<dim_ps> particle_velocity(particle_properties.gamma_0);
+    ParticleVelocity<dim_ps> particle_velocity(reference_values.gamma);
     std::vector<double> particle_velocities(q_points.size());
     particle_velocity.value_list(q_points, particle_velocities);
 
@@ -1376,7 +1378,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
         lambda *= particle_velocities[q_index];
       } else {
         // No momentum part == transport only, i.e. only one energy
-        lambda *= particle_properties.particle_velocity;
+        // lambda *= particle_properties.particle_velocity;
       }
       // Add the velocities to the eigenvalues
       lambda.add(velocities[q_index][component]);
@@ -1414,7 +1416,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
         std::vector<Vector<double>>(dim_cs, Vector<double>(dim_cs)));
     velocity_field.jacobian_list(q_points, jacobians_vel);
 
-    ParticleGamma<dim_ps> particle_gamma(particle_properties.gamma_0);
+    ParticleGamma<dim_ps> particle_gamma(reference_values.gamma);
     std::vector<double> particle_gammas(q_points.size());
     particle_gamma.value_list(q_points, particle_gammas);
 
@@ -1742,8 +1744,8 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
       magnetic_field;
   magnetic_field.set_time(time);
 
-  ParticleVelocity<dim_ps> particle_velocity(particle_properties.gamma_0);
-  ParticleGamma<dim_ps> particle_gamma(particle_properties.gamma_0);
+  ParticleVelocity<dim_ps> particle_velocity(reference_values.gamma);
+  ParticleGamma<dim_ps> particle_gamma(reference_values.gamma);
 
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
@@ -1836,11 +1838,12 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
 
                 } else {
                   // fixed energy case (i.e. transport only)
-                  copy_data.cell_matrix(i, j) -=
-                      fe_v.shape_grad(i, q_index)[coordinate] *
-                      particle_properties.particle_velocity *
-                      advection_matrices[coordinate](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                  // copy_data.cell_matrix(i, j) -=
+                  //     fe_v.shape_grad(i, q_index)[coordinate] *
+                  //     particle_properties.particle_velocity *
+                  //     advection_matrices[coordinate](component_i,
+                  //     component_j) * fe_v.shape_value(j, q_index) *
+                  //     JxW[q_index];
                 }
               }
             }
@@ -2471,7 +2474,7 @@ void VFPEquationSolver<flags, dim_cs>::output_index_order() const {
     pcout << "	" << lms[0] << lms[1] << lms[2] << "\n";
   pcout << "\n";
 }
-}  // namespace vfp_equation_solver
+}  // namespace VFPEquation
 
 int main(int argc, char *argv[]) {
   try {
