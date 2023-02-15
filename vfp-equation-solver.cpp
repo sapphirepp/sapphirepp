@@ -57,6 +57,7 @@
 #include <vector>
 
 // own header files
+#include "physical-setup.h"
 #include "reference-values.h"
 
 namespace VFPEquation {
@@ -472,7 +473,7 @@ class VFPEquationSolver {
   double scattering_frequency = 1.;
   // particle
   ReferenceValues reference_values;
-
+  ParticleProperties particle_properties;
   // Number of refinements
   unsigned int num_refinements = 5;
   // For the moment, I will use a quadratic domain
@@ -612,6 +613,7 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
     // GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
     // GridTools::collect_periodic_faces(triangulation, 2, 3, 1, matched_pairs);
     // triangulation.add_periodicity(matched_pairs);
+
     triangulation.refine_global(num_refinements);
   }
 
@@ -1122,9 +1124,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
   FullMatrix<double> lambda_plus_matrix(num_exp_coefficients);
   FullMatrix<double> lambda_minus_matrix(num_exp_coefficients);
 
-  BackgroundVelocityField<dim_cs,
-                          (flags & TermFlags::momentum) != TermFlags::none>
-      velocity_field;
+  BackgroundVelocityField<dim_ps> velocity_field;
   velocity_field.set_time(time);
 
   // Two different cases: 1. Upwinding for the spatial advection part and
@@ -1133,8 +1133,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
     // Background velocity field
     // Get the value of the velocity field at every quadrature point
     // TODO: Value list for a specific component would be faster.
-    std::vector<Vector<double>> velocities(q_points.size(),
-                                           Vector<double>(dim_cs));
+    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(3));
     velocity_field.vector_value_list(q_points, velocities);
 
     // Particle
@@ -1151,7 +1150,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
         lambda *= particle_velocities[q_index];
       } else {
         // No momentum part == transport only, i.e. only one energy
-        // lambda *= particle_properties.particle_velocity;
+        lambda *= particle_properties.velocity;
       }
       // Add the velocities to the eigenvalues
       lambda.add(velocities[q_index][component]);
@@ -1182,11 +1181,10 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
   } else if (component == p) {
     // Background velocity field
     std::vector<Vector<double>> material_derivative_vel(q_points.size(),
-                                                        Vector<double>(dim_cs));
+                                                        Vector<double>(3));
     velocity_field.material_derivative_list(q_points, material_derivative_vel);
     std::vector<std::vector<Vector<double>>> jacobians_vel(
-        q_points.size(),
-        std::vector<Vector<double>>(dim_cs, Vector<double>(dim_cs)));
+        q_points.size(), std::vector<Vector<double>>(3, Vector<double>(3)));
     velocity_field.jacobian_list(q_points, jacobians_vel);
 
     ParticleGamma<dim_ps> particle_gamma(reference_values.gamma);
@@ -1199,8 +1197,8 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
     for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
       // Reset matrix
       matrix_sum.reinit(num_exp_coefficients);
-      for (unsigned int i = 0; i < dim_cs; ++i) {
-        for (unsigned int j = i; j < dim_cs; ++j) {
+      for (unsigned int i = 0; i < 3; ++i) {
+        for (unsigned int j = i; j < 3; ++j) {
           if (i == j) {
             matrix_sum.add(-normals[q_index][dim_ps - 1] *
                                particle_gammas[q_index] *
@@ -1509,12 +1507,9 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
-  BackgroundVelocityField<dim_cs,
-                          (flags & TermFlags::momentum) != TermFlags::none>
-      background_velocity_field;
+  BackgroundVelocityField<dim_ps> background_velocity_field;
   background_velocity_field.set_time(time);
-  MagneticField<dim_cs, (flags & TermFlags::momentum) != TermFlags::none>
-      magnetic_field;
+  MagneticField<dim_ps> magnetic_field;
   magnetic_field.set_time(time);
 
   ParticleVelocity<dim_ps> particle_velocity(reference_values.gamma);
@@ -1537,18 +1532,16 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
     // Background Plasma
     // NOTE: Second argument constructs empty vectors with 2 values. They are
     // copied q_points.size() times.
-    std::vector<Vector<double>> velocities(q_points.size(),
-                                           Vector<double>(dim_cs));
+    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(3));
     background_velocity_field.vector_value_list(q_points, velocities);
     std::vector<double> div_velocities(q_points.size());
     background_velocity_field.divergence_list(q_points, div_velocities);
     std::vector<Vector<double>> material_derivative_vel(q_points.size(),
-                                                        Vector<double>(dim_cs));
+                                                        Vector<double>(3));
     background_velocity_field.material_derivative_list(q_points,
                                                        material_derivative_vel);
     std::vector<std::vector<Vector<double>>> jacobians_vel(
-        q_points.size(),
-        std::vector<Vector<double>>(dim_cs, Vector<double>(dim_cs)));
+        q_points.size(), std::vector<Vector<double>>(3, Vector<double>(3)));
     background_velocity_field.jacobian_list(q_points, jacobians_vel);
 
     // Magnetic field
@@ -1611,12 +1604,11 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
 
                 } else {
                   // fixed energy case (i.e. transport only)
-                  // copy_data.cell_matrix(i, j) -=
-                  //     fe_v.shape_grad(i, q_index)[coordinate] *
-                  //     particle_properties.particle_velocity *
-                  //     advection_matrices[coordinate](component_i,
-                  //     component_j) * fe_v.shape_value(j, q_index) *
-                  //     JxW[q_index];
+                  copy_data.cell_matrix(i, j) -=
+                      fe_v.shape_grad(i, q_index)[coordinate] *
+                      particle_properties.velocity *
+                      advection_matrices[coordinate](component_i, component_j) *
+                      fe_v.shape_value(j, q_index) * JxW[q_index];
                 }
               }
             }
@@ -1627,7 +1619,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
             for (unsigned int coordinate = 0; coordinate < 3; ++coordinate) {
               if ((flags & TermFlags::momentum) != TermFlags::none) {
                 copy_data.cell_matrix(i, j) -=
-                    fe_v.shape_value(i, q_index) *
+                    fe_v.shape_value(i, q_index) * particle_properties.charge *
                     magnetic_field_values[q_index][coordinate] /
                     particle_gammas[q_index] *
                     generator_rotation_matrices[coordinate](component_i,
@@ -1637,8 +1629,9 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
               } else {
                 // fixed energy case (i.e. transport only)
                 copy_data.cell_matrix(i, j) -=
-                    fe_v.shape_value(i, q_index) *
-                    magnetic_field_values[q_index][coordinate] *
+                    fe_v.shape_value(i, q_index) * particle_properties.charge *
+                    magnetic_field_values[q_index][coordinate] /
+                    particle_properties.gamma *
                     generator_rotation_matrices[coordinate](component_i,
                                                             component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -1647,8 +1640,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
           }
           if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
             // Momentum part
-            for (unsigned int coordinate = 0; coordinate < dim_cs;
-                 ++coordinate) {
+            for (unsigned int coordinate = 0; coordinate < 3; ++coordinate) {
               // \grad_phi * \gamma du^k/ dt * A_k \phi
               copy_data.cell_matrix(i, j) +=
                   fe_v.shape_grad(i, q_index)[dim_ps - 1] *
@@ -1669,10 +1661,10 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
                   adv_x_gen_matrices[coordinate](component_i, component_j) *
                   fe_v.shape_value(j, q_index) * JxW[q_index];
             }
-            for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
+            for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                  ++coordinate_1) {
-              for (unsigned int coordinate_2 = coordinate_1;
-                   coordinate_2 < dim_cs; ++coordinate_2) {
+              for (unsigned int coordinate_2 = coordinate_1; coordinate_2 < 3;
+                   ++coordinate_2) {
                 if (coordinate_1 == coordinate_2) {
                   // \grad_phi p \jacobian[coordinate_1][coordinate_2]
                   // Ap_coordinate_1,coordinate_2 * \phi
@@ -1741,9 +1733,9 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
                 }
               }
             }
-            for (unsigned int coordinate_1 = 0; coordinate_1 < dim_cs;
+            for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                  ++coordinate_1) {
-              for (unsigned int coordinate_2 = 0; coordinate_2 < dim_cs;
+              for (unsigned int coordinate_2 = 0; coordinate_2 < 3;
                    ++coordinate_2) {
                 // \phi * jacobian[coordinate_1][coordinate_2] *
                 // T_coordinate_2,coordinate_1 * \phi
@@ -2253,7 +2245,8 @@ int main(int argc, char *argv[]) {
   try {
     using namespace VFPEquation;
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-    constexpr TermFlags flags = TermFlags::spatial_advection;
+    constexpr TermFlags flags =
+        TermFlags::spatial_advection | TermFlags::momentum;
     ConditionalOStream pcout(
         std::cout, (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0));
     ParameterHandler parameter_handler;
@@ -2272,7 +2265,7 @@ int main(int argc, char *argv[]) {
     { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
     parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 2> vfp_equation_solver(
+    VFPEquationSolver<flags, 1> vfp_equation_solver(
         parameter_handler, polynomial_degree, expansion_order);
     vfp_equation_solver.run();
 
