@@ -378,22 +378,6 @@ class VFPEquationSolver {
   // for AMR
   const AffineConstraints<double> constraints;
 
-  // PDE System data
-  // Spatial advection/(magnitude) p advection
-  std::vector<LAPACKFullMatrix<double>> advection_matrices;
-
-  // Rotataion matrices (due to the magnetic field)
-  std::vector<LAPACKFullMatrix<double>> generator_rotation_matrices;
-  // (magnitude) p advection
-  std::vector<LAPACKFullMatrix<double>> adv_mat_products;
-  // A corss Omega matrices
-  std::vector<LAPACKFullMatrix<double>> adv_x_gen_matrices;
-  // T matrices
-  std::vector<LAPACKFullMatrix<double>> t_matrices;
-
-  // Collision term (essentially a reaction term)
-  Vector<double> collision_matrix;
-
   // Upwind flux matrices
   // Eigenvectors
   std::vector<FullMatrix<double>> eigenvectors_advection_matrices;
