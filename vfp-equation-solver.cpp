@@ -57,59 +57,11 @@
 #include <vector>
 
 // own header files
+#include "particle-functions.h"
 #include "physical-setup.h"
-#include "reference-values.h"
 
 namespace VFPEquation {
 using namespace dealii;
-// Functions to compute the velocity and gamma when p is given
-template <int dim_ps>
-class ParticleVelocity : public Function<dim_ps> {
- public:
-  ParticleVelocity(double gamma) : reference_gamma{gamma} {}
-
-  void value_list(const std::vector<Point<dim_ps>> &points,
-                  std::vector<double> &velocities,
-                  unsigned int component = 0) const override {
-    Assert(velocities.size() == points.size(),
-           ExcDimensionMismatch(velocities.size(), points.size()));
-    static_cast<void>(component);
-    // NOTE: It is assumed that magnitude p is always the last component in
-    // points (i.e. the coordinates of the phase space are x,(y,z), p)
-    for (unsigned int i = 0; i < points.size(); ++i) {
-      velocities[i] = points[i][dim_ps - 1] /
-                      std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] +
-                                1 / (reference_gamma * reference_gamma));
-    }
-  }
-
- private:
-  double reference_gamma;
-};
-
-template <int dim_ps>
-class ParticleGamma : public Function<dim_ps> {
- public:
-  ParticleGamma(double gamma) : reference_gamma{gamma} {}
-
-  void value_list(const std::vector<Point<dim_ps>> &points,
-                  std::vector<double> &gammas,
-                  unsigned int component = 0) const override {
-    Assert(gammas.size() == points.size(),
-           ExcDimensionMismatch(gammas.size(), points.size()));
-    static_cast<void>(component);
-
-    // NOTE: It is assumed that magnitude p is always the last component in
-    // points (i.e. the coordinates of the phase space are x,(y,z), p)
-    for (unsigned int i = 0; i < points.size(); ++i) {
-      gammas[i] = std::sqrt(points[i][dim_ps - 1] * points[i][dim_ps - 1] +
-                            1 / (reference_gamma * reference_gamma));
-    }
-  }
-
- private:
-  double reference_gamma;
-};
 
 // Input data
 class ParameterReader {
@@ -1137,7 +1089,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
     velocity_field.vector_value_list(q_points, velocities);
 
     // Particle
-    ParticleVelocity<dim_ps> particle_velocity(reference_values.gamma);
+    ParticleVelocity<dim_ps> particle_velocity;
     std::vector<double> particle_velocities(q_points.size());
     particle_velocity.value_list(q_points, particle_velocities);
 
@@ -1187,7 +1139,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
         q_points.size(), std::vector<Vector<double>>(3, Vector<double>(3)));
     velocity_field.jacobian_list(q_points, jacobians_vel);
 
-    ParticleGamma<dim_ps> particle_gamma(reference_values.gamma);
+    ParticleGamma<dim_ps> particle_gamma;
     std::vector<double> particle_gammas(q_points.size());
     particle_gamma.value_list(q_points, particle_gammas);
 
@@ -1512,8 +1464,8 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   MagneticField<dim_ps> magnetic_field;
   magnetic_field.set_time(time);
 
-  ParticleVelocity<dim_ps> particle_velocity(reference_values.gamma);
-  ParticleGamma<dim_ps> particle_gamma(reference_values.gamma);
+  ParticleVelocity<dim_ps> particle_velocity;
+  ParticleGamma<dim_ps> particle_gamma;
 
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
