@@ -57,106 +57,14 @@
 #include <vector>
 
 // own header files
+#include "compile-time-flags.h"
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "physical-setup.h"
+#include "vfp-solver-control.h"
 
 namespace VFPEquation {
 using namespace dealii;
-
-// Input data
-class ParameterReader {
- public:
-  ParameterReader(ParameterHandler &prm);
-  void read_parameters(const std::string &input_file);
-
- private:
-  void declare_parameters();
-  ParameterHandler &parameter_handler;
-};
-
-ParameterReader::ParameterReader(ParameterHandler &prm)
-    : parameter_handler(prm) {}
-
-void ParameterReader::declare_parameters() {
-  parameter_handler.enter_subsection("Mesh");
-  {  // NOTE: This is a very strange syntax
-    parameter_handler.declare_entry("Number of refinements", "6",
-                                    Patterns::Integer(0),
-                                    "Number of global mesh refinement steps");
-  }
-  parameter_handler.leave_subsection();
-
-  parameter_handler.enter_subsection("Time stepping");
-  {
-    parameter_handler.declare_entry("Time step size", "7.8125e-3",
-                                    Patterns::Double(),
-                                    "Duration of the simulation.");
-    parameter_handler.declare_entry("Final time", "0.4", Patterns::Double(),
-                                    "Duration of the simulation.");
-  }
-  parameter_handler.leave_subsection();
-
-  parameter_handler.enter_subsection("Expansion");
-  {
-    parameter_handler.declare_entry(
-        "Expansion order", "0", Patterns::Integer(0),
-        "The order of the expansion of the particle distribution function.");
-  }
-  parameter_handler.leave_subsection();
-
-  parameter_handler.enter_subsection("Finite element");
-  {
-    parameter_handler.declare_entry("Polynomial degree", "1",
-                                    Patterns::Integer(0),
-                                    "The degree of the shape functions (i.e. "
-                                    "the polynomials) of the finite element.");
-  }
-  parameter_handler.leave_subsection();
-
-  parameter_handler.enter_subsection("Physical parameters");
-  {
-    parameter_handler.declare_entry(
-        "Scattering frequency", "1.", Patterns::Double(),
-        "Frequency at which energetic particles are scattered.");
-    parameter_handler.declare_entry(
-        "Particle energy", "1.", Patterns::Double(),
-        "The energy of the particle in units of 10 Gev");
-  }
-  parameter_handler.leave_subsection();
-}
-
-void ParameterReader::read_parameters(const std::string &input_file) {
-  declare_parameters();
-  parameter_handler.parse_input(input_file);
-}
-
-enum class TermFlags {
-  none = 0,
-  spatial_advection = 1 << 0,
-  collision = 1 << 1,
-  magnetic = 1 << 2,
-  momentum = 1 << 3
-};
-
-constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
-  return static_cast<TermFlags>(static_cast<int>(f1) | static_cast<int>(f2));
-}
-
-constexpr TermFlags operator&(TermFlags f1, TermFlags f2) {
-  return static_cast<TermFlags>(static_cast<int>(f1) & static_cast<int>(f2));
-}
-
-template <typename StreamType>
-inline StreamType &operator<<(StreamType &s, TermFlags f) {
-  s << "Term flags: \n";
-  if ((f & TermFlags::spatial_advection) != TermFlags::none)
-    s << "	 - Spatial Advection\n";
-  if ((f & TermFlags::collision) != TermFlags::none) s << "	 - Collision\n";
-  if ((f & TermFlags::magnetic) != TermFlags::none) s << "	 - Magnetic\n";
-  if ((f & TermFlags::momentum) != TermFlags::none) s << "	 - Momentum\n";
-  return s;
-}
 
 // Initial values
 template <int dim_cs, bool momentum>
@@ -305,25 +213,19 @@ struct CopyData {
   }
 };
 
-template <TermFlags flags, int dim_cs>
 class VFPEquationSolver {
  public:
-  VFPEquationSolver(ParameterHandler &prm, unsigned int polynomial_degree,
-                    int order_expansion);
+  VFPEquationSolver(const VFPSolverControl &control);
   void run();
 
  private:
-  // Increase the dimension by one if momentum terms are included
-  //
-  // NOTE: Member variable needs be constexpr to be used as template argument.
-  // But it can only be constexpr if it is static ,i.e. if it is the same for
-  // all class instances. If it was not static, it would be determined when
-  // constructing an instance, which happens at run time.
-  //
-  // Alternative implementaion: Introduce an additional template parameter, e.g.
-  // bool momentum (see InitialValueFunction).
-  static constexpr int dim_ps =
-      ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
+  // VFPSolverControl
+  const VFPSolverControl &vfp_solver_control;
+
+  static constexpr int dim_ps = VFPSolverControl::dim;
+  static constexpr int dim_cs = VFPSolverControl::dim_configuration_space;
+  static constexpr TermFlags flags = VFPSolverControl::terms;
+  // ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
 
   void make_grid();
   void prepare_upwind_fluxes();
@@ -343,7 +245,6 @@ class VFPEquationSolver {
   void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
   void output_results() const;
-  void output_compile_time_parameters() const;
 
   MPI_Comm mpi_communicator;
   const unsigned int n_mpi_procs;
@@ -351,7 +252,6 @@ class VFPEquationSolver {
 
   ConditionalOStream pcout;
 
-  ParameterHandler &parameter_handler;
   // NOTE: Parallel distribution does not allow 1D triangulation. This excludes
   // the 1D transport (i.e. no momentum terms) only case. To reimplement this
   // case, take a look at Step-16, Step-17 how to deal with copys of
@@ -412,67 +312,48 @@ class VFPEquationSolver {
   PETScWrappers::MPI::Vector locally_relevant_previous_solution;
   PETScWrappers::MPI::Vector locally_relevant_current_solution;
 
-  const int expansion_order = 0;
-  const unsigned int num_exp_coefficients;
+  const int expansion_order = vfp_solver_control.expansion_order;
+  const unsigned int num_exp_coefficients =
+      static_cast<unsigned int>((expansion_order + 1) * (expansion_order + 1));
 
   // parameters of the time stepping method
-  double time_step = 1. / 128;
+  double time_step = vfp_solver_control.time_step;
   double time = 0.;
-  double final_time = .4;
+  double final_time = vfp_solver_control.final_time;
   unsigned int time_step_number = 0;
 
-  // scattering frequency
-  double scattering_frequency = 1.;
-  // particle
-  ParticleProperties particle_properties;
   // Number of refinements
-  unsigned int num_refinements = 5;
+  unsigned int num_refinements = vfp_solver_control.num_refinements;
   // For the moment, I will use a quadratic domain
   // Rectangular domain
   // Point<dim> left_bottom;
   // Point<dim> right_top;
+
+  // particle
+  ParticleProperties particle_properties;
+
   TimerOutput timer;
 };
 
-template <TermFlags flags, int dim_cs>
-VFPEquationSolver<flags, dim_cs>::VFPEquationSolver(
-    ParameterHandler &prm, unsigned int polynomial_degree, int order)
-    : mpi_communicator(MPI_COMM_WORLD),
+VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
+    : vfp_solver_control(control),
+      mpi_communicator(MPI_COMM_WORLD),
       n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator)),
       rank(Utilities::MPI::this_mpi_process(mpi_communicator)),
       pcout(std::cout, (rank == 0)),
-      parameter_handler(prm),
       triangulation(mpi_communicator),
       dof_handler(triangulation),
       mapping(),
-      fe(FE_DGQ<dim_ps>(polynomial_degree), (order + 1) * (order + 1)),
+      fe(FE_DGQ<dim_ps>(vfp_solver_control.polynomial_degree),
+         (vfp_solver_control.expansion_order + 1) *
+             (vfp_solver_control.expansion_order + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
-      pde_system(order),
-      expansion_order{order},
-      num_exp_coefficients{
-          static_cast<unsigned int>((order + 1) * (order + 1))},
+      pde_system(vfp_solver_control.expansion_order),
       timer(mpi_communicator, pcout, TimerOutput::never,
-            TimerOutput::wall_times) {
-  parameter_handler.enter_subsection("Mesh");
-  { num_refinements = parameter_handler.get_integer("Number of refinements"); }
-  parameter_handler.leave_subsection();
-  parameter_handler.enter_subsection("Time stepping");
-  {
-    time_step = parameter_handler.get_double("Time step size");
-    final_time = parameter_handler.get_double("Final time");
-  }
-  parameter_handler.leave_subsection();
-  parameter_handler.enter_subsection("Physical parameters");
-  {
-    scattering_frequency = parameter_handler.get_double("Scattering frequency");
-  }
-  parameter_handler.leave_subsection();
-}
+            TimerOutput::wall_times) {}
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::run() {
-  output_compile_time_parameters();
+void VFPEquationSolver::run() {
   make_grid();
   setup_system();
   prepare_upwind_fluxes();
@@ -509,15 +390,14 @@ void VFPEquationSolver<flags, dim_cs>::run() {
   pcout << "The simulation ended. \n";
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::make_grid() {
+void VFPEquationSolver::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
     if constexpr (dim_cs == 1) {
       unsigned int n_cells = 1 << num_refinements;
       std::vector<unsigned int> repititions{n_cells, n_cells};
-      Point<dim_ps> p1{-3., 1.};
-      Point<dim_ps> p2{3., 10.};
+      Point<dim_ps> p1{-5., 1.};
+      Point<dim_ps> p2{5., 10.};
       // // Colorize = true means to set boundary ids (default for 1D)
       GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
                                                 p2, false);
@@ -561,8 +441,7 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
         << triangulation.n_global_active_cells() << "\n";
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
+void VFPEquationSolver::prepare_upwind_fluxes() {
   TimerOutput::Scope timer_section(timer, "Prepare Upwind flux");
   // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
   // requires to copy it
@@ -631,8 +510,7 @@ void VFPEquationSolver<flags, dim_cs>::prepare_upwind_fluxes() {
   }
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
+void VFPEquationSolver::compute_upwind_fluxes(
     const std::vector<Point<dim_ps>> &q_points,
     const std::vector<Tensor<1, dim_ps>> &normals,
     std::vector<FullMatrix<double>> &positive_flux_matrices,
@@ -947,8 +825,7 @@ void VFPEquationSolver<flags, dim_cs>::compute_upwind_fluxes(
   }
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::setup_system() {
+void VFPEquationSolver::setup_system() {
   TimerOutput::Scope timer_section(timer, "FE system");
 
   dof_handler.distribute_dofs(fe);
@@ -995,8 +872,7 @@ void VFPEquationSolver<flags, dim_cs>::setup_system() {
                        mpi_communicator);
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::assemble_mass_matrix() {
+void VFPEquationSolver::assemble_mass_matrix() {
   TimerOutput::Scope timer_section(timer, "Mass matrix");
 
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
@@ -1047,8 +923,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_mass_matrix() {
   pcout << "The mass matrix was assembled. \n";
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
+void VFPEquationSolver::assemble_dg_matrix() {
   TimerOutput::Scope timer_section(timer, "DG matrix");
   /*
     What kind of loops are there ?
@@ -1513,8 +1388,7 @@ void VFPEquationSolver<flags, dim_cs>::assemble_dg_matrix() {
   pcout << "The DG matrix was assembled. \n";
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::project_initial_condition() {
+void VFPEquationSolver::project_initial_condition() {
   TimerOutput::Scope timer_section(timer, "Intial condition");
 
   // Create right hand side
@@ -1676,8 +1550,7 @@ void VFPEquationSolver<flags, dim_cs>::project_initial_condition() {
 //   // element of the c vector is 1. (see low_storage_erk())
 // }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::low_storage_explicit_runge_kutta() {
+void VFPEquationSolver::low_storage_explicit_runge_kutta() {
   TimerOutput::Scope timer_section(timer, "LSERK");
 
   // see Hesthaven p.64
@@ -1737,17 +1610,16 @@ void VFPEquationSolver<flags, dim_cs>::low_storage_explicit_runge_kutta() {
   // locally_relevant_current_solution.print(std::cout);
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::output_results() const {
+void VFPEquationSolver::output_results() const {
   DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
   std::vector<std::string> component_names(num_exp_coefficients);
   const std::vector<std::array<unsigned int, 3>> &lms_indices =
       pde_system.get_lms_indices();
-  
+
   for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    const std::array<unsigned int, 3>& lms = lms_indices[i];
+    const std::array<unsigned int, 3> &lms = lms_indices[i];
     component_names[i] = "f_" + std::to_string(lms[0]) +
                          std::to_string(lms[1]) + std::to_string(lms[2]);
   }
@@ -1776,42 +1648,18 @@ void VFPEquationSolver<flags, dim_cs>::output_results() const {
                                       time_step_number, mpi_communicator, 3, 8);
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::output_compile_time_parameters() const {
-  pcout << "Compile-time parameters: "
-        << "\n";
-  // pcout << "	" << flags;
-  pcout << "	Dimension Configuration Space: " << dim_cs << "\n\n";
-}
-
 }  // namespace VFPEquation
 
 int main(int argc, char *argv[]) {
   try {
     using namespace VFPEquation;
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-    constexpr TermFlags flags =
-        TermFlags::spatial_advection | TermFlags::momentum;
-    ConditionalOStream pcout(
-        std::cout, (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0));
-    ParameterHandler parameter_handler;
-    ParameterReader parameter_reader(parameter_handler);
-    parameter_reader.read_parameters("vfp-equation.prm");
-    pcout << "Run-time parameters: "
-          << "\n";
-    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-      parameter_handler.print_parameters(std::cout, ParameterHandler::ShortPRM);
-    int expansion_order;
-    parameter_handler.enter_subsection("Expansion");
-    { expansion_order = parameter_handler.get_integer("Expansion order"); }
-    parameter_handler.leave_subsection();
-    unsigned int polynomial_degree;
-    parameter_handler.enter_subsection("Finite element");
-    { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
-    parameter_handler.leave_subsection();
 
-    VFPEquationSolver<flags, 1> vfp_equation_solver(
-        parameter_handler, polynomial_degree, expansion_order);
+    VFPSolverControl vfp_solver_control("vfp-equation.prm");
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      vfp_solver_control.print_settings(std::cout);
+
+    VFPEquationSolver vfp_equation_solver(vfp_solver_control);
     vfp_equation_solver.run();
 
   } catch (std::exception &exc) {
