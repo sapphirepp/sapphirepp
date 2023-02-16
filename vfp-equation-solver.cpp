@@ -58,6 +58,7 @@
 
 // own header files
 #include "particle-functions.h"
+#include "pde-system.h"
 #include "physical-setup.h"
 
 namespace VFPEquation {
@@ -325,7 +326,6 @@ class VFPEquationSolver {
       ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
 
   void make_grid();
-  void setup_pde_system();
   void prepare_upwind_fluxes();
   // NOTE: The LAPACKFullMatrix class does not implement a move constructor,
   // this is why the output argument is an input argument
@@ -344,7 +344,6 @@ class VFPEquationSolver {
   void low_storage_explicit_runge_kutta();
   void output_results() const;
   void output_compile_time_parameters() const;
-  void output_index_order() const;
 
   MPI_Comm mpi_communicator;
   const unsigned int n_mpi_procs;
@@ -378,6 +377,23 @@ class VFPEquationSolver {
   // for AMR
   const AffineConstraints<double> constraints;
 
+  // PDE System
+  PDESystem pde_system;
+
+  const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
+      pde_system.get_advection_matrices();
+  const std::vector<LAPACKFullMatrix<double>> &generator_rotation_matrices =
+      pde_system.get_generator_matrices();
+  const std::vector<LAPACKFullMatrix<double>> &adv_mat_products =
+      pde_system.get_adv_mat_products();
+  const std::vector<LAPACKFullMatrix<double>> &adv_x_gen_matrices =
+      pde_system.get_adv_cross_gen();
+  const std::vector<LAPACKFullMatrix<double>> &t_matrices =
+      pde_system.get_t_matrices();
+
+  // Collision term (essentially a reaction term)
+  Vector<double> collision_matrix;
+
   // Upwind flux matrices
   // Eigenvectors
   std::vector<FullMatrix<double>> eigenvectors_advection_matrices;
@@ -408,7 +424,6 @@ class VFPEquationSolver {
   // scattering frequency
   double scattering_frequency = 1.;
   // particle
-  ReferenceValues reference_values;
   ParticleProperties particle_properties;
   // Number of refinements
   unsigned int num_refinements = 5;
@@ -416,9 +431,6 @@ class VFPEquationSolver {
   // Rectangular domain
   // Point<dim> left_bottom;
   // Point<dim> right_top;
-
-  // Map between i and l,m,s (implemented in constructor)
-  std::vector<std::array<unsigned int, 3>> lms_indices;
   TimerOutput timer;
 };
 
@@ -436,23 +448,12 @@ VFPEquationSolver<flags, dim_cs>::VFPEquationSolver(
       fe(FE_DGQ<dim_ps>(polynomial_degree), (order + 1) * (order + 1)),
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
+      pde_system(order),
       expansion_order{order},
       num_exp_coefficients{
           static_cast<unsigned int>((order + 1) * (order + 1))},
-      lms_indices((order + 1) * (order + 1)),
       timer(mpi_communicator, pcout, TimerOutput::never,
             TimerOutput::wall_times) {
-  // Create the index order
-  for (int s = 0, idx = 0; s <= 1; ++s) {
-    for (int l = 0; l <= expansion_order; ++l) {
-      for (int m = l; m >= s; --m) {
-        idx = l * (l + 1) - (s ? -1. : 1.) * m;
-        lms_indices[idx][0] = l;
-        lms_indices[idx][1] = m;
-        lms_indices[idx][2] = s;
-      }
-    }
-  }
   parameter_handler.enter_subsection("Mesh");
   { num_refinements = parameter_handler.get_integer("Number of refinements"); }
   parameter_handler.leave_subsection();
@@ -471,11 +472,8 @@ VFPEquationSolver<flags, dim_cs>::VFPEquationSolver(
 
 template <TermFlags flags, int dim_cs>
 void VFPEquationSolver<flags, dim_cs>::run() {
-  pcout << reference_values;
   output_compile_time_parameters();
-  output_index_order();
   make_grid();
-  setup_pde_system();
   setup_system();
   prepare_upwind_fluxes();
   assemble_mass_matrix();
@@ -561,388 +559,6 @@ void VFPEquationSolver<flags, dim_cs>::make_grid() {
   pcout << "The grid was created: \n"
         << "	Number of active cells: "
         << triangulation.n_global_active_cells() << "\n";
-}
-
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::setup_pde_system() {
-  TimerOutput::Scope timer_section(timer, "PDE system");
-
-  // The matrix products (e.g. A_x * A_y) only yield the correct system if we
-  // compute the matrices for expansion_order + 1 and later shrink them to
-  // expansion_order
-  unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
-
-  advection_matrices.resize(3);
-  for (auto &advection_matrix : advection_matrices)
-    advection_matrix.reinit(matrix_size);
-
-  generator_rotation_matrices.resize(3);
-  for (auto &generator_matrix : generator_rotation_matrices)
-    generator_matrix.reinit(matrix_size);
-
-  collision_matrix.reinit(matrix_size);
-  for (int s = 0; s <= 1; ++s) {
-    for (int l = 0, i = 0; l <= expansion_order + 1; ++l) {
-      for (int m = l; m >= s; --m) {
-        i = l * (l + 1) - (s ? -1. : 1.) * m;  // (-1)^s
-        for (int s_prime = 0; s_prime <= 1; ++s_prime) {
-          for (int l_prime = 0, j = 0; l_prime <= expansion_order + 1;
-               ++l_prime) {
-            for (int m_prime = l_prime; m_prime >= s_prime; --m_prime) {
-              j = l_prime * (l_prime + 1) - (s_prime ? -1. : 1.) * m_prime;
-              // Ax
-              if (l + 1 == l_prime && m == m_prime && s == s_prime)
-                advection_matrices[0].set(
-                    i, j,
-                    std::sqrt(((l - m + 1.) * (l + m + 1.)) /
-                              ((2. * l + 3.) * (2 * l + 1.))));
-              if (l - 1 == l_prime && m == m_prime && s == s_prime)
-                advection_matrices[0].set(
-                    i, j,
-                    std::sqrt(((l - m) * (l + m)) /
-                              ((2. * l + 1.) * (2. * l - 1.))));
-              // Ay
-              if ((l + 1) == l_prime && (m + 1) == m_prime && s == s_prime)
-                advection_matrices[1].set(
-                    i, j,
-                    -0.5 * std::sqrt(((l + m + 1.) * (l + m + 2.)) /
-                                     ((2. * l + 3.) * (2. * l + 1.))));
-              if ((l - 1) == l_prime && m + 1 == m_prime && s == s_prime)
-                advection_matrices[1].set(
-                    i, j,
-                    0.5 * std::sqrt(((l - m - 1.) * (l - m)) /
-                                    ((2. * l + 1.) * (2. * l - 1.))));
-              if ((l + 1) == l_prime && (m - 1) == m_prime && s == s_prime)
-                advection_matrices[1].set(
-                    i, j,
-                    0.5 * std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                                    ((2. * l + 3.) * (2 * l + 1.))));
-              if ((l - 1) == l_prime && (m - 1) == m_prime && s == s_prime)
-                advection_matrices[1].set(
-                    i, j,
-                    -0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
-                                     ((2. * l + 1.) * (2. * l - 1.))));
-              // Az
-              // l + 1 = l_prime and s = 1 and s_prime = 0
-              if (l + 1 == l_prime && m + 1 == m_prime && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2].set(
-                    i, j,
-                    0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l + m + 1.) * (l + m + 2.)) /
-                                  ((2 * l + 3.) * (2 * l + 1.))));
-              if (l + 1 == l_prime && m - 1 == m_prime && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2].set(
-                    i, j,
-                    0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                                  ((2 * l + 3.) * (2 * l + 1.))));
-              // NOTE: The correction are now directly included (-> new way to
-              // compute the real matrices)
-              if (l + 1 == l_prime && m == 0 && m_prime == 1 && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2](i, j) -=
-                    0.5 * std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                                    ((2 * l + 3.) * (2 * l + 1.)));
-              if (l + 1 == l_prime && m == 1 && m_prime == 0 && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2](i, j) +=
-                    0.5 * 1. / std::sqrt(2) *
-                    std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                              ((2 * l + 3.) * (2 * l + 1.)));
-
-              // l+ 1 = l_prime and s = 0 and s_prime = 1
-              if (l + 1 == l_prime && m + 1 == m_prime && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2].set(
-                    i, j,
-                    -0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l + m + 1.) * (l + m + 2.)) /
-                                  ((2 * l + 3.) * (2 * l + 1.))));
-              if (l + 1 == l_prime && m - 1 == m_prime && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2].set(
-                    i, j,
-                    -0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                                  ((2 * l + 3.) * (2 * l + 1.))));
-              // Corrections
-              if (l + 1 == l_prime && m == 0 && m_prime == 1 && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2](i, j) -=
-                    0.5 * 1. / std::sqrt(2) *
-                    std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                              ((2 * l + 3.) * (2 * l + 1.)));
-              if (l + 1 == l_prime && m == 1 && m_prime == 0 && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2](i, j) +=
-                    0.5 * std::sqrt(((l - m + 1.) * (l - m + 2.)) /
-                                    ((2 * l + 3.) * (2 * l + 1.)));
-
-              // l - 1 = l_prime and s = 1 and s_prime = 0
-              if (l - 1 == l_prime && m + 1 == m_prime && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2].set(
-                    i, j,
-                    -0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l - m - 1.) * (l - m)) /
-                                  ((2 * l + 1.) * (2 * l - 1.))));
-              if (l - 1 == l_prime && m - 1 == m_prime && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2].set(
-                    i, j,
-                    -0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l + m - 1.) * (l + m)) /
-                                  ((2 * l + 1.) * (2 * l - 1.))));
-              // Corrections
-              if (l - 1 == l_prime && m == 0 && m_prime == 1 && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2](i, j) +=
-                    0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
-                                    ((2 * l + 1.) * (2 * l - 1.)));
-              if (l - 1 == l_prime && m == 1 && m_prime == 0 && s == 1 &&
-                  s_prime == 0)
-                advection_matrices[2](i, j) -=
-                    0.5 * 1. / std::sqrt(2) *
-                    std::sqrt(((l + m - 1.) * (l + m)) /
-                              ((2 * l + 1.) * (2 * l - 1.)));
-
-              // l - 1 = l_prime and s = 0 and s_prime = 1
-              if (l - 1 == l_prime && m + 1 == m_prime && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2].set(
-                    i, j,
-                    0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l - m - 1.) * (l - m)) /
-                                  ((2 * l + 1.) * (2 * l - 1.))));
-              if (l - 1 == l_prime && m - 1 == m_prime && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2].set(
-                    i, j,
-                    0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                        std::sqrt(((l + m - 1.) * (l + m)) /
-                                  ((2 * l + 1.) * (2 * l - 1.))));
-              // Corrections
-              if (l - 1 == l_prime && m == 0 && m_prime == 1 && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2](i, j) +=
-                    0.5 * 1. / std::sqrt(2) *
-                    std::sqrt(((l + m - 1.) * (l + m)) /
-                              ((2 * l + 1.) * (2 * l - 1.)));
-              if (l - 1 == l_prime && m == 1 && m_prime == 0 && s == 0 &&
-                  s_prime == 1)
-                advection_matrices[2](i, j) -=
-                    0.5 * std::sqrt(((l + m - 1.) * (l + m)) /
-                                    ((2 * l + 1.) * (2 * l - 1.)));
-
-              // Omega_x
-              if (l == l_prime && m == m_prime && s == 0 && s_prime == 1) {
-                generator_rotation_matrices[0].set(i, j, 1. * m);
-                generator_rotation_matrices[0].set(
-                    j, i,
-                    -1. * m);  // Omega matrices are anti-symmetric
-              }
-              // Omega_y
-              if (l == l_prime && (m + 1) == m_prime && s == 0 &&
-                  s_prime == 1) {
-                generator_rotation_matrices[1].set(
-                    i, j, 0.5 * std::sqrt((l + m + 1.) * (l - m)));
-                generator_rotation_matrices[1].set(
-                    j, i, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
-              }
-              if (l == l_prime && (m - 1) == m_prime && s == 0 &&
-                  s_prime == 1) {
-                generator_rotation_matrices[1].set(
-                    i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
-                generator_rotation_matrices[1].set(
-                    j, i, -0.5 * std::sqrt((l - m + 1.) * (l + m)));
-              }
-              // Omega_z
-              if (l == l_prime && (m + 1) == m_prime && s == s_prime) {
-                generator_rotation_matrices[2].set(
-                    i, j, -0.5 * std::sqrt((l + m + 1.) * (l - m)));
-              }
-              if (l == l_prime && (m - 1) == m_prime && s == s_prime) {
-                generator_rotation_matrices[2].set(
-                    i, j, 0.5 * std::sqrt((l - m + 1.) * (l + m)));
-              }
-              // C
-              if (l == l_prime && m == m_prime && s == s_prime) {
-                collision_matrix[i] = 0.5 * scattering_frequency * l * (l + 1.);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  // TODO: Remove the correction part and derive formulas as you did for Az
-
-  // Edit entries of the matrices around m=0 and s=0. After the transformation
-  // they fall out of the pattern of the matrix elements, namely they differ by
-  // a factor of 2^(1/2).
-  //
-  // NOTE: These corrections were not included in the above loops, because some
-  // of them were overwritten. This is an effect of the s loops being outside
-  // the l and m loops.
-  if (expansion_order > 0) {
-    for (int l = 0; l <= expansion_order + 1; ++l) {
-      // Special cases for Omega
-      if (l > 0) {
-        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
-        generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1) =
-            std::sqrt(2) *
-            generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1);
-        // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
-        generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1)) =
-            std::sqrt(2) *
-            generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1));
-
-        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
-        generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1) =
-            std::sqrt(2) *
-            generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1);
-        // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
-        generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1)) =
-            std::sqrt(2) *
-            generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1));
-      }
-      // Special cases for A_y (necessary for every value of l)
-      // Above the diagonal
-      // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
-      if (l != expansion_order + 1)
-        advection_matrices[1](l * (l + 1), (l + 1) * (l + 2) - 1) =
-            std::sqrt(2) *
-            advection_matrices[1](l * (l + 1), (l + 2) * (l + 1) - 1);
-      // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
-      if (l != 0 && l != expansion_order + 1)
-        advection_matrices[1](l * (l + 1) - 1, (l + 1) * (l + 2)) =
-            std::sqrt(2) *
-            advection_matrices[1](l * (l + 1) - 1, (l + 2) * (l + 1));
-      // Below the diagonal
-      // l - 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
-      if (l > 1)
-        advection_matrices[1](l * (l + 1), l * (l - 1) - 1) =
-            std::sqrt(2) * advection_matrices[1](l * (l + 1), l * (l - 1) - 1);
-      // l - 1 = l_prime , m = 1, s = 0 and m_prime = 0, s_prime = 0
-      if (l != 0)
-        advection_matrices[1](l * (l + 1) - 1, l * (l - 1)) =
-            std::sqrt(2) * advection_matrices[1](l * (l + 1) - 1, l * (l - 1));
-    }
-  }
-
-  // Compute the matrix products
-  adv_mat_products.resize(6);
-  for (auto &adv_mat_product : adv_mat_products)
-    adv_mat_product.reinit(matrix_size);
-
-  // row-major order, i.e. A_xx, A_xy, A_xz, Ayy, Ayz, Azz
-  for (unsigned int i = 0; i < 3; ++i)
-    for (unsigned int j = i; j < 3; ++j)
-      advection_matrices[i].mmult(adv_mat_products[3 * i - i * (i + 1) / 2 + j],
-                                  advection_matrices[j]);
-
-  // A cross Omega
-  adv_x_gen_matrices.resize(4);  // The last element is a temporary storage
-                                 // needed to add the two matrix products (the
-                                 // interface of dealii of LAPACKFULLMatrix is
-                                 // not well suited to compute the cross product
-                                 // of matrices)
-  for (auto &adv_x_gen_mat : adv_x_gen_matrices)
-    adv_x_gen_mat.reinit(matrix_size);
-
-  // A_y * Omega_z - A_z * Omega_y
-  advection_matrices[1].mmult(adv_x_gen_matrices[0],
-                              generator_rotation_matrices[2]);
-  advection_matrices[2].mmult(adv_x_gen_matrices[3],
-                              generator_rotation_matrices[1]);
-  adv_x_gen_matrices[0].add(-1., adv_x_gen_matrices[3]);
-  // A_z * Omega_x - A_x * Omega_z
-  advection_matrices[2].mmult(adv_x_gen_matrices[1],
-                              generator_rotation_matrices[0]);
-  advection_matrices[0].mmult(adv_x_gen_matrices[3],
-                              generator_rotation_matrices[2]);
-  adv_x_gen_matrices[1].add(-1., adv_x_gen_matrices[3]);
-  // A_x * Omega_y - A_y * Omega_x
-  advection_matrices[0].mmult(adv_x_gen_matrices[2],
-                              generator_rotation_matrices[1]);
-  advection_matrices[1].mmult(adv_x_gen_matrices[3],
-                              generator_rotation_matrices[0]);
-  adv_x_gen_matrices[2].add(-1., adv_x_gen_matrices[3]);
-  // Free the intermediate storage
-  adv_x_gen_matrices.resize(3);
-
-  // t matrices
-  t_matrices.resize(9);
-  for (auto &t_mat : t_matrices) t_mat.reinit(matrix_size);
-  // the T matrices are stored in row-major order
-  for (unsigned int i = 0; i < 3; ++i)
-    for (unsigned int j = 0; j < 3; ++j)
-      advection_matrices[j].mmult(t_matrices[3 * i + j], adv_x_gen_matrices[i]);
-
-  // Shrink the matrices such that they agree with order of the expansion
-  for (auto &advection_matrix : advection_matrices)
-    advection_matrix.grow_or_shrink(num_exp_coefficients);
-
-  for (auto &generator_matrix : generator_rotation_matrices)
-    generator_matrix.grow_or_shrink(num_exp_coefficients);
-
-  collision_matrix.grow_or_shrink(num_exp_coefficients);
-
-  for (auto &adv_mat_product : adv_mat_products)
-    adv_mat_product.grow_or_shrink(num_exp_coefficients);
-
-  for (auto &adv_x_gen_mat : adv_x_gen_matrices)
-    adv_x_gen_mat.grow_or_shrink(num_exp_coefficients);
-
-  for (auto &t_mat : t_matrices) t_mat.grow_or_shrink(num_exp_coefficients);
-
-  // std::cout << "A_x: \n";
-  // advection_matrices[0].print_formatted(std::cout);
-
-  // std::cout << "A_y: \n";
-  // advection_matrices[1].print_formatted(std::cout);
-
-  // std::cout << "A_z: \n";
-  // advection_matrices[2].print_formatted(std::cout);
-
-  // std::cout << "Omega_x: \n";
-  // omega_matrices[0].print_formatted(std::cout);
-
-  // std::cout << "Omega_y: \n";
-  // omega_matrices[1].print_formatted(std::cout);
-
-  // std::cout << "Omega_z: \n";
-  // omega_matrices[2].print_formatted(std::cout);
-
-  // std::cout << "Collision matrix: \n";
-  // collision_matrix.print(std::cout);
-
-  // std::cout << "Ap_xx: \n";
-  // adv_mat_products[0].print_formatted(std::cout);
-
-  // std::cout << "Ap_xy: \n";
-  // adv_mat_products[1].print_formatted(std::cout);
-
-  // std::cout << "Ap_xz: \n";
-  // adv_mat_products[2].print_formatted(std::cout);
-
-  // std::cout << "Ap_yy: \n";
-  // adv_mat_products[3].print_formatted(std::cout);
-
-  // std::cout << "Ap_yz: \n";
-  // adv_mat_products[4].print_formatted(std::cout);
-
-  // std::cout << "Ap_zz: \n";
-  // adv_mat_products[5].print_formatted(std::cout);
-
-  // std::cout << "A cross Omega \n";
-  // for (auto &adv_x_gen_mat : adv_x_gen_matrices)
-  //   adv_x_gen_mat.print_formatted(std::cout);
-
-  // std::cout << "T matrices \n";
-  // for (auto &t_mat : t_matrices) t_mat.print_formatted(std::cout);
 }
 
 template <TermFlags flags, int dim_cs>
@@ -2127,9 +1743,11 @@ void VFPEquationSolver<flags, dim_cs>::output_results() const {
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
   std::vector<std::string> component_names(num_exp_coefficients);
-
+  const std::vector<std::array<unsigned int, 3>> &lms_indices =
+      pde_system.get_lms_indices();
+  
   for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    const std::array<unsigned int, 3> lms = lms_indices[i];
+    const std::array<unsigned int, 3>& lms = lms_indices[i];
     component_names[i] = "f_" + std::to_string(lms[0]) +
                          std::to_string(lms[1]) + std::to_string(lms[2]);
   }
@@ -2166,15 +1784,6 @@ void VFPEquationSolver<flags, dim_cs>::output_compile_time_parameters() const {
   pcout << "	Dimension Configuration Space: " << dim_cs << "\n\n";
 }
 
-template <TermFlags flags, int dim_cs>
-void VFPEquationSolver<flags, dim_cs>::output_index_order() const {
-  pcout << "Ordering of the lms indices: "
-        << "\n";
-
-  for (std::array<unsigned int, 3> lms : lms_indices)
-    pcout << "	" << lms[0] << lms[1] << lms[2] << "\n";
-  pcout << "\n";
-}
 }  // namespace VFPEquation
 
 int main(int argc, char *argv[]) {

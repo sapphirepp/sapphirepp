@@ -1,5 +1,6 @@
 #include "pde-system.h"
 
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 
 VFPEquation::PDESystem::PDESystem(int l)
@@ -8,7 +9,8 @@ VFPEquation::PDESystem::PDESystem(int l)
       generator_rotation_matrices(3),
       adv_mat_products(6),
       adv_x_gen_matrices(3),
-      t_matrices(9) {
+      t_matrices(9),
+      lms_indices((l + 1) * (l + 1)) {
   create_advection_matrices();
   create_generator_rotation_matrices();
   create_collision_matrix();
@@ -16,6 +18,129 @@ VFPEquation::PDESystem::PDESystem(int l)
   compute_adv_cross_generators();
   compute_t_matrices();
   shrink_matrices();
+
+  // Create the map between i and the the lms indices
+  for (int s = 0, idx = 0; s <= 1; ++s) {
+    for (int l = 0; l <= expansion_order; ++l) {
+      for (int m = l; m >= s; --m) {
+        idx = l * (l + 1) - (s ? -1. : 1.) * m;
+        lms_indices[idx][0] = l;
+        lms_indices[idx][1] = m;
+        lms_indices[idx][2] = s;
+      }
+    }
+  }
+}
+
+const std::vector<dealii::LAPACKFullMatrix<double>>
+    &VFPEquation::PDESystem::get_advection_matrices() const {
+  return advection_matrices;
+}
+const std::vector<dealii::LAPACKFullMatrix<double>>
+    &VFPEquation::PDESystem::get_generator_matrices() const {
+  return generator_rotation_matrices;
+}
+const std::vector<dealii::LAPACKFullMatrix<double>>
+    &VFPEquation::PDESystem::get_adv_mat_products() const {
+  return adv_mat_products;
+}
+const std::vector<dealii::LAPACKFullMatrix<double>>
+    &VFPEquation::PDESystem::get_adv_cross_gen() const {
+  return adv_x_gen_matrices;
+}
+const std::vector<dealii::LAPACKFullMatrix<double>>
+    &VFPEquation::PDESystem::get_t_matrices() const {
+  return t_matrices;
+}
+
+const std::vector<std::array<unsigned int, 3>>
+    &VFPEquation::PDESystem::get_lms_indices() const {
+  return lms_indices;
+}
+
+void VFPEquation::PDESystem::print_advection_matrices(std::ostream &os) const {
+  char subscript = 'x';
+  for (const auto &advection_matrix : advection_matrices) {
+    os << "A_" << subscript << ": " << std::endl;
+    advection_matrix.print_formatted(os);
+    subscript++;
+  }
+}
+
+void VFPEquation::PDESystem::print_generator_matrices(std::ostream &os) const {
+  char subscript = 'x';
+  for (const auto &generator_matrix : generator_rotation_matrices) {
+    os << "Omega_" << subscript << ": " << std::endl;
+    generator_matrix.print_formatted(os);
+    subscript++;
+  }
+}
+
+void VFPEquation::PDESystem::print_collision_matrix(std::ostream &os) const {
+  os << "Collision matrix: \n";
+  collision_matrix.print(os);
+}
+
+void VFPEquation::PDESystem::print_adv_mat_products(std::ostream &os) const {
+  char subscript_1 = 'x';
+  char subscript_2 = 'x';
+  for (unsigned int i = 0; i < 3; ++i) {
+    for (unsigned int j = i; j < 3; ++j) {
+      os << "A_" << subscript_1 << subscript_2 << ": " << std::endl;
+      adv_mat_products[3 * i - i * (i + 1) / 2 + j].print_formatted(os);
+      subscript_2++;
+    }
+    subscript_1++;
+    subscript_2 = subscript_1;
+  }
+}
+
+void VFPEquation::PDESystem::print_adv_cross_gen(std::ostream &os) const {
+  char subscript = 'x';
+  for (const auto &adv_x_gen_mat : adv_x_gen_matrices) {
+    os << "(A x Omega)_" << subscript << ": " << std::endl;
+    adv_x_gen_mat.print_formatted(std::cout);
+    subscript++;
+  }
+}
+
+void VFPEquation::PDESystem::print_t_matrices(std::ostream &os) const {
+  char subscript_1 = 'x';
+  char subscript_2 = 'x';
+  for (unsigned int i = 0; i < 3; ++i) {
+    for (unsigned int j = 0; j < 3; ++j) {
+      os << "T_" << subscript_1 << subscript_2 << ": " << std::endl;
+      t_matrices[3 * i + j].print_formatted(os);
+      subscript_2++;
+    }
+    subscript_2 = 'x';
+    subscript_1++;
+  }
+}
+
+template <typename StreamType>
+void VFPEquation::PDESystem::print_index_map(StreamType &os) const {
+  os << "Ordering of the lms indices: " << std::endl;
+  unsigned int i = 0;
+  for (const std::array<unsigned int, 3> &lms : lms_indices) {
+    os << i << ": " << lms[0] << lms[1] << lms[2] << "\n";
+    ++i;
+  }
+  os << std::endl;
+}
+
+// explicit instantiation
+template void VFPEquation::PDESystem::print_index_map(std::ostream &os) const;
+template void VFPEquation::PDESystem::print_index_map(
+    dealii::ConditionalOStream &os) const;
+
+void VFPEquation::PDESystem::print_pde_system(std::ostream &os) const {
+  print_advection_matrices(os);
+  print_generator_matrices(os);
+  print_collision_matrix(os);
+  print_adv_mat_products(os);
+  print_adv_cross_gen(os);
+  print_t_matrices(os);
 }
 
 void VFPEquation::PDESystem::create_advection_matrices() {
@@ -373,7 +498,7 @@ void ::VFPEquation::PDESystem::shrink_matrices() {
   // Shrink the matrices such that they agree with order of the expansion
   unsigned int num_exp_coefficients =
       (expansion_order + 1) * (expansion_order + 1);
-  
+
   for (auto &advection_matrix : advection_matrices)
     advection_matrix.grow_or_shrink(num_exp_coefficients);
 

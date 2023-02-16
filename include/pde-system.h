@@ -4,16 +4,38 @@
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/vector.h>
 
+#include <ostream>
 #include <vector>
+
 namespace VFPEquation {
 class PDESystem {
  public:
   PDESystem(int l);
-  std::vector<dealii::LAPACKFullMatrix<double>>& get_advection_matrices();
-  std::vector<dealii::LAPACKFullMatrix<double>>& get_rotation_matrices();
-  std::vector<dealii::LAPACKFullMatrix<double>>& get_adv_mat_products();
-  std::vector<dealii::LAPACKFullMatrix<double>>& get_adv_cross_gen();
-  std::vector<dealii::LAPACKFullMatrix<double>>& get_t_matrices();
+  // get functions
+  // matrices
+  const std::vector<dealii::LAPACKFullMatrix<double>>& get_advection_matrices()
+      const;
+  const std::vector<dealii::LAPACKFullMatrix<double>>& get_generator_matrices()
+      const;
+  const std::vector<dealii::LAPACKFullMatrix<double>>& get_adv_mat_products()
+      const;
+  const std::vector<dealii::LAPACKFullMatrix<double>>& get_adv_cross_gen()
+      const;
+  const std::vector<dealii::LAPACKFullMatrix<double>>& get_t_matrices() const;
+  // lms indices
+  const std::vector<std::array<unsigned int, 3>>& get_lms_indices() const;
+  // print functions
+  // matrices
+  void print_advection_matrices(std::ostream& os) const;
+  void print_generator_matrices(std::ostream& os) const;
+  void print_collision_matrix(std::ostream& os) const;
+  void print_adv_mat_products(std::ostream& os) const;
+  void print_adv_cross_gen(std::ostream& os) const;
+  void print_t_matrices(std::ostream& os) const;
+  void print_pde_system(std::ostream& os) const;
+  // lms indices
+  template <typename StreamType>
+  void print_index_map(StreamType& os) const;
 
  private:
   void create_advection_matrices();
@@ -38,6 +60,8 @@ class PDESystem {
   std::vector<dealii::LAPACKFullMatrix<double>> t_matrices;
   // Collision matrix (essentially a reaction matrix)
   dealii::Vector<double> collision_matrix;
+  // Map between i and l,m,s (implemented in constructor)
+  std::vector<std::array<unsigned int, 3>> lms_indices;
 };
 }  // namespace VFPEquation
 #endif
