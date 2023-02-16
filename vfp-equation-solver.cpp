@@ -994,8 +994,9 @@ void VFPEquationSolver::assemble_dg_matrix() {
             if constexpr ((flags & TermFlags::collision) != TermFlags::none) {
               // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_matrix(i, j) +=
-                  collision_matrix[component_i] * fe_v.shape_value(i, q_index) *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                  scattering_frequency * collision_matrix[component_i] *
+                  fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index) *
+                  JxW[q_index];
             }
           }
           if constexpr ((flags & TermFlags::spatial_advection) !=

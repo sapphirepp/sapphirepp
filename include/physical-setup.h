@@ -13,6 +13,8 @@
 #include "reference-values.h"
 
 namespace VFPEquation {
+const double scattering_frequency = 1.;
+
 struct ParticleProperties {
   const double mass = 1.;
   const double charge = 1.;
