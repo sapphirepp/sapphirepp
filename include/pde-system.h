@@ -17,6 +17,7 @@ class PDESystem {
       const;
   const std::vector<dealii::LAPACKFullMatrix<double>>& get_generator_matrices()
       const;
+  const dealii::Vector<double>& get_collision_matrix() const;
   const std::vector<dealii::LAPACKFullMatrix<double>>& get_adv_mat_products()
       const;
   const std::vector<dealii::LAPACKFullMatrix<double>>& get_adv_cross_gen()

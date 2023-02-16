@@ -392,7 +392,7 @@ class VFPEquationSolver {
       pde_system.get_t_matrices();
 
   // Collision term (essentially a reaction term)
-  Vector<double> collision_matrix;
+  const Vector<double> &collision_matrix = pde_system.get_collision_matrix();
 
   // Upwind flux matrices
   // Eigenvectors

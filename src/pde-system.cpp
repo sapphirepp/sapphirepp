@@ -40,6 +40,10 @@ const std::vector<dealii::LAPACKFullMatrix<double>>
     &VFPEquation::PDESystem::get_generator_matrices() const {
   return generator_rotation_matrices;
 }
+const dealii::Vector<double> &VFPEquation::PDESystem::get_collision_matrix()
+    const {
+  return collision_matrix;
+}
 const std::vector<dealii::LAPACKFullMatrix<double>>
     &VFPEquation::PDESystem::get_adv_mat_products() const {
   return adv_mat_products;
