@@ -5,6 +5,7 @@
 
 VFPEquation::PDESystem::PDESystem(int l)
     : expansion_order{l},
+      system_sz{static_cast<unsigned int>((l + 1) * (l + 1))},
       advection_matrices(3),
       generator_rotation_matrices(3),
       adv_mat_products(6),
@@ -61,6 +62,8 @@ const std::vector<std::array<unsigned int, 3>>
     &VFPEquation::PDESystem::get_lms_indices() const {
   return lms_indices;
 }
+
+unsigned int VFPEquation::PDESystem::system_size() const { return system_sz; }
 
 void VFPEquation::PDESystem::print_advection_matrices(std::ostream &os) const {
   char subscript = 'x';

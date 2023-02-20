@@ -25,6 +25,10 @@ class PDESystem {
   const std::vector<dealii::LAPACKFullMatrix<double>>& get_t_matrices() const;
   // lms indices
   const std::vector<std::array<unsigned int, 3>>& get_lms_indices() const;
+
+  // returns the size of the system
+  unsigned int system_size() const;
+
   // print functions
   // matrices
   void print_advection_matrices(std::ostream& os) const;
@@ -48,7 +52,9 @@ class PDESystem {
   void shrink_matrices();
 
   // PDE System data
-  int expansion_order;  // Order of the spherical harmonic expansion
+  int expansion_order;     // Order of the spherical harmonic expansion
+  unsigned int system_sz;  // size of system , i.e. of the quadaratic
+                           // matrices
   // Advection matrices
   std::vector<dealii::LAPACKFullMatrix<double>> advection_matrices;
   // Rotation matrices (due to the magnetic field)
