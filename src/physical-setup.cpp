@@ -29,7 +29,7 @@ void VFPEquation::BackgroundVelocityField<dim>::vector_value(
          dealii::ExcDimensionMismatch(velocity.size(), 3));
   // EXAMPLES:
   // constant velocity field
-  static_cast<void>(point);  // suppress compiler warning
+  // static_cast<void>(point);  // suppress compiler warning
   // velocity[0] = .4;          // u_x
   // velocity[1] = .2;          // u_y
   // velocity[2] = .0;          // u_z
