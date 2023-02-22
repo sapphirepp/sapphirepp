@@ -23,23 +23,36 @@ class UpwindFlux {
       std::vector<dealii::FullMatrix<double>>& negative_flux_matrices);
 
  private:
-  // void compute_eigenvalues_and_eigenvectors(std::vector<double>&
-  // matrix_values);
+  // Enum to ease the understanding in the compute_upwind_flux function
+  enum Coordinate {
+    x,
+    y,
+    z,
+    p,  // p is always the component of in Point<dim> etc.
+    none = 1000
+  };
+  void prepare_work_arrays_for_lapack();
   void prepare_upwind_fluxes();
-  void separate_positive_and_negative_eigenvalues();
-  void triple_product(const std::vector<double>& eigenvalues,
-                      const std::vector<double>& eigenvectors,
-                      dealii::FullMatrix<double>& flux_matrix);
-  void compute_flux_in_space_directions();
-  void compute_matrix_sum(const double n_p, const double p, const double gamma,
+  void compute_flux_in_space_directions(
+      const Coordinate component, const double n_component,
+      const double background_velocity, const double particle_velocity,
+      dealii::FullMatrix<double>& positive_flux_matrix,
+      dealii::FullMatrix<double>& negative_flux_matrix);
+  void compute_matrix_sum(const double n_p, const double momentum,
+                          const double gamma,
                           const dealii::Vector<double>& material_derivative,
                           const std::vector<dealii::Vector<double>>& jacobian);
-  void compute_flux_in_p_direction();
+  void compute_flux_in_p_direction(
+      const double n_p, const double momentum, const double gamma,
+      const dealii::Vector<double>& material_derivative,
+      const std::vector<dealii::Vector<double>>& jacobian,
+      dealii::FullMatrix<double>& positive_flux_matrix,
+      dealii::FullMatrix<double>& negative_flux_matrix);
 
   std::vector<std::vector<double>> advection_matrices;
   std::vector<std::vector<double>> adv_mat_products;
 
-  // Will be used and overwritten in flux computations in p directions
+  // Will be used and overwritten in flux computations
   std::vector<double> matrix_sum;
   std::vector<double> eigenvalues;
   std::vector<double> eigenvectors;
@@ -102,13 +115,5 @@ class UpwindFlux {
   // The upwind flux computations require to know if the momentum direction
   // exits or not.
   const bool momentum;
-  // Enum to ease the understanding in the compute_upwind_flux function
-  enum Coordinate {
-    x,
-    y,
-    z,
-    p,  // p is always the component of in Point<dim> etc.
-    none = 1000
-  };
 };
 }  // namespace VFPEquation

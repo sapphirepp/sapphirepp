@@ -5,6 +5,8 @@
 #include <deal.II/lac/lapack_templates.h>  // direct access to the Fortran driver routines of Lapack
 #include <deal.II/lac/vector.h>
 
+#include <algorithm>
+
 template <int dim>
 VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
     : pde_system{system},
@@ -23,7 +25,7 @@ VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
       jobz{&dealii::LAPACKSupport::V},
       range{&dealii::LAPACKSupport::A},
       uplo{&dealii::LAPACKSupport::U},
-      abstol{0.},
+      abstol{0.},  // see Documentation of xsyever
       int_dummy{&dealii::LAPACKSupport::one},
       double_dummy{1.},
       momentum{momentum} {
@@ -50,72 +52,8 @@ VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
       for (int j = 0; j < matrix_size; ++j)
         adv_mat_products[k][i * matrix_size + j] = adv_mat_prod[k](i, j);
   }
-  // Preparations for the eigenvalue and eigenvector computations
-  //
-  // The computation of the upwind flux in the p direction requires to the
-  // compute eigenvalues and eigenvectors for every face with n_p = 1 (or -1).
-  // Lapack needs correctly sized work arrays to do these computations. It can
-  // determine the sizes it needs with a specific call to the used eigenvalue
-  // routine. The work arrays will be allocated only once and then reused every
-  // time eigenvalues and eigenvectors are computed.
 
-  // https://stackoverflow.com/questions/46618391/what-is-the-use-of-the-work-parameters-in-lapack-routines
-  // Quote: "If dynamic allocation is available, the most common use of LAPACK
-  // functions is to first perform a workspace query using LWORK = -1, then use
-  // the return value to allocate a WORK array of the correct size and finally
-  // call the routine of LAPACK to get the expected result. High-end wrappers of
-  // LAPACK such as LAPACKE features function doing just that: take a look at
-  // the source of LAPACKE for function LAPACKE_dsyev()! It calls twice the
-  // function LAPACKE_dsyev_work, which calls LAPACK_dsyev (wrapping dsyev()).
-
-  // Wrappers still feature functions such as LAPACKE_dsyev_work(), where the
-  // arguments work and lwork are still required. The number of allocations can
-  // therefore be reduced if the routine is called multiple times on similar
-  // sizes by not deallocating WORK between calls, but the user must do that
-  // himself (see this example). In addition, the source of ILAENV, the function
-  // of LAPACK called to compute the optimzed size of WORK, features the
-  // following text:
-
-  //     This version provides a set of parameters which should give good, but
-  //     not optimal, performance on many of the currently available computers.
-  //     Users are encouraged to modify this subroutine to set the tuning
-  //     parameters for their particular machine using the option and problem
-  //     size information in the arguments.
-
-  // As a result, testing sizes of WORK larger than the size returned by the
-  // workspace query could improve performances."
-
-  // Compute the size of the working arrays for the Lapack routine xsyevr
-
-  // The optimal size of the work arrays will be stored in their first element
-  work.resize(1);
-  iwork.resize(1);
-  lwork = -1;
-  liwork = -1;
-  // create dummy variables for the matrix sum
-  double n_p_dummy = 1.;
-  double gamma_dummy = 1.;
-  double p_dummy = 1.;
-  dealii::Vector<double> material_derivative_dummy{1., 1., 1.};
-  std::vector<dealii::Vector<double>> jacobian_dummy(
-      3, dealii::Vector<double>{1., 1., 1.});
-  compute_matrix_sum(n_p_dummy, p_dummy, gamma_dummy, material_derivative_dummy,
-                     jacobian_dummy);
-  // call Lapack routine
-  dealii::syevr(jobz, range, uplo, &matrix_size, matrix_sum.data(),
-                &matrix_size, &double_dummy, &double_dummy, int_dummy,
-                int_dummy, &abstol, &num_eigenvalues, eigenvalues.data(),
-                eigenvectors.data(), &matrix_size, isuppz.data(), work.data(),
-                &lwork, iwork.data(), &liwork, &info);
-  Assert(info == 0, dealii::ExcInternalError());
-
-  // resize the working arrays
-  lwork = static_cast<dealii::types::blas_int>(work[0]);
-  liwork = iwork[0];
-  work.resize(lwork);
-  iwork.resize(liwork);
-
-  // Prepare upwind fluxes in space directions
+  prepare_work_arrays_for_lapack();
   prepare_upwind_fluxes();
 }
 
@@ -193,8 +131,77 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
     for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
       compute_flux_in_p_direction(
           normals[p], q_points[p], particle_gammas[q_index],
-          material_derivative_vel[q_index], jacobians_vel[q_index]);
+          material_derivative_vel[q_index], jacobians_vel[q_index],
+          positive_flux_matrices[q_index], negative_flux_matrices[q_index]);
   }
+}
+
+template <int dim>
+void VFPEquation::UpwindFlux<dim>::prepare_work_arrays_for_lapack() {
+  // Preparations for the eigenvalue and eigenvector computations
+  //
+  // The computation of the upwind flux in the p direction requires to the
+  // compute eigenvalues and eigenvectors for every face with n_p = 1 (or -1).
+  // Lapack needs correctly sized work arrays to do these computations. It can
+  // determine the sizes it needs with a specific call to the used eigenvalue
+  // routine. The work arrays will be allocated only once and then reused every
+  // time eigenvalues and eigenvectors are computed.
+
+  // https://stackoverflow.com/questions/46618391/what-is-the-use-of-the-work-parameters-in-lapack-routines
+  // Quote: "If dynamic allocation is available, the most common use of LAPACK
+  // functions is to first perform a workspace query using LWORK = -1, then use
+  // the return value to allocate a WORK array of the correct size and finally
+  // call the routine of LAPACK to get the expected result. High-end wrappers of
+  // LAPACK such as LAPACKE features function doing just that: take a look at
+  // the source of LAPACKE for function LAPACKE_dsyev()! It calls twice the
+  // function LAPACKE_dsyev_work, which calls LAPACK_dsyev (wrapping dsyev()).
+
+  // Wrappers still feature functions such as LAPACKE_dsyev_work(), where the
+  // arguments work and lwork are still required. The number of allocations can
+  // therefore be reduced if the routine is called multiple times on similar
+  // sizes by not deallocating WORK between calls, but the user must do that
+  // himself (see this example). In addition, the source of ILAENV, the function
+  // of LAPACK called to compute the optimzed size of WORK, features the
+  // following text:
+
+  //     This version provides a set of parameters which should give good, but
+  //     not optimal, performance on many of the currently available computers.
+  //     Users are encouraged to modify this subroutine to set the tuning
+  //     parameters for their particular machine using the option and problem
+  //     size information in the arguments.
+
+  // As a result, testing sizes of WORK larger than the size returned by the
+  // workspace query could improve performances."
+
+  // Compute the size of the working arrays for the Lapack routine xsyevr
+
+  // The optimal size of the work arrays will be stored in their first element
+  work.resize(1);
+  iwork.resize(1);
+  lwork = -1;
+  liwork = -1;
+  // create dummy variables for the matrix sum
+  double n_p_dummy = 1.;
+  double gamma_dummy = 1.;
+  double p_dummy = 1.;
+  dealii::Vector<double> material_derivative_dummy{1., 1., 1.};
+  std::vector<dealii::Vector<double>> jacobian_dummy(
+      3, dealii::Vector<double>{1., 1., 1.});
+  compute_matrix_sum(n_p_dummy, p_dummy, gamma_dummy, material_derivative_dummy,
+                     jacobian_dummy);
+  // call Lapack routine
+  dealii::syevr(jobz, range, uplo, &matrix_size, matrix_sum.data(),
+                &matrix_size, &double_dummy, &double_dummy, int_dummy,
+                int_dummy, &abstol, &num_eigenvalues, eigenvalues.data(),
+                eigenvectors.data(), &matrix_size, isuppz.data(), work.data(),
+                &lwork, iwork.data(), &liwork, &info);
+  Assert(info == 0, dealii::ExcInternalError());
+
+  // resize the working arrays
+  lwork = static_cast<dealii::types::blas_int>(work[0]);
+  liwork = iwork[0];
+  work.resize(lwork);
+  iwork.resize(liwork);
 }
 
 template <int dim>
@@ -262,19 +269,51 @@ void VFPEquation::UpwindFlux<dim>::prepare_upwind_fluxes() {
   // \Omega_z pi/2} For now we will three times compute the same eigenvalues to
   // get the eigenvectors of A_y and A_z
 }
-// template <int dim>
-// void VFPEquation::UpwindFlux<dim>::compute_eigenvalues_and_eigenvectors(
-//     std::vector<double> &matrix_values) {
-//   dealii::syevr(jobz, range, uplo, &matrix_size, matrix_values.data(),
-//                 &matrix_size, &double_dummy, &double_dummy, int_dummy,
-//                 int_dummy, &abstol, &num_eigenvalues, eigenvalues.data(),
-//                 eigenvectors.data(), &matrix_size, isuppz.data(),
-//                 work.data(), &lwork, iwork.data(), &liwork, &info);
-// }
+
+template <int dim>
+void VFPEquation::UpwindFlux<dim>::compute_flux_in_space_directions(
+    const Coordinate component, const double n_component,
+    const double background_velocity, const double particle_velocity,
+    dealii::FullMatrix<double> &positive_flux_matrix,
+    dealii::FullMatrix<double> &negative_flux_matrix) {
+  // Create a copy of the eigenvalues of the advection matrices to compute the
+  // positive and negative fluxes at point q at time t
+  eigenvalues = eigenvalues_advection_matrices;
+  // Update the eigenvalues
+  std::for_each(eigenvalues.begin(), eigenvalues.end(), [=](double &lambda) {
+    lambda = n_component * (background_velocity + particle_velocity * lambda);
+  });
+
+  // split eigenvalues in positive and negative ones
+  std::replace_copy_if(
+      eigenvalues.begin(), eigenvalues.end(), positive_eigenvalues.begin(),
+      std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
+  std::replace_copy_if(
+      eigenvalues.begin(), eigenvalues.end(), negative_eigenvalues.begin(),
+      std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
+
+  // compute the flux matrices
+  for (unsigned int i = 0; i < matrix_size; ++i)
+    for (unsigned int j = 0; j < matrix_size; ++j) {
+      // NOTE: We compute the triple matrix product = V * Lambda_{+/-} V^T. The
+      // eigenvectors V are computed with the Lapack routine xsyevr. Since this
+      // routine is a Fortran routine it returns an array V in column-major
+      // order instead of row-major order. This is why it looks like the roles
+      // of V^T and V are exchanged.
+      positive_flux_matrix(i, j) =
+          eigenvectors_advection_matrices[component][j * matrix_size + i] *
+          positive_eigenvalues[i] *
+          eigenvectors_advection_matrices[component][i * matrix_size + j];
+      negative_flux_matrix(i, j) =
+          eigenvectors_advection_matrices[component][j * matrix_size + i] *
+          negative_eigenvalues[i] *
+          eigenvectors_advection_matrices[component][i * matrix_size + j];
+    }
+}
 
 template <int dim>
 void VFPEquation::UpwindFlux<dim>::compute_matrix_sum(
-    const double n_p, const double p, const double gamma,
+    const double n_p, const double momentum, const double gamma,
     const dealii::Vector<double> &material_derivative,
     const std::vector<dealii::Vector<double>> &jacobian) {
   for (int i = 0; i < matrix_size * matrix_size; ++i)
@@ -283,21 +322,55 @@ void VFPEquation::UpwindFlux<dim>::compute_matrix_sum(
         (gamma * (material_derivative[0] * advection_matrices[0][i] +
                   material_derivative[1] * advection_matrices[1][i] +
                   material_derivative[2] * advection_matrices[2][i]) +
-         p * (jacobian[0][0] * adv_mat_products[0][i] +
+         momentum *
+             (jacobian[0][0] * adv_mat_products[0][i] +
               jacobian[1][1] * adv_mat_products[3][i] +
               jacobian[2][2] * adv_mat_products[5][i] +
               (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][i] +
               (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
               (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
-  // matrix_sum[i * matrix_size + j] =
-  //     -n_p *
-  //     (gamma * (material_derivative[0] * advection_matrices[0](i, j) +
-  //               material_derivative[1] * advection_matrices[1](i, j) +
-  //               material_derivative[2] * advection_matrices[2](i, j)) +
-  //      p * (jacobian[0][0] * adv_mat_products[0](i, j) +
-  //           jacobian[1][1] * adv_mat_products[3](i, j) +
-  //           jacobian[2][2] * adv_mat_products[5](i, j) +
-  //           (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1](i, j) +
-  //           (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2](i, j) +
-  //           (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4](i, j)));
+}
+
+template <int dim>
+void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
+    const double n_p, const double momentum, const double gamma,
+    const dealii::Vector<double> &material_derivative,
+    const std::vector<dealii::Vector<double>> &jacobian,
+    dealii::FullMatrix<double> &positive_flux_matrix,
+    dealii::FullMatrix<double> &negative_flux_matrix) {
+  // compute the matrix sum at the point q at time t. Overwrites the member
+  // variable matrix_sum
+  compute_matrix_sum(n_p, momentum, gamma, material_derivative, jacobian);
+  // compute eigenvalues and eigenvectors. Overwrites the member variables
+  // eigenvalues and eigenvectors
+  dealii::syevr(jobz, range, uplo, &matrix_size, matrix_sum.data(),
+                &matrix_size, &double_dummy, &double_dummy, int_dummy,
+                int_dummy, &abstol, &num_eigenvalues, eigenvalues.data(),
+                eigenvectors.data(), &matrix_size, isuppz.data(), work.data(),
+                &lwork, iwork.data(), &liwork, &info);
+  Assert(info >= 0, dealii::ExcInternalError());
+  if (info != 0)
+    std::cerr << "The computation of the eigenvalues and eigenvectors for the "
+                 "flux in p direction failed: LAPACK error in syevr"
+              << std::endl;
+
+  // split eigenvalues in positive and negative ones
+  std::replace_copy_if(
+      eigenvalues.begin(), eigenvalues.end(), positive_eigenvalues.begin(),
+      std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
+  std::replace_copy_if(
+      eigenvalues.begin(), eigenvalues.end(), negative_eigenvalues.begin(),
+      std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
+
+  // compute the flux matrices
+  for (unsigned int i = 0; i < matrix_size; ++i)
+    for (unsigned int j = 0; j < matrix_size; ++j) {
+      // NOTE: see comment in compute_flux_in_space_directions
+      positive_flux_matrix(i, j) = eigenvectors[j * matrix_size + i] *
+                                   positive_eigenvalues[i] *
+                                   eigenvectors[i * matrix_size + j];
+      negative_flux_matrix(i, j) = eigenvectors[j * matrix_size + i] *
+                                   negative_eigenvalues[i] *
+                                   eigenvectors[i * matrix_size + j];
+    }
 }
