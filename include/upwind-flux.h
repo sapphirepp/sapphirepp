@@ -14,6 +14,7 @@
 namespace VFPEquation {
 template <int dim>
 class UpwindFlux {
+ public:
   UpwindFlux(const PDESystem& system, bool momentum);
   void set_time(double time);
   void compute_upwind_fluxes(
@@ -21,20 +22,13 @@ class UpwindFlux {
       const std::vector<dealii::Tensor<1, dim>>& normals,
       std::vector<dealii::FullMatrix<double>>& positive_flux_matrices,
       std::vector<dealii::FullMatrix<double>>& negative_flux_matrices);
+  void test();
 
  private:
-  // Enum to ease the understanding in the compute_upwind_flux function
-  enum Coordinate {
-    x,
-    y,
-    z,
-    p,  // p is always the component of in Point<dim> etc.
-    none = 1000
-  };
   void prepare_work_arrays_for_lapack();
   void prepare_upwind_fluxes();
   void compute_flux_in_space_directions(
-      const Coordinate component, const double n_component,
+      unsigned int component, const double n_component,
       const double background_velocity, const double particle_velocity,
       dealii::FullMatrix<double>& positive_flux_matrix,
       dealii::FullMatrix<double>& negative_flux_matrix);
@@ -48,6 +42,9 @@ class UpwindFlux {
       const std::vector<dealii::Vector<double>>& jacobian,
       dealii::FullMatrix<double>& positive_flux_matrix,
       dealii::FullMatrix<double>& negative_flux_matrix);
+  // PDE System matrices
+  const PDESystem& pde_system;
+  const int matrix_size;
 
   std::vector<std::vector<double>> advection_matrices;
   std::vector<std::vector<double>> adv_mat_products;
@@ -69,9 +66,6 @@ class UpwindFlux {
   ParticleVelocity<dim> particle_velocity_func;
   ParticleGamma<dim> particle_gamma_func;
   ParticleProperties particle_properties;
-  // PDE System matrices
-  const int matrix_size;
-  const PDESystem& pde_system;
 
   // Arguments for the Lapack routine xsyevr
   // Documentation:

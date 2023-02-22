@@ -10,17 +10,17 @@
 template <int dim>
 VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
     : pde_system{system},
-      matrix_size(pde_system.system_size()),
-      advection_matrices(3),
-      adv_mat_products(6),
+      matrix_size{static_cast<int>(pde_system.system_size())},
+      advection_matrices(3, std::vector<double>(matrix_size * matrix_size)),
+      adv_mat_products(6, std::vector<double>(matrix_size * matrix_size)),
       matrix_sum(matrix_size * matrix_size),
       eigenvalues(matrix_size),
       eigenvectors(matrix_size * matrix_size),
       positive_eigenvalues(matrix_size),
       negative_eigenvalues(matrix_size),
+      eigenvalues_advection_matrices(matrix_size),
       eigenvectors_advection_matrices(
           3, std::vector<double>(matrix_size * matrix_size)),
-      eigenvalues_advection_matrices(matrix_size),
       isuppz(2 * matrix_size),
       jobz{&dealii::LAPACKSupport::V},
       range{&dealii::LAPACKSupport::A},
@@ -75,9 +75,9 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
   // over the quadrature points
 
   unsigned int dim_cs = dim - momentum;
-  Coordinate component = none;  // Produces an error if not overwritten
+  unsigned int component = 1000;  // Produces an error if not overwritten
 
-  for (unsigned int i = 0; i < dim_cs; ++i)
+  for (unsigned int i = 0; i < dim; ++i)
     // NOTE: Such a simple comparison of doubles is only possible, because I
     // know that I am comparing 0. with 1. or something very close to one with
     // one. If this ever fails a more sophisticated comparison is needed, e.g.
@@ -86,13 +86,8 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
     // for some faces.
     if (std::abs(1. - std::abs(normals[0][i])) < 1e-5) component = i;
 
-  // If the momentum terms are included, then the last component of normals is
-  // the momentum direction
-  if (momentum && std::abs(1. - std::abs(normals[0][dim])) < 1e-5)
-    component = p;
-
-  // Flux in the spatial directions
-  if (component == x || component == y || component == z) {
+  // Fluxes in the spatial directions
+  if (component <= dim_cs) {
     // Background velocity field
     // Get the value of the velocity field at every quadrature point
     // TODO: Value list for a specific component would be faster.
@@ -111,11 +106,14 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
                 particle_properties.velocity);
     }
     // Compute flux at every quadrature point
-    for (unsigned int q_index; q_index < q_points.size(); ++q_index)
+    for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
       compute_flux_in_space_directions(
-          normals[component], velocities[q_index], particle_velocities[q_index],
+          component, normals[q_index][component],
+          velocities[q_index][component], particle_velocities[q_index],
           positive_flux_matrices[q_index], negative_flux_matrices[q_index]);
-  } else if (component == p) {
+  }  // NOTE: If the momentum terms are included, then the last component of
+     // normals, points etc. is the momentum direction
+  else if (momentum && component == dim) {  // Fluxes in the p direction
     std::vector<dealii::Vector<double>> material_derivative_vel(
         q_points.size(), dealii::Vector<double>(3));
     background_velocity_field.material_derivative_list(q_points,
@@ -130,9 +128,10 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
     particle_gamma_func.value_list(q_points, particle_gammas);
     for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
       compute_flux_in_p_direction(
-          normals[p], q_points[p], particle_gammas[q_index],
-          material_derivative_vel[q_index], jacobians_vel[q_index],
-          positive_flux_matrices[q_index], negative_flux_matrices[q_index]);
+          normals[q_index][component], q_points[q_index][component],
+          particle_gammas[q_index], material_derivative_vel[q_index],
+          jacobians_vel[q_index], positive_flux_matrices[q_index],
+          negative_flux_matrices[q_index]);
   }
 }
 
@@ -271,8 +270,26 @@ void VFPEquation::UpwindFlux<dim>::prepare_upwind_fluxes() {
 }
 
 template <int dim>
+void VFPEquation::UpwindFlux<dim>::test() {
+  std::cout << "Eigenvalues: \n";
+  for (auto &lambda : eigenvalues_advection_matrices)
+    std::cout << lambda << " ";
+  std::cout << std::endl;
+
+  dealii::FullMatrix<double> test_positive_flux_matrix(matrix_size);
+  dealii::FullMatrix<double> test_negative_flux_matrix(matrix_size);
+  compute_flux_in_space_directions(1, 1., 5., 0.2, test_positive_flux_matrix,
+                                   test_negative_flux_matrix);
+
+  std::cout << "positive_flux_matrix \n";
+  test_positive_flux_matrix.print_formatted(std::cout);
+  std::cout << "negative_flux_matrix \n";
+  test_negative_flux_matrix.print_formatted(std::cout);
+}
+
+template <int dim>
 void VFPEquation::UpwindFlux<dim>::compute_flux_in_space_directions(
-    const Coordinate component, const double n_component,
+    const unsigned int component, const double n_component,
     const double background_velocity, const double particle_velocity,
     dealii::FullMatrix<double> &positive_flux_matrix,
     dealii::FullMatrix<double> &negative_flux_matrix) {
@@ -293,21 +310,23 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_space_directions(
       std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
 
   // compute the flux matrices
-  for (unsigned int i = 0; i < matrix_size; ++i)
-    for (unsigned int j = 0; j < matrix_size; ++j) {
+  for (int i = 0; i < matrix_size; ++i)
+    for (int j = 0; j < matrix_size; ++j) {
+      for(int k = 0; k < matrix_size; ++k) {
       // NOTE: We compute the triple matrix product = V * Lambda_{+/-} V^T. The
       // eigenvectors V are computed with the Lapack routine xsyevr. Since this
       // routine is a Fortran routine it returns an array V in column-major
       // order instead of row-major order. This is why it looks like the roles
       // of V^T and V are exchanged.
       positive_flux_matrix(i, j) =
-          eigenvectors_advection_matrices[component][j * matrix_size + i] *
-          positive_eigenvalues[i] *
-          eigenvectors_advection_matrices[component][i * matrix_size + j];
+          eigenvectors_advection_matrices[component][j * matrix_size + k] *
+          positive_eigenvalues[k] *
+          eigenvectors_advection_matrices[component][i * matrix_size + k];
       negative_flux_matrix(i, j) =
-          eigenvectors_advection_matrices[component][j * matrix_size + i] *
-          negative_eigenvalues[i] *
-          eigenvectors_advection_matrices[component][i * matrix_size + j];
+          eigenvectors_advection_matrices[component][j * matrix_size + k] *
+          negative_eigenvalues[k] *
+          eigenvectors_advection_matrices[component][i * matrix_size + k];
+      }
     }
 }
 
@@ -363,8 +382,8 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
       std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
 
   // compute the flux matrices
-  for (unsigned int i = 0; i < matrix_size; ++i)
-    for (unsigned int j = 0; j < matrix_size; ++j) {
+  for (int i = 0; i < matrix_size; ++i)
+    for (int j = 0; j < matrix_size; ++j) {
       // NOTE: see comment in compute_flux_in_space_directions
       positive_flux_matrix(i, j) = eigenvectors[j * matrix_size + i] *
                                    positive_eigenvalues[i] *
@@ -374,3 +393,8 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
                                    eigenvectors[i * matrix_size + j];
     }
 }
+
+// explicit instantiation
+template class VFPEquation::UpwindFlux<1>;
+template class VFPEquation::UpwindFlux<2>;
+template class VFPEquation::UpwindFlux<3>;
