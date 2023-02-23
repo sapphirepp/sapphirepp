@@ -309,25 +309,32 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_space_directions(
       eigenvalues.begin(), eigenvalues.end(), negative_eigenvalues.begin(),
       std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
 
-  // compute the flux matrices
-  for (int i = 0; i < matrix_size; ++i)
-    for (int j = 0; j < matrix_size; ++j) {
-      for(int k = 0; k < matrix_size; ++k) {
-      // NOTE: We compute the triple matrix product = V * Lambda_{+/-} V^T. The
-      // eigenvectors V are computed with the Lapack routine xsyevr. Since this
-      // routine is a Fortran routine it returns an array V in column-major
-      // order instead of row-major order. This is why it looks like the roles
-      // of V^T and V are exchanged.
-      positive_flux_matrix(i, j) =
-          eigenvectors_advection_matrices[component][j * matrix_size + k] *
-          positive_eigenvalues[k] *
-          eigenvectors_advection_matrices[component][i * matrix_size + k];
-      negative_flux_matrix(i, j) =
-          eigenvectors_advection_matrices[component][j * matrix_size + k] *
-          negative_eigenvalues[k] *
-          eigenvectors_advection_matrices[component][i * matrix_size + k];
+  // compute the flux matrices: triple product V * Lambda_{+/-} * V^{T})
+  //
+  // This is reimplementation of a part of Lapacks
+  // dgemm routine to allow for a diagonal matrix in between the two matrix
+  // factors.
+  // https://netlib.org/lapack/explore-html/d1/d54/group__double__blas__level3_gaeda3cbd99c8fb834a60a6412878226e1.html
+  double temp_positive = 0;
+  double temp_negative = 0;
+  for (int j = 0; j < matrix_size; ++j) {
+    for (int l = 0; l < matrix_size; ++l) {
+      temp_positive =
+          positive_eigenvalues[l] *
+          eigenvectors_advection_matrices[component][l * matrix_size + j];
+      temp_negative =
+          negative_eigenvalues[l] *
+          eigenvectors_advection_matrices[component][l * matrix_size + j];
+      for (int i = 0; i < matrix_size; ++i) {
+        positive_flux_matrix(i, j) +=
+            temp_positive *
+            eigenvectors_advection_matrices[component][l * matrix_size + i];
+        negative_flux_matrix(i, j) +=
+            temp_negative *
+            eigenvectors_advection_matrices[component][l * matrix_size + i];
       }
     }
+  }
 }
 
 template <int dim>
@@ -382,16 +389,22 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
       std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
 
   // compute the flux matrices
-  for (int i = 0; i < matrix_size; ++i)
-    for (int j = 0; j < matrix_size; ++j) {
-      // NOTE: see comment in compute_flux_in_space_directions
-      positive_flux_matrix(i, j) = eigenvectors[j * matrix_size + i] *
-                                   positive_eigenvalues[i] *
-                                   eigenvectors[i * matrix_size + j];
-      negative_flux_matrix(i, j) = eigenvectors[j * matrix_size + i] *
-                                   negative_eigenvalues[i] *
-                                   eigenvectors[i * matrix_size + j];
+  double temp_positive = 0;
+  double temp_negative = 0;
+  for (int j = 0; j < matrix_size; ++j) {
+    for (int l = 0; l < matrix_size; ++l) {
+      temp_positive =
+          positive_eigenvalues[l] * eigenvectors[l * matrix_size + j];
+      temp_negative =
+          negative_eigenvalues[l] * eigenvectors[l * matrix_size + j];
+      for (int i = 0; i < matrix_size; ++i) {
+        positive_flux_matrix(i, j) +=
+            temp_positive * eigenvectors[l * matrix_size + i];
+        negative_flux_matrix(i, j) +=
+            temp_negative * eigenvectors[l * matrix_size + i];
+      }
     }
+  }
 }
 
 // explicit instantiation
