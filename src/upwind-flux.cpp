@@ -6,6 +6,10 @@
 #include <deal.II/lac/vector.h>
 
 #include <algorithm>
+// for testing arbirtary coefficients in matrix sum and the corresponding
+// eigenvalue/eigenvector computations
+#include <iomanip>
+#include <random>
 
 template <int dim>
 VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
@@ -278,8 +282,75 @@ void VFPEquation::UpwindFlux<dim>::test() {
 
   dealii::FullMatrix<double> test_positive_flux_matrix(matrix_size);
   dealii::FullMatrix<double> test_negative_flux_matrix(matrix_size);
-  compute_flux_in_space_directions(1, 1., 5., 0.2, test_positive_flux_matrix,
+
+  // Test space directions
+  compute_flux_in_space_directions(1, 1., -0.5, 0.9, test_positive_flux_matrix,
                                    test_negative_flux_matrix);
+
+  // std::cout << "positive_flux_matrix \n";
+  // test_positive_flux_matrix.print_formatted(std::cout);
+  // std::cout << "negative_flux_matrix \n";
+  // test_negative_flux_matrix.print_formatted(std::cout);
+
+  // Test momentum direction
+  // Random number generator
+  class RandomNumber {
+   public:
+    RandomNumber(double low, double high) : m_uniform_dist{low, high} {}
+
+    double operator()() { return m_uniform_dist(m_re); };
+    void seed(unsigned int s) { m_re.seed(s); }
+
+   private:
+    std::default_random_engine m_re;
+    std::uniform_real_distribution<double> m_uniform_dist;  // Default intervall
+  };
+  RandomNumber rnd_number_generator{-1.e4, 1.e4};
+  std::random_device seed;  // Seeded with /dev/urandom
+  rnd_number_generator.seed(seed());
+
+  // Fill the arguments of compute_flux_in_p_directon with randon numbers
+  double test_n_p = 1.;
+  double test_gamma = rnd_number_generator();
+  double test_p = rnd_number_generator();
+  dealii::Vector<double> test_material_derivative{
+      rnd_number_generator(), rnd_number_generator(), rnd_number_generator()};
+  std::vector<dealii::Vector<double>> test_jacobian(3);
+  test_jacobian[0] = dealii::Vector<double>{
+      rnd_number_generator(), rnd_number_generator(), rnd_number_generator()};
+  test_jacobian[1] = dealii::Vector<double>{
+      rnd_number_generator(), rnd_number_generator(), rnd_number_generator()};
+  test_jacobian[2] = dealii::Vector<double>{
+      rnd_number_generator(), rnd_number_generator(), rnd_number_generator()};
+
+  // Print out the random values:
+  std::cout << "n_p: " << test_n_p << "\n";
+  std::cout << "gamma: " << test_gamma << "\n";
+  std::cout << "momentum: " << test_p << "\n";
+  std::cout << "Material derivative: \n";
+  test_material_derivative.print(std::cout);
+  std::cout << "Jacobian: "
+            << "\n";
+  for (const auto &row : test_jacobian) row.print(std::cout);
+
+  // Python array ouput to ease testing
+  std::cout << std::fixed << std::setprecision(9) << "[" << test_n_p << ", "
+            << test_gamma << ", " << test_material_derivative[0] << ", "
+            << test_material_derivative[1] << ", "
+            << test_material_derivative[2] << ", " << test_p << ", "
+            << test_jacobian[0][0] << ", " << test_jacobian[1][1] << ", "
+            << test_jacobian[2][2] << ", " << test_jacobian[0][1] << ", "
+            << test_jacobian[1][0] << ", " << test_jacobian[0][2] << ", "
+            << test_jacobian[2][0] << ", " << test_jacobian[1][2] << ", "
+            << test_jacobian[2][1] << "]" << std::endl;
+
+  // reset matrices
+  test_positive_flux_matrix = 0;
+  test_negative_flux_matrix = 0;
+  // Compute flux matrices
+  compute_flux_in_p_direction(
+      test_n_p, test_p, test_gamma, test_material_derivative, test_jacobian,
+      test_positive_flux_matrix, test_negative_flux_matrix);
 
   std::cout << "positive_flux_matrix \n";
   test_positive_flux_matrix.print_formatted(std::cout);
@@ -389,6 +460,7 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
       std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
 
   // compute the flux matrices
+  // see comment in compute_flux_in_space_directions
   double temp_positive = 0;
   double temp_negative = 0;
   for (int j = 0; j < matrix_size; ++j) {
