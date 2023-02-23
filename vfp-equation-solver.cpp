@@ -61,6 +61,7 @@
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "physical-setup.h"
+#include "upwind-flux.h"
 #include "vfp-solver-control.h"
 
 namespace VFPEquation {
@@ -228,14 +229,6 @@ class VFPEquationSolver {
   // ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
 
   void make_grid();
-  void prepare_upwind_fluxes();
-  // NOTE: The LAPACKFullMatrix class does not implement a move constructor,
-  // this is why the output argument is an input argument
-  void compute_upwind_fluxes(
-      const std::vector<Point<dim_ps>> &q_points,
-      const std::vector<Tensor<1, dim_ps>> &normals,
-      std::vector<FullMatrix<double>> &positive_flux_matrices,
-      std::vector<FullMatrix<double>> &negative_flux_matrices);
   void setup_system();
   void assemble_mass_matrix();
   void assemble_dg_matrix();
@@ -356,7 +349,6 @@ VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
 void VFPEquationSolver::run() {
   make_grid();
   setup_system();
-  prepare_upwind_fluxes();
   assemble_mass_matrix();
   assemble_dg_matrix();
   project_initial_condition();
@@ -440,390 +432,6 @@ void VFPEquationSolver::make_grid() {
   pcout << "The grid was created: \n"
         << "	Number of active cells: "
         << triangulation.n_global_active_cells() << "\n";
-}
-
-void VFPEquationSolver::prepare_upwind_fluxes() {
-  TimerOutput::Scope timer_section(timer, "Prepare Upwind flux");
-  // NOTE: The matrix gets destroyed, when the eigenvalues are computed. This
-  // requires to copy it
-  LAPACKFullMatrix<double> matrix_copy;
-  double tolerance = 1.e-16;
-  eigenvectors_advection_matrices.resize(3);
-
-  // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
-  // eigenvalues of A_x are the roots of the associated legendre polynomials.
-  // Since the associated Legendre Polynomials are orthogonal polynomials, it
-  // can be shown that all roots are contained in in the intervall [-1., 1.].
-  // Physically this makes sense, because c = 1 and the eigenvalues encode the
-  // speed of 'information' transport.
-  matrix_copy = advection_matrices[0];  // A_x
-  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance,
-                                            eigenvalues_adv,
-                                            eigenvectors_advection_matrices[0]);
-  // NOTE: The eigenvalues of A_x can computed very efficiently because A_x is
-  // (when ordered correctly) a tridiagonal symmetric matrix, i.e. it is in
-  // Hessenberg-Form. It seems that Lapack has function for this implemented but
-  // there is no dealii interface to it.
-
-  matrix_copy = advection_matrices[1];
-  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance,
-                                            eigenvalues_adv,
-                                            eigenvectors_advection_matrices[1]);
-  matrix_copy = advection_matrices[2];
-  matrix_copy.compute_eigenvalues_symmetric(-1.2, 1.2, tolerance,
-                                            eigenvalues_adv,
-                                            eigenvectors_advection_matrices[2]);
-  // TODO: Rotate the eigenvectors of A_x to get the eigenvectors of A_y and
-  // A_z, i.e. implement the rotation matrices e^{-i\Omega_x pi/2} and e^{-i
-  // \Omega_z pi/2} For now we will three times compute the same eigenvalues to
-  // get the eigenvectors of A_y and A_z
-
-  // NOTE: I actually thinkt that the next clean up step is not necessary
-  // Remove eigenvalues, which are smaller than tolerance
-  auto smaller_than_tolerance = [&tolerance](double value) {
-    return (std::abs(value) < tolerance ? true : false);
-  };
-  std::replace_if(eigenvalues_adv.begin(), eigenvalues_adv.end(),
-                  smaller_than_tolerance, 0.);
-
-  // The computation of upwind flux in p-direction requires the eigenvalues and
-  // eigenvectors of all adv_mat_products. Unfortunately, I did not find a way
-  // to construct them from the eigenvectors and eigenvalues of the advection
-  // matrices A_x, A_y and A_z. For finite expansion the operatos represented by
-  // A_x, A_y and A_z do not commute. In infinite case, they do. If they
-  // commuted, then it would be possible to compute the eigenvalues and
-  // eigenvectors of adv_mat_products from the ones of A_x, A_y and A_z.
-  //
-  // NOTE: The eigenvalues of Ap_xx, Ap_yy and Ap_zz are the same. Moreover the
-  // eigenvalues for of Ap_xy, Ap_xz and Ap_yz are the same as well. The
-  // matrices can be obtained from each other by rotations which are similarity
-  // transformations, i.e. the eigenvalues do not change.
-  eigenvectors_adv_mat_prod_matrices.resize(6);
-  eigenvalues_adv_mat_prod.resize(2);
-
-  for (unsigned int i = 0; i < 3; ++i) {
-    for (unsigned int j = i; j < 3; ++j) {
-      matrix_copy = adv_mat_products[3 * i - i * (i + 1) / 2 + j];
-      matrix_copy.compute_eigenvalues_symmetric(
-          -1.2, 1.2, tolerance, eigenvalues_adv_mat_prod[i == j ? 0 : 1],
-          eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 + j]);
-    }
-  }
-}
-
-void VFPEquationSolver::compute_upwind_fluxes(
-    const std::vector<Point<dim_ps>> &q_points,
-    const std::vector<Tensor<1, dim_ps>> &normals,
-    std::vector<FullMatrix<double>> &positive_flux_matrices,
-    std::vector<FullMatrix<double>> &negative_flux_matrices) {
-  // Determine if we are computing the flux of an interior face whose normal
-  // points into the x,y,z or p direction. Since we are using a rectangular
-  // grid, the normal is the same for all quadrature points and it points either
-  // in the x, y, z or p direction. Hence it can determined outside the loop
-  // over the quadrature points
-  enum Coordinate {
-    x,
-    y,
-    z,
-    p,
-    none = 1000
-  };                            // p is always the
-                                // last component
-  Coordinate component = none;  // Produces an error if not overwritten
-  // NOTE: Such a simple comparison of doubles is only possible, because I know
-  // that I am comparing 0. with 1. or something very close to one with one. If
-  // this ever fails a more sophisticated comparison is needed, e.g.
-  // https://floating-point-gui.de/errors/comparison/
-  if (std::abs(1. - std::abs(normals[0][x])) < 1e-5)
-    component = x;  // std::abs is nessecary
-                    // because of the boundary
-                    // faces, i.e. <-| n_k = -1
-                    // for some faces.
-  if constexpr (dim_cs >= 2) {
-    if (std::abs(1. - std::abs(normals[0][y])) < 1e-5) component = y;
-  }
-  if constexpr (dim_cs == 3) {
-    if (std::abs(1. - std::abs(normals[0][z])) < 1e-5) component = z;
-  }
-  if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
-    if (std::abs(1. - std::abs(normals[0][dim_ps - 1])) < 1e-5) component = p;
-  }
-
-  Vector<double> positive_lambda(num_exp_coefficients);
-  Vector<double> negative_lambda(num_exp_coefficients);
-
-  FullMatrix<double> lambda_plus_matrix(num_exp_coefficients);
-  FullMatrix<double> lambda_minus_matrix(num_exp_coefficients);
-
-  BackgroundVelocityField<dim_ps> velocity_field;
-  velocity_field.set_time(time);
-
-  // Two different cases: 1. Upwinding for the spatial advection part and
-  // Upwinding for magnitude p advection part
-  if (component == x || component == y || component == z) {
-    // Background velocity field
-    // Get the value of the velocity field at every quadrature point
-    // TODO: Value list for a specific component would be faster.
-    std::vector<Vector<double>> velocities(q_points.size(), Vector<double>(3));
-    velocity_field.vector_value_list(q_points, velocities);
-
-    // Particle
-    ParticleVelocity<dim_ps> particle_velocity;
-    std::vector<double> particle_velocities(q_points.size());
-    particle_velocity.value_list(q_points, particle_velocities);
-
-    for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
-      // Create a copy of the eigenvalues to compute the positive and negative
-      // fluxes at interface point q at time t
-      Vector<double> lambda(eigenvalues_adv);
-      // Multiply the eigenvalues of A_i with the particle velocity
-      if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
-        lambda *= particle_velocities[q_index];
-      } else {
-        // No momentum part == transport only, i.e. only one energy
-        lambda *= particle_properties.velocity;
-      }
-      // Add the velocities to the eigenvalues
-      lambda.add(velocities[q_index][component]);
-      // Multiply with the normal component (Implication: Positive flux is
-      // always into the direction of normal.)
-      lambda *= normals[q_index][component];
-
-      std::replace_copy_if(
-          lambda.begin(), lambda.end(), positive_lambda.begin(),
-          std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
-      std::replace_copy_if(
-          lambda.begin(), lambda.end(), negative_lambda.begin(),
-          std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
-
-      for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-        lambda_plus_matrix(i, i) = positive_lambda[i];
-        lambda_minus_matrix(i, i) = negative_lambda[i];
-      }
-      // Return
-      positive_flux_matrices[q_index].triple_product(
-          lambda_plus_matrix, eigenvectors_advection_matrices[component],
-          eigenvectors_advection_matrices[component], false, true);
-
-      negative_flux_matrices[q_index].triple_product(
-          lambda_minus_matrix, eigenvectors_advection_matrices[component],
-          eigenvectors_advection_matrices[component], false, true);
-    }
-  } else if (component == p) {
-    // Background velocity field
-    std::vector<Vector<double>> material_derivative_vel(q_points.size(),
-                                                        Vector<double>(3));
-    velocity_field.material_derivative_list(q_points, material_derivative_vel);
-    std::vector<std::vector<Vector<double>>> jacobians_vel(
-        q_points.size(), std::vector<Vector<double>>(3, Vector<double>(3)));
-    velocity_field.jacobian_list(q_points, jacobians_vel);
-
-    ParticleGamma<dim_ps> particle_gamma;
-    std::vector<double> particle_gammas(q_points.size());
-    particle_gamma.value_list(q_points, particle_gammas);
-
-    LAPACKFullMatrix<double> matrix_sum(num_exp_coefficients);
-    FullMatrix<double> eigenvectors_matrix_sum(num_exp_coefficients);
-    Vector<double> eigenvalues_matrix_sum(num_exp_coefficients);
-    for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index) {
-      // Reset matrix
-      matrix_sum.reinit(num_exp_coefficients);
-      for (unsigned int i = 0; i < 3; ++i) {
-        for (unsigned int j = i; j < 3; ++j) {
-          if (i == j) {
-            matrix_sum.add(-normals[q_index][dim_ps - 1] *
-                               particle_gammas[q_index] *
-                               material_derivative_vel[q_index][i],
-                           advection_matrices[i]);
-            matrix_sum.add(-normals[q_index][dim_ps - 1] *
-                               q_points[q_index][dim_ps - 1] *
-                               jacobians_vel[q_index][i][j],
-                           adv_mat_products[3 * i - i * (i + 1) / 2 + j]);
-          } else {
-            matrix_sum.add(-normals[q_index][dim_ps - 1] *
-                               q_points[q_index][dim_ps - 1] *
-                               jacobians_vel[q_index][i][j],
-                           adv_mat_products[3 * i - i * (i + 1) / 2 + j]);
-            matrix_sum.add(-normals[q_index][dim_ps - 1] *
-                               q_points[q_index][dim_ps - 1] *
-                               jacobians_vel[q_index][j][i],
-                           adv_mat_products[3 * i - i * (i + 1) / 2 + j]);
-          }
-        }
-      }
-      // Bounds: Eigenvalues of and A_k are A_kl in [-1,. 1.]. Without
-      // justification: We expect that this holds true for a sum of these
-      // matrices as well. Since the matrices are multiplied the eigenvalues are
-      // of the order of the scalar with which they are multiplied. Hence we
-      // expect the maximum eigenvalue to be max(du/dt * \gamma, p * jacobian)
-      // TODO: Do this correctly
-      // double bound = std::max(std::abs(particle_gammas[q_index] *
-      //                                  material_derivative_vel[q_index][0]),
-      //                         std::abs(q_points[q_index][dim_ps - 1] *
-      //                                  jacobians_vel[q_index][0][0]));
-
-      matrix_sum.compute_eigenvalues_symmetric(
-          -10., 10., 0, eigenvalues_matrix_sum, eigenvectors_matrix_sum);
-      // Create Lambda_plus/minus
-      std::replace_copy_if(
-          eigenvalues_matrix_sum.begin(), eigenvalues_matrix_sum.end(),
-          positive_lambda.begin(),
-          std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
-      std::replace_copy_if(
-          eigenvalues_matrix_sum.begin(), eigenvalues_matrix_sum.end(),
-          negative_lambda.begin(),
-          std::bind(std::greater<double>(), std::placeholders::_1, 0.), 0.);
-
-      for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-        lambda_plus_matrix(i, i) = positive_lambda[i];
-        lambda_minus_matrix(i, i) = negative_lambda[i];
-      }
-
-      positive_flux_matrices[q_index].triple_product(
-          lambda_plus_matrix, eigenvectors_matrix_sum, eigenvectors_matrix_sum,
-          false, true);
-
-      negative_flux_matrices[q_index].triple_product(
-          lambda_minus_matrix, eigenvectors_matrix_sum, eigenvectors_matrix_sum,
-          false, true);
-    }
-
-    // first part
-    // for (unsigned int i = 0; i < dim_cs; ++i) {
-    //   Vector<double> lambda(eigenvalues_adv);
-    //   // Update the eigenvalue
-    //   lambda *= -normals[q_index][dim_ps - 1] * particle_gammas[q_index] *
-    //             material_derivative_vel[q_index][i];
-    //   // Create Lambda_plus/minus
-    //   std::replace_copy_if(
-    //       lambda.begin(), lambda.end(), positive_lambda.begin(),
-    //       std::bind(std::less<double>(), std::placeholders::_1, 0.), 0.);
-    //   std::replace_copy_if(
-    //       lambda.begin(), lambda.end(), negative_lambda.begin(),
-    //       std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-    //       0.);
-
-    //   for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    //     lambda_plus_matrix(i, i) = positive_lambda[i];
-    //     lambda_minus_matrix(i, i) = negative_lambda[i];
-    //   }
-
-    //   // NOTE: The triple product adds the result to the calling matrix,
-    //   i.e.
-    //   // for each i the positive/negative flux matrix is added
-    //   positive_flux_matrices[q_index].triple_product(
-    //       lambda_plus_matrix, eigenvectors_advection_matrices[i],
-    //       eigenvectors_advection_matrices[i], false, true);
-
-    //   negative_flux_matrices[q_index].triple_product(
-    //       lambda_minus_matrix, eigenvectors_advection_matrices[i],
-    //       eigenvectors_advection_matrices[i], false, true);
-    // }
-    // second part
-    // for (unsigned int i = 0; i < dim_cs; ++i) {
-    //   for (unsigned int j = i; j < dim_cs; ++j) {
-    //     if (i == j) {
-    //       Vector<double> lambda(eigenvalues_adv_mat_prod[0]);
-    //       lambda *= -normals[q_index][dim_ps - 1] *
-    //                 q_points[q_index][dim_ps - 1] *
-    //                 jacobians_vel[q_index][i][j];
-    //       // Create Lambda_plus/minus
-    //       std::replace_copy_if(
-    //           lambda.begin(), lambda.end(), positive_lambda.begin(),
-    //           std::bind(std::less<double>(), std::placeholders::_1, 0.),
-    //           0.);
-    //       std::replace_copy_if(
-    //           lambda.begin(), lambda.end(), negative_lambda.begin(),
-    //           std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-    //           0.);
-
-    //       for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    //         lambda_plus_matrix(i, i) = positive_lambda[i];
-    //         lambda_minus_matrix(i, i) = negative_lambda[i];
-    //       }
-
-    //       positive_flux_matrices[q_index].triple_product(
-    //           lambda_plus_matrix,
-    //           eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 +
-    //           j], eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) /
-    //           2 + j], false, true);
-
-    //       negative_flux_matrices[q_index].triple_product(
-    //           lambda_minus_matrix,
-    //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-    //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-    //           false, true);
-
-    //     } else {
-    //       // Symmetry A_xA_y| = A_yA_x|
-    //       Vector<double> lambda_ij(eigenvalues_adv_mat_prod[1]);
-    //       Vector<double> lambda_ji(eigenvalues_adv_mat_prod[1]);
-    //       lambda_ij *= -normals[q_index][dim_ps - 1] *
-    //                    q_points[q_index][dim_ps - 1] *
-    //                    jacobians_vel[q_index][i][j];
-    //       lambda_ji *= -normals[q_index][dim_ps - 1] *
-    //                    q_points[q_index][dim_ps - 1] *
-    //                    jacobians_vel[q_index][j][i];
-
-    //       // ij
-    //       std::replace_copy_if(
-    //           lambda_ij.begin(), lambda_ij.end(), positive_lambda.begin(),
-    //           std::bind(std::less<double>(), std::placeholders::_1, 0.),
-    //           0.);
-    //       std::replace_copy_if(
-    //           lambda_ij.begin(), lambda_ij.end(), negative_lambda.begin(),
-    //           std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-    //           0.);
-
-    //       for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    //         lambda_plus_matrix(i, i) = positive_lambda[i];
-    //         lambda_minus_matrix(i, i) = negative_lambda[i];
-    //       }
-
-    //       positive_flux_matrices[q_index].triple_product(
-    //           lambda_plus_matrix,
-    //           eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 +
-    //           j], eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) /
-    //           2 + j], false, true);
-
-    //       negative_flux_matrices[q_index].triple_product(
-    //           lambda_minus_matrix,
-    //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-    //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-    //           false, true);
-    //       // ji
-    //       std::replace_copy_if(
-    //           lambda_ji.begin(), lambda_ji.end(), positive_lambda.begin(),
-    //           std::bind(std::less<double>(), std::placeholders::_1, 0.),
-    //           0.);
-    //       std::replace_copy_if(
-    //           lambda_ji.begin(), lambda_ji.end(), negative_lambda.begin(),
-    //           std::bind(std::greater<double>(), std::placeholders::_1, 0.),
-    //           0.);
-
-    //       for (unsigned int i = 0; i < num_exp_coefficients; ++i) {
-    //         lambda_plus_matrix(i, i) = positive_lambda[i];
-    //         lambda_minus_matrix(i, i) = negative_lambda[i];
-    //       }
-
-    //       positive_flux_matrices[q_index].triple_product(
-    //           lambda_plus_matrix,
-    //           eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) / 2 +
-    //           j], eigenvectors_adv_mat_prod_matrices[3 * i - i * (i + 1) /
-    //           2 + j], false, true);
-
-    //       negative_flux_matrices[q_index].triple_product(
-    //           lambda_minus_matrix,
-    //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-    //           eigenvectors_advection_matrices[3 * i - i * (i + 1) / 2 + j],
-    //           false, true);
-    //     }
-    //   }
-    // }
-    //   }
-  } else {
-    Assert(component != none, ExcInternalError());
-  }
 }
 
 void VFPEquationSolver::setup_system() {
@@ -935,6 +543,9 @@ void VFPEquationSolver::assemble_dg_matrix() {
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
+  UpwindFlux<dim_ps> upwind_flux(pde_system, VFPSolverControl::momentum);
+  upwind_flux.set_time(time);
+
   BackgroundVelocityField<dim_ps> background_velocity_field;
   background_velocity_field.set_time(time);
   MagneticField<dim_ps> magnetic_field;
@@ -1203,8 +814,9 @@ void VFPEquationSolver::assemble_dg_matrix() {
         std::vector<FullMatrix<double>> negative_flux_matrices(
             q_points.size(), FullMatrix<double>(num_exp_coefficients));
 
-        compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
-                              negative_flux_matrices);
+        upwind_flux.compute_upwind_fluxes(
+            q_points, normals, positive_flux_matrices, negative_flux_matrices);
+
         for (unsigned int i = 0; i < n_facet_dofs; ++i) {
           const unsigned int component_i =
               fe_face_v.get_fe().system_to_component_index(i).first;
@@ -1284,8 +896,8 @@ void VFPEquationSolver::assemble_dg_matrix() {
     std::vector<FullMatrix<double>> negative_flux_matrices(
         q_points.size(), FullMatrix<double>(num_exp_coefficients));
 
-    compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
-                          negative_flux_matrices);
+    upwind_flux.compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
+                                      negative_flux_matrices);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices()) {
       // cell_dg_matrix_11
