@@ -319,30 +319,28 @@ void VFPEquation::PDESystem::create_advection_matrices() {
     }
   }
   // TODO: Remove the correction part and derive formulas as you did for Az
-  if (expansion_order > 0) {
-    for (int l = 0; l <= expansion_order + 1; ++l) {
-      // Special cases for A_y (necessary for every value of l)
-      // Above the diagonal
-      // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
-      if (l != expansion_order + 1)
-        advection_matrices[1](l * (l + 1), (l + 1) * (l + 2) - 1) =
-            std::sqrt(2) *
-            advection_matrices[1](l * (l + 1), (l + 2) * (l + 1) - 1);
-      // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
-      if (l != 0 && l != expansion_order + 1)
-        advection_matrices[1](l * (l + 1) - 1, (l + 1) * (l + 2)) =
-            std::sqrt(2) *
-            advection_matrices[1](l * (l + 1) - 1, (l + 2) * (l + 1));
-      // Below the diagonal
-      // l - 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
-      if (l > 1)
-        advection_matrices[1](l * (l + 1), l * (l - 1) - 1) =
-            std::sqrt(2) * advection_matrices[1](l * (l + 1), l * (l - 1) - 1);
-      // l - 1 = l_prime , m = 1, s = 0 and m_prime = 0, s_prime = 0
-      if (l != 0)
-        advection_matrices[1](l * (l + 1) - 1, l * (l - 1)) =
-            std::sqrt(2) * advection_matrices[1](l * (l + 1) - 1, l * (l - 1));
-    }
+  for (int l = 0; l <= expansion_order + 1; ++l) {
+    // Special cases for A_y (necessary for every value of l)
+    // Above the diagonal
+    // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
+    if (l != expansion_order + 1)
+      advection_matrices[1](l * (l + 1), (l + 1) * (l + 2) - 1) =
+          std::sqrt(2) *
+          advection_matrices[1](l * (l + 1), (l + 2) * (l + 1) - 1);
+    // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
+    if (l != 0 && l != expansion_order + 1)
+      advection_matrices[1](l * (l + 1) - 1, (l + 1) * (l + 2)) =
+          std::sqrt(2) *
+          advection_matrices[1](l * (l + 1) - 1, (l + 2) * (l + 1));
+    // Below the diagonal
+    // l - 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
+    if (l > 1)
+      advection_matrices[1](l * (l + 1), l * (l - 1) - 1) =
+          std::sqrt(2) * advection_matrices[1](l * (l + 1), l * (l - 1) - 1);
+    // l - 1 = l_prime , m = 1, s = 0 and m_prime = 0, s_prime = 0
+    if (l != 0)
+      advection_matrices[1](l * (l + 1) - 1, l * (l - 1)) =
+          std::sqrt(2) * advection_matrices[1](l * (l + 1) - 1, l * (l - 1));
   }
 }
 
@@ -405,27 +403,25 @@ void VFPEquation::PDESystem::create_generator_rotation_matrices() {
   // NOTE: These corrections were not included in the above loops, because some
   // of them were overwritten. This is an effect of the s loops being outside
   // the l and m loops.
-  if (expansion_order > 0) {
-    for (int l = 0; l <= expansion_order + 1; ++l) {
-      // Special cases for Omega
-      if (l > 0) {
-        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
-        generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1) =
-            std::sqrt(2) *
-            generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1);
-        // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
-        generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1)) =
-            std::sqrt(2) *
-            generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1));
-        // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
-        generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1) =
-            std::sqrt(2) *
-            generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1);
-        // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
-        generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1)) =
-            std::sqrt(2) *
-            generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1));
-      }
+  for (int l = 0; l <= expansion_order + 1; ++l) {
+    // Special cases for Omega
+    if (l > 0) {
+      // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
+      generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1) =
+          std::sqrt(2) *
+          generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1);
+      // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
+      generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1)) =
+          std::sqrt(2) *
+          generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1));
+      // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
+      generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1) =
+          std::sqrt(2) *
+          generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1);
+      // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
+      generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1)) =
+          std::sqrt(2) *
+          generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1));
     }
   }
 }
