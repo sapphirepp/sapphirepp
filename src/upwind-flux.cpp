@@ -77,21 +77,23 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
   // grid, the normal is the same for all quadrature points and it points either
   // in the x, y, z or p direction. Hence it can determined outside the loop
   // over the quadrature points
-
   unsigned int dim_cs = dim - momentum;
   unsigned int component = 1000;  // Produces an error if not overwritten
-
-  for (unsigned int i = 0; i < dim; ++i)
+  for (unsigned int i = 0; i < dim; ++i) {
     // NOTE: Such a simple comparison of doubles is only possible, because I
     // know that I am comparing 0. with 1. or something very close to one with
     // one. If this ever fails a more sophisticated comparison is needed, e.g.
     // https://floating-point-gui.de/errors/comparison/
     // std::abs is nessecary because of the boundary faces, i.e. <-| n_k = -1
     // for some faces.
-    if (std::abs(1. - std::abs(normals[0][i])) < 1e-5) component = i;
+    if (std::abs(1. - std::abs(normals[0][i])) < 1e-5) {
+      component = i;
+      break;
+    }
+  }
 
   // Fluxes in the spatial directions
-  if (component <= dim_cs) {
+  if (component < dim_cs) {
     // Background velocity field
     // Get the value of the velocity field at every quadrature point
     // TODO: Value list for a specific component would be faster.
@@ -115,9 +117,9 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
           component, normals[q_index][component],
           velocities[q_index][component], particle_velocities[q_index],
           positive_flux_matrices[q_index], negative_flux_matrices[q_index]);
-  }  // NOTE: If the momentum terms are included, then the last component of
-     // normals, points etc. is the momentum direction
-  else if (momentum && component == dim) {  // Fluxes in the p direction
+  } else {  // Fluxes in the p direction
+    // NOTE: If momentum terms are included, then the last component of normals,
+    // points etc. are the ones corresponding to the momentum direction
     std::vector<dealii::Vector<double>> material_derivative_vel(
         q_points.size(), dealii::Vector<double>(3));
     background_velocity_field.material_derivative_list(q_points,
