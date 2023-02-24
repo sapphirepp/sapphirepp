@@ -272,6 +272,7 @@ class VFPEquationSolver {
 
   // PDE System
   PDESystem pde_system;
+  UpwindFlux<dim_ps> upwind_flux;
 
   const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
       pde_system.get_advection_matrices();
@@ -343,6 +344,7 @@ VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
       pde_system(vfp_solver_control.expansion_order),
+      upwind_flux(pde_system, VFPSolverControl::momentum),
       timer(mpi_communicator, pcout, TimerOutput::never,
             TimerOutput::wall_times) {}
 
@@ -543,7 +545,6 @@ void VFPEquationSolver::assemble_dg_matrix() {
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
-  UpwindFlux<dim_ps> upwind_flux(pde_system, VFPSolverControl::momentum);
   upwind_flux.set_time(time);
 
   BackgroundVelocityField<dim_ps> background_velocity_field;
