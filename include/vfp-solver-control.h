@@ -18,18 +18,24 @@ class VFPSolverControl {
 
   // compile time settings
   static constexpr TermFlags terms =
-      TermFlags::spatial_advection | TermFlags::magnetic;
+      TermFlags::spatial_advection | TermFlags::momentum;
   // Deactivating the spatial advection term is equivalent to assuming a
   // homogeneous distribution function (i.e. a distribution function which does
-  // not depend on x,y z). In this program this equivalent to set dimension of
-  // the configuration to zero.
-  static constexpr int dim_configuration_space =
-      ((terms & TermFlags::spatial_advection) == TermFlags::none ? 0 : 2);
+  // not depend on x,y z). In this program this is equivalent to set dimension
+  // of the configuration to zero.
+  static constexpr int dim_configuration_space = 1;
+  static_assert(!((terms & TermFlags::spatial_advection) == TermFlags::none &&
+                  dim_configuration_space != 0),
+                "If the spatial advection term is deactivated, the "
+                "distribtuion function is assumed to be homogeneous, i.e. the "
+                "dimension of the configuratin space is equal to zero.");
   // Compute the total dimension and set momentum to true
   static constexpr bool momentum =
       ((terms & TermFlags::momentum) != TermFlags::none ? true : false);
   static constexpr int dim = dim_configuration_space + momentum;
-  static_assert(dim <= 3, "The total dimension must be smaller or equal three");
+  static_assert(dim <= 3,
+                "The total dimension must be greater than or equal to one and "
+                "smaller or equal to three.");
 
   // Runtime settings
   // These settings are read from a parameter file

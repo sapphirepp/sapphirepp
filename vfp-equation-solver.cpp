@@ -603,27 +603,28 @@ void VFPEquationSolver::assemble_dg_matrix() {
         const unsigned int component_j =
             fe_v.get_fe().system_to_component_index(j).first;
         for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
-          if (component_i == component_j) {
-            if constexpr ((flags & TermFlags::collision) != TermFlags::none) {
-              // 0.5 * scattering_frequency * l(l+1) * \phi_i * \phi_j
+          if constexpr ((flags & TermFlags::collision) != TermFlags::none) {
+            if (component_i == component_j) {
+              // scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_matrix(i, j) +=
                   scattering_frequency * collision_matrix[component_i] *
                   fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index) *
                   JxW[q_index];
             }
           }
-          if constexpr ((flags & TermFlags::spatial_advection) !=
-                        TermFlags::none) {
+          // NOTE: If spatial advection term is deactivated, then dim_cs must
+          // euqal zero, i.e. the distributin function is assumend to be
+          // homogeneous (it does not depend on x, y and z). And if dim_cs = 0,
+          // there for loop is not entered.
+          for (unsigned int coordinate = 0; coordinate < dim_cs; ++coordinate) {
             // -[partial_x \phi_i * (u_x \delta_ij + Ax_ij)
             //   + partial_y \phi_i * (u_y \delta_ij + Ay_ij)] * phi_j
             if (component_i == component_j) {
-              for (unsigned int coordinate = 0; coordinate < dim_cs;
-                   ++coordinate) {
-                copy_data.cell_matrix(i, j) -=
-                    fe_v.shape_grad(i, q_index)[coordinate] *
-                    velocities[q_index][coordinate] *
-                    fe_v.shape_value(j, q_index) * JxW[q_index];
-              }
+              copy_data.cell_matrix(i, j) -=
+                  fe_v.shape_grad(i, q_index)[coordinate] *
+                  velocities[q_index][coordinate] *
+                  fe_v.shape_value(j, q_index) * JxW[q_index];
+
               // - [\partial_x(u_x\delta_ij + Ax_ij) + \partial_y(u_y\delta_ij +
               // - Ay_ij) ] \phi_i \phi_j where \partial_x/y Ax/y_ij = 0
               copy_data.cell_matrix(i, j) -=
@@ -634,23 +635,20 @@ void VFPEquationSolver::assemble_dg_matrix() {
               // NOTE: Many zerso are added here, because the matrices Ax, Ay
               // and A_z are sparse. TODO: Performance check. If too bad, return
               // to the strategy, which was used in v0.6.5
-              for (unsigned int coordinate = 0; coordinate < dim_cs;
-                   ++coordinate) {
-                if ((flags & TermFlags::momentum) != TermFlags::none) {
-                  copy_data.cell_matrix(i, j) -=
-                      fe_v.shape_grad(i, q_index)[coordinate] *
-                      particle_velocities[q_index] *
-                      advection_matrices[coordinate](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
+              if ((flags & TermFlags::momentum) != TermFlags::none) {
+                copy_data.cell_matrix(i, j) -=
+                    fe_v.shape_grad(i, q_index)[coordinate] *
+                    particle_velocities[q_index] *
+                    advection_matrices[coordinate](component_i, component_j) *
+                    fe_v.shape_value(j, q_index) * JxW[q_index];
 
-                } else {
-                  // fixed energy case (i.e. transport only)
-                  copy_data.cell_matrix(i, j) -=
-                      fe_v.shape_grad(i, q_index)[coordinate] *
-                      particle_properties.velocity *
-                      advection_matrices[coordinate](component_i, component_j) *
-                      fe_v.shape_value(j, q_index) * JxW[q_index];
-                }
+              } else {
+                // fixed energy case (i.e. transport only)
+                copy_data.cell_matrix(i, j) -=
+                    fe_v.shape_grad(i, q_index)[coordinate] *
+                    particle_properties.velocity *
+                    advection_matrices[coordinate](component_i, component_j) *
+                    fe_v.shape_value(j, q_index) * JxW[q_index];
               }
             }
           }
@@ -908,13 +906,10 @@ void VFPEquationSolver::assemble_dg_matrix() {
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          if constexpr ((flags & TermFlags::spatial_advection) !=
-                        TermFlags::none) {
-            copy_data_face.cell_dg_matrix_11(i, j) +=
-                fe_v_face.shape_value(i, q_index) *
-                positive_flux_matrices[q_index](component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
+          copy_data_face.cell_dg_matrix_11(i, j) +=
+              fe_v_face.shape_value(i, q_index) *
+              positive_flux_matrices[q_index](component_i, component_j) *
+              fe_v_face.shape_value(j, q_index) * JxW[q_index];
         }
       }
       // cell_dg_matrix_12
@@ -924,13 +919,10 @@ void VFPEquationSolver::assemble_dg_matrix() {
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          if constexpr ((flags & TermFlags::spatial_advection) !=
-                        TermFlags::none) {
-            copy_data_face.cell_dg_matrix_12(i, j) -=
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                positive_flux_matrices[q_index](component_i, component_j) *
-                fe_v_face.shape_value(j, q_index) * JxW[q_index];
-          }
+          copy_data_face.cell_dg_matrix_12(i, j) -=
+              fe_v_face_neighbor.shape_value(i, q_index) *
+              positive_flux_matrices[q_index](component_i, component_j) *
+              fe_v_face.shape_value(j, q_index) * JxW[q_index];
         }
       }
       // cell_dg_matrix_21
@@ -940,13 +932,10 @@ void VFPEquationSolver::assemble_dg_matrix() {
         for (unsigned int j : fe_v_face.dof_indices()) {
           unsigned int component_j =
               fe_v_face.get_fe().system_to_component_index(j).first;
-          if constexpr ((flags & TermFlags::spatial_advection) !=
-                        TermFlags::none) {
-            copy_data_face.cell_dg_matrix_21(i, j) +=
-                fe_v_face.shape_value(i, q_index) *
-                negative_flux_matrices[q_index](component_i, component_j) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
+          copy_data_face.cell_dg_matrix_21(i, j) +=
+              fe_v_face.shape_value(i, q_index) *
+              negative_flux_matrices[q_index](component_i, component_j) *
+              fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
         }
       }
       // cell_dg_matrix_22
@@ -956,13 +945,10 @@ void VFPEquationSolver::assemble_dg_matrix() {
         for (unsigned int j : fe_v_face_neighbor.dof_indices()) {
           unsigned int component_j =
               fe_v_face_neighbor.get_fe().system_to_component_index(j).first;
-          if constexpr ((flags & TermFlags::spatial_advection) !=
-                        TermFlags::none) {
-            copy_data_face.cell_dg_matrix_22(i, j) -=
-                fe_v_face_neighbor.shape_value(i, q_index) *
-                negative_flux_matrices[q_index](component_i, component_j) *
-                fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-          }
+          copy_data_face.cell_dg_matrix_22(i, j) -=
+              fe_v_face_neighbor.shape_value(i, q_index) *
+              negative_flux_matrices[q_index](component_i, component_j) *
+              fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
         }
       }
     }

@@ -93,6 +93,10 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
   }
 
   // Fluxes in the spatial directions
+  //
+  // NOTE: If the spatial advection term is deactivated then then dim_cs is
+  // equal to zero and first branch of the if the statement is never entered,
+  // i.e. no fluxes in spatial directions are computed.
   if (component < dim_cs) {
     // Background velocity field
     // Get the value of the velocity field at every quadrature point
