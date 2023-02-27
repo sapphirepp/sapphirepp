@@ -11,10 +11,10 @@
 namespace VFPEquation {
 class VFPSolverControl {
  public:
-  // NOTE: Member variable needs be constexpr to be used as template arguments.
-  // But it can only be constexpr if it is static ,i.e. if it is the same for
-  // all class instances. If it was not static, it would be determined when
-  // constructing an instance, which happens at runtime.
+  // NOTE: A member variable needs be constexpr to be used as template
+  // arguments. But it can only be constexpr if it is static ,i.e. if it is the
+  // same for all class instances. If it was not static, it would be determined
+  // when constructing an instance, which happens at runtime.
 
   // compile time settings
   static constexpr TermFlags terms =
@@ -24,11 +24,16 @@ class VFPSolverControl {
   // not depend on x,y z). In this program this is equivalent to set dimension
   // of the configuration to zero.
   static constexpr int dim_configuration_space = 1;
-  static_assert(!((terms & TermFlags::spatial_advection) == TermFlags::none &&
-                  dim_configuration_space != 0),
+
+  // The following static_assert uses an exlusive or (xor), represented in C/C++
+  // as "!=" for expressions of boolean type: Either the spatial advection term
+  // is included in the equation or the dimension of the configuration space is
+  // set to zero.
+  static_assert((((terms & TermFlags::spatial_advection) != TermFlags::none) !=
+                 (dim_configuration_space == 0)),
                 "If the spatial advection term is deactivated, the "
                 "distribtuion function is assumed to be homogeneous, i.e. the "
-                "dimension of the configuratin space is equal to zero.");
+                "dimension of the configuratin space needs to be set to zero.");
   // Compute the total dimension and set momentum to true
   static constexpr bool momentum =
       ((terms & TermFlags::momentum) != TermFlags::none ? true : false);
