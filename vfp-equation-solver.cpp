@@ -382,7 +382,7 @@ void VFPEquationSolver::run() {
 
   pcout << "The time stepping loop is entered: \n";
   for (; time <= final_time; time += time_step, ++time_step_number) {
-    pcout << "	Time step " << time_step_number << " at t = " << time << "\n";
+    pcout << "Time step " << time_step_number << " at t = " << time << "\n";
     // Time stepping method
     // theta_method(0.5);
     // explicit_runge_kutta();
@@ -991,7 +991,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
 
   ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData copy_data;
-  pcout << "Begin the assembly of the DG matrix. \n";
+  pcout << "	Begin the assembly of the DG matrix. \n";
   const auto filtered_iterator_range =
       dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
   MeshWorker::mesh_loop(
@@ -1001,14 +1001,14 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
           MeshWorker::assemble_own_interior_faces_once,
       boundary_worker, face_worker);
   dg_matrix.compress(VectorOperation::add);
-  pcout << "The DG matrix was assembled. \n";
+  pcout << "	The DG matrix was assembled. \n";
 }
 
 template <int dim>
 void VFPEquationSolver::project(
     const Function<dim> &f, PETScWrappers::MPI::Vector &projected_function) {
   TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
-
+  pcout << "Project a function onto the finite element space \n";
   // Create right hand side
   FEValues<dim_ps> fe_v(
       mapping, fe, quadrature,
