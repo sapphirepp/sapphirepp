@@ -234,14 +234,15 @@ class VFPEquationSolver {
   void setup_system();
   // Matrix assembly
   void assemble_mass_matrix();
-  void assemble_dg_matrix();
+  void assemble_dg_matrix(const double time);
   // Time stepping methods
   void theta_method_solve_system();
   void theta_method(double theta);
   void explicit_runge_kutta();
-  void low_storage_explicit_runge_kutta();
+  void low_storage_explicit_runge_kutta(const double time,
+                                        const double time_step);
   // Output
-  void output_results() const;
+  void output_results(const unsigned int time_step_number) const;
 
   // auxiliary functions
   template <int dim>
@@ -319,12 +320,6 @@ class VFPEquationSolver {
   const unsigned int num_exp_coefficients =
       static_cast<unsigned int>((expansion_order + 1) * (expansion_order + 1));
 
-  // parameters of the time stepping method
-  double time_step = vfp_solver_control.time_step;
-  double time = 0.;
-  double final_time = vfp_solver_control.final_time;
-  unsigned int time_step_number = 0;
-
   // Number of refinements
   unsigned int num_refinements = vfp_solver_control.num_refinements;
   // For the moment, I will use a quadratic domain
@@ -361,13 +356,21 @@ void VFPEquationSolver::run() {
   make_grid();
   setup_system();
   assemble_mass_matrix();
-  assemble_dg_matrix();
+  // assemble_dg_matrix();
 
+  // Project the initial values
   InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
   project(iv, locally_relevant_previous_solution);
 
+  // parameters of the time stepping method
+  double time_step = vfp_solver_control.time_step;
+  double time = 0.;
+  double final_time = vfp_solver_control.final_time;
+  unsigned int time_step_number = 0;
+
+  // Output time step zero
   locally_relevant_current_solution = locally_relevant_previous_solution;
-  output_results();
+  output_results(time_step_number);
 
   time += time_step;
   ++time_step_number;
@@ -378,17 +381,13 @@ void VFPEquationSolver::run() {
     // Time stepping method
     // theta_method(0.5);
     // explicit_runge_kutta();
-    low_storage_explicit_runge_kutta();
+    low_storage_explicit_runge_kutta(time, time_step);
     // NOTE: I cannot create TimerOutput::Scope inside output_results(),
     // because it is declared const.
     {
       TimerOutput::Scope timer_section(timer, "Output");
-      output_results();
+      output_results(time_step_number);
     }
-    // If the B-field and the velocity field are time dependent
-    // Update the DG matrix
-    dg_matrix = 0;
-    assemble_dg_matrix();
     // Update solution
     locally_relevant_previous_solution = locally_relevant_current_solution;
   }
@@ -545,7 +544,7 @@ void VFPEquationSolver::assemble_mass_matrix() {
   pcout << "The mass matrix was assembled. \n";
 }
 
-void VFPEquationSolver::assemble_dg_matrix() {
+void VFPEquationSolver::assemble_dg_matrix(const double time) {
   TimerOutput::Scope timer_section(timer, "DG matrix");
   /*
     What kind of loops are there ?
@@ -1161,7 +1160,8 @@ void VFPEquationSolver::project(
 //   // element of the c vector is 1. (see low_storage_erk())
 // }
 
-void VFPEquationSolver::low_storage_explicit_runge_kutta() {
+void VFPEquationSolver::low_storage_explicit_runge_kutta(
+    const double time, const double time_step) {
   TimerOutput::Scope timer_section(timer, "LSERK");
 
   // see Hesthaven p.64
@@ -1174,9 +1174,9 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta() {
        2277821191437. / 14882151754819});
   // NOTE: I only need c if the velocity field and the magnetic field are time
   // dependent
-  // Vector<double> c(
-  //     {0., 1432997174477. / 9575080441755, 2526269341429. / 6820363962896,
-  //      2006345519317. / 3224310063776, 2802321613138. / 2924317926251});
+  Vector<double> c(
+      {0., 1432997174477. / 9575080441755, 2526269341429. / 6820363962896,
+       2006345519317. / 3224310063776, 2802321613138. / 2924317926251});
 
   // The mass matrix needs to be "inverted" in every stage
 
@@ -1200,7 +1200,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta() {
   PETScWrappers::MPI::Vector k(locally_owned_dofs, mpi_communicator);
   PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
   for (unsigned int s = 0; s < 5; ++s) {
-    // assemble_system(time + c[s]*time_step);
+    assemble_dg_matrix(time + c[s] * time_step);
     dg_matrix.vmult(system_rhs, locally_owned_current_solution);
     cg.solve(mass_matrix, temp, system_rhs, preconditioner);
     pcout << "	Stage s: " << s << "	Solver converged in "
@@ -1209,6 +1209,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta() {
 
     k.sadd(a[s], -time_step, temp);
     locally_owned_current_solution.add(b[s], k);
+    dg_matrix = 0;
   }
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);
@@ -1221,7 +1222,8 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta() {
   // locally_relevant_current_solution.print(std::cout);
 }
 
-void VFPEquationSolver::output_results() const {
+void VFPEquationSolver::output_results(
+    const unsigned int time_step_number) const {
   DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
