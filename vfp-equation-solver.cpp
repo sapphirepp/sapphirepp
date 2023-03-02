@@ -232,12 +232,16 @@ class VFPEquationSolver {
   void setup_system();
   void assemble_mass_matrix();
   void assemble_dg_matrix();
-  void project_initial_condition();
   void theta_method_solve_system();
   void theta_method(double theta);
   void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
   void output_results() const;
+
+  // auxiliary functions
+  template <int dim>
+  void project(const Function<dim> &f,
+               PETScWrappers::MPI::Vector &projected_function);
 
   MPI_Comm mpi_communicator;
   const unsigned int n_mpi_procs;
@@ -353,7 +357,9 @@ void VFPEquationSolver::run() {
   setup_system();
   assemble_mass_matrix();
   assemble_dg_matrix();
-  project_initial_condition();
+
+  InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
+  project(iv, locally_relevant_previous_solution);
 
   locally_relevant_current_solution = locally_relevant_previous_solution;
   output_results();
@@ -989,8 +995,10 @@ void VFPEquationSolver::assemble_dg_matrix() {
   pcout << "The DG matrix was assembled. \n";
 }
 
-void VFPEquationSolver::project_initial_condition() {
-  TimerOutput::Scope timer_section(timer, "Intial condition");
+template <int dim>
+void VFPEquationSolver::project(
+    const Function<dim> &f, PETScWrappers::MPI::Vector &projected_function) {
+  TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
 
   // Create right hand side
   FEValues<dim_ps> fe_v(
@@ -1011,19 +1019,16 @@ void VFPEquationSolver::project_initial_condition() {
       const std::vector<double> &JxW = fe_v.get_JxW_values();
 
       // Initial values
-      InitialValueFunction<dim_cs,
-                           (flags & TermFlags::momentum) != TermFlags::none>
-          initial_value_function(expansion_order);
-      std::vector<Vector<double>> initial_values(
+      std::vector<Vector<double>> function_values(
           q_points.size(), Vector<double>(num_exp_coefficients));
-      initial_value_function.vector_value_list(q_points, initial_values);
+      f.vector_value_list(q_points, function_values);
 
       for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
         for (unsigned int i : fe_v.dof_indices()) {
           const unsigned int component_i =
               fe.system_to_component_index(i).first;
           cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                         initial_values[q_index][component_i] * JxW[q_index];
+                         function_values[q_index][component_i] * JxW[q_index];
         }
       }
       cell->get_dof_indices(local_dof_indices);
@@ -1054,7 +1059,7 @@ void VFPEquationSolver::project_initial_condition() {
   // At the moment I am assuming, that I do not have constraints. Hence, I do
   // not need the following line.
   // constraints.distribute(completely_distributed_solution);
-  locally_relevant_previous_solution = completely_distributed_solution;
+  projected_function = completely_distributed_solution;
 
   // Reset system RHS
   system_rhs = 0;
