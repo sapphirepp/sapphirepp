@@ -226,6 +226,8 @@ class VFPEquationSolver {
   static constexpr int dim_ps = VFPSolverControl::dim;
   static constexpr int dim_cs = VFPSolverControl::dim_configuration_space;
   static constexpr TermFlags flags = VFPSolverControl::terms;
+  static constexpr bool time_dependent_fields =
+      VFPSolverControl::time_dependent_fields;
   // ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
 
   // Triangulation
@@ -356,7 +358,6 @@ void VFPEquationSolver::run() {
   make_grid();
   setup_system();
   assemble_mass_matrix();
-  // assemble_dg_matrix();
 
   // Project the initial values
   InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
@@ -371,6 +372,10 @@ void VFPEquationSolver::run() {
   // Output time step zero
   locally_relevant_current_solution = locally_relevant_previous_solution;
   output_results(time_step_number);
+
+  // if the fields are time independent the dg matrix is not assembled inside
+  // the time stepping methods. But it needs to be assembled once.
+  if constexpr (!time_dependent_fields) assemble_dg_matrix(0.);
 
   time += time_step;
   ++time_step_number;
@@ -1200,8 +1205,15 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
   PETScWrappers::MPI::Vector k(locally_owned_dofs, mpi_communicator);
   PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
   for (unsigned int s = 0; s < 5; ++s) {
-    assemble_dg_matrix(time + c[s] * time_step);
+    // only assemble the dg_matrix in every stage if the fields are time
+    // dependent
+    if constexpr (time_dependent_fields)
+      assemble_dg_matrix(time + c[s] * time_step);
+
     dg_matrix.vmult(system_rhs, locally_owned_current_solution);
+
+    if constexpr (time_dependent_fields) dg_matrix = 0;
+
     cg.solve(mass_matrix, temp, system_rhs, preconditioner);
     pcout << "	Stage s: " << s << "	Solver converged in "
           << solver_control.last_step() << " iterations."
@@ -1209,7 +1221,6 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
 
     k.sadd(a[s], -time_step, temp);
     locally_owned_current_solution.add(b[s], k);
-    dg_matrix = 0;
   }
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);

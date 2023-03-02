@@ -25,10 +25,17 @@ class VFPSolverControl {
   // of the configuration to zero.
   static constexpr int dim_configuration_space = 1;
 
-  // The following static_assert uses an exlusive or (xor), represented in C/C++
-  // as "!=" for expressions of boolean type: Either the spatial advection term
-  // is included in the equation or the dimension of the configuration space is
-  // set to zero.
+  // If the background velocity field and the the magnetic field do not depend
+  // on time, the time stepping methods can be accelerated a lot: In this case
+  // it is not necessary to reassamble the spatial discretisation matrix in
+  // every stage of the Runge-Kutta method. Actually it only has to be assembled
+  // once at time zero.
+  static constexpr bool time_dependent_fields = false;
+
+  // The following static_assert uses an exlusive or (xor),
+  // represented in C/C++ as "!=" for expressions of boolean type: Either the
+  // spatial advection term is included in the equation or the dimension of the
+  // configuration space is set to zero.
   static_assert((((terms & TermFlags::spatial_advection) != TermFlags::none) !=
                  (dim_configuration_space == 0)),
                 "If the spatial advection term is deactivated, the "
