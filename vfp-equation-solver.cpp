@@ -315,6 +315,7 @@ class VFPEquationSolver {
   PETScWrappers::MPI::SparseMatrix system_matrix;
 
   PETScWrappers::MPI::Vector system_rhs;
+  PETScWrappers::MPI::Vector locally_owned_solution;
   PETScWrappers::MPI::Vector locally_relevant_previous_solution;
   PETScWrappers::MPI::Vector locally_relevant_current_solution;
 
@@ -469,6 +470,7 @@ void VFPEquationSolver::setup_system() {
   // constraints.close();
 
   // Vectors
+  locally_owned_solution.reinit(locally_owned_dofs, mpi_communicator);
   locally_relevant_current_solution.reinit(
       locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   locally_relevant_previous_solution.reinit(
@@ -1045,25 +1047,20 @@ void VFPEquationSolver::project(
 
   // Solve the system
 
-  // NOTE: It is not possible to directly write into the
-  // locally_relevant_previous_solution, because it is a ghosted vector. Hence,
-  // the vector completely_distributed_solution. It is copied in the end.
-  PETScWrappers::MPI::Vector completely_distributed_solution(locally_owned_dofs,
-                                                             mpi_communicator);
-
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
-
+  // NOTE: It is not possible to directly write into the
+  // locally_relevant_solution, because it is a ghosted vector. Hence,
+  // the we use the vector locally_owned_solution. It is copied in the end.
   SolverControl solver_control(1000, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
-  cg.solve(mass_matrix, completely_distributed_solution, system_rhs,
-           preconditioner);
+  cg.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
   pcout << "	Solved in " << solver_control.last_step() << " iterations."
         << std::endl;
   // At the moment I am assuming, that I do not have constraints. Hence, I do
   // not need the following line.
   // constraints.distribute(completely_distributed_solution);
-  projected_function = completely_distributed_solution;
+  projected_function = locally_owned_solution;
 
   // Reset system RHS
   system_rhs = 0;
@@ -1193,9 +1190,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
   // completely_distributed_vector (cf. project_initial_condition), i.e. a
   // vector does not contain ghost cells. We extract the locally owned part with
   // the equal sign operator.
-  PETScWrappers::MPI::Vector locally_owned_current_solution(locally_owned_dofs,
-                                                            mpi_communicator);
-  locally_owned_current_solution = locally_relevant_current_solution;
+  locally_owned_solution = locally_relevant_current_solution;
 
   PETScWrappers::MPI::Vector k(locally_owned_dofs, mpi_communicator);
   PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
@@ -1205,7 +1200,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
     if constexpr (time_dependent_fields)
       assemble_dg_matrix(time + c[s] * time_step);
 
-    dg_matrix.vmult(system_rhs, locally_owned_current_solution);
+    dg_matrix.vmult(system_rhs, locally_owned_solution);
 
     if constexpr (time_dependent_fields) dg_matrix = 0;
 
@@ -1215,7 +1210,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
           << "\n";
 
     k.sadd(a[s], -time_step, temp);
-    locally_owned_current_solution.add(b[s], k);
+    locally_owned_solution.add(b[s], k);
   }
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);
@@ -1223,7 +1218,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
   // std::cout << "Locally owned current solution: \n";
   // locally_owned_current_solution.print(std::cout);
 
-  locally_relevant_current_solution = locally_owned_current_solution;
+  locally_relevant_current_solution = locally_owned_solution;
   // std::cout << "Locally relevant current solution: \n";
   // locally_relevant_current_solution.print(std::cout);
 }
