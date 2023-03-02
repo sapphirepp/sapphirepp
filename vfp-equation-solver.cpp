@@ -322,13 +322,6 @@ class VFPEquationSolver {
   const unsigned int num_exp_coefficients =
       static_cast<unsigned int>((expansion_order + 1) * (expansion_order + 1));
 
-  // Number of refinements
-  unsigned int num_refinements = vfp_solver_control.num_refinements;
-  // For the moment, I will use a quadratic domain
-  // Rectangular domain
-  // Point<dim> left_bottom;
-  // Point<dim> right_top;
-
   // particle
   ParticleProperties particle_properties;
 
@@ -401,6 +394,8 @@ void VFPEquationSolver::run() {
 
 void VFPEquationSolver::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
+  // Number of refinements
+  unsigned int num_refinements = vfp_solver_control.num_refinements;
   if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
     if constexpr (dim_cs == 1) {
       unsigned int n_cells = 1 << num_refinements;
