@@ -228,14 +228,19 @@ class VFPEquationSolver {
   static constexpr TermFlags flags = VFPSolverControl::terms;
   // ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
 
+  // Triangulation
   void make_grid();
+  // Setup data structures for the linear system
   void setup_system();
+  // Matrix assembly
   void assemble_mass_matrix();
   void assemble_dg_matrix();
+  // Time stepping methods
   void theta_method_solve_system();
   void theta_method(double theta);
   void explicit_runge_kutta();
   void low_storage_explicit_runge_kutta();
+  // Output
   void output_results() const;
 
   // auxiliary functions
