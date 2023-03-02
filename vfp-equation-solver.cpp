@@ -354,7 +354,7 @@ void VFPEquationSolver::run() {
 
   // Project the initial values
   InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
-  project(iv, locally_relevant_previous_solution);
+  project(iv, locally_relevant_current_solution);
 
   // parameters of the time stepping method
   double time_step = vfp_solver_control.time_step;
@@ -363,7 +363,6 @@ void VFPEquationSolver::run() {
   unsigned int time_step_number = 0;
 
   // Output time step zero
-  locally_relevant_current_solution = locally_relevant_previous_solution;
   output_results(time_step_number);
 
   // if the fields are time independent the dg matrix is not assembled inside
@@ -1041,22 +1040,23 @@ void VFPEquationSolver::project(
   system_rhs.compress(VectorOperation::add);
 
   // Solve the system
-
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
-  // NOTE: It is not possible to directly write into the
-  // locally_relevant_solution, because it is a ghosted vector. Hence,
-  // the we use the vector locally_owned_solution. It is copied in the end.
+  // NOTE: It is not possible to directly write into a ghosted vector. And the
+  // the second argument of project is meant to be a ghosted vector. Hence, we
+  // create an unghosted vector and copy it later on.
+  PETScWrappers::MPI::Vector temporary_non_ghosted_vector(locally_owned_dofs,
+                                                          mpi_communicator);
   SolverControl solver_control(1000, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
-  cg.solve(mass_matrix, locally_owned_previous_solution, system_rhs,
+  cg.solve(mass_matrix, temporary_non_ghosted_vector, system_rhs,
            preconditioner);
   pcout << "	Solved in " << solver_control.last_step() << " iterations."
         << std::endl;
   // At the moment I am assuming, that I do not have constraints. Hence, I do
   // not need the following line.
   // constraints.distribute(completely_distributed_solution);
-  projected_function = locally_owned_previous_solution;
+  projected_function = temporary_non_ghosted_vector;
 
   // Reset system RHS
   system_rhs = 0;
