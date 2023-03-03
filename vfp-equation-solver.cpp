@@ -1132,7 +1132,7 @@ void VFPEquationSolver::explicit_runge_kutta(const double time,
                                              const double time_step) {
   TimerOutput::Scope timer_section(timer, "ERK4");
   // ERK 4
-  // \df(t)/dt = - mass_matrix_inv * dg_matrix(t) * f(t) + s(t)
+  // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // Butcher's array
   Vector<double> a({0.5, 0.5, 1.});
   Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
@@ -1222,7 +1222,7 @@ void VFPEquationSolver::explicit_runge_kutta(const double time,
 void VFPEquationSolver::low_storage_explicit_runge_kutta(
     const double time, const double time_step) {
   TimerOutput::Scope timer_section(timer, "LSERK");
-  // \df(t)/dt = - mass_matrix_inv * dg_matrix(t) * f(t) + s(t)
+  // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
   Vector<double> a(
       {0., -567301805773. / 1357537059087, -2404267990393. / 2016746695238,
