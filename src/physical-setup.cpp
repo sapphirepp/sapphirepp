@@ -14,13 +14,17 @@ void VFPEquation::Source<dim>::vector_value(
   // EXAMPLES:
   // Transport only
   // 1D Gaussian (isotropic)
-  values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+  // values[0] = 0.01 * std::exp(-(std::pow(p[0], 2)));
   // 2D Gaussian (isotropic)
-  values[0] = 1. * std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
+  // values[0] = .01 * std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
   // 2D pulsating Gaussian (isotropic, time dependent)
-  values[0] = 1. * std::sin(0.5 * this->get_time()) *
+  values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
               std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
 }
+// explicit instantiation
+template class VFPEquation::Source<1>;
+template class VFPEquation::Source<2>;
+template class VFPEquation::Source<3>;
 
 // Magnetic field implementation
 template <int dim>
@@ -51,16 +55,16 @@ void VFPEquation::BackgroundVelocityField<dim>::vector_value(
          dealii::ExcDimensionMismatch(velocity.size(), 3));
   // EXAMPLES:
   // constant velocity field
-  // static_cast<void>(point);  // suppress compiler warning
-  // velocity[0] = .4;          // u_x
-  // velocity[1] = .2;          // u_y
-  // velocity[2] = .0;          // u_z
+  static_cast<void>(point);  // suppress compiler warning
+  velocity[0] = .0;          // u_x
+  velocity[1] = .0;          // u_y
+  velocity[2] = .0;          // u_z
 
   // space dependent velocity
   // u_x = 1/5 * x
-  velocity[0] = 1. / 5 * point[0];
-  velocity[1] = .0;
-  velocity[2] = .0;
+  // velocity[0] = 1. / 5 * point[0];
+  // velocity[1] = .0;
+  // velocity[2] = .0;
 
   // u_x = 0.1 * cos(pi/2 * x)
   // velocity[0] = 0.1 * std::cos(pi / 2 * point[0]);
@@ -80,8 +84,7 @@ void VFPEquation::BackgroundVelocityField<dim>::vector_value(
 
   // time- and space dependent velocity
   // u_x = -1/10 * sin(t) * cos(pi/2 * x)
-  // velocity[0] =
-  //     -0.1 * std::sin(this->get_time()) * std::cos(pi / 2 * point[0]);
+  // velocity[0] = -0.1 * std::sin(this->get_time()) * std::cos(pi / 2 * point[0]);
   // velocity[1] = .0;
   // velocity[2] = .0;
 
@@ -105,11 +108,11 @@ void VFPEquation::BackgroundVelocityField<dim>::divergence_list(
          dealii::ExcDimensionMismatch(divergence.size(), points.size()));
   // EXAMPLES:
   // constant velocity
-  // std::fill(divergence.begin(), divergence.end(), 0.);
+  std::fill(divergence.begin(), divergence.end(), 0.);
 
   // space-dependent velocity field
   // u_x = 1/5 * x => div u = 1/5
-  std::fill(divergence.begin(), divergence.end(), 1. / 5);
+  // std::fill(divergence.begin(), divergence.end(), 1. / 5);
 
   // u_x = 0.1 * cos(pi/2 * x) => div u = -0.1 * pi/2 * sin(pi/2 * x)
   // for (unsigned int i = 0; i < points.size(); ++i)
@@ -127,7 +130,7 @@ void VFPEquation::BackgroundVelocityField<dim>::divergence_list(
   // div u = 0.1 * pi/2 * sin(t) * sin(pi/2 * x)
   // for (unsigned int i = 0; i < points.size(); ++i)
   //   divergence[i] = 0.1 * pi / 2 * std::sin(this->get_time()) *
-  //               std::sin(pi / 2 * points[i][0]);
+  //                   std::sin(pi / 2 * points[i][0]);
 
   // u_x = 1/10 * x * (1 - e^(-t))  => div u = 0.1 (1  - e^(-t))
   // std::fill(divergence.begin(), divergence.end(),
@@ -147,15 +150,15 @@ void VFPEquation::BackgroundVelocityField<dim>::material_derivative_list(
   for (unsigned int i = 0; i < points.size(); ++i) {
     // EXAMPLES:
     // constant velocity
-    // material_derivatives[i][0] = 0.;  // D/Dt u_x
-    // material_derivatives[i][1] = 0.;  // D/Dt u_y
-    // material_derivatives[i][2] = 0.;  // D/Dt u_z
+    material_derivatives[i][0] = 0.;  // D/Dt u_x
+    material_derivatives[i][1] = 0.;  // D/Dt u_y
+    material_derivatives[i][2] = 0.;  // D/Dt u_z
 
     // space dependent velocity field
     // u_x = 1/5 * x => D/Dt u_x = 1/25 * x
-    material_derivatives[i][0] = 1. / 25 * points[i][0];
-    material_derivatives[i][1] = 0.;
-    material_derivatives[i][2] = 0.;
+    // material_derivatives[i][0] = 1. / 25 * points[i][0];
+    // material_derivatives[i][1] = 0.;
+    // material_derivatives[i][2] = 0.;
 
     // u_x = 0.1 * cos(pi/2 * x)
     // => D/Dt u_x = 1/100 * pi/2 * cos(pi/2*x) * sin(pi/2 * x)
@@ -211,31 +214,31 @@ void VFPEquation::BackgroundVelocityField<dim>::jacobian_list(
   for (unsigned int i = 0; i < points.size(); ++i) {
     // EXAMPLES:
     // constant velocity field
-    // jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
-    // jacobians[i][0][1] = 0.;  // \partial u_x / \partial y
-    // jacobians[i][0][2] = 0.;  // \partial u_x / \partial z
+    jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
+    jacobians[i][0][1] = 0.;  // \partial u_x / \partial y
+    jacobians[i][0][2] = 0.;  // \partial u_x / \partial z
 
-    // jacobians[i][1][0] = 0.;  // \partial u_y / \partial x
-    // jacobians[i][1][1] = 0.;  // \partial u_y / \partial y
-    // jacobians[i][1][2] = 0.;  // \partial u_y / \partial z
+    jacobians[i][1][0] = 0.;  // \partial u_y / \partial x
+    jacobians[i][1][1] = 0.;  // \partial u_y / \partial y
+    jacobians[i][1][2] = 0.;  // \partial u_y / \partial z
 
-    // jacobians[i][2][0] = 0.;  // \partial u_z / \partial x
-    // jacobians[i][2][1] = 0.;  // \partial u_z / \partial y
-    // jacobians[i][2][2] = 0.;  // \partial u_z / \partial z
+    jacobians[i][2][0] = 0.;  // \partial u_z / \partial x
+    jacobians[i][2][1] = 0.;  // \partial u_z / \partial y
+    jacobians[i][2][2] = 0.;  // \partial u_z / \partial z
 
     // space dependent velocity field
     // u_x = 1/5 * x
-    jacobians[i][0][0] = 1. / 5;
-    jacobians[i][0][1] = 0.;
-    jacobians[i][0][2] = 0.;
+    // jacobians[i][0][0] = 1. / 5;
+    // jacobians[i][0][1] = 0.;
+    // jacobians[i][0][2] = 0.;
 
-    jacobians[i][1][0] = 0.;
-    jacobians[i][1][1] = 0.;
-    jacobians[i][1][2] = 0.;
+    // jacobians[i][1][0] = 0.;
+    // jacobians[i][1][1] = 0.;
+    // jacobians[i][1][2] = 0.;
 
-    jacobians[i][2][0] = 0.;
-    jacobians[i][2][1] = 0.;
-    jacobians[i][2][2] = 0.;
+    // jacobians[i][2][0] = 0.;
+    // jacobians[i][2][1] = 0.;
+    // jacobians[i][2][2] = 0.;
 
     // u_x = 0.1 * cos(pi/2 * x)
     // jacobians[i][0][0] = 0.1 * pi/2 * std::sin(pi/2 * points[i][0]);

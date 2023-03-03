@@ -91,10 +91,10 @@ class InitialValueFunction : public Function<dim_cs + momentum> {
 
     if constexpr (dim_cs == 2) {
       // Gaussian
-      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+      // values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
 
       // constant
-      // values[0] = 1.;
+      values[0] = 0.;
 
       // constant disc
       // if (p.norm() <= 1.) values[0] = 1.;
@@ -228,6 +228,9 @@ class VFPEquationSolver {
   static constexpr TermFlags flags = VFPSolverControl::terms;
   static constexpr bool time_dependent_fields =
       VFPSolverControl::time_dependent_fields;
+  static constexpr bool time_dependent_source =
+      VFPSolverControl::time_dependent_source;
+
   // ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
 
   // Triangulation

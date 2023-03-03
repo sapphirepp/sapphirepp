@@ -18,23 +18,23 @@ class VFPSolverControl {
 
   // compile time settings
   static constexpr TermFlags terms =
-      TermFlags::spatial_advection | TermFlags::momentum;
+      TermFlags::spatial_advection | TermFlags::source;
   // Deactivating the spatial advection term is equivalent to assuming a
   // homogeneous distribution function (i.e. a distribution function which does
   // not depend on x,y z). In this program this is equivalent to set dimension
   // of the configuration to zero.
-  static constexpr int dim_configuration_space = 1;
+  static constexpr int dim_configuration_space = 2;
 
   // If the background velocity field and the the magnetic field do not depend
   // on time, the time stepping methods can be accelerated a lot: In this case
   // it is not necessary to reassamble the spatial discretisation matrix in
   // every stage of the Runge-Kutta method. Actually it only has to be assembled
   // once at time zero.
-  static constexpr bool time_dependent_fields = true;
+  static constexpr bool time_dependent_fields = false;
 
   // If the source term depends on time, it needs to be projected onto the FEM
   // space in the time stepping methods.
-  static constexpr bool time_dependent_source = false;
+  static constexpr bool time_dependent_source = true;
 
   // The following static_assert uses an exlusive or (xor),
   // represented in C/C++ as "!=" for expressions of boolean type: Either the
