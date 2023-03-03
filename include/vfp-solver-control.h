@@ -30,7 +30,7 @@ class VFPSolverControl {
   // it is not necessary to reassamble the spatial discretisation matrix in
   // every stage of the Runge-Kutta method. Actually it only has to be assembled
   // once at time zero.
-  static constexpr bool time_dependent_fields = false;
+  static constexpr bool time_dependent_fields = true;
 
   // The following static_assert uses an exlusive or (xor),
   // represented in C/C++ as "!=" for expressions of boolean type: Either the

@@ -238,9 +238,8 @@ class VFPEquationSolver {
   void assemble_mass_matrix();
   void assemble_dg_matrix(const double time);
   // Time stepping methods
-  void theta_method_solve_system();
-  void theta_method(double theta);
   void explicit_runge_kutta();
+  void theta_method(const double time, const double time_step);
   void low_storage_explicit_runge_kutta(const double time,
                                         const double time_step);
   // Output
@@ -355,33 +354,24 @@ void VFPEquationSolver::run() {
   // Project the initial values
   InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
   project(iv, locally_relevant_current_solution);
+  // Output t = 0
+  output_results(0);
 
-  // parameters of the time stepping method
+  // Assemble the dg matrix for t = 0
+  assemble_dg_matrix(0);
   double time_step = vfp_solver_control.time_step;
-  double time = 0.;
   double final_time = vfp_solver_control.final_time;
-  unsigned int time_step_number = 0;
-
-  // Output time step zero
-  output_results(time_step_number);
-
-  // if the fields are time independent the dg matrix is not assembled inside
-  // the time stepping methods. But it needs to be assembled once.
-  if constexpr (!time_dependent_fields) assemble_dg_matrix(0.);
-
-  time += time_step;
-  ++time_step_number;
-
   pcout << "The time stepping loop is entered: \n";
-  for (; time <= final_time; time += time_step, ++time_step_number) {
+  for (double time = 0., time_step_number = 1; time < final_time;
+       time += time_step, ++time_step_number) {
     pcout << "Time step " << time_step_number << " at t = " << time << "\n";
     // Time stepping method
-    // theta_method(0.5);
-    // explicit_runge_kutta();
-    low_storage_explicit_runge_kutta(time, time_step);
-    // NOTE: I cannot create TimerOutput::Scope inside output_results(),
-    // because it is declared const.
+    // explicit_runge_kutta(time, time_step);
+    theta_method(time, time_step);
+    // low_storage_explicit_runge_kutta(time, time_step);
     {
+      // NOTE: I cannot create TimerOutput::Scope inside output_results(),
+      // because it is declared const.
       TimerOutput::Scope timer_section(timer, "Output");
       output_results(time_step_number);
     }
@@ -1062,100 +1052,64 @@ void VFPEquationSolver::project(
   system_rhs = 0;
 }
 
-// void VFPEquationSolver::theta_method_solve_system() {
-//   SolverControl solver_control(1000, 1e-12);
-//   SolverRichardson<Vector<double>> solver(solver_control);
+void VFPEquationSolver::theta_method(const double time,
+                                     const double time_step) {
+  TimerOutput::Scope timer_section(timer, "Theta method");
+  // Equation:
+  // (mass_matrix + time_step * theta * dg_matrix(time + time_step)) f(time +
+  // time_step) = (mass_matrix - time_step * (1 - theta) * dg_matrix(time) )
+  // f(time)
+  const double theta = 0.; 	// 0.  Forward Euler; 1. Backward Euler; 1./2 Crank-Nicolson
 
-//   PreconditionBlockSSOR<SparseMatrix<double>> preconditioner;
-//   preconditioner.initialize(system_matrix, fe.n_dofs_per_cell());
-//   solver.solve(system_matrix, current_solution, system_rhs, preconditioner);
+  locally_owned_previous_solution = locally_relevant_current_solution;
 
-//   std::cout << "	Solver converged in " << solver_control.last_step()
-//             << " iterations."
-//             << "\n";
-// }
+  mass_matrix.vmult(system_rhs, locally_owned_previous_solution);
+  PETScWrappers::MPI::Vector tmp(locally_owned_dofs, mpi_communicator);
+  dg_matrix.vmult(tmp, locally_owned_previous_solution);
+  system_rhs.add(-time_step * (1 - theta), tmp);
 
-// template <TermFlags flags, int dim_cs>
-// void VFPEquationSolver<flags, dim_cs>::theta_method(double theta) {
-//   TimerOutput::Scope timer_section(timer, "Theta method");
+  // Since the the dg_matrix depends on the velocity field (and/or the magnetice
+  // field) and the velocity field may depend on time, it needs to reassembled
+  // every time step. This is not true for the mass matrix ( but it may if the
+  // grid adapts after a specified amount of time steps)
+  if constexpr (time_dependent_fields) {
+    dg_matrix = 0;
+    assemble_dg_matrix(time + time_step);
+  }
 
-//   Vector<double> tmp(locally_relevant_current_solution.size());
+  system_matrix.copy_from(mass_matrix);
+  system_matrix.add(time_step * theta, dg_matrix);
 
-//   mass_matrix.vmult(system_rhs, locally_relevant_previous_solution);
-//   dg_matrix.vmult(tmp, locally_relevant_previous_solution);
-//   system_rhs.add(-time_step * (1 - theta), tmp);
+  SolverControl solver_control(1000, 1e-12);
+  PETScWrappers::SolverRichardson solver(solver_control, mpi_communicator);
 
-//   // Since the the dg_matrix depends on the velocity field and the the
-//   // velocity field may depend on time, it needs to reassembled every time
-//   // step. This is not true for the mass matrix ( but it may if the grid
-//   // adapts after a specified amount of time steps)
+  // PETScWrappers::PreconditionBoomerAMG preconditioner;
+  // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
+  // data.symmetric_operator = true;
+  // preconditioner.initialize(system_matrix, data);
 
-//   // mass_matrix = 0; dg_matrix = 0;
-//   // assemble_system(time + time_step);
+  // PETScWrappers::PreconditionSOR preconditioner;
+  // preconditioner.initialize(system_matrix);
 
-//   // NOTE: Currently that is not necessary, because the velocity field is
-//   // constant. And I should check if I cannot update the system matrix
-//   without
-//   // reassembling in each time step.
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
+  preconditioner.initialize(system_matrix);
 
-//   system_matrix.copy_from(mass_matrix);
-//   system_matrix.add(time_step * theta, dg_matrix);
-//   theta_method_solve_system();
-// }
+  solver.solve(system_matrix, locally_owned_previous_solution, system_rhs,
+               preconditioner);
 
-// template <TermFlags flags, int dim_cs>
-// void VFPEquationSolver<flags, dim_cs>::explicit_runge_kutta() {
-//   TimerOutput::Scope timer_section(timer, "ERK4");
+  // Update the solution
+  locally_relevant_current_solution = locally_owned_previous_solution;
 
-//   // ERK 4
-//   // Butcher's array
-//   Vector<double> a({0.5, 0.5, 1.});
-//   Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
-//   // NOTE: c is only necessary if the velocity field and the magnetic field
-//   // are time dependent.
-//   // Vector<double> c({0., 0.5, 0.5, 1.});
+  pcout << "	Solver converged in " << solver_control.last_step()
+        << " iterations."
+        << "\n";
+}
 
-//   // Allocate storage for the four stages
-//   std::vector<Vector<double>> k(4,
-//   Vector<double>(locally_relevant_current_solution.size()));
-//   // The mass matrix needs to be "inverted" in every stage
-//   SolverControl solver_control(1000, 1e-12);
-//   SolverCG<Vector<double>> cg(solver_control);
-//   // k_0
-//   dg_matrix.vmult(system_rhs, locally_relevant_previous_solution);
-//   cg.solve(mass_matrix, k[0], system_rhs, PreconditionIdentity());
-//   std::cout << "	Stage s: " << 0 << "	Solver converged in "
-//             << solver_control.last_step() << " iterations."
-//             << "\n";
-//   locally_relevant_current_solution.add(b[0] * time_step, k[0]);
-
-//   Vector<double> temp(locally_relevant_current_solution.size());
-//   for (unsigned int s = 1; s < 4; ++s) {
-//     // NOTE: It would be nessary to reassemble the dg matrix twice for
-//     // (for half a time step and a whole time step) if the velocity field and
-//     // the magnetic field were time dependent.
-//     temp.add(-1., locally_relevant_previous_solution, -a[s - 1] * time_step,
-//     k[s - 1]);
-//     // assemble_system(time + c[s]*time_step);
-//     dg_matrix.vmult(system_rhs, temp);
-//     cg.solve(mass_matrix, k[s], system_rhs, PreconditionIdentity());
-//     std::cout << "	Stage s: " << s << "	Solver converged in "
-//               << solver_control.last_step() << " iterations."
-//               << "\n";
-
-//     locally_relevant_current_solution.add(b[s] * time_step, k[s]);
-
-//     // empty temp vector
-//     temp = 0;
-//   }
-//   // NOTE: It is not necessary to assemble the matrix again, because the last
-//   // element of the c vector is 1. (see low_storage_erk())
-// }
 
 void VFPEquationSolver::low_storage_explicit_runge_kutta(
     const double time, const double time_step) {
   TimerOutput::Scope timer_section(timer, "LSERK");
-
+  // \df(t)/dt = - mass_matrix_inv * dg_matrix(t) * f(t)
   // see Hesthaven p.64
   Vector<double> a(
       {0., -567301805773. / 1357537059087, -2404267990393. / 2016746695238,
