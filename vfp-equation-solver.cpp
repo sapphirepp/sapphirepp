@@ -383,8 +383,8 @@ void VFPEquationSolver::run() {
        time += time_step, ++time_step_number) {
     pcout << "Time step " << time_step_number << " at t = " << time << "\n";
     // Time stepping method
-    explicit_runge_kutta(time, time_step);
-    // theta_method(time, time_step);
+    // explicit_runge_kutta(time, time_step);
+    theta_method(time, time_step);
     // low_storage_explicit_runge_kutta(time, time_step);
     {
       // NOTE: I cannot create TimerOutput::Scope inside output_results(),
@@ -1068,7 +1068,8 @@ void VFPEquationSolver::theta_method(const double time,
   // (mass_matrix + time_step * theta * dg_matrix(time + time_step)) f(time +
   // time_step) = (mass_matrix - time_step * (1 - theta) * dg_matrix(time) )
   // f(time)
-  const double theta = 0.; 	// 0.  Forward Euler; 1. Backward Euler; 1./2 Crank-Nicolson
+  const double theta =
+      1. / 2;  // 0.  Forward Euler; 1. Backward Euler; 1./2 Crank-Nicolson
 
   locally_owned_previous_solution = locally_relevant_current_solution;
 
