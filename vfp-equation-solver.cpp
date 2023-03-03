@@ -1076,7 +1076,20 @@ void VFPEquationSolver::theta_method(const double time,
   PETScWrappers::MPI::Vector tmp(locally_owned_dofs, mpi_communicator);
   dg_matrix.vmult(tmp, locally_owned_previous_solution);
   system_rhs.add(-time_step * (1 - theta), tmp);
+  // Source term
+  if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+    if constexpr (time_dependent_source) {
+      system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
+      // Update the source term
+      Source<dim_ps> source_function(expansion_order);
+      source_function.set_time(time + time_step);
 
+      project(source_function, locally_owned_current_source);
+      system_rhs.add(theta * time_step, locally_owned_current_source);
+    } else {
+      system_rhs.add(time_step, locally_owned_current_source);
+    }
+  }
   // Since the the dg_matrix depends on the velocity field (and/or the magnetice
   // field) and the velocity field may depend on time, it needs to reassembled
   // every time step. This is not true for the mass matrix ( but it may if the
