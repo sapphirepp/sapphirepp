@@ -32,7 +32,7 @@ inline StreamType &operator<<(StreamType &os, TermFlags f) {
     os << "	 - Collision\n";
   if ((f & TermFlags::magnetic) != TermFlags::none) os << "	 - Magnetic\n";
   if ((f & TermFlags::momentum) != TermFlags::none) os << "	 - Momentum\n";
-  if ((f & TermFlags::momentum) != TermFlags::none) os << "	 - Source\n";
+  if ((f & TermFlags::source) != TermFlags::none) os << "	 - Source\n";
   return os;
 }
 
