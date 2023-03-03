@@ -11,7 +11,8 @@ enum class TermFlags {
   spatial_advection = 1 << 0,
   collision = 1 << 1,
   magnetic = 1 << 2,
-  momentum = 1 << 3
+  momentum = 1 << 3,
+  source = 1 << 4
 };
 
 constexpr TermFlags operator|(TermFlags f1, TermFlags f2) {
@@ -31,6 +32,7 @@ inline StreamType &operator<<(StreamType &os, TermFlags f) {
     os << "	 - Collision\n";
   if ((f & TermFlags::magnetic) != TermFlags::none) os << "	 - Magnetic\n";
   if ((f & TermFlags::momentum) != TermFlags::none) os << "	 - Momentum\n";
+  if ((f & TermFlags::momentum) != TermFlags::none) os << "	 - Source\n";
   return os;
 }
 

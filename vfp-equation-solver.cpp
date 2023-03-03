@@ -317,6 +317,8 @@ class VFPEquationSolver {
   PETScWrappers::MPI::Vector locally_owned_previous_solution;
   PETScWrappers::MPI::Vector locally_relevant_current_solution;
 
+  PETScWrappers::MPI::Vector locally_owned_source;
+
   const int expansion_order = vfp_solver_control.expansion_order;
   const unsigned int num_exp_coefficients =
       static_cast<unsigned int>((expansion_order + 1) * (expansion_order + 1));
@@ -460,7 +462,8 @@ void VFPEquationSolver::setup_system() {
   locally_relevant_current_solution.reinit(
       locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
-
+  locally_owned_source.reinit(locally_owned_dofs, mpi_communicator);
+  
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
   DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);

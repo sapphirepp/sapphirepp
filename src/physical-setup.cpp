@@ -1,5 +1,27 @@
 #include "physical-setup.h"
 
+// Source term implementation
+template <int dim>
+void VFPEquation::Source<dim>::vector_value(
+    const dealii::Point<dim> &p, dealii::Vector<double> &values) const {
+  Assert(dim <= 3, dealii::ExcNotImplemented());
+  Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
+         dealii::ExcDimensionMismatch(
+             values.size(), (expansion_order + 1) * (expansion_order + 1)));
+  // The zeroth component of values corresponds to isotropic part of the
+  // distribution
+
+  // EXAMPLES:
+  // Transport only
+  // 1D Gaussian (isotropic)
+  values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+  // 2D Gaussian (isotropic)
+  values[0] = 1. * std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
+  // 2D pulsating Gaussian (isotropic, time dependent)
+  values[0] = 1. * std::sin(0.5 * this->get_time()) *
+              std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
+}
+
 // Magnetic field implementation
 template <int dim>
 void VFPEquation::MagneticField<dim>::vector_value(

@@ -32,6 +32,10 @@ class VFPSolverControl {
   // once at time zero.
   static constexpr bool time_dependent_fields = true;
 
+  // If the source term depends on time, it needs to be projected onto the FEM
+  // space in the time stepping methods.
+  static constexpr bool time_dependent_source = false;
+
   // The following static_assert uses an exlusive or (xor),
   // represented in C/C++ as "!=" for expressions of boolean type: Either the
   // spatial advection term is included in the equation or the dimension of the
