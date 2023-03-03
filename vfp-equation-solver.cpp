@@ -1261,8 +1261,18 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
       assemble_dg_matrix(time + c[s] * time_step);
 
     dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
-
     if constexpr (time_dependent_fields) dg_matrix = 0;
+
+    if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+      if constexpr (time_dependent_source) {
+        Source<dim_ps> source_function(expansion_order);
+        source_function.set_time(time + c[s] * time_step);
+        project(source_function, locally_owned_current_source);
+        system_rhs.add(-1., locally_owned_current_source);
+      } else {
+        system_rhs.add(-1., locally_owned_current_source);
+      }
+    }
 
     cg.solve(mass_matrix, temp, system_rhs, preconditioner);
     pcout << "	Stage s: " << s << "	Solver converged in "
@@ -1270,6 +1280,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
           << "\n";
 
     k.sadd(a[s], -time_step, temp);
+
     locally_owned_previous_solution.add(b[s], k);
   }
   // Currently I assume that there are no constraints
