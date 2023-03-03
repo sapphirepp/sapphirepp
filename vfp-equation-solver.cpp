@@ -320,7 +320,7 @@ class VFPEquationSolver {
   PETScWrappers::MPI::Vector locally_owned_previous_solution;
   PETScWrappers::MPI::Vector locally_relevant_current_solution;
 
-  PETScWrappers::MPI::Vector locally_owned_source;
+  PETScWrappers::MPI::Vector locally_owned_current_source;
 
   const int expansion_order = vfp_solver_control.expansion_order;
   const unsigned int num_exp_coefficients =
@@ -465,8 +465,8 @@ void VFPEquationSolver::setup_system() {
   locally_relevant_current_solution.reinit(
       locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
-  locally_owned_source.reinit(locally_owned_dofs, mpi_communicator);
-  
+  locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
+
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
   DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
@@ -1006,6 +1006,7 @@ void VFPEquationSolver::project(
 
   std::vector<types::global_dof_index> local_dof_indices(n_dofs);
 
+  PETScWrappers::MPI::Vector rhs(locally_owned_dofs, mpi_communicator);
   for (const auto &cell : dof_handler.active_cell_iterators()) {
     if (cell->is_locally_owned()) {
       cell_rhs = 0;
@@ -1029,33 +1030,23 @@ void VFPEquationSolver::project(
       }
       cell->get_dof_indices(local_dof_indices);
 
-      constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
-                                             system_rhs);
+      constraints.distribute_local_to_global(cell_rhs, local_dof_indices, rhs);
     }
   }
-  system_rhs.compress(VectorOperation::add);
+  rhs.compress(VectorOperation::add);
 
   // Solve the system
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
-  // NOTE: It is not possible to directly write into a ghosted vector. And the
-  // the second argument of project is meant to be a ghosted vector. Hence, we
-  // create an unghosted vector and copy it later on.
-  PETScWrappers::MPI::Vector temporary_non_ghosted_vector(locally_owned_dofs,
-                                                          mpi_communicator);
+
   SolverControl solver_control(1000, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
-  cg.solve(mass_matrix, temporary_non_ghosted_vector, system_rhs,
-           preconditioner);
+  cg.solve(mass_matrix, projected_function, rhs, preconditioner);
   pcout << "	Solved in " << solver_control.last_step() << " iterations."
         << std::endl;
   // At the moment I am assuming, that I do not have constraints. Hence, I do
   // not need the following line.
-  // constraints.distribute(completely_distributed_solution);
-  projected_function = temporary_non_ghosted_vector;
-
-  // Reset system RHS
-  system_rhs = 0;
+  // constraints.distribute(projected_function);
 }
 
 void VFPEquationSolver::theta_method(const double time,
