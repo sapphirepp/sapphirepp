@@ -238,8 +238,8 @@ class VFPEquationSolver {
   void assemble_mass_matrix();
   void assemble_dg_matrix(const double time);
   // Time stepping methods
-  void explicit_runge_kutta();
   void theta_method(const double time, const double time_step);
+  void explicit_runge_kutta(const double time, const double time_step);
   void low_storage_explicit_runge_kutta(const double time,
                                         const double time_step);
   // Output
@@ -366,8 +366,8 @@ void VFPEquationSolver::run() {
        time += time_step, ++time_step_number) {
     pcout << "Time step " << time_step_number << " at t = " << time << "\n";
     // Time stepping method
-    // explicit_runge_kutta(time, time_step);
-    theta_method(time, time_step);
+    explicit_runge_kutta(time, time_step);
+    // theta_method(time, time_step);
     // low_storage_explicit_runge_kutta(time, time_step);
     {
       // NOTE: I cannot create TimerOutput::Scope inside output_results(),
@@ -1105,11 +1105,101 @@ void VFPEquationSolver::theta_method(const double time,
         << "\n";
 }
 
+void VFPEquationSolver::explicit_runge_kutta(const double time,
+                                             const double time_step) {
+  TimerOutput::Scope timer_section(timer, "ERK4");
+  // ERK 4
+  // \df(t)/dt = - mass_matrix_inv * dg_matrix(t) * f(t) + s(t)
+  // Butcher's array
+  Vector<double> a({0.5, 0.5, 1.});
+  Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
+  // NOTE: c is only necessary if the velocity field and the magnetic field
+  // are time dependent.
+  Vector<double> c({0., 0.5, 0.5, 1.});
+
+  // The mass matrix needs to be "inverted" in every stage
+  PETScWrappers::PreconditionNone preconditioner;
+  preconditioner.initialize(mass_matrix);
+
+  SolverControl solver_control(1000, 1e-12);
+  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+
+  // I need the previous solution to compute k_0, k_1, k_2, k_3
+  locally_owned_previous_solution = locally_relevant_current_solution;
+  // locally_owned_current_solution is the result (or return) vector of the ERK4
+  // method. I cannot use locally_owned previous solution, because it is
+  // required for the computation of the ks.
+  PETScWrappers::MPI::Vector locally_owned_current_solution =
+      locally_owned_previous_solution;
+  // a temporary vector to compute f(time) + a*time_step*k_{i-1}
+  PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
+
+  // k_0
+  PETScWrappers::MPI::Vector k_0(locally_owned_dofs, mpi_communicator);
+  // dg_matrix(time)
+  dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
+  cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
+  pcout << "	Stage s: " << 0 << "	Solver converged in "
+        << solver_control.last_step() << " iterations."
+        << "\n";
+  k_0 *= -1.;
+  locally_owned_current_solution.add(b[0] * time_step, k_0);
+
+  // k_1
+  PETScWrappers::MPI::Vector k_1(locally_owned_dofs, mpi_communicator);
+  // Comute dg_matrix(time + c[1] * time_step) if the fields are time dependent
+  if constexpr (time_dependent_fields) {
+    dg_matrix = 0;
+    assemble_dg_matrix(time + c[1] * time_step);
+  }
+  temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
+  dg_matrix.vmult(system_rhs, temp);
+  cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
+  pcout << "	Stage s: " << 1 << "	Solver converged in "
+        << solver_control.last_step() << " iterations."
+        << "\n";
+  k_1 *= -1.;
+  locally_owned_current_solution.add(b[1] * time_step, k_1);
+  temp = 0;
+
+  // k_2
+  PETScWrappers::MPI::Vector k_2(locally_owned_dofs, mpi_communicator);
+  // NOTE: For k_2 it is not necessary to reassamble the dg_matrix,
+  // since c[1] = c[2]
+  temp.add(1., locally_owned_previous_solution, a[1] * time_step, k_1);
+  dg_matrix.vmult(system_rhs, temp);
+  cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
+  pcout << "	Stage s: " << 2 << "	Solver converged in "
+        << solver_control.last_step() << " iterations."
+        << "\n";
+  k_2 *= -1.;
+  locally_owned_current_solution.add(b[2] * time_step, k_2);
+  temp = 0;
+
+  // k_3
+  PETScWrappers::MPI::Vector k_3(locally_owned_dofs, mpi_communicator);
+  // Comute dg_matrix(time + c[1] * time_step) if the fields are time dependent
+  if constexpr (time_dependent_fields) {
+    dg_matrix = 0;
+    assemble_dg_matrix(time + c[3] * time_step);
+  }
+  temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
+  dg_matrix.vmult(system_rhs, temp);
+  cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
+  pcout << "	Stage s: " << 3 << "	Solver converged in "
+        << solver_control.last_step() << " iterations."
+        << "\n";
+  k_3 *= -1.;
+  locally_owned_current_solution.add(b[3] * time_step, k_3);
+  temp = 0;
+
+  locally_relevant_current_solution = locally_owned_current_solution;
+}
 
 void VFPEquationSolver::low_storage_explicit_runge_kutta(
     const double time, const double time_step) {
   TimerOutput::Scope timer_section(timer, "LSERK");
-  // \df(t)/dt = - mass_matrix_inv * dg_matrix(t) * f(t)
+  // \df(t)/dt = - mass_matrix_inv * dg_matrix(t) * f(t) + s(t)
   // see Hesthaven p.64
   Vector<double> a(
       {0., -567301805773. / 1357537059087, -2404267990393. / 2016746695238,
