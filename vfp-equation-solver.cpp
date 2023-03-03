@@ -358,12 +358,24 @@ void VFPEquationSolver::run() {
 
   // Project the initial values
   InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
-  project(iv, locally_relevant_current_solution);
+  PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
+                                               mpi_communicator);
+  project(iv, initial_condition);
+  // Here a non ghosted vector, is copied into a ghosted vector. I think that is
+  // the moment where the ghost cells are filled.
+  locally_relevant_current_solution = initial_condition;
   // Output t = 0
   output_results(0);
 
   // Assemble the dg matrix for t = 0
   assemble_dg_matrix(0);
+  // Source term at t = 0;
+  if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+    Source<dim_ps> source(expansion_order);
+    source.set_time(0);
+    project(source, locally_owned_current_source);
+  }
+
   double time_step = vfp_solver_control.time_step;
   double final_time = vfp_solver_control.final_time;
   pcout << "The time stepping loop is entered: \n";
