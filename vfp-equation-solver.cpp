@@ -1135,7 +1135,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
   SolverControl solver_control(1000, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
   // NOTE: The locally_relevant_current_solution is a "ghosted" vector and it
-  // cannot be written to. It is necessary to use a vector does not contain
+  // cannot be written to. It is necessary to use a vector that does not contain
   // ghost cells. We extract the locally owned part with the equal sign
   // operator.
   locally_owned_previous_solution = locally_relevant_current_solution;
@@ -1162,13 +1162,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
   }
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);
-  // std::cout << "Rank: " << rank << "\n";
-  // std::cout << "Locally owned current solution: \n";
-  // locally_owned_current_solution.print(std::cout);
-
   locally_relevant_current_solution = locally_owned_previous_solution;
-  // std::cout << "Locally relevant current solution: \n";
-  // locally_relevant_current_solution.print(std::cout);
 }
 
 void VFPEquationSolver::output_results(
