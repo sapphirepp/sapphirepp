@@ -252,6 +252,9 @@ class VFPEquationSolver {
   template <int dim>
   void project(const Function<dim> &f,
                PETScWrappers::MPI::Vector &projected_function);
+  // compute the source term
+  template <int dim>
+  void compute_source_term(const Function<dim> &source_function);
 
   MPI_Comm mpi_communicator;
   const unsigned int n_mpi_procs;
@@ -371,9 +374,9 @@ void VFPEquationSolver::run() {
   assemble_dg_matrix(0);
   // Source term at t = 0;
   if constexpr ((flags & TermFlags::source) != TermFlags::none) {
-    Source<dim_ps> source(expansion_order);
-    source.set_time(0);
-    project(source, locally_owned_current_source);
+    Source<dim_ps> source_function(expansion_order);
+    source_function.set_time(0);
+    compute_source_term(source_function);
   }
 
   double time_step = vfp_solver_control.time_step;
@@ -477,7 +480,6 @@ void VFPEquationSolver::setup_system() {
   locally_relevant_current_solution.reinit(
       locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
-  locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -1061,6 +1063,49 @@ void VFPEquationSolver::project(
   // constraints.distribute(projected_function);
 }
 
+template <int dim>
+void VFPEquationSolver::compute_source_term(
+    const Function<dim> &source_function) {
+  FEValues<dim_ps> fe_v(
+      mapping, fe, quadrature,
+      update_values | update_quadrature_points | update_JxW_values);
+
+  const unsigned int n_dofs = fe.n_dofs_per_cell();
+  Vector<double> cell_rhs(n_dofs);
+
+  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
+  // reinitialis the source term
+  locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
+  for (const auto &cell : dof_handler.active_cell_iterators()) {
+    if (cell->is_locally_owned()) {
+      cell_rhs = 0;
+      fe_v.reinit(cell);
+
+      const std::vector<Point<dim_ps>> &q_points = fe_v.get_quadrature_points();
+      const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+      // Initial values
+      std::vector<Vector<double>> source_values(
+          q_points.size(), Vector<double>(num_exp_coefficients));
+      source_function.vector_value_list(q_points, source_values);
+
+      for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+        for (unsigned int i : fe_v.dof_indices()) {
+          const unsigned int component_i =
+              fe.system_to_component_index(i).first;
+          cell_rhs(i) += fe_v.shape_value(i, q_index) *
+                         source_values[q_index][component_i] * JxW[q_index];
+        }
+      }
+      cell->get_dof_indices(local_dof_indices);
+
+      constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
+                                             locally_owned_current_source);
+    }
+  }
+  locally_owned_current_source.compress(VectorOperation::add);
+}
+
 void VFPEquationSolver::theta_method(const double time,
                                      const double time_step) {
   TimerOutput::Scope timer_section(timer, "Theta method");
@@ -1084,8 +1129,7 @@ void VFPEquationSolver::theta_method(const double time,
       // Update the source term
       Source<dim_ps> source_function(expansion_order);
       source_function.set_time(time + time_step);
-
-      project(source_function, locally_owned_current_source);
+      compute_source_term(source_function);
       system_rhs.add(theta * time_step, locally_owned_current_source);
     } else {
       system_rhs.add(time_step, locally_owned_current_source);
@@ -1268,7 +1312,7 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
       if constexpr (time_dependent_source) {
         Source<dim_ps> source_function(expansion_order);
         source_function.set_time(time + c[s] * time_step);
-        project(source_function, locally_owned_current_source);
+        compute_source_term(source_function);
         system_rhs.add(-1., locally_owned_current_source);
       } else {
         system_rhs.add(-1., locally_owned_current_source);
