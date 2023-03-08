@@ -1029,7 +1029,6 @@ void VFPEquationSolver::project(
       const std::vector<Point<dim_ps>> &q_points = fe_v.get_quadrature_points();
       const std::vector<double> &JxW = fe_v.get_JxW_values();
 
-      // Initial values
       std::vector<Vector<double>> function_values(
           q_points.size(), Vector<double>(num_exp_coefficients));
       f.vector_value_list(q_points, function_values);
@@ -1084,7 +1083,6 @@ void VFPEquationSolver::compute_source_term(
       const std::vector<Point<dim_ps>> &q_points = fe_v.get_quadrature_points();
       const std::vector<double> &JxW = fe_v.get_JxW_values();
 
-      // Initial values
       std::vector<Vector<double>> source_values(
           q_points.size(), Vector<double>(num_exp_coefficients));
       source_function.vector_value_list(q_points, source_values);
@@ -1205,6 +1203,9 @@ void VFPEquationSolver::explicit_runge_kutta(const double time,
   PETScWrappers::MPI::Vector k_0(locally_owned_dofs, mpi_communicator);
   // dg_matrix(time)
   dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
+  if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+    system_rhs.add(-1., locally_owned_current_source);
+  }
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
   pcout << "	Stage s: " << 0 << "	Solver converged in "
         << solver_control.last_step() << " iterations."
@@ -1221,6 +1222,16 @@ void VFPEquationSolver::explicit_runge_kutta(const double time,
   }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
   dg_matrix.vmult(system_rhs, temp);
+  if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+    if constexpr (time_dependent_source) {
+      Source<dim_ps> source_function(expansion_order);
+      source_function.set_time(time + c[1] * time_step);
+      compute_source_term(source_function);
+      system_rhs.add(-1., locally_owned_current_source);
+    } else {
+      system_rhs.add(-1., locally_owned_current_source);
+    }
+  }
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
   pcout << "	Stage s: " << 1 << "	Solver converged in "
         << solver_control.last_step() << " iterations."
@@ -1235,6 +1246,16 @@ void VFPEquationSolver::explicit_runge_kutta(const double time,
   // since c[1] = c[2]
   temp.add(1., locally_owned_previous_solution, a[1] * time_step, k_1);
   dg_matrix.vmult(system_rhs, temp);
+  if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+    if constexpr (time_dependent_source) {
+      Source<dim_ps> source_function(expansion_order);
+      source_function.set_time(time + c[2] * time_step);
+      compute_source_term(source_function);
+      system_rhs.add(-1., locally_owned_current_source);
+    } else {
+      system_rhs.add(-1., locally_owned_current_source);
+    }
+  }
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
   pcout << "	Stage s: " << 2 << "	Solver converged in "
         << solver_control.last_step() << " iterations."
@@ -1252,6 +1273,16 @@ void VFPEquationSolver::explicit_runge_kutta(const double time,
   }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
   dg_matrix.vmult(system_rhs, temp);
+  if constexpr ((flags & TermFlags::source) != TermFlags::none) {
+    if constexpr (time_dependent_source) {
+      Source<dim_ps> source_function(expansion_order);
+      source_function.set_time(time + c[3] * time_step);
+      compute_source_term(source_function);
+      system_rhs.add(-1., locally_owned_current_source);
+    } else {
+      system_rhs.add(-1., locally_owned_current_source);
+    }
+  }
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
   pcout << "	Stage s: " << 3 << "	Solver converged in "
         << solver_control.last_step() << " iterations."
