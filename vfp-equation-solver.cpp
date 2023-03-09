@@ -611,14 +611,13 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
 
     std::vector<double> particle_gammas(q_points.size());
     particle_gamma.value_list(q_points, particle_gammas);
-
-    for (unsigned int i : fe_v.dof_indices()) {
-      const unsigned int component_i =
-          fe_v.get_fe().system_to_component_index(i).first;
-      for (unsigned int j : fe_v.dof_indices()) {
-        const unsigned int component_j =
-            fe_v.get_fe().system_to_component_index(j).first;
-        for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+    for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
+      for (unsigned int i : fe_v.dof_indices()) {
+        const unsigned int component_i =
+            fe_v.get_fe().system_to_component_index(i).first;
+        for (unsigned int j : fe_v.dof_indices()) {
+          const unsigned int component_j =
+              fe_v.get_fe().system_to_component_index(j).first;
           if constexpr ((flags & TermFlags::collision) != TermFlags::none) {
             if (component_i == component_j) {
               // scattering_frequency * l(l+1) * \phi_i * \phi_j
@@ -831,14 +830,13 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
 
         upwind_flux.compute_upwind_fluxes(
             q_points, normals, positive_flux_matrices, negative_flux_matrices);
-
-        for (unsigned int i = 0; i < n_facet_dofs; ++i) {
-          const unsigned int component_i =
-              fe_face_v.get_fe().system_to_component_index(i).first;
-          for (unsigned int j = 0; j < n_facet_dofs; ++j) {
-            const unsigned int component_j =
-                fe_face_v.get_fe().system_to_component_index(j).first;
-            for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+          for (unsigned int i = 0; i < n_facet_dofs; ++i) {
+            const unsigned int component_i =
+                fe_face_v.get_fe().system_to_component_index(i).first;
+            for (unsigned int j = 0; j < n_facet_dofs; ++j) {
+              const unsigned int component_j =
+                  fe_face_v.get_fe().system_to_component_index(j).first;
               if constexpr ((flags & TermFlags::spatial_advection) !=
                             TermFlags::none) {
                 // Outflow boundary: Everyhing with a positive flux along the
