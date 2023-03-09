@@ -231,8 +231,6 @@ class VFPEquationSolver {
   static constexpr bool time_dependent_source =
       VFPSolverControl::time_dependent_source;
 
-  // ((flags & TermFlags::momentum) != TermFlags::none) ? dim_cs + 1 : dim_cs;
-
   // Triangulation
   void make_grid();
   // Setup data structures for the linear system
@@ -298,29 +296,6 @@ class VFPEquationSolver {
   PDESystem pde_system;
   UpwindFlux<dim_ps> upwind_flux;
 
-  const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
-      pde_system.get_advection_matrices();
-  const std::vector<LAPACKFullMatrix<double>> &generator_rotation_matrices =
-      pde_system.get_generator_matrices();
-  const std::vector<LAPACKFullMatrix<double>> &adv_mat_products =
-      pde_system.get_adv_mat_products();
-  const std::vector<LAPACKFullMatrix<double>> &adv_x_gen_matrices =
-      pde_system.get_adv_cross_gen();
-  const std::vector<LAPACKFullMatrix<double>> &t_matrices =
-      pde_system.get_t_matrices();
-
-  // Collision term (essentially a reaction term)
-  const Vector<double> &collision_matrix = pde_system.get_collision_matrix();
-
-  // Upwind flux matrices
-  // Eigenvectors
-  std::vector<FullMatrix<double>> eigenvectors_advection_matrices;
-  std::vector<FullMatrix<double>> eigenvectors_adv_mat_prod_matrices;
-
-  // Eigenvalues
-  Vector<double> eigenvalues_adv;
-  std::vector<Vector<double>> eigenvalues_adv_mat_prod;
-
   SparsityPattern sparsity_pattern;
   PETScWrappers::MPI::SparseMatrix mass_matrix;
   PETScWrappers::MPI::SparseMatrix dg_matrix;
@@ -335,9 +310,6 @@ class VFPEquationSolver {
   const int expansion_order = vfp_solver_control.expansion_order;
   const unsigned int num_exp_coefficients =
       static_cast<unsigned int>((expansion_order + 1) * (expansion_order + 1));
-
-  // particle
-  ParticleProperties particle_properties;
 
   TimerOutput timer;
 };
@@ -570,6 +542,20 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
   upwind_flux.set_time(time);
 
+  const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
+      pde_system.get_advection_matrices();
+  const std::vector<LAPACKFullMatrix<double>> &generator_rotation_matrices =
+      pde_system.get_generator_matrices();
+  const std::vector<LAPACKFullMatrix<double>> &adv_mat_products =
+      pde_system.get_adv_mat_products();
+  const std::vector<LAPACKFullMatrix<double>> &adv_x_gen_matrices =
+      pde_system.get_adv_cross_gen();
+  const std::vector<LAPACKFullMatrix<double>> &t_matrices =
+      pde_system.get_t_matrices();
+
+  // Collision term (essentially a reaction term)
+  const Vector<double> &collision_matrix = pde_system.get_collision_matrix();
+
   BackgroundVelocityField<dim_ps> background_velocity_field;
   background_velocity_field.set_time(time);
   MagneticField<dim_ps> magnetic_field;
@@ -577,6 +563,9 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
 
   ParticleVelocity<dim_ps> particle_velocity;
   ParticleGamma<dim_ps> particle_gamma;
+
+
+  ParticleProperties particle_properties;
 
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator &cell,
