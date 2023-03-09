@@ -113,7 +113,7 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
       particle_velocity_func.value_list(q_points, particle_velocities);
     } else {
       std::fill(particle_velocities.begin(), particle_velocities.end(),
-                particle_properties.velocity);
+                transport_only.velocity);
     }
     // Compute flux at every quadrature point
     for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)

@@ -18,12 +18,15 @@ const double scattering_frequency = 1.;
 struct ParticleProperties {
   const double mass = 1.;
   const double charge = 1.;
+};
 
+struct TransportOnly {
   // In the transport-only case (i.e. no dependence on p) the energy of the
   // particles has to be given.
   const double energy = 1.;
-  const double gamma = energy / mass;
-  // Compute the particle velocity
+  // Compute the partilces Lorentz factor gamma and its velocity
+  ParticleProperties particle_properties;
+  const double gamma = energy / particle_properties.mass;
   ReferenceValues reference_values;
   const double velocity =
       std::sqrt(1 - 1 / std::pow((reference_values.gamma * gamma), 2));

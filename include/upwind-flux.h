@@ -65,7 +65,7 @@ class UpwindFlux {
   BackgroundVelocityField<dim> background_velocity_field;
   ParticleVelocity<dim> particle_velocity_func;
   ParticleGamma<dim> particle_gamma_func;
-  ParticleProperties particle_properties;
+  TransportOnly transport_only;
 
   // Arguments for the Lapack routine xsyevr
   // Documentation:

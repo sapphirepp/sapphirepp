@@ -564,6 +564,9 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
   ParticleVelocity<dim_ps> particle_velocity;
   ParticleGamma<dim_ps> particle_gamma;
 
+  // For the transport only case, the energy, the Lorentz factor and the
+  // velocity are defined in TransportOnly struct
+  TransportOnly transport_only;
 
   ParticleProperties particle_properties;
 
@@ -657,7 +660,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                 // fixed energy case (i.e. transport only)
                 copy_data.cell_matrix(i, j) -=
                     fe_v.shape_grad(i, q_index)[coordinate] *
-                    particle_properties.velocity *
+                    transport_only.velocity *
                     advection_matrices[coordinate](component_i, component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
               }
@@ -681,7 +684,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                 copy_data.cell_matrix(i, j) -=
                     fe_v.shape_value(i, q_index) * particle_properties.charge *
                     magnetic_field_values[q_index][coordinate] /
-                    particle_properties.gamma *
+                    transport_only.gamma *
                     generator_rotation_matrices[coordinate](component_i,
                                                             component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
