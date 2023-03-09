@@ -262,11 +262,18 @@ class VFPEquationSolver {
 
   ConditionalOStream pcout;
 
-  // NOTE: Parallel distribution does not allow 1D triangulation. This excludes
-  // the 1D transport (i.e. no momentum terms) only case. To reimplement this
-  // case, take a look at Step-16, Step-17 how to deal with copys of
-  // triangulations and dof handler on every mpi process.
-  parallel::distributed::Triangulation<dim_ps> triangulation;
+  // NOTE: parallel::distributed:Triangulation does not allow 1D. This excludes
+  // the 1D transport (i.e. no momentum terms) only case. But I would like to
+  // maintain the possibility to compute 1D scenarios. In Step-17, Step-18 it is
+  // explained how to deal with copys of the triangulation and the dof handler
+  // on every mpi process: It is enough to replace
+  // parallel::distributed:Triangulation with parallel::shared::Triangulation.
+  // We use a bit of C++ metaprogramming tricky to decide which triangulation to
+  // use.
+  typename std::conditional<
+      dim_ps != 1, parallel::distributed::Triangulation<dim_ps>,
+      parallel::shared::Triangulation<dim_ps>>::type triangulation;
+
   DoFHandler<dim_ps> dof_handler;
 
   IndexSet locally_owned_dofs;
