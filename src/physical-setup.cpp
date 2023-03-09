@@ -1,10 +1,27 @@
 #include "physical-setup.h"
 
+template <int dim>
+void VFPEquation::ScatteringFrequency<dim>::value_list(
+    const std::vector<dealii::Point<dim>> &points,
+    std::vector<double> &scattering_frequencies,
+    const unsigned int component) const {
+  Assert(scattering_frequencies.size() == points.size(),
+         dealii::ExcDimensionMismatch(scattering_frequencies.size(),
+                                      points.size()));
+  static_cast<void>(component);
+  // EXAMPLES:
+  // Constant scattering frequency
+  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 0.5);
+}
+// explicit instantiation
+template class VFPEquation::ScatteringFrequency<1>;
+template class VFPEquation::ScatteringFrequency<2>;
+template class VFPEquation::ScatteringFrequency<3>;
+
 // Source term implementation
 template <int dim>
 void VFPEquation::Source<dim>::vector_value(
     const dealii::Point<dim> &p, dealii::Vector<double> &values) const {
-  Assert(dim <= 3, dealii::ExcNotImplemented());
   Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
          dealii::ExcDimensionMismatch(
              values.size(), (expansion_order + 1) * (expansion_order + 1)));

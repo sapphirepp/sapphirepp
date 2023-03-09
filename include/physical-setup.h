@@ -13,7 +13,6 @@
 #include "reference-values.h"
 
 namespace VFPEquation {
-const double scattering_frequency = 1.;
 
 struct ParticleProperties {
   const double mass = 1.;
@@ -30,6 +29,15 @@ struct TransportOnly {
   ReferenceValues reference_values;
   const double velocity =
       std::sqrt(1 - 1 / std::pow((reference_values.gamma * gamma), 2));
+};
+
+// Scattering frequency
+template <int dim>
+class ScatteringFrequency : public dealii::Function<dim> {
+ public:
+  void value_list(const std::vector<dealii::Point<dim>> &p,
+                  std::vector<double> &scattering_frequencies,
+                  const unsigned int component = 0) const override;
 };
 
 // Source term

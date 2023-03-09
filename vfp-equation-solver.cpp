@@ -560,7 +560,9 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
   background_velocity_field.set_time(time);
   MagneticField<dim_ps> magnetic_field;
   magnetic_field.set_time(time);
-
+  ScatteringFrequency<dim_ps> scattering_frequency;
+  scattering_frequency.set_time(time);
+  
   ParticleVelocity<dim_ps> particle_velocity;
   ParticleGamma<dim_ps> particle_gamma;
 
@@ -604,6 +606,10 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                                                       Vector<double>(3));
     magnetic_field.vector_value_list(q_points, magnetic_field_values);
 
+    // Scattering frequency
+    std::vector<double> frequencies(q_points.size());
+    scattering_frequency.value_list(q_points, frequencies);
+    
     // Particle
     std::vector<double> particle_velocities(q_points.size());
     particle_velocity.value_list(q_points, particle_velocities);
@@ -621,7 +627,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
             if (component_i == component_j) {
               // scattering_frequency * l(l+1) * \phi_i * \phi_j
               copy_data.cell_matrix(i, j) +=
-                  scattering_frequency * collision_matrix[component_i] *
+                  frequencies[q_index] * collision_matrix[component_i] *
                   fe_v.shape_value(i, q_index) * fe_v.shape_value(j, q_index) *
                   JxW[q_index];
             }
