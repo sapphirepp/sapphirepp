@@ -30,6 +30,17 @@ struct TransportOnly {
   const double velocity =
       std::sqrt(1 - 1 / std::pow((reference_values.gamma * gamma), 2));
 };
+// Initial values
+template <int dim>
+class InitialValueFunction : public dealii::Function<dim> {
+ public:
+  InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
+  void vector_value(const dealii::Point<dim> &p,
+                    dealii::Vector<double> &values) const override;
+
+ private:
+  const unsigned int expansion_order;
+};
 
 // Scattering frequency
 template <int dim>

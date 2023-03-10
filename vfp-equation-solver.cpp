@@ -67,60 +67,6 @@
 namespace VFPEquation {
 using namespace dealii;
 
-// Initial values
-template <int dim_cs, bool momentum>
-class InitialValueFunction : public Function<dim_cs + momentum> {
- public:
-  InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
-  virtual void vector_value(const Point<dim_cs + momentum> &p,
-                            Vector<double> &values) const override {
-    Assert(dim_cs <= 3, ExcNotImplemented());
-    Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
-           ExcDimensionMismatch(values.size(),
-                                (expansion_order + 1) * (expansion_order + 1)));
-    // The zeroth component of values corresponds to f_000, the first component
-    // to f_110 etc.
-    if constexpr (dim_cs == 1) {
-      // values[0] = 1. * std::exp(-(std::pow(p[0], 2)));
-      // if (std::abs(p[0]) < 1.) values[0] = 1.;
-      // values[0] = 1. + 0.2 * p[0];
-      // constant
-      values[0] = 1.;
-    }
-    // values[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
-
-    if constexpr (dim_cs == 2) {
-      // Gaussian
-      // values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
-
-      // constant
-      values[0] = 0.;
-
-      // constant disc
-      // if (p.norm() <= 1.) values[0] = 1.;
-
-      // Rigid rotator
-      // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) values[0] = 1.;
-      // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) values[0] = 1.;
-    }
-    if constexpr (dim_cs == 3)
-      values[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) +
-                                   std::pow(p[2], 2))));
-
-    // Fill all components with the same values
-    // std::fill(
-    //     values.begin(), values.end(),
-    //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
-    //                     0.01)));
-    if constexpr (momentum)
-      values[0] *=
-          std::exp(-(std::pow(p[dim_cs + momentum - 1] - 5.5, 2) / 0.5));
-  }
-
- private:
-  const unsigned int expansion_order = 1;
-};
-
 // The mesh_loop function requires helper data types
 template <int dim_ps>
 class ScratchData {
@@ -339,10 +285,10 @@ void VFPEquationSolver::run() {
   assemble_mass_matrix();
 
   // Project the initial values
-  InitialValueFunction<dim_cs, VFPSolverControl::momentum> iv(expansion_order);
+  InitialValueFunction<dim_ps> initial_value_function(expansion_order);
   PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
                                                mpi_communicator);
-  project(iv, initial_condition);
+  project(initial_value_function, initial_condition);
   // Here a non ghosted vector, is copied into a ghosted vector. I think that is
   // the moment where the ghost cells are filled.
   locally_relevant_current_solution = initial_condition;

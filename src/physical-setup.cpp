@@ -1,5 +1,65 @@
 #include "physical-setup.h"
 
+// Initial values
+template <int dim>
+void VFPEquation::InitialValueFunction<dim>::vector_value(
+    const dealii::Point<dim> &p, dealii::Vector<double> &f) const {
+  Assert(dim <= 3, dealii::ExcNotImplemented());
+  Assert(f.size() == (expansion_order + 1) * (expansion_order + 1),
+         dealii::ExcDimensionMismatch(
+             f.size(), (expansion_order + 1) * (expansion_order + 1)));
+  // NOTE: The zeroth component of values corresponds to f_000, the first
+  // component to f_110 etc.
+  //
+  // NOTE: If the momentum term is activated the last component
+  // of point, i.e. p[dim] is the p coordinate.
+  //
+  // EXAMPLES
+  // DIM = 1
+  // constant function
+  static_cast<void>(p);
+  f[0] = 0.;
+  // Gaussian
+  // f[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+
+  // Constant disc
+  // if (std::abs(p[0]) < 1.) f[0] = 1.;
+
+  // space/momentum dependent distribution
+  // f[0] = 1. + 0.2 * p[0];
+
+  // sinusoidal distribution
+  // f[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
+
+  // DIM = 2
+  // constant
+  // static_cast<void>(p);
+  // f[0] = 0.;
+  // Gaussian
+  // f[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
+
+  // Constant disc
+  // if (p.norm() <= 1.) f[0] = 1.;
+
+  // Constant cross (e.g. for a rigid rotator)
+  // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) f[0] = 1.;
+  // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) f[0] = 1.;
+
+  // Initialise f_000, f_110, f_100, f111, ... with a Gaussian
+  // std::fill(
+  //     f.begin(), f.end(),
+  //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5, 2)) /
+  //                     0.01)));
+
+  // DIM 3
+  // f[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) +
+  //                                std::pow(p[2], 2))));
+}
+// explicit instantiation
+template class VFPEquation::InitialValueFunction<1>;
+template class VFPEquation::InitialValueFunction<2>;
+template class VFPEquation::InitialValueFunction<3>;
+
 template <int dim>
 void VFPEquation::ScatteringFrequency<dim>::value_list(
     const std::vector<dealii::Point<dim>> &points,
