@@ -2,6 +2,9 @@
 
 #include <deal.II/base/patterns.h>
 
+#include <cctype>
+#include <sstream>
+
 VFPEquation::VFPSolverControl::VFPSolverControl(const std::string& file_path)
     : parameter_file{file_path} {
   declare_parameters();
@@ -25,6 +28,9 @@ void VFPEquation::VFPSolverControl::declare_parameters() {
     parameter_handler.declare_entry("Number of refinements", "6",
                                     dealii::Patterns::Integer(0),
                                     "Number of global mesh refinement steps");
+    parameter_handler.declare_entry(
+        "Periodicity", "false, false, false", dealii::Patterns::Anything(),
+        "Periodic boundaries in the three coordinate directions.");
   }
   parameter_handler.leave_subsection();
 
@@ -68,7 +74,19 @@ void VFPEquation::VFPSolverControl::parse_parameters() {
 
 void VFPEquation::VFPSolverControl::get_parameters() {
   parameter_handler.enter_subsection("Mesh");
-  { num_refinements = parameter_handler.get_integer("Number of refinements"); }
+  {
+    num_refinements = parameter_handler.get_integer("Number of refinements");
+    // Periodicity
+    std::string p = parameter_handler.get("Periodicity");
+    // Remove whitespace
+    p.erase(std::remove_if(p.begin(), p.end(),
+                           [](unsigned char x) { return std::isspace(x); }),
+            p.end());
+
+    std::stringstream string_stream(p);
+    for (std::string value; std::getline(string_stream, value, ',');)
+      periodicity.push_back((value == "true" ? true : false));
+  }
   parameter_handler.leave_subsection();
 
   parameter_handler.enter_subsection("Time stepping");

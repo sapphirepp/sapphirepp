@@ -342,20 +342,6 @@ void VFPEquationSolver::make_grid() {
       // // Colorize = true means to set boundary ids (default for 1D)
       GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
                                                 p2, true);
-      // Periodic boundary conditions with MeshWorker. Mailinglist
-    // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
-    //
-    // "If you call add_periodicity() on a Triangulation object, the periodic
-    // faces are treated as internal faces in MeshWorker. This means that you
-    // will not access them in a "integrate_boundary_term" function but in a
-    // "integrate_face_term" function. "
-    std::vector<GridTools::PeriodicFacePair<
-        typename Triangulation<dim_ps>::cell_iterator>>
-        matched_pairs;
-    GridTools::collect_periodic_faces(triangulation, 0, 1, 0, matched_pairs);
-    // GridTools::collect_periodic_faces(triangulation, 2, 3, 1, matched_pairs);
-    triangulation.add_periodicity(matched_pairs);
-
       // GridGenerator::hyper_cube(triangulation, 1., 6., true);
       // triangulation.refine_global(num_refinements);
     }
@@ -368,8 +354,35 @@ void VFPEquationSolver::make_grid() {
                                                 p2, true);
     }
   } else {
+    // Colorize = true means to set boundary ids (default for 1D)
     GridGenerator::hyper_cube(triangulation, -5., 5., true);
 
+    if (vfp_solver_control.periodicity[0] ||
+        vfp_solver_control.periodicity[1] ||
+        vfp_solver_control.periodicity[2]) {
+      // Periodic boundary conditions with MeshWorker. Mailinglist
+      // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+      //
+      // "If you call add_periodicity() on a Triangulation object, the
+      // periodic faces are treated as internal faces in MeshWorker. This
+      // means that you will not access them in a "integrate_boundary_term"
+      // function but in a "integrate_face_term" function. "
+      std::vector<GridTools::PeriodicFacePair<
+          typename Triangulation<dim_ps>::cell_iterator>>
+          matched_pairs;
+      if (vfp_solver_control.periodicity[0])
+        GridTools::collect_periodic_faces(triangulation, 0, 1, 0,
+                                          matched_pairs);
+      if (vfp_solver_control.periodicity[1] && dim_ps >= 2)
+        GridTools::collect_periodic_faces(triangulation, 2, 3, 1,
+                                          matched_pairs);
+      if (vfp_solver_control.periodicity[2] && dim_ps == 3)
+        GridTools::collect_periodic_faces(triangulation, 4, 5, 2,
+                                          matched_pairs);
+
+      triangulation.add_periodicity(matched_pairs);
+    }
+    // Refinement after periodicity
     triangulation.refine_global(num_refinements);
   }
 

@@ -5,6 +5,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "compile-time-flags.h"
 
@@ -57,6 +58,7 @@ class VFPSolverControl {
   // These settings are read from a parameter file
   int expansion_order;
   unsigned int num_refinements;
+  std::vector<bool> periodicity;
   unsigned int polynomial_degree;
   std::string time_stepping_method;
   double theta;
