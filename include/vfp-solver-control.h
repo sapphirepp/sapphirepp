@@ -58,6 +58,8 @@ class VFPSolverControl {
   int expansion_order;
   unsigned int num_refinements;
   unsigned int polynomial_degree;
+  std::string time_stepping_method;
+  double theta;
   double time_step;
   double final_time;
 

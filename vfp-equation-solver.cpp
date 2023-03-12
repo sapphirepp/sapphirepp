@@ -311,9 +311,14 @@ void VFPEquationSolver::run() {
        time += time_step, ++time_step_number) {
     pcout << "Time step " << time_step_number << " at t = " << time << "\n";
     // Time stepping method
-    // explicit_runge_kutta(time, time_step);
-    theta_method(time, time_step);
-    // low_storage_explicit_runge_kutta(time, time_step);
+    if (vfp_solver_control.time_stepping_method == "Forward Euler" ||
+        vfp_solver_control.time_stepping_method == "Backward Euler" ||
+        vfp_solver_control.time_stepping_method == "Crank-Nicolson")
+      theta_method(time, time_step);
+    else if (vfp_solver_control.time_stepping_method == "ERK4")
+      explicit_runge_kutta(time, time_step);
+    else if (vfp_solver_control.time_stepping_method == "LSERK")
+      low_storage_explicit_runge_kutta(time, time_step);
     {
       // NOTE: I cannot create TimerOutput::Scope inside output_results(),
       // because it is declared const.
@@ -1056,12 +1061,11 @@ void VFPEquationSolver::compute_source_term(
 void VFPEquationSolver::theta_method(const double time,
                                      const double time_step) {
   TimerOutput::Scope timer_section(timer, "Theta method");
-  // Equation:
-  // (mass_matrix + time_step * theta * dg_matrix(time + time_step)) f(time +
-  // time_step) = (mass_matrix - time_step * (1 - theta) * dg_matrix(time) )
-  // f(time)
-  const double theta =
-      1. / 2;  // 0.  Forward Euler; 1. Backward Euler; 1./2 Crank-Nicolson
+  // Equation: (mass_matrix + time_step * theta * dg_matrix(time + time_step))
+  // f(time + time_step) = (mass_matrix - time_step * (1 - theta) *
+  // dg_matrix(time) ) f(time) + time_step * theta * s(time + time_step) +
+  // time_step * (1 - theta) * s(time)
+  const double theta = vfp_solver_control.theta;
 
   locally_owned_previous_solution = locally_relevant_current_solution;
 
