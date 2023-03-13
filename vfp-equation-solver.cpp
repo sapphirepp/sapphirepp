@@ -12,6 +12,7 @@
 #include <deal.II/base/types.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
+#include <deal.II/distributed/shared_tria.h>
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/grid/filtered_iterator.h>
 #include <deal.II/grid/grid_generator.h>
@@ -370,9 +371,25 @@ void VFPEquationSolver::make_grid() {
       std::vector<GridTools::PeriodicFacePair<
           typename Triangulation<dim_ps>::cell_iterator>>
           matched_pairs;
-      if (vfp_solver_control.periodicity[0])
-        GridTools::collect_periodic_faces(triangulation, 0, 1, 0,
-                                          matched_pairs);
+      if (vfp_solver_control.periodicity[0]) {
+        // fill the matched_pairs vector manually if dim_ps = 1, at the moment
+        // there is instance of the template collect_period_faces for the
+        // parallel::shared::Triangulation with dim = 1.
+        // https://github.com/dealii/dealii/issues/14879
+        if constexpr (dim_ps == 1) {
+          matched_pairs.resize(1);
+          matched_pairs[0].cell[0] = triangulation.begin();
+          matched_pairs[0].cell[1] = triangulation.last();
+          matched_pairs[0].face_idx[0] = 0;
+          matched_pairs[0].face_idx[1] = 1;
+          std::bitset<3> temp_bitset;
+          temp_bitset[0] = 1;
+          matched_pairs[0].orientation = temp_bitset;
+        } else {
+          GridTools::collect_periodic_faces(triangulation, 0, 1, 0,
+                                            matched_pairs);
+        }
+      }
       if (vfp_solver_control.periodicity[1] && dim_ps >= 2)
         GridTools::collect_periodic_faces(triangulation, 2, 3, 1,
                                           matched_pairs);
