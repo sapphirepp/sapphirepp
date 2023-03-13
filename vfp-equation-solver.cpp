@@ -235,8 +235,7 @@ class VFPEquationSolver {
   const QGauss<dim_ps - 1> quadrature_face;
 
   // The constraints object is used for the distribute_local_to_global()
-  // function, (maybe for the periodic boundary conditions) and, in the future,
-  // for AMR
+  // function
   const AffineConstraints<double> constraints;
 
   // PDE System
@@ -543,7 +542,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
   magnetic_field.set_time(time);
   ScatteringFrequency<dim_ps> scattering_frequency;
   scattering_frequency.set_time(time);
-  
+
   ParticleVelocity<dim_ps> particle_velocity;
   ParticleGamma<dim_ps> particle_gamma;
 
@@ -590,7 +589,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
     // Scattering frequency
     std::vector<double> frequencies(q_points.size());
     scattering_frequency.value_list(q_points, frequencies);
-    
+
     // Particle
     std::vector<double> particle_velocities(q_points.size());
     particle_velocity.value_list(q_points, particle_velocities);
