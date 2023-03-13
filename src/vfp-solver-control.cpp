@@ -24,7 +24,13 @@ void VFPEquation::VFPSolverControl::print_settings(std::ostream& os) const {
 
 void VFPEquation::VFPSolverControl::declare_parameters() {
   parameter_handler.enter_subsection("Mesh");
-  {  // NOTE: This is a very strange syntax
+  { // NOTE: This is a very strange syntax
+    parameter_handler.declare_entry("Point 1", "-5., -5., -5",
+				    dealii::Patterns::Anything(),
+				    "");
+    parameter_handler.declare_entry("Point 2", "-5., -5., -5",
+				    dealii::Patterns::Anything(),
+				    "");
     parameter_handler.declare_entry("Number of refinements", "6",
                                     dealii::Patterns::Integer(0),
                                     "Number of global mesh refinement steps");
