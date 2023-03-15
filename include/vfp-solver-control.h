@@ -57,8 +57,10 @@ class VFPSolverControl {
   // Runtime settings
   // These settings are read from a parameter file
   int expansion_order;
-  unsigned int num_refinements;
   std::vector<bool> periodicity;
+  dealii::Point<dim> p1;
+  dealii::Point<dim> p2;
+  std::vector<unsigned int> n_cells;
   unsigned int polynomial_degree;
   std::string time_stepping_method;
   double theta;

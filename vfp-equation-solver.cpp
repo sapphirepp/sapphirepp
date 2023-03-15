@@ -331,85 +331,58 @@ void VFPEquationSolver::run() {
 
 void VFPEquationSolver::make_grid() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
-  // Number of refinements
-  unsigned int num_refinements = vfp_solver_control.num_refinements;
-  if constexpr ((flags & TermFlags::momentum) != TermFlags::none) {
-    if constexpr (dim_cs == 1) {
-      unsigned int n_cells = 1 << num_refinements;
-      std::vector<unsigned int> repititions{n_cells, n_cells};
-      Point<dim_ps> p1{-5., 1.};
-      Point<dim_ps> p2{5., 10.};
-      // // Colorize = true means to set boundary ids (default for 1D)
-      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
-                                                p2, true);
-      // GridGenerator::hyper_cube(triangulation, 1., 6., true);
-      // triangulation.refine_global(num_refinements);
-    }
-    if constexpr (dim_cs == 2) {
-      unsigned int n_cells = 1 << num_refinements;
-      std::vector<unsigned int> repititions{n_cells, n_cells, n_cells};
-      Point<dim_ps> p1{-5., -5., 1.};
-      Point<dim_ps> p2{5., 5., 10.};
-      GridGenerator::subdivided_hyper_rectangle(triangulation, repititions, p1,
-                                                p2, true);
-    }
-  } else {
-    // Colorize = true means to set boundary ids (default for 1D)
-    GridGenerator::hyper_cube(triangulation, -5., 5., true);
+  pcout << "Create the grid" << std::endl;
+  // Colorise = true means to set boundary ids (default for 1D)
+  bool colorise = vfp_solver_control.periodicity[0] ||
+                  vfp_solver_control.periodicity[1] ||
+                  vfp_solver_control.periodicity[2];
+  GridGenerator::subdivided_hyper_rectangle(
+      triangulation, vfp_solver_control.n_cells, vfp_solver_control.p1,
+      vfp_solver_control.p2, colorise);
 
-    if (vfp_solver_control.periodicity[0] ||
-        vfp_solver_control.periodicity[1] ||
-        vfp_solver_control.periodicity[2]) {
-      // Periodic boundary conditions with MeshWorker. Mailinglist
-      // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
-      //
-      // "If you call add_periodicity() on a Triangulation object, the
-      // periodic faces are treated as internal faces in MeshWorker. This
-      // means that you will not access them in a "integrate_boundary_term"
-      // function but in a "integrate_face_term" function. "
-      std::vector<GridTools::PeriodicFacePair<
-          typename Triangulation<dim_ps>::cell_iterator>>
-          matched_pairs;
-      if (vfp_solver_control.periodicity[0]) {
-        // fill the matched_pairs vector manually if dim_ps = 1, at the moment
-        // there is instance of the template collect_period_faces for the
-        // parallel::shared::Triangulation with dim = 1.
-        // https://github.com/dealii/dealii/issues/14879
-        if constexpr (dim_ps == 1) {
-          matched_pairs.resize(1);
-          matched_pairs[0].cell[0] = triangulation.begin();
-          matched_pairs[0].cell[1] = triangulation.last();
-          matched_pairs[0].face_idx[0] = 0;
-          matched_pairs[0].face_idx[1] = 1;
-          std::bitset<3> temp_bitset;
-          temp_bitset[0] = 1;
-          matched_pairs[0].orientation = temp_bitset;
-        } else {
-          GridTools::collect_periodic_faces(triangulation, 0, 1, 0,
-                                            matched_pairs);
-        }
-      }
-      if (vfp_solver_control.periodicity[1] && dim_ps >= 2)
-        GridTools::collect_periodic_faces(triangulation, 2, 3, 1,
-                                          matched_pairs);
-      if (vfp_solver_control.periodicity[2] && dim_ps == 3)
-        GridTools::collect_periodic_faces(triangulation, 4, 5, 2,
-                                          matched_pairs);
-
-      triangulation.add_periodicity(matched_pairs);
-    }
-    // Refinement after periodicity
-    triangulation.refine_global(num_refinements);
-  }
-
-  // std::ofstream out("grid.vtk");
-  // GridOut grid_out;
-  // grid_out.write_vtk(triangulation, out);
-  // std::cout << "	Grid written to grid.vtk"
-  //           << "\n";
+  // GridGenerator::hyper_cube(triangulation, -5., 5., colorise);
+  // triangulation.refine_global(6);
   pcout << "The grid was created: \n"
         << "	Number of active cells: "
         << triangulation.n_global_active_cells() << "\n";
+
+  if (colorise) {
+    pcout << "Set up periodic boundary conditions" << std::endl;
+    // Periodic boundary conditions with MeshWorker. Mailinglist
+    // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+    //
+    // "If you call add_periodicity() on a Triangulation object, the
+    // periodic faces are treated as internal faces in MeshWorker. This
+    // means that you will not access them in a "integrate_boundary_term"
+    // function but in a "integrate_face_term" function. "
+    std::vector<GridTools::PeriodicFacePair<
+        typename Triangulation<dim_ps>::cell_iterator>>
+        matched_pairs;
+
+    // Fill the matched_pairs vector manually if dim_ps = 1. At the moment there
+    // is no instance of the template collect_period_faces for MeshType =
+    // parallel::shared::Triangulation<1,1>.
+    // https://github.com/dealii/dealii/issues/14879
+    if constexpr (dim_ps == 1) {
+      if (vfp_solver_control.periodicity[0]) {
+        matched_pairs.resize(1);
+        matched_pairs[0].cell[0] = triangulation.begin();
+        matched_pairs[0].cell[1] = triangulation.last();
+        matched_pairs[0].face_idx[0] = 0;
+        matched_pairs[0].face_idx[1] = 1;
+        std::bitset<3> temp_bitset;
+        temp_bitset[0] = 1;
+        matched_pairs[0].orientation = temp_bitset;
+      }
+    } else {
+      for (unsigned int i = 0; i < dim_ps; ++i) {
+        if (vfp_solver_control.periodicity[i])
+          GridTools::collect_periodic_faces(triangulation, 2 * i, 2 * i + 1, i,
+                                            matched_pairs);
+      }
+    }
+    triangulation.add_periodicity(matched_pairs);
+  }
 }
 
 void VFPEquationSolver::setup_system() {

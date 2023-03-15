@@ -24,16 +24,16 @@ void VFPEquation::VFPSolverControl::print_settings(std::ostream& os) const {
 
 void VFPEquation::VFPSolverControl::declare_parameters() {
   parameter_handler.enter_subsection("Mesh");
-  { // NOTE: This is a very strange syntax
-    parameter_handler.declare_entry("Point 1", "-5., -5., -5",
-				    dealii::Patterns::Anything(),
-				    "");
-    parameter_handler.declare_entry("Point 2", "-5., -5., -5",
-				    dealii::Patterns::Anything(),
-				    "");
-    parameter_handler.declare_entry("Number of refinements", "6",
-                                    dealii::Patterns::Integer(0),
-                                    "Number of global mesh refinement steps");
+  {  // NOTE: This is a very strange syntax
+    parameter_handler.declare_entry(
+        "Point 1", "0., 0., 0.", dealii::Patterns::Anything(),
+        "Two diagonally opposite corner points, Point 1 and  Point 2");
+    parameter_handler.declare_entry(
+        "Point 2", "1., 1., 1.", dealii::Patterns::Anything(),
+        "Two diagonally opposite corner points Point 1 and  Point 2");
+    parameter_handler.declare_entry(
+        "Number of cells", "6", dealii::Patterns::Anything(),
+        "Number of cells in each coordinate direction");
     parameter_handler.declare_entry(
         "Periodicity", "false, false, false", dealii::Patterns::Anything(),
         "Periodic boundaries in the three coordinate directions.");
@@ -81,17 +81,38 @@ void VFPEquation::VFPSolverControl::parse_parameters() {
 void VFPEquation::VFPSolverControl::get_parameters() {
   parameter_handler.enter_subsection("Mesh");
   {
-    num_refinements = parameter_handler.get_integer("Number of refinements");
-    // Periodicity
-    std::string p = parameter_handler.get("Periodicity");
-    // Remove whitespace
-    p.erase(std::remove_if(p.begin(), p.end(),
-                           [](unsigned char x) { return std::isspace(x); }),
-            p.end());
+    // Two diagonally opposite corner points of the grid
+    std::stringstream p1_string(parameter_handler.get("Point 1"));
+    std::stringstream p2_string(parameter_handler.get("Point 2"));
+    for (auto [coordinate, i] =
+             std::tuple<std::string, unsigned int>{std::string(), 0};
+         std::getline(p1_string, coordinate, ','); ++i) {
+      if (i < dim) p1[i] = std::stod(coordinate);
+    }
+    for (auto [coordinate, i] =
+             std::tuple<std::string, unsigned int>{std::string(), 0};
+         std::getline(p2_string, coordinate, ','); ++i) {
+      if (i < dim) p2[i] = std::stod(coordinate);
+    }
 
-    std::stringstream string_stream(p);
+    // Number of cells
+    std::stringstream n_cells_string(parameter_handler.get("Number of cells"));
+    for (std::string n; std::getline(n_cells_string, n, ',');)
+      n_cells.push_back(std::stoi(n));
+    n_cells.resize(dim);  // shrink to dim of the phase-space
+
+    // Periodicity
+    std::string periodicity_string = parameter_handler.get("Periodicity");
+    // Remove whitespace
+    periodicity_string.erase(
+        std::remove_if(periodicity_string.begin(), periodicity_string.end(),
+                       [](unsigned char x) { return std::isspace(x); }),
+        periodicity_string.end());
+
+    std::stringstream string_stream(periodicity_string);
     for (std::string value; std::getline(string_stream, value, ',');)
       periodicity.push_back((value == "true" ? true : false));
+    periodicity.resize(dim);
   }
   parameter_handler.leave_subsection();
 
