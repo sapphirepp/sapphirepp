@@ -32,7 +32,7 @@ void Sapphire::VFPSolverControl::declare_parameters() {
         "Point 2", "1., 1., 1.", dealii::Patterns::Anything(),
         "Two diagonally opposite corner points Point 1 and  Point 2");
     parameter_handler.declare_entry(
-        "Number of cells", "6", dealii::Patterns::Anything(),
+        "Number of cells", "4, 4, 4", dealii::Patterns::Anything(),
         "Number of cells in each coordinate direction");
     parameter_handler.declare_entry(
         "Periodicity", "false, false, false", dealii::Patterns::Anything(),
