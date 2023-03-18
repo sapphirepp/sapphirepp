@@ -3,7 +3,7 @@
 #include <cmath>
 
 template <int dim>
-void VFPEquation::ParticleVelocity<dim>::value_list(
+void Sapphire::ParticleVelocity<dim>::value_list(
     const std::vector<dealii::Point<dim>> &points,
     std::vector<double> &velocities, unsigned int component) const {
   Assert(velocities.size() == points.size(),
@@ -20,12 +20,12 @@ void VFPEquation::ParticleVelocity<dim>::value_list(
 }
 
 // explicit instantiation
-template class VFPEquation::ParticleVelocity<1>;
-template class VFPEquation::ParticleVelocity<2>;
-template class VFPEquation::ParticleVelocity<3>;
+template class Sapphire::ParticleVelocity<1>;
+template class Sapphire::ParticleVelocity<2>;
+template class Sapphire::ParticleVelocity<3>;
 
 template <int dim>
-void VFPEquation::ParticleGamma<dim>::value_list(
+void Sapphire::ParticleGamma<dim>::value_list(
     const std::vector<dealii::Point<dim>> &points, std::vector<double> &gammas,
     unsigned int component) const {
   Assert(gammas.size() == points.size(),
@@ -40,6 +40,6 @@ void VFPEquation::ParticleGamma<dim>::value_list(
 }
 
 // explicit instantiation
-template class VFPEquation::ParticleGamma<1>;
-template class VFPEquation::ParticleGamma<2>;
-template class VFPEquation::ParticleGamma<3>;
+template class Sapphire::ParticleGamma<1>;
+template class Sapphire::ParticleGamma<2>;
+template class Sapphire::ParticleGamma<3>;

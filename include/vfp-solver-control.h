@@ -9,7 +9,7 @@
 
 #include "compile-time-flags.h"
 
-namespace VFPEquation {
+namespace Sapphire {
 class VFPSolverControl {
  public:
   // NOTE: A member variable needs be constexpr to be used as template
@@ -78,5 +78,5 @@ class VFPSolverControl {
   dealii::ParameterHandler parameter_handler;
 };
 
-}  // namespace VFPEquation
+}  // namespace Sapphire
 #endif

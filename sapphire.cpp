@@ -65,7 +65,7 @@
 #include "upwind-flux.h"
 #include "vfp-solver-control.h"
 
-namespace VFPEquation {
+namespace Sapphire {
 using namespace dealii;
 
 // The mesh_loop function requires helper data types
@@ -1358,11 +1358,11 @@ void VFPEquationSolver::output_results(
                                       time_step_number, mpi_communicator, 3, 8);
 }
 
-}  // namespace VFPEquation
+}  // namespace Sapphire
 
 int main(int argc, char *argv[]) {
   try {
-    using namespace VFPEquation;
+    using namespace Sapphire;
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
     VFPSolverControl vfp_solver_control("vfp-equation.prm");

@@ -2,7 +2,7 @@
 
 // Initial values
 template <int dim>
-void VFPEquation::InitialValueFunction<dim>::vector_value(
+void Sapphire::InitialValueFunction<dim>::vector_value(
     const dealii::Point<dim> &p, dealii::Vector<double> &f) const {
   Assert(dim <= 3, dealii::ExcNotImplemented());
   Assert(f.size() == (expansion_order + 1) * (expansion_order + 1),
@@ -56,12 +56,12 @@ void VFPEquation::InitialValueFunction<dim>::vector_value(
   //                                std::pow(p[2], 2))));
 }
 // explicit instantiation
-template class VFPEquation::InitialValueFunction<1>;
-template class VFPEquation::InitialValueFunction<2>;
-template class VFPEquation::InitialValueFunction<3>;
+template class Sapphire::InitialValueFunction<1>;
+template class Sapphire::InitialValueFunction<2>;
+template class Sapphire::InitialValueFunction<3>;
 
 template <int dim>
-void VFPEquation::ScatteringFrequency<dim>::value_list(
+void Sapphire::ScatteringFrequency<dim>::value_list(
     const std::vector<dealii::Point<dim>> &points,
     std::vector<double> &scattering_frequencies,
     const unsigned int component) const {
@@ -74,13 +74,13 @@ void VFPEquation::ScatteringFrequency<dim>::value_list(
   std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 0.5);
 }
 // explicit instantiation
-template class VFPEquation::ScatteringFrequency<1>;
-template class VFPEquation::ScatteringFrequency<2>;
-template class VFPEquation::ScatteringFrequency<3>;
+template class Sapphire::ScatteringFrequency<1>;
+template class Sapphire::ScatteringFrequency<2>;
+template class Sapphire::ScatteringFrequency<3>;
 
 // Source term implementation
 template <int dim>
-void VFPEquation::Source<dim>::vector_value(
+void Sapphire::Source<dim>::vector_value(
     const dealii::Point<dim> &p, dealii::Vector<double> &values) const {
   Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
          dealii::ExcDimensionMismatch(
@@ -99,13 +99,13 @@ void VFPEquation::Source<dim>::vector_value(
               std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
 }
 // explicit instantiation
-template class VFPEquation::Source<1>;
-template class VFPEquation::Source<2>;
-template class VFPEquation::Source<3>;
+template class Sapphire::Source<1>;
+template class Sapphire::Source<2>;
+template class Sapphire::Source<3>;
 
 // Magnetic field implementation
 template <int dim>
-void VFPEquation::MagneticField<dim>::vector_value(
+void Sapphire::MagneticField<dim>::vector_value(
     const dealii::Point<dim> &point,
     dealii::Vector<double> &magnetic_field) const {
   Assert(magnetic_field.size() == 3,
@@ -120,13 +120,13 @@ void VFPEquation::MagneticField<dim>::vector_value(
 }
 
 // explicit instantiation
-template class VFPEquation::MagneticField<1>;
-template class VFPEquation::MagneticField<2>;
-template class VFPEquation::MagneticField<3>;
+template class Sapphire::MagneticField<1>;
+template class Sapphire::MagneticField<2>;
+template class Sapphire::MagneticField<3>;
 
 // Velocity field implementation
 template <int dim>
-void VFPEquation::BackgroundVelocityField<dim>::vector_value(
+void Sapphire::BackgroundVelocityField<dim>::vector_value(
     const dealii::Point<dim> &point, dealii::Vector<double> &velocity) const {
   Assert(velocity.size() == 3,
          dealii::ExcDimensionMismatch(velocity.size(), 3));
@@ -178,7 +178,7 @@ void VFPEquation::BackgroundVelocityField<dim>::vector_value(
 
 // Divergence
 template <int dim>
-void VFPEquation::BackgroundVelocityField<dim>::divergence_list(
+void Sapphire::BackgroundVelocityField<dim>::divergence_list(
     const std::vector<dealii::Point<dim>> &points,
     std::vector<double> &divergence) {
   Assert(divergence.size() == points.size(),
@@ -216,7 +216,7 @@ void VFPEquation::BackgroundVelocityField<dim>::divergence_list(
 
 // Material derivative
 template <int dim>
-void VFPEquation::BackgroundVelocityField<dim>::material_derivative_list(
+void Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
     const std::vector<dealii::Point<dim>> &points,
     std::vector<dealii::Vector<double>> &material_derivatives) {
   Assert(material_derivatives[0].size() == 3,
@@ -281,7 +281,7 @@ void VFPEquation::BackgroundVelocityField<dim>::material_derivative_list(
 
 // Jacobian matrix
 template <int dim>
-void VFPEquation::BackgroundVelocityField<dim>::jacobian_list(
+void Sapphire::BackgroundVelocityField<dim>::jacobian_list(
     const std::vector<dealii::Point<dim>> &points,
     std::vector<std::vector<dealii::Vector<double>>> &jacobians) const {
   Assert(jacobians.size() == points.size(),
@@ -375,6 +375,6 @@ void VFPEquation::BackgroundVelocityField<dim>::jacobian_list(
 }
 
 // explicit instantiation
-template class VFPEquation::BackgroundVelocityField<1>;
-template class VFPEquation::BackgroundVelocityField<2>;
-template class VFPEquation::BackgroundVelocityField<3>;
+template class Sapphire::BackgroundVelocityField<1>;
+template class Sapphire::BackgroundVelocityField<2>;
+template class Sapphire::BackgroundVelocityField<3>;

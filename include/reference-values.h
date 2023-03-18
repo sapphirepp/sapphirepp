@@ -1,7 +1,7 @@
 #ifndef VFPEQUATION_REFERENCEVALUES_H
 #define VFPEQUATION_REFERENCEVALUES_H
 
-namespace VFPEquation {
+namespace Sapphire {
 struct ReferenceValues {
   // reference values
   const double energy = 10;       // GeV
@@ -20,6 +20,6 @@ struct ReferenceValues {
 
 template <typename StreamType>
 StreamType &operator<<(StreamType &os, const ReferenceValues &reference_values);
-}  // namespace VFPEquation
+}  // namespace Sapphire
 
 #endif

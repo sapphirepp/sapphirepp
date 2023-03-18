@@ -10,18 +10,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. 
 
 set(DEAL_II_DIR "~/.local/lib/dealii")
 
-find_package(deal.II 9.3.0 REQUIRED
+find_package(deal.II 9.4.0 REQUIRED
   HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
 
-project(VFP-Equation)
+project(Sapphire VERSION 0.9.0)
 option(vfp-equation-solver "Compile the VFP Equation Solver" ON )
 if(vfp-equation-solver)
   add_subdirectory(src)
-  add_executable(vfp-equation-solver vfp-equation-solver.cpp)
-  deal_ii_setup_target(vfp-equation-solver)
-  target_link_libraries(vfp-equation-solver VFPSolverLib)
+  add_executable(sapphire sapphire.cpp)
+  deal_ii_setup_target(sapphire)
+  target_link_libraries(sapphire VFPSolverLib)
 endif(vfp-equation-solver)
 
 

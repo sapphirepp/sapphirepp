@@ -12,7 +12,7 @@
 #include <random>
 
 template <int dim>
-VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
+Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
     : pde_system{system},
       matrix_size{static_cast<int>(pde_system.system_size())},
       advection_matrices(3, std::vector<double>(matrix_size * matrix_size)),
@@ -62,12 +62,12 @@ VFPEquation::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::set_time(double time) {
+void Sapphire::UpwindFlux<dim>::set_time(double time) {
   background_velocity_field.set_time(time);
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
+void Sapphire::UpwindFlux<dim>::compute_upwind_fluxes(
     const std::vector<dealii::Point<dim>> &q_points,
     const std::vector<dealii::Tensor<1, dim>> &normals,
     std::vector<dealii::FullMatrix<double>> &positive_flux_matrices,
@@ -146,7 +146,7 @@ void VFPEquation::UpwindFlux<dim>::compute_upwind_fluxes(
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::prepare_work_arrays_for_lapack() {
+void Sapphire::UpwindFlux<dim>::prepare_work_arrays_for_lapack() {
   // Preparations for the eigenvalue and eigenvector computations
   //
   // The computation of the upwind flux in the p direction requires to the
@@ -214,7 +214,7 @@ void VFPEquation::UpwindFlux<dim>::prepare_work_arrays_for_lapack() {
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::prepare_upwind_fluxes() {
+void Sapphire::UpwindFlux<dim>::prepare_upwind_fluxes() {
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
   // eigenvalues of A_x are the roots of the associated legendre polynomials.
   // Since the associated Legendre Polynomials are orthogonal polynomials, it
@@ -280,7 +280,7 @@ void VFPEquation::UpwindFlux<dim>::prepare_upwind_fluxes() {
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::test() {
+void Sapphire::UpwindFlux<dim>::test() {
   std::cout << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
     std::cout << lambda << " ";
@@ -365,7 +365,7 @@ void VFPEquation::UpwindFlux<dim>::test() {
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::compute_flux_in_space_directions(
+void Sapphire::UpwindFlux<dim>::compute_flux_in_space_directions(
     const unsigned int component, const double n_component,
     const double background_velocity, const double particle_velocity,
     dealii::FullMatrix<double> &positive_flux_matrix,
@@ -415,7 +415,7 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_space_directions(
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::compute_matrix_sum(
+void Sapphire::UpwindFlux<dim>::compute_matrix_sum(
     const double n_p, const double momentum, const double gamma,
     const dealii::Vector<double> &material_derivative,
     const std::vector<dealii::Vector<double>> &jacobian) {
@@ -435,7 +435,7 @@ void VFPEquation::UpwindFlux<dim>::compute_matrix_sum(
 }
 
 template <int dim>
-void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
+void Sapphire::UpwindFlux<dim>::compute_flux_in_p_direction(
     const double n_p, const double momentum, const double gamma,
     const dealii::Vector<double> &material_derivative,
     const std::vector<dealii::Vector<double>> &jacobian,
@@ -486,6 +486,6 @@ void VFPEquation::UpwindFlux<dim>::compute_flux_in_p_direction(
 }
 
 // explicit instantiation
-template class VFPEquation::UpwindFlux<1>;
-template class VFPEquation::UpwindFlux<2>;
-template class VFPEquation::UpwindFlux<3>;
+template class Sapphire::UpwindFlux<1>;
+template class Sapphire::UpwindFlux<2>;
+template class Sapphire::UpwindFlux<3>;

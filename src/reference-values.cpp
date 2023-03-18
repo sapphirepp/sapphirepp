@@ -5,8 +5,8 @@
 #include <ostream>
 
 template <typename StreamType>
-StreamType &VFPEquation::operator<<(
-    StreamType &os, const VFPEquation::ReferenceValues &reference_values) {
+StreamType &Sapphire::operator<<(
+    StreamType &os, const Sapphire::ReferenceValues &reference_values) {
   os << "Reference Values: \n"
      << "	Energy: " << reference_values.energy << " GeV \n"
      << "	Mass: " << reference_values.mass << " GeV/c^2 \n"
@@ -20,7 +20,7 @@ StreamType &VFPEquation::operator<<(
 }
 
 // explicit instantiation
-template std::ostream &VFPEquation::operator<<(
-    std::ostream &, const VFPEquation::ReferenceValues &);
-template dealii::ConditionalOStream &VFPEquation::operator<<(
-    dealii::ConditionalOStream &, const VFPEquation::ReferenceValues &);
+template std::ostream &Sapphire::operator<<(
+    std::ostream &, const Sapphire::ReferenceValues &);
+template dealii::ConditionalOStream &Sapphire::operator<<(
+    dealii::ConditionalOStream &, const Sapphire::ReferenceValues &);

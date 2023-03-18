@@ -7,7 +7,7 @@
 #include <ostream>
 #include <vector>
 
-namespace VFPEquation {
+namespace Sapphire {
 class PDESystem {
  public:
   PDESystem(int l);
@@ -70,5 +70,5 @@ class PDESystem {
   // Map between i and l,m,s (implemented in constructor)
   std::vector<std::array<unsigned int, 3>> lms_indices;
 };
-}  // namespace VFPEquation
+}  // namespace Sapphire
 #endif

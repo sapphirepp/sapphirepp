@@ -11,7 +11,7 @@
 
 // Functions to compute the velocity and the gamma of a particle at the point
 // x,(y,z) of p in phase space
-namespace VFPEquation {
+namespace Sapphire {
 template <int dim>
 class ParticleVelocity : public dealii::Function<dim> {
  public:
@@ -33,5 +33,5 @@ class ParticleGamma : public dealii::Function<dim> {
  private:
   ReferenceValues reference_values;
 };
-}  // namespace VFPEquation
+}  // namespace Sapphire
 #endif

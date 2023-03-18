@@ -5,14 +5,14 @@
 #include <cctype>
 #include <sstream>
 
-VFPEquation::VFPSolverControl::VFPSolverControl(const std::string& file_path)
+Sapphire::VFPSolverControl::VFPSolverControl(const std::string& file_path)
     : parameter_file{file_path} {
   declare_parameters();
   parse_parameters();
   get_parameters();
 }
 
-void VFPEquation::VFPSolverControl::print_settings(std::ostream& os) const {
+void Sapphire::VFPSolverControl::print_settings(std::ostream& os) const {
   os << "Compile time parameters: " << std::endl;
   os << "	Dimension Configuration Space: "
      << VFPSolverControl::dim_configuration_space << "\n";
@@ -22,7 +22,7 @@ void VFPEquation::VFPSolverControl::print_settings(std::ostream& os) const {
   os << std::endl;
 }
 
-void VFPEquation::VFPSolverControl::declare_parameters() {
+void Sapphire::VFPSolverControl::declare_parameters() {
   parameter_handler.enter_subsection("Mesh");
   {  // NOTE: This is a very strange syntax
     parameter_handler.declare_entry(
@@ -74,11 +74,11 @@ void VFPEquation::VFPSolverControl::declare_parameters() {
   parameter_handler.leave_subsection();
 }
 
-void VFPEquation::VFPSolverControl::parse_parameters() {
+void Sapphire::VFPSolverControl::parse_parameters() {
   parameter_handler.parse_input(parameter_file);
 }
 
-void VFPEquation::VFPSolverControl::get_parameters() {
+void Sapphire::VFPSolverControl::get_parameters() {
   parameter_handler.enter_subsection("Mesh");
   {
     // Two diagonally opposite corner points of the grid

@@ -12,7 +12,7 @@
 // defined in the reference-values.h header.
 #include "reference-values.h"
 
-namespace VFPEquation {
+namespace Sapphire {
 
 struct ParticleProperties {
   const double mass = 1.;
@@ -96,5 +96,5 @@ class BackgroundVelocityField : public dealii::Function<dim> {
   // Numerical constants
   double pi = 2 * std::acos(0.);
 };
-}  // namespace VFPEquation
+}  // namespace Sapphire
 #endif

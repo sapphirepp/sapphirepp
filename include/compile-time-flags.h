@@ -5,7 +5,7 @@
 
 #include <ostream>
 
-namespace VFPEquation {
+namespace Sapphire {
 enum class TermFlags {
   none = 0,
   spatial_advection = 1 << 0,
@@ -41,5 +41,5 @@ template std::ostream &operator<<(std::ostream &os, TermFlags f);
 template dealii::ConditionalOStream &operator<<(dealii::ConditionalOStream &os,
                                                 TermFlags f);
 
-}  // namespace VFPEquation
+}  // namespace Sapphire
 #endif

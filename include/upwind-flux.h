@@ -11,7 +11,7 @@
 #include "pde-system.h"
 #include "physical-setup.h"
 
-namespace VFPEquation {
+namespace Sapphire {
 template <int dim>
 class UpwindFlux {
  public:
@@ -110,4 +110,4 @@ class UpwindFlux {
   // exits or not.
   const bool momentum;
 };
-}  // namespace VFPEquation
+}  // namespace Sapphire
