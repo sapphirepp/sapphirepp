@@ -37,8 +37,19 @@ simulation.
 
 The system of equations is solved applying a finite element method. We use the
 discontinuous Galerkin method. Sapphire is implemented with the help of the
-finite element library (deal.ii)[https://dealii.org/]. 
+finite element library [deal.ii](https://dealii.org/).
 
 # Compiling Sapphire
+
+The compilation of Sapphire requires an installed version of deal.ii with PETSc
+support. After having installed deal.ii, the path in CMakeLists.txt to the deal.ii
+installation needs to be adapted. Then calling 
+```bash
+mkdir build
+cd build
+cmake ..
+make 
+```
+compiles it.
 
 # Quick start guide
