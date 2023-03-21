@@ -1448,7 +1448,8 @@ void VFPEquationSolver::output_results(
     subdomain(i) = triangulation.locally_owned_subdomain();
   data_out.add_data_vector(subdomain, "subdomain");
 
-  data_out.build_patches();
+  // Adapt the output to the polynomial degree of the shape functions
+  data_out.build_patches(vfp_solver_control.polynomial_degree);
   if (vfp_solver_control.format == "vtu")
     data_out.write_vtu_with_pvtu_record(
         vfp_solver_control.results_path + "/" +
