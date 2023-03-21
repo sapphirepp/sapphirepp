@@ -20,6 +20,10 @@ class VFPSolverControl {
   // compile time settings
   static constexpr TermFlags terms =
       TermFlags::spatial_advection | TermFlags::source;
+
+  // This variabale controls if p is linear or logarithmic
+  static constexpr bool logarithmic_p = true;
+
   // Deactivating the spatial advection term is equivalent to assuming a
   // homogeneous distribution function (i.e. a distribution function which does
   // not depend on x,y z). In this program this is equivalent to set dimension

@@ -174,6 +174,7 @@ class VFPEquationSolver {
   static constexpr int dim_ps = VFPSolverControl::dim;
   static constexpr int dim_cs = VFPSolverControl::dim_configuration_space;
   static constexpr TermFlags flags = VFPSolverControl::terms;
+  static constexpr bool logarithmic_p = VFPSolverControl::logarithmic_p;
   static constexpr bool time_dependent_fields =
       VFPSolverControl::time_dependent_fields;
   static constexpr bool time_dependent_source =
@@ -276,7 +277,7 @@ VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
       quadrature(fe.tensor_degree() + 1),
       quadrature_face(fe.tensor_degree() + 1),
       pde_system(vfp_solver_control.expansion_order),
-      upwind_flux(pde_system, VFPSolverControl::momentum),
+      upwind_flux(pde_system, vfp_solver_control),
       timer(mpi_communicator, pcout, TimerOutput::never,
             TimerOutput::wall_times) {
   // It should be checked if the results folder exists and if not it should be
@@ -527,8 +528,8 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
   ScatteringFrequency<dim_ps> scattering_frequency;
   scattering_frequency.set_time(time);
 
-  ParticleVelocity<dim_ps> particle_velocity;
-  ParticleGamma<dim_ps> particle_gamma;
+  ParticleVelocity<dim_ps> particle_velocity(logarithmic_p);
+  ParticleGamma<dim_ps> particle_gamma(logarithmic_p);
 
   // For the transport only case, the energy, the Lorentz factor and the
   // velocity are defined in TransportOnly struct

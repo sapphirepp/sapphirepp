@@ -15,23 +15,27 @@ namespace Sapphire {
 template <int dim>
 class ParticleVelocity : public dealii::Function<dim> {
  public:
+  ParticleVelocity(bool log_p) : logarithmic_p {log_p} {}
   void value_list(const std::vector<dealii::Point<dim>> &points,
                   std::vector<double> &velocities,
                   unsigned int component = 0) const override;
 
  private:
+  bool logarithmic_p;
   ReferenceValues reference_values;
 };
 
 template <int dim>
 class ParticleGamma : public dealii::Function<dim> {
  public:
+  ParticleGamma(bool log_p) : logarithmic_p {log_p} {}
   void value_list(const std::vector<dealii::Point<dim>> &points,
                   std::vector<double> &gammas,
                   unsigned int component = 0) const override;
 
  private:
   ReferenceValues reference_values;
+  bool logarithmic_p;
 };
 }  // namespace Sapphire
 #endif

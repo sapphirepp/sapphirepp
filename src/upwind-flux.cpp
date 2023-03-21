@@ -11,8 +11,11 @@
 #include <iomanip>
 #include <random>
 
+#include "vfp-solver-control.h"
+
 template <int dim>
-Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
+Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem &system,
+                                      const VFPSolverControl &solver_control)
     : pde_system{system},
       matrix_size{static_cast<int>(pde_system.system_size())},
       advection_matrices(3, std::vector<double>(matrix_size * matrix_size)),
@@ -25,6 +28,8 @@ Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
       eigenvalues_advection_matrices(matrix_size),
       eigenvectors_advection_matrices(
           3, std::vector<double>(matrix_size * matrix_size)),
+      particle_velocity_func(solver_control.logarithmic_p),
+      particle_gamma_func(solver_control.logarithmic_p),
       isuppz(2 * matrix_size),
       jobz{&dealii::LAPACKSupport::V},
       range{&dealii::LAPACKSupport::A},
@@ -32,7 +37,7 @@ Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem &system, bool momentum)
       abstol{0.},  // see Documentation of xsyever
       int_dummy{&dealii::LAPACKSupport::one},
       double_dummy{1.},
-      momentum{momentum} {
+      momentum{solver_control.momentum} {
   // NOTE: Since we very often call compute_matrix_sum and the matrixes classes
   // of dealii do not allow unchecked access to there raw data, we create copies
   // of the matrices in the hope that this additional memory consumption is made

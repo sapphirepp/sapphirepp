@@ -12,10 +12,10 @@ void Sapphire::ParticleVelocity<dim>::value_list(
   for (unsigned int i = 0; i < points.size(); ++i) {
     // NOTE: It is assumed that magnitude of p is always the last component of a
     // point (i.e the coordinates of the phase space are x,(y,z), p)
-    velocities[i] =
-        points[i][dim - 1] /
-        std::sqrt(points[i][dim - 1] * points[i][dim - 1] +
-                  1 / (reference_values.gamma * reference_values.gamma));
+    double p =
+        (logarithmic_p ? std::exp(points[i][dim - 1]) : points[i][dim - 1]);
+    velocities[i] = p / std::sqrt(p * p + 1 / (reference_values.gamma *
+                                               reference_values.gamma));
   }
 }
 
@@ -33,9 +33,10 @@ void Sapphire::ParticleGamma<dim>::value_list(
   static_cast<void>(component);
 
   for (unsigned int i = 0; i < points.size(); ++i) {
-    gammas[i] =
-        std::sqrt(points[i][dim - 1] * points[i][dim - 1] +
-                  1 / (reference_values.gamma * reference_values.gamma));
+    double p =
+        (logarithmic_p ? std::exp(points[i][dim - 1]) : points[i][dim - 1]);
+    gammas[i] = std::sqrt(
+        p * p + 1 / (reference_values.gamma * reference_values.gamma));
   }
 }
 

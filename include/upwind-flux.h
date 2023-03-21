@@ -10,12 +10,13 @@
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "physical-setup.h"
+#include "vfp-solver-control.h"
 
 namespace Sapphire {
 template <int dim>
 class UpwindFlux {
  public:
-  UpwindFlux(const PDESystem& system, bool momentum);
+  UpwindFlux(const PDESystem& system, const VFPSolverControl& solver_control);
   void set_time(double time);
   void compute_upwind_fluxes(
       const std::vector<dealii::Point<dim>>& q_points,
