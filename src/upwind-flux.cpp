@@ -37,7 +37,8 @@ Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem &system,
       abstol{0.},  // see Documentation of xsyever
       int_dummy{&dealii::LAPACKSupport::one},
       double_dummy{1.},
-      momentum{solver_control.momentum} {
+      momentum{solver_control.momentum},
+      logarithmic_p(solver_control.logarithmic_p) {
   // NOTE: Since we very often call compute_matrix_sum and the matrixes classes
   // of dealii do not allow unchecked access to there raw data, we create copies
   // of the matrices in the hope that this additional memory consumption is made
@@ -424,19 +425,34 @@ void Sapphire::UpwindFlux<dim>::compute_matrix_sum(
     const double n_p, const double momentum, const double gamma,
     const dealii::Vector<double> &material_derivative,
     const std::vector<dealii::Vector<double>> &jacobian) {
-  for (int i = 0; i < matrix_size * matrix_size; ++i)
-    matrix_sum[i] =
-        -n_p *
-        (gamma * (material_derivative[0] * advection_matrices[0][i] +
-                  material_derivative[1] * advection_matrices[1][i] +
-                  material_derivative[2] * advection_matrices[2][i]) +
-         momentum *
-             (jacobian[0][0] * adv_mat_products[0][i] +
-              jacobian[1][1] * adv_mat_products[3][i] +
-              jacobian[2][2] * adv_mat_products[5][i] +
-              (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][i] +
-              (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
-              (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
+  if (logarithmic_p) {
+    double p = std::exp(momentum);
+    for (int i = 0; i < matrix_size * matrix_size; ++i)
+      matrix_sum[i] =
+          -n_p * (gamma / p *
+                      (material_derivative[0] * advection_matrices[0][i] +
+                       material_derivative[1] * advection_matrices[1][i] +
+                       material_derivative[2] * advection_matrices[2][i]) +
+                  jacobian[0][0] * adv_mat_products[0][i] +
+                  jacobian[1][1] * adv_mat_products[3][i] +
+                  jacobian[2][2] * adv_mat_products[5][i] +
+                  (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][i] +
+                  (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
+                  (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]);
+  } else
+    for (int i = 0; i < matrix_size * matrix_size; ++i)
+      matrix_sum[i] =
+          -n_p *
+          (gamma * (material_derivative[0] * advection_matrices[0][i] +
+                    material_derivative[1] * advection_matrices[1][i] +
+                    material_derivative[2] * advection_matrices[2][i]) +
+           momentum *
+               (jacobian[0][0] * adv_mat_products[0][i] +
+                jacobian[1][1] * adv_mat_products[3][i] +
+                jacobian[2][2] * adv_mat_products[5][i] +
+                (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][i] +
+                (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
+                (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
 }
 
 template <int dim>
