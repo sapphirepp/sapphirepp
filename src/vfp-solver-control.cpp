@@ -72,6 +72,21 @@ void Sapphire::VFPSolverControl::declare_parameters() {
                                     "the polynomials) of the finite element.");
   }
   parameter_handler.leave_subsection();
+  parameter_handler.enter_subsection("Output");
+  {
+    parameter_handler.declare_entry(
+        "Results folder", "./results", dealii::Patterns::Anything(),
+        "Path to the folder in which the simulation results will be stored. "
+        "Without a trailing slash.");
+    parameter_handler.declare_entry(
+        "Simulation identifier", "001", dealii::Patterns::Anything(),
+        "Name of the simulation run. It will be used to create a subdirectory "
+        "in the results folder.");
+    parameter_handler.declare_entry(
+        "Format", "vtu", dealii::Patterns::Selection("vtu|hdf5"),
+        "The format in which the simulation output will be stored.");
+  }
+  parameter_handler.leave_subsection();
 }
 
 void Sapphire::VFPSolverControl::parse_parameters() {
@@ -139,4 +154,10 @@ void Sapphire::VFPSolverControl::get_parameters() {
   parameter_handler.enter_subsection("Finite element");
   { polynomial_degree = parameter_handler.get_integer("Polynomial degree"); }
   parameter_handler.leave_subsection();
+  parameter_handler.enter_subsection("Output");
+  {
+    results_path = parameter_handler.get("Results folder");
+    simulation_id = parameter_handler.get("Simulation identifier");
+    format = parameter_handler.get("Format");
+  }
 }

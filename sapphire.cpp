@@ -51,6 +51,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -277,7 +278,17 @@ VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
       pde_system(vfp_solver_control.expansion_order),
       upwind_flux(pde_system, VFPSolverControl::momentum),
       timer(mpi_communicator, pcout, TimerOutput::never,
-            TimerOutput::wall_times) {}
+            TimerOutput::wall_times) {
+  // It should be checked if the results folder exists and if not it should be
+  // tried to create it
+  // Only one processor needs to check and create the folder
+  if (rank == 0)
+    if (!std::filesystem::exists(vfp_solver_control.results_path + "/" +
+                                 vfp_solver_control.simulation_id))
+      std::filesystem::create_directories(vfp_solver_control.results_path +
+                                          "/" +
+                                          vfp_solver_control.simulation_id);
+}
 
 void VFPEquationSolver::run() {
   make_grid();
@@ -1343,19 +1354,14 @@ void VFPEquationSolver::output_results(
   data_out.add_data_vector(subdomain, "subdomain");
 
   data_out.build_patches();
-  // const std::string file_path = "results/solution" +
-  //                               Utilities::int_to_string(time_step_number, 3)
-  //                               +
-  //                               ".vtu";
-
-  DataOutBase::VtkFlags vtk_flags;
-  vtk_flags.compression_level = DataOutBase::VtkFlags::best_speed;
-  data_out.set_flags(vtk_flags);
-
-  // std::ofstream output(file_path);
-  // data_out.write_vtu(output);
-  data_out.write_vtu_with_pvtu_record("./results/", "solution",
-                                      time_step_number, mpi_communicator, 3, 8);
+  if (vfp_solver_control.format == "vtu")
+    data_out.write_vtu_with_pvtu_record(
+        vfp_solver_control.results_path + "/" +
+            vfp_solver_control.simulation_id + "/",
+        "f", time_step_number, mpi_communicator, 3, 8);
+  else if (vfp_solver_control.format == "hdf5")
+    Assert(false, ExcNotImplemented("Currentlty it is not implemented to store "
+                                    "the simulation results in hdf5 format."));
 }
 
 }  // namespace Sapphire

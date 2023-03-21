@@ -57,15 +57,22 @@ class VFPSolverControl {
   // Runtime settings
   // These settings are read from a parameter file
   int expansion_order;
+  // Mesh
   std::vector<bool> periodicity;
   dealii::Point<dim> p1;
   dealii::Point<dim> p2;
   std::vector<unsigned int> n_cells;
+  // Finite element
   unsigned int polynomial_degree;
+  // Time stepping
   std::string time_stepping_method;
   double theta;
   double time_step;
   double final_time;
+  // Output
+  std::string results_path;
+  std::string simulation_id;
+  std::string format;
 
   VFPSolverControl(const std::string& file_path);
   void print_settings(std::ostream& os) const;
