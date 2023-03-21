@@ -2,23 +2,28 @@
 # set the parameters as needed
 
 subsection Mesh
-  set Number of refinements = 4
+  set Point 1 = -5., 0., -5.
+  set Point 2 = 5., 5., 5.
+  set Number of cells = 16, 16, 16
+  set Periodicity = false, false, false
 end
 
 subsection Time stepping
-  set Time step size = 7.8125e-3
-  set Final time = 0.8
+  set Method = Crank-Nicolson
+  set Time step size = 0.1
+  set Final time = 20
 end
 
 subsection Expansion
-  set Expansion order = 2
+  set Expansion order = 1
 end
 
 subsection Finite element
-  set Polynomial degree = 2
+  set Polynomial degree = 1
 end
 
-subsection Physical parameters
-  set Scattering frequency = 1.
-  set Particle energy = 1.
+subsection Output
+ set Results folder = ./results
+ set Simulation identifier = 001
+ set Format = vtu
 end
