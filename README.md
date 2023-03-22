@@ -376,8 +376,8 @@ Depending on the total dimension of the problem a different line needs to be com
 out. A very important point to know is, that if momentum terms are included, the
 last component of the point `p` corresponds to the \(p\)-direction For example, if
 `terms` include the `momentum` flag and if `dim_configuration_space` is set to
-one, then `p[2]` is \(p\). If `dim_configuration_space` was two, then
-`p[3]` would be \(p\). 
+one, then `p[1]` is \(p\). If `dim_configuration_space` was two, then
+`p[2]` would be \(p\). 
 
 #### Source term
 
