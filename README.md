@@ -269,7 +269,7 @@ void Sapphire::MagneticField<dim>::vector_value(
   static_cast<void>(point);  // suppress compiler warning
   magnetic_field[0] = 0.; // B_x
   magnetic_field[1] = 0.; // B_y
-  magnetic_field[2] = 3.; // B_z
+  magnetic_field[2] = 1.; // B_z
 }
 ```
 
