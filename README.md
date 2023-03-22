@@ -299,7 +299,7 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
 ```
 
 Again, this is the definition of the method `vector_value` of the object
-`BackgroundVelocityfield`. This time it is not a constant velocity field, but a
+`BackgroundVelocityField`. This time it is not a constant velocity field, but a
 velocity field, which depends on \(x\). This is expressed with using the first
 coordinate in `point` , i.e. `point[0]`. When sapphire needs to know the
 velocity \(\mathbf{u}\), it calls `vector_value` and it hands over the
