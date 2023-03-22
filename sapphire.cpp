@@ -182,6 +182,8 @@ class VFPEquationSolver {
 
   // Triangulation
   void make_grid();
+  // Triangulation for a shock
+  void make_grid_shock();
   // Setup data structures for the linear system
   void setup_system();
   // Matrix assembly
