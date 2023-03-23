@@ -253,7 +253,7 @@ examples demonstrate how to implement a physical setup in sapphire.
 
 #### Fields
 
-A constant magnetic field \(B_{z} = 3\) is implemented as follows:
+A constant magnetic field \(B_{z} = 1\) is implemented as follows:
 
 ```cpp
 // Magnetic field implementation
