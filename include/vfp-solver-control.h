@@ -19,16 +19,16 @@ class VFPSolverControl {
 
   // compile time settings
   static constexpr TermFlags terms =
-      TermFlags::spatial_advection | TermFlags::source;
+      TermFlags::spatial_advection | TermFlags::momentum | TermFlags::collision | TermFlags::magnetic | TermFlags::source;
 
   // This variabale controls if p is linear or logarithmic
-  static constexpr bool logarithmic_p = true;
+  static constexpr bool logarithmic_p = false;
 
   // Deactivating the spatial advection term is equivalent to assuming a
   // homogeneous distribution function (i.e. a distribution function which does
   // not depend on x,y z). In this program this is equivalent to set dimension
   // of the configuration to zero.
-  static constexpr int dim_configuration_space = 2;
+  static constexpr int dim_configuration_space = 1;
 
   // If the background velocity field and the the magnetic field do not depend
   // on time, the time stepping methods can be accelerated a lot: In this case
@@ -39,7 +39,7 @@ class VFPSolverControl {
 
   // If the source term depends on time, it needs to be projected onto the FEM
   // space in the time stepping methods.
-  static constexpr bool time_dependent_source = true;
+  static constexpr bool time_dependent_source = false;
 
   // The following static_assert uses an exlusive or (xor),
   // represented in C/C++ as "!=" for expressions of boolean type: Either the

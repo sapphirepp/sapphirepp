@@ -1,5 +1,7 @@
 #include "physical-setup.h"
 
+#include <cmath>
+
 // Initial values
 template <int dim>
 void Sapphire::InitialValueFunction<dim>::vector_value(
@@ -80,8 +82,8 @@ template class Sapphire::ScatteringFrequency<3>;
 
 // Source term implementation
 template <int dim>
-void Sapphire::Source<dim>::vector_value(
-    const dealii::Point<dim> &p, dealii::Vector<double> &values) const {
+void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
+                                         dealii::Vector<double> &values) const {
   Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
          dealii::ExcDimensionMismatch(
              values.size(), (expansion_order + 1) * (expansion_order + 1)));
@@ -93,10 +95,11 @@ void Sapphire::Source<dim>::vector_value(
   // 1D Gaussian (isotropic)
   // values[0] = 0.01 * std::exp(-(std::pow(p[0], 2)));
   // 2D Gaussian (isotropic)
-  // values[0] = .01 * std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
+  values[0] = .01 * std::exp(-std::pow(p[0], 2)) *
+              std::exp(-std::pow(p[1] - 1, 2) / 0.25);
   // 2D pulsating Gaussian (isotropic, time dependent)
-  values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
-              std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
+  // values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
+  //               std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
 }
 // explicit instantiation
 template class Sapphire::Source<1>;
@@ -114,9 +117,9 @@ void Sapphire::MagneticField<dim>::vector_value(
   // EXAMPLES:
   // constant magnetic field
   static_cast<void>(point);  // suppress compiler warning
-  magnetic_field[0] = 0.;
+  magnetic_field[0] = 1.;
   magnetic_field[1] = 0.;
-  magnetic_field[2] = 3.;
+  magnetic_field[2] = 0.;
 }
 
 // explicit instantiation
@@ -132,10 +135,10 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
          dealii::ExcDimensionMismatch(velocity.size(), 3));
   // EXAMPLES:
   // constant velocity field
-  static_cast<void>(point);  // suppress compiler warning
-  velocity[0] = .0;          // u_x
-  velocity[1] = .0;          // u_y
-  velocity[2] = .0;          // u_z
+  // static_cast<void>(point);  // suppress compiler warning
+  // velocity[0] = .0;          // u_x
+  // velocity[1] = .0;          // u_y
+  // velocity[2] = .0;          // u_z
 
   // space dependent velocity
   // u_x = 1/5 * x
@@ -147,6 +150,11 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
   // velocity[0] = 0.1 * std::cos(pi / 2 * point[0]);
   // velocity[1] = .0;
   // velocity[2] = .0;
+
+  // u_x = u_sh/8 * (-3*tanh(x) + 5)
+  velocity[0] = u_sh / 8 * (-3 * std::tanh(point[0]) + 5);
+  velocity[1] = 0.;
+  velocity[2] = 0.;
 
   // time-dependent velocity-field
   // u_x = 1/10 * t
@@ -161,9 +169,8 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
 
   // time- and space dependent velocity
   // u_x = -1/10 * sin(t) * cos(pi/2 * x)
-  // velocity[0] = -0.1 * std::sin(this->get_time()) * std::cos(pi / 2 * point[0]);
-  // velocity[1] = .0;
-  // velocity[2] = .0;
+  // velocity[0] = -0.1 * std::sin(this->get_time()) * std::cos(pi / 2 *
+  // point[0]); velocity[1] = .0; velocity[2] = .0;
 
   // u_x = 1/10 * x * (1 - e^(-t))
   // velocity[0] = 0.1 * point[0] * (1 - std::exp(-this->get_time()));
@@ -185,7 +192,7 @@ void Sapphire::BackgroundVelocityField<dim>::divergence_list(
          dealii::ExcDimensionMismatch(divergence.size(), points.size()));
   // EXAMPLES:
   // constant velocity
-  std::fill(divergence.begin(), divergence.end(), 0.);
+  // std::fill(divergence.begin(), divergence.end(), 0.);
 
   // space-dependent velocity field
   // u_x = 1/5 * x => div u = 1/5
@@ -194,6 +201,11 @@ void Sapphire::BackgroundVelocityField<dim>::divergence_list(
   // u_x = 0.1 * cos(pi/2 * x) => div u = -0.1 * pi/2 * sin(pi/2 * x)
   // for (unsigned int i = 0; i < points.size(); ++i)
   //   divergence[i] = -0.1 * pi / 2 * std::sin(pi / 2 * points[i][0]);
+
+  // u_x = u_sh/8 * (-3*tanh(x) + 5) => u_x = -3/8 * u_sh (1- tanh(x)^2)
+  for (unsigned int i = 0; i < points.size(); ++i)
+    divergence[i] = -3. / 8 * u_sh *
+                    (1 - std::tanh(points[i][0]) * std::tanh(points[i][0]));
 
   // time-dependent velocity field
   // u_x = 1/10 * t => div u = 0
@@ -227,9 +239,9 @@ void Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
   for (unsigned int i = 0; i < points.size(); ++i) {
     // EXAMPLES:
     // constant velocity
-    material_derivatives[i][0] = 0.;  // D/Dt u_x
-    material_derivatives[i][1] = 0.;  // D/Dt u_y
-    material_derivatives[i][2] = 0.;  // D/Dt u_z
+    // material_derivatives[i][0] = 0.;  // D/Dt u_x
+    // material_derivatives[i][1] = 0.;  // D/Dt u_y
+    // material_derivatives[i][2] = 0.;  // D/Dt u_z
 
     // space dependent velocity field
     // u_x = 1/5 * x => D/Dt u_x = 1/25 * x
@@ -244,6 +256,14 @@ void Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
     //                              std::cos(pi / 2 * points[i][0]);
     // material_derivatives[i][1] = 0.;
     // material_derivatives[i][2] = 0.;
+
+    // u_x = u_sh/8 * (-3*tanh(x) + 5)
+    // => D/Dt u_x = -3/64 * u_sh^2 * (-3 * tanh(x) + 5) * (1 -tanh(x)^2)
+    material_derivatives[i][0] =
+        -3. / 64 * u_sh * u_sh * (-3 * std::tanh(points[i][0]) + 5) *
+        (1 - std::tanh(points[i][0]) * std::tanh(points[i][0]));
+    material_derivatives[i][1] = 0.;
+    material_derivatives[i][2] = 0.;
 
     // time-dependent velocity field
     // u_x = 1/10 * t => D/Dt u_x = 1/10
@@ -291,17 +311,17 @@ void Sapphire::BackgroundVelocityField<dim>::jacobian_list(
   for (unsigned int i = 0; i < points.size(); ++i) {
     // EXAMPLES:
     // constant velocity field
-    jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
-    jacobians[i][0][1] = 0.;  // \partial u_x / \partial y
-    jacobians[i][0][2] = 0.;  // \partial u_x / \partial z
+    // jacobians[i][0][0] = 0.;  // \partial u_x / \partial x
+    // jacobians[i][0][1] = 0.;  // \partial u_x / \partial y
+    // jacobians[i][0][2] = 0.;  // \partial u_x / \partial z
 
-    jacobians[i][1][0] = 0.;  // \partial u_y / \partial x
-    jacobians[i][1][1] = 0.;  // \partial u_y / \partial y
-    jacobians[i][1][2] = 0.;  // \partial u_y / \partial z
+    // jacobians[i][1][0] = 0.;  // \partial u_y / \partial x
+    // jacobians[i][1][1] = 0.;  // \partial u_y / \partial y
+    // jacobians[i][1][2] = 0.;  // \partial u_y / \partial z
 
-    jacobians[i][2][0] = 0.;  // \partial u_z / \partial x
-    jacobians[i][2][1] = 0.;  // \partial u_z / \partial y
-    jacobians[i][2][2] = 0.;  // \partial u_z / \partial z
+    // jacobians[i][2][0] = 0.;  // \partial u_z / \partial x
+    // jacobians[i][2][1] = 0.;  // \partial u_z / \partial y
+    // jacobians[i][2][2] = 0.;  // \partial u_z / \partial z
 
     // space dependent velocity field
     // u_x = 1/5 * x
@@ -329,6 +349,21 @@ void Sapphire::BackgroundVelocityField<dim>::jacobian_list(
     // jacobians[i][2][0] = 0.;
     // jacobians[i][2][1] = 0.;
     // jacobians[i][2][2] = 0.;
+
+    // u_x = u_sh/8 * (-3*tanh(x) + 5)
+    jacobians[i][0][0] =
+        -3. / 8 * u_sh *
+        (1 - std::tanh(points[i][0]) * std::tanh(points[i][0]));
+    jacobians[i][0][1] = 0.;
+    jacobians[i][0][2] = 0.;
+
+    jacobians[i][1][0] = 0.;
+    jacobians[i][1][1] = 0.;
+    jacobians[i][1][2] = 0.;
+
+    jacobians[i][2][0] = 0.;
+    jacobians[i][2][1] = 0.;
+    jacobians[i][2][2] = 0.;
 
     // time-dependent velocity field
     // u_x = 1/10 * t and u_x = 1/2 * sin(t)
