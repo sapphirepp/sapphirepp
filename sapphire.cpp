@@ -294,7 +294,8 @@ VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
 }
 
 void VFPEquationSolver::run() {
-  make_grid();
+  // make_grid();
+  make_grid_shock();
   setup_system();
   assemble_mass_matrix();
 
@@ -397,6 +398,54 @@ void VFPEquationSolver::make_grid() {
     }
     triangulation.add_periodicity(matched_pairs);
   }
+}
+
+void VFPEquationSolver::make_grid_shock() {
+  // The functions creats a 2d mesh, which is refined in the spatial coordinate
+  // around the shock
+  Assert(dim_ps == 2,
+         ExcNotImplemented("The shock grid is only implemented for x,p case."));
+  TimerOutput::Scope timer_section(timer, "Grid setup");
+  pcout << "Create refined grid around a shock" << std::endl;
+  double length_scale_system = 100.;
+  double p_min = 0.1;
+  double p_max = 5;
+  Point<2> p1{-length_scale_system, p_min};
+  Point<2> p2{+length_scale_system, p_max};
+
+  // x - direction
+  // double h_max = 25.;
+  // double h_min = shock_width / 10;
+  std::vector<double> intervals{1.,        6. / 10,   3. / 10,  1. / 10,
+                                5. / 100,  3. / 100,  2. / 100, 1. / 100,
+                                5. / 1000, 1. / 1000, 0};
+  unsigned int n_intervals = intervals.size() - 1;
+  std::vector<unsigned int> n_cells{1 << 2, 1 << 3, 1 << 4, 1 << 4, 1 << 4,
+                                    1 << 4, 1 << 5, 1 << 5, 1 << 5, 1 << 5};
+  unsigned int total_n_cells = std::reduce(n_cells.begin(), n_cells.end());
+  std::vector<double> delta_h;
+  for (unsigned int i = 0; i < n_intervals; ++i) {
+    double h =
+        ((intervals[i] - intervals[i + 1]) * length_scale_system) / n_cells[i];
+    delta_h.insert(delta_h.end(), n_cells[i], h);
+  }
+  std::vector<double> temp(delta_h);
+  std::reverse(temp.begin(), temp.end());
+  delta_h.insert(delta_h.end(), temp.begin(), temp.end());
+
+  unsigned int n_cells_p = 50;
+  std::vector<std::vector<double>> step_sizes{
+      std::vector<double>(2 * total_n_cells), std::vector<double>(n_cells_p)};
+  step_sizes[0] = delta_h;
+  // p-direction
+  double delta_h_p = (p_max - p_min) / n_cells_p;
+  std::fill(step_sizes[1].begin(), step_sizes[1].end(), delta_h_p);
+
+  GridGenerator::subdivided_hyper_rectangle(triangulation, step_sizes, p1, p2);
+
+  pcout << "The grid was created: \n"
+        << "	Number of active cells: "
+        << triangulation.n_global_active_cells() << "\n";
 }
 
 void VFPEquationSolver::setup_system() {
