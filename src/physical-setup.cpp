@@ -73,7 +73,7 @@ void Sapphire::ScatteringFrequency<dim>::value_list(
   static_cast<void>(component);
   // EXAMPLES:
   // Constant scattering frequency
-  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 0.5);
+  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 0.3);
 }
 // explicit instantiation
 template class Sapphire::ScatteringFrequency<1>;
@@ -89,6 +89,10 @@ void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
              values.size(), (expansion_order + 1) * (expansion_order + 1)));
   // The zeroth component of values corresponds to isotropic part of the
   // distribution
+  //
+  // Interpreation of the source term: dN/dt = 4 * pi * p^2
+  // Q_{000}. I need Q_{000}, hence if I interpret the source as dN/dt, I need
+  // to divide by 4 * pi * p^2.
 
   // EXAMPLES:
   // Transport only
@@ -96,7 +100,8 @@ void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
   // values[0] = 0.01 * std::exp(-(std::pow(p[0], 2)));
   // 2D Gaussian (isotropic)
   values[0] = .01 * std::exp(-std::pow(p[0], 2)) *
-              std::exp(-std::pow(p[1] - 1, 2) / 0.25);
+              std::exp(-std::pow(p[1] - 3, 2) / 0.25) /
+              (4 * 3.14159 * p[1] * p[1]);
   // 2D pulsating Gaussian (isotropic, time dependent)
   // values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
   //               std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
@@ -151,8 +156,8 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
   // velocity[1] = .0;
   // velocity[2] = .0;
 
-  // u_x = u_sh/8 * (-3*tanh(x) + 5)
-  velocity[0] = u_sh / 8 * (-3 * std::tanh(point[0]) + 5);
+  // u_x = u_sh/8 * (-3*tanh(3x) + 5)
+  velocity[0] = u_sh / 8 * (-3 * std::tanh(3 * point[0]) + 5);
   velocity[1] = 0.;
   velocity[2] = 0.;
 
@@ -202,10 +207,11 @@ void Sapphire::BackgroundVelocityField<dim>::divergence_list(
   // for (unsigned int i = 0; i < points.size(); ++i)
   //   divergence[i] = -0.1 * pi / 2 * std::sin(pi / 2 * points[i][0]);
 
-  // u_x = u_sh/8 * (-3*tanh(x) + 5) => u_x = -3/8 * u_sh (1- tanh(x)^2)
+  // u_x = u_sh/8 * (-3*tanh(3x) + 5) => u_x = -9/8 * u_sh (1- tanh(3x)^2)
   for (unsigned int i = 0; i < points.size(); ++i)
-    divergence[i] = -3. / 8 * u_sh *
-                    (1 - std::tanh(points[i][0]) * std::tanh(points[i][0]));
+    divergence[i] =
+        -9. / 8 * u_sh *
+        (1 - std::tanh(3 * points[i][0]) * std::tanh(3 * points[i][0]));
 
   // time-dependent velocity field
   // u_x = 1/10 * t => div u = 0
@@ -258,10 +264,10 @@ void Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
     // material_derivatives[i][2] = 0.;
 
     // u_x = u_sh/8 * (-3*tanh(x) + 5)
-    // => D/Dt u_x = -3/64 * u_sh^2 * (-3 * tanh(x) + 5) * (1 -tanh(x)^2)
+    // => D/Dt u_x = -9/64 * u_sh^2 * (-3 * tanh(3x) + 5) * (1 -tanh(x)^2)
     material_derivatives[i][0] =
-        -3. / 64 * u_sh * u_sh * (-3 * std::tanh(points[i][0]) + 5) *
-        (1 - std::tanh(points[i][0]) * std::tanh(points[i][0]));
+        -9. / 64 * u_sh * u_sh * (-3 * std::tanh(3 * points[i][0]) + 5) *
+        (1 - std::tanh(3 * points[i][0]) * std::tanh(3 * points[i][0]));
     material_derivatives[i][1] = 0.;
     material_derivatives[i][2] = 0.;
 
@@ -352,8 +358,8 @@ void Sapphire::BackgroundVelocityField<dim>::jacobian_list(
 
     // u_x = u_sh/8 * (-3*tanh(x) + 5)
     jacobians[i][0][0] =
-        -3. / 8 * u_sh *
-        (1 - std::tanh(points[i][0]) * std::tanh(points[i][0]));
+        -9. / 8 * u_sh *
+        (1 - std::tanh(3 * points[i][0]) * std::tanh(3 * points[i][0]));
     jacobians[i][0][1] = 0.;
     jacobians[i][0][2] = 0.;
 
