@@ -407,36 +407,100 @@ void VFPEquationSolver::make_grid_shock() {
          ExcNotImplemented("The shock grid is only implemented for x,p case."));
   TimerOutput::Scope timer_section(timer, "Grid setup");
   pcout << "Create refined grid around a shock" << std::endl;
-  double length_scale_system = 100.;
+  // double length_scale_system = 100.;
+  unsigned int n_cells_x = 256; 	// The grid is symmteric about x = 0 -> the
+				// number of cells must be an even number
+    Assert(n_cells_x % 2 == 0 ,
+         ExcMessage(
+             "The grid is symmetric about x = 0. The number of cells in the x-direction "));
+
   double p_min = 0.1;
   double p_max = 5;
-  Point<2> p1{-length_scale_system, p_min};
-  Point<2> p2{+length_scale_system, p_max};
-
-  // x - direction
-  // double h_max = 25.;
-  // double h_min = shock_width / 10;
-  std::vector<double> intervals{1.,        6. / 10,   3. / 10,  1. / 10,
-                                5. / 100,  3. / 100,  2. / 100, 1. / 100,
-                                5. / 1000, 1. / 1000, 0};
-  unsigned int n_intervals = intervals.size() - 1;
-  std::vector<unsigned int> n_cells{1 << 2, 1 << 3, 1 << 4, 1 << 4, 1 << 4,
-                                    1 << 4, 1 << 5, 1 << 5, 1 << 5, 1 << 5};
-  unsigned int total_n_cells = std::reduce(n_cells.begin(), n_cells.end());
-  std::vector<double> delta_h;
-  for (unsigned int i = 0; i < n_intervals; ++i) {
-    double h =
-        ((intervals[i] - intervals[i + 1]) * length_scale_system) / n_cells[i];
-    delta_h.insert(delta_h.end(), n_cells[i], h);
-  }
-  std::vector<double> temp(delta_h);
-  std::reverse(temp.begin(), temp.end());
-  delta_h.insert(delta_h.end(), temp.begin(), temp.end());
-
   unsigned int n_cells_p = 50;
+
+  // x - direction using a sinh(x) distribution of the step sizes: We have to
+  // find a sample of the values of sinh(x), such that its sum equals
+  // length_scale_system/2. If use a uniform sample, i.e. if pick values at
+  // equidistant points in x, we have to find the root of the following
+  // transcendal equation:
+  //
+  // g(delta_x) = length_scale_system/2 - \sum^{n_cells_x}_{ k = 1} sinh(k *
+  // delta_x) = 0
+  //
+  // We are looking for a delta_x which solves this equation. Luckily sinh(x) is
+  // convex in [0, \infty] and the sum is convex as well, hence there is one
+  // solution to this equation. We will find it using the Newton method. A good
+  // guess for the starting point can be obtained considering that the largest
+  // step size, must be much smaller than length_scale_system/2. We compute when
+  // step size, i.e. the value of sinh(n_cells_x * delta_x) =
+  // length_scale_system/2 and then divide this delta_x by 2.
+  // auto g = [n_cells_x, length_scale_system](double delta_x) {
+  //   double value = length_scale_system / 2;
+  //   for (unsigned int k = 1; k <= n_cells_x/2; ++k)
+  //     value -= std::sinh(k * delta_x);
+  //   return value;
+  // };
+
+  // auto g_prime = [n_cells_x](double delta_x) {
+  //   double value = 0;
+  //   for (unsigned int k = 1; k <= n_cells_x/2; ++k)
+  //     value -= k * std::cosh(k * delta_x);
+  //   return value;
+  // };
+
+  // double delta_x0 = 0.5 * std::asinh(length_scale_system / 2) / n_cells_x;
+  // double delta_x = delta_x0;
+  // unsigned int iter = 0;
+  // while (std::abs(g(delta_x)) > 1.e-15 && iter <= 1000) {
+  //   delta_x -= g(delta_x) / g_prime(delta_x);
+  //   ++iter;
+  // }
+  // Assert(iter < 1000,
+  //        ExcMessage(
+  //            "Not possible to determine the step sizes for grid generation. "
+  //            "Try different values for n_cells_x and length_scale_system"));
+
+  // yet another way to use sinh(x) distribution of the step_sizes: set the
+  // smallest step_size, compute the corresponding x
+  // (asinh(smallest_step_size)), set this x to be delta_x, and compute a number
+  // of step sizes in agreement with a given number of cells in the x-direction.
+  const double smallest_step_size = 1./100;
+  const double delta_x = std::asinh(smallest_step_size);
+
   std::vector<std::vector<double>> step_sizes{
-      std::vector<double>(2 * total_n_cells), std::vector<double>(n_cells_p)};
-  step_sizes[0] = delta_h;
+      std::vector<double>(n_cells_x), std::vector<double>(n_cells_p)};
+  for(unsigned int i = 0; i < n_cells_x/2; ++i)
+    step_sizes[0][n_cells_x/2 + i] = std::sinh((i + 1) * delta_x);
+
+  // The first part of the vector is still equal to zero and does not contribute
+  // to the sum
+  const double length = std::reduce(step_sizes[0].begin(), step_sizes[0].end());
+  std::vector<double>::iterator mid = step_sizes[0].begin() + n_cells_x/2;
+  std::reverse_copy(mid, step_sizes[0].end(), step_sizes[0].begin());
+  Point<2> p1{-length, p_min};
+  Point<2> p2{+length, p_max};
+
+  // x - direction double h_max = 25.; double h_min = shock_width / 10;
+  // std::vector<double> intervals{1.,        6. / 10,   3. / 10,  1. / 10,
+  //                               5. / 100,  3. / 100,  2. / 100, 1. / 100,
+  //                               5. / 1000, 1. / 1000, 0};
+  // unsigned int n_intervals = intervals.size() - 1;
+  // std::vector<unsigned int> n_cells{1 << 2, 1 << 3, 1 << 4, 1 << 4, 1 << 4,
+  //                                   1 << 4, 1 << 5, 1 << 5, 1 << 5, 1 << 5};
+  // unsigned int total_n_cells = std::reduce(n_cells.begin(), n_cells.end());
+  // std::vector<double> delta_h;
+  // for (unsigned int i = 0; i < n_intervals; ++i) {
+  //   double h =
+  //       ((intervals[i] - intervals[i + 1]) * length_scale_system) / n_cells[i];
+  //   delta_h.insert(delta_h.end(), n_cells[i], h);
+  // }
+  // std::vector<double> temp(delta_h);
+  // std::reverse(temp.begin(), temp.end());
+  // delta_h.insert(delta_h.end(), temp.begin(), temp.end());
+
+
+  
+  // step_sizes[0] = delta_h;
   // p-direction
   double delta_h_p = (p_max - p_min) / n_cells_p;
   std::fill(step_sizes[1].begin(), step_sizes[1].end(), delta_h_p);
