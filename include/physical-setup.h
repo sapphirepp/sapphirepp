@@ -34,18 +34,19 @@ struct TransportOnly {
 template <int dim>
 class InitialValueFunction : public dealii::Function<dim> {
  public:
-  InitialValueFunction(unsigned int exp_order) : expansion_order{exp_order} {}
+  InitialValueFunction(unsigned int exp_order)
+      :  // set the number of components with the constructor of the base class
+        dealii::Function<dim>((exp_order + 1) * (exp_order + 1)) {}
   void vector_value(const dealii::Point<dim> &p,
                     dealii::Vector<double> &values) const override;
-
- private:
-  const unsigned int expansion_order;
 };
 
 // Scattering frequency
 template <int dim>
 class ScatteringFrequency : public dealii::Function<dim> {
  public:
+  // Set the variable  n_components of the base class
+  ScatteringFrequency() : dealii::Function<dim>(1) {}
   void value_list(const std::vector<dealii::Point<dim>> &p,
                   std::vector<double> &scattering_frequencies,
                   const unsigned int component = 0) const override;
@@ -55,18 +56,19 @@ class ScatteringFrequency : public dealii::Function<dim> {
 template <int dim>
 class Source : public dealii::Function<dim> {
  public:
-  Source(unsigned int exp_order) : expansion_order{exp_order} {}
+  Source(unsigned int exp_order)
+      :  // set n_components
+        dealii::Function<dim>((exp_order + 1) * (exp_order + 1)) {}
   void vector_value(const dealii::Point<dim> &p,
                     dealii::Vector<double> &values) const override;
-
- private:
-  const unsigned int expansion_order;
 };
 
 // Magnetic field
 template <int dim>
 class MagneticField : public dealii::Function<dim> {
  public:
+  // set n_components
+  MagneticField() : dealii::Function<dim>(3) {}
   void vector_value(const dealii::Point<dim> &point,
                     dealii::Vector<double> &magnetic_field) const override;
 };
@@ -75,6 +77,8 @@ class MagneticField : public dealii::Function<dim> {
 template <int dim>
 class BackgroundVelocityField : public dealii::Function<dim> {
  public:
+  // set n_components
+  BackgroundVelocityField() : dealii::Function<dim>(3) {}
   // Velocity field
   void vector_value(const dealii::Point<dim> &point,
                     dealii::Vector<double> &velocity) const override;

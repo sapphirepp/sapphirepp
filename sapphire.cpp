@@ -1092,7 +1092,7 @@ void VFPEquationSolver::project(
       const std::vector<double> &JxW = fe_v.get_JxW_values();
 
       std::vector<Vector<double>> function_values(
-          q_points.size(), Vector<double>(num_exp_coefficients));
+          q_points.size(), Vector<double>(f.n_components));
       f.vector_value_list(q_points, function_values);
 
       for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
