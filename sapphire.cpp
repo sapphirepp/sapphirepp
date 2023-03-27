@@ -490,7 +490,7 @@ void VFPEquationSolver::make_grid_shock() {
   const double start_sinh = std::asinh(step_size_shock);
 
   std::vector<std::vector<double>> step_sizes{
-      std::vector<double>(2*n_cells_shock + 2*additional_cells),
+      std::vector<double>(2 * n_cells_shock + 2 * additional_cells),
       std::vector<double>(n_cells_p)};
 
   for (unsigned int i = 0; i < n_cells_shock; ++i)
@@ -1013,71 +1013,72 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
     }
   };
   // assemble boundary face terms
-  const auto boundary_worker =
-      [&](const Iterator &cell, const unsigned int &face_no,
-          ScratchData<dim_ps> &scratch_data, CopyData &copy_data) {
-        scratch_data.fe_values_face.reinit(cell, face_no);
-        const FEFaceValuesBase<dim_ps> &fe_face_v = scratch_data.fe_values_face;
-        // Every shape function on the cell could contribute to the face
-        // integral, hence n_facet_dofs = n_dofs_per_cell
-        const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
-        // NOTE: copy_data is not reinitialised, the cell_workers contribution
-        // to the cell_dg_matrix should not be deleted
+  const auto boundary_worker = [&](const Iterator &cell,
+                                   const unsigned int &face_no,
+                                   ScratchData<dim_ps> &scratch_data,
+                                   CopyData &copy_data) {
+    scratch_data.fe_values_face.reinit(cell, face_no);
+    const FEFaceValuesBase<dim_ps> &fe_face_v = scratch_data.fe_values_face;
+    // Every shape function on the cell could contribute to the face
+    // integral, hence n_facet_dofs = n_dofs_per_cell
+    const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
+    // NOTE: copy_data is not reinitialised, the cell_workers contribution
+    // to the cell_dg_matrix should not be deleted
 
-        const std::vector<Point<dim_ps>> &q_points =
-            fe_face_v.get_quadrature_points();
-        const std::vector<double> &JxW = fe_face_v.get_JxW_values();
-        const std::vector<Tensor<1, dim_ps>> &normals =
-            fe_face_v.get_normal_vectors();
-        std::vector<FullMatrix<double>> positive_flux_matrices(
-            q_points.size(), FullMatrix<double>(num_exp_coefficients));
-        std::vector<FullMatrix<double>> negative_flux_matrices(
-            q_points.size(), FullMatrix<double>(num_exp_coefficients));
+    const std::vector<Point<dim_ps>> &q_points =
+        fe_face_v.get_quadrature_points();
+    const std::vector<double> &JxW = fe_face_v.get_JxW_values();
+    const std::vector<Tensor<1, dim_ps>> &normals =
+        fe_face_v.get_normal_vectors();
+    std::vector<FullMatrix<double>> positive_flux_matrices(
+        q_points.size(), FullMatrix<double>(num_exp_coefficients));
+    std::vector<FullMatrix<double>> negative_flux_matrices(
+        q_points.size(), FullMatrix<double>(num_exp_coefficients));
 
-        upwind_flux.compute_upwind_fluxes(
-            q_points, normals, positive_flux_matrices, negative_flux_matrices);
-        for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
-          for (unsigned int i = 0; i < n_facet_dofs; ++i) {
-            const unsigned int component_i =
-                fe_face_v.get_fe().system_to_component_index(i).first;
-            for (unsigned int j = 0; j < n_facet_dofs; ++j) {
-              const unsigned int component_j =
-                  fe_face_v.get_fe().system_to_component_index(j).first;
-              if constexpr ((flags & TermFlags::spatial_advection) !=
-                            TermFlags::none) {
-                // Outflow boundary: Everyhing with a positive flux along the
-                // direction of the normal leaves the boundary
-		if(normals[q_index][0] != 0 && std::abs(normals[q_index][0] - 1) < 1.e-5) {
-                copy_data.cell_matrix(i, j) +=
-                    fe_face_v.shape_value(i, q_index) *
-                    positive_flux_matrices[q_index](component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                copy_data.cell_matrix(i, j) +=
-                    fe_face_v.shape_value(i, q_index) *
-                    negative_flux_matrices[q_index](component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-		} else if (normals[q_index][0] != 0 && std::abs(normals[q_index][0] + 1) < 1.e-5){
-		  copy_data.cell_matrix(i, j) +=
-                    fe_face_v.shape_value(i, q_index) *
-                    positive_flux_matrices[q_index](component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-		}
-		else {
-                copy_data.cell_matrix(i, j) +=
-                    fe_face_v.shape_value(i, q_index) *
-                    positive_flux_matrices[q_index](component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                copy_data.cell_matrix(i, j) +=
-                    fe_face_v.shape_value(i, q_index) *
-                    negative_flux_matrices[q_index](component_i, component_j) *
-                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
-
-		}
-              }
+    upwind_flux.compute_upwind_fluxes(q_points, normals, positive_flux_matrices,
+                                      negative_flux_matrices);
+    for (unsigned int q_index : fe_face_v.quadrature_point_indices()) {
+      for (unsigned int i = 0; i < n_facet_dofs; ++i) {
+        const unsigned int component_i =
+            fe_face_v.get_fe().system_to_component_index(i).first;
+        for (unsigned int j = 0; j < n_facet_dofs; ++j) {
+          const unsigned int component_j =
+              fe_face_v.get_fe().system_to_component_index(j).first;
+          if constexpr ((flags & TermFlags::spatial_advection) !=
+                        TermFlags::none) {
+            // Outflow boundary: Everyhing with a positive flux along the
+            // direction of the normal leaves the boundary
+            if (normals[q_index][0] != 0 &&
+                std::abs(normals[q_index][0] - 1) < 1.e-5) {
+              copy_data.cell_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) *
+                  positive_flux_matrices[q_index](component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+              copy_data.cell_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) *
+                  negative_flux_matrices[q_index](component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            } else if (normals[q_index][0] != 0 &&
+                       std::abs(normals[q_index][0] + 1) < 1.e-5) {
+              copy_data.cell_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) *
+                  positive_flux_matrices[q_index](component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+            } else {
+              copy_data.cell_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) *
+                  positive_flux_matrices[q_index](component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
+              copy_data.cell_matrix(i, j) +=
+                  fe_face_v.shape_value(i, q_index) *
+                  negative_flux_matrices[q_index](component_i, component_j) *
+                  fe_face_v.shape_value(j, q_index) * JxW[q_index];
             }
           }
         }
-      };
+      }
+    }
+  };
 
   // assemble interior face terms
   // NOTE: The face worker assumes a grid consisting of rectangular cells with
@@ -1616,10 +1617,9 @@ void VFPEquationSolver::output_results(
             vfp_solver_control.simulation_id + "/",
         "f", time_step_number, mpi_communicator, 4, 8);
   else if (vfp_solver_control.format == "hdf5") {
-    const std::string filename_h5 =
-        vfp_solver_control.results_path + "/" +
-        vfp_solver_control.simulation_id + "/f_" +
-        std::to_string(time_step_number) + ".h5";
+    const std::string filename_h5 = vfp_solver_control.results_path + "/" +
+                                    vfp_solver_control.simulation_id + "/f_" +
+                                    std::to_string(time_step_number) + ".h5";
     DataOutBase::DataOutFilterFlags flags(false, true);
     DataOutBase::DataOutFilter data_filter(flags);
     data_out.write_filtered_data(data_filter);
