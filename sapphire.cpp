@@ -1020,6 +1020,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                             TermFlags::none) {
                 // Outflow boundary: Everyhing with a positive flux along the
                 // direction of the normal leaves the boundary
+		if(normals[q_index][0] != 0 && std::abs(normals[q_index][0] - 1) < 1.e-5) {
                 copy_data.cell_matrix(i, j) +=
                     fe_face_v.shape_value(i, q_index) *
                     positive_flux_matrices[q_index](component_i, component_j) *
@@ -1028,6 +1029,23 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                     fe_face_v.shape_value(i, q_index) *
                     negative_flux_matrices[q_index](component_i, component_j) *
                     fe_face_v.shape_value(j, q_index) * JxW[q_index];
+		} else if (normals[q_index][0] != 0 && std::abs(normals[q_index][0] + 1) < 1.e-5){
+		  copy_data.cell_matrix(i, j) +=
+                    fe_face_v.shape_value(i, q_index) *
+                    positive_flux_matrices[q_index](component_i, component_j) *
+                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
+		}
+		else {
+                copy_data.cell_matrix(i, j) +=
+                    fe_face_v.shape_value(i, q_index) *
+                    positive_flux_matrices[q_index](component_i, component_j) *
+                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                copy_data.cell_matrix(i, j) +=
+                    fe_face_v.shape_value(i, q_index) *
+                    negative_flux_matrices[q_index](component_i, component_j) *
+                    fe_face_v.shape_value(j, q_index) * JxW[q_index];
+
+		}
               }
             }
           }
