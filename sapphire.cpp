@@ -1454,7 +1454,7 @@ void VFPEquationSolver::output_results(
     data_out.write_vtu_with_pvtu_record(
         vfp_solver_control.results_path + "/" +
             vfp_solver_control.simulation_id + "/",
-        "f", time_step_number, mpi_communicator, 3, 8);
+        "f", time_step_number, mpi_communicator, 4, 8);
   else if (vfp_solver_control.format == "hdf5") {
     const std::string filename_h5 =
         vfp_solver_control.results_path + "/" +
