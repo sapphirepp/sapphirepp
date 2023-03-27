@@ -1207,7 +1207,7 @@ void VFPEquationSolver::project(
       const std::vector<double> &JxW = fe_v.get_JxW_values();
 
       std::vector<Vector<double>> function_values(
-          q_points.size(), Vector<double>(num_exp_coefficients));
+          q_points.size(), Vector<double>(f.n_components));
       f.vector_value_list(q_points, function_values);
 
       for (const unsigned int q_index : fe_v.quadrature_point_indices()) {
@@ -1569,12 +1569,22 @@ void VFPEquationSolver::output_results(
     data_out.write_vtu_with_pvtu_record(
         vfp_solver_control.results_path + "/" +
             vfp_solver_control.simulation_id + "/",
-        "f", time_step_number, mpi_communicator, 3, 8);
-  else if (vfp_solver_control.format == "hdf5")
-    Assert(false, ExcNotImplemented("Currentlty it is not implemented to store "
-                                    "the simulation results in hdf5 format."));
+        "f", time_step_number, mpi_communicator, 4, 8);
+  else if (vfp_solver_control.format == "hdf5") {
+    const std::string filename_h5 =
+        vfp_solver_control.results_path + "/" +
+        vfp_solver_control.simulation_id + "/f_" +
+        Utilities::int_to_string(time_step_number, 4) + ".h5";
+    DataOutBase::DataOutFilterFlags flags(false, true);
+    DataOutBase::DataOutFilter data_filter(flags);
+    data_out.write_filtered_data(data_filter);
+    data_out.write_hdf5_parallel(data_filter, filename_h5, mpi_communicator);
+    // Assert(false, ExcNotImplemented("Currentlty it is not implemented to
+    // store "
+    //                                 "the simulation results in hdf5
+    //                                 format."));
+  }
 }
-
 }  // namespace Sapphire
 
 int main(int argc, char *argv[]) {

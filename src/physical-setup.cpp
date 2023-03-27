@@ -7,9 +7,9 @@ template <int dim>
 void Sapphire::InitialValueFunction<dim>::vector_value(
     const dealii::Point<dim> &p, dealii::Vector<double> &f) const {
   Assert(dim <= 3, dealii::ExcNotImplemented());
-  Assert(f.size() == (expansion_order + 1) * (expansion_order + 1),
-         dealii::ExcDimensionMismatch(
-             f.size(), (expansion_order + 1) * (expansion_order + 1)));
+  Assert(f.size() == InitialValueFunction<dim>::n_components,
+         dealii::ExcDimensionMismatch(f.size(),
+                                      InitialValueFunction<dim>::n_components));
   // NOTE: The zeroth component of values corresponds to f_000, the first
   // component to f_110 etc.
   //
@@ -84,9 +84,9 @@ template class Sapphire::ScatteringFrequency<3>;
 template <int dim>
 void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
                                          dealii::Vector<double> &values) const {
-  Assert(values.size() == (expansion_order + 1) * (expansion_order + 1),
-         dealii::ExcDimensionMismatch(
-             values.size(), (expansion_order + 1) * (expansion_order + 1)));
+  Assert(
+      values.size() == Source<dim>::n_components,
+      dealii::ExcDimensionMismatch(values.size(), Source<dim>::n_components));
   // The zeroth component of values corresponds to isotropic part of the
   // distribution
   //
@@ -118,8 +118,9 @@ template <int dim>
 void Sapphire::MagneticField<dim>::vector_value(
     const dealii::Point<dim> &point,
     dealii::Vector<double> &magnetic_field) const {
-  Assert(magnetic_field.size() == 3,
-         dealii::ExcDimensionMismatch(magnetic_field.size(), 3));
+  Assert(magnetic_field.size() == MagneticField<dim>::n_components,
+         dealii::ExcDimensionMismatch(magnetic_field.size(),
+                                      MagneticField<dim>::n_components));
 
   // EXAMPLES:
   // constant magnetic field
@@ -138,8 +139,9 @@ template class Sapphire::MagneticField<3>;
 template <int dim>
 void Sapphire::BackgroundVelocityField<dim>::vector_value(
     const dealii::Point<dim> &point, dealii::Vector<double> &velocity) const {
-  Assert(velocity.size() == 3,
-         dealii::ExcDimensionMismatch(velocity.size(), 3));
+  Assert(velocity.size() == BackgroundVelocityField<dim>::n_components,
+         dealii::ExcDimensionMismatch(
+             velocity.size(), BackgroundVelocityField<dim>::n_components));
   // EXAMPLES:
   // constant velocity field
   // static_cast<void>(point);  // suppress compiler warning
