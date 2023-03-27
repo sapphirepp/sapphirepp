@@ -4,7 +4,7 @@
 namespace Sapphire {
 struct ReferenceValues {
   // reference values
-  const double energy = 10;       // GeV
+  const double energy = 1;       // GeV
   const double mass = 0.9382721;  // GeV/c^2 (proton mass)
   const double gamma = energy / mass;
   const double velocity = 299792458;              // m/s (speed of light)
