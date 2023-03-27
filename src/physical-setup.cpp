@@ -101,8 +101,8 @@ void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
   // 2D Gaussian (isotropic)
   // double momentum = std::exp(p[1]);
   double momentum = p[1];
-  values[0] = 50 * std::exp(-std::pow(p[0], 2)) *
-              std::exp(-std::pow(momentum - 3, 2) / 0.25) /
+  values[0] = 5. * std::exp(-std::pow(p[0]-1., 2)) *
+      std::exp(-std::pow(momentum - 3, 2) / 0.25) /
               (4 * 3.14159 * momentum * momentum);
   // 2D pulsating Gaussian (isotropic, time dependent)
   // values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
@@ -161,7 +161,7 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
   // velocity[2] = .0;
 
   // u_x = u_sh/8 * (-3*tanh(50x) + 5)
-  velocity[0] = u_sh / 8 * (-3 * std::tanh(50 * point[0]) + 5);
+  velocity[0] = u_sh / 8 * (-3 * std::tanh(25 * point[0]) + 5);
   velocity[1] = 0.;
   velocity[2] = 0.;
 
@@ -214,8 +214,8 @@ void Sapphire::BackgroundVelocityField<dim>::divergence_list(
   // u_x = u_sh/8 * (-3*tanh(50x) + 5) => u_x = -150/8 * u_sh (1- tanh(50x)^2)
   for (unsigned int i = 0; i < points.size(); ++i)
     divergence[i] =
-        -150. / 8 * u_sh *
-        (1 - std::tanh(50 * points[i][0]) * std::tanh(50 * points[i][0]));
+        -75. / 8 * u_sh *
+        (1 - std::tanh(25 * points[i][0]) * std::tanh(25 * points[i][0]));
 
   // time-dependent velocity field
   // u_x = 1/10 * t => div u = 0
@@ -270,8 +270,8 @@ void Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
     // u_x = u_sh/8 * (-3*tanh(x) + 5)
     // => D/Dt u_x = -9/64 * u_sh^2 * (-3 * tanh(3x) + 5) * (1 -tanh(x)^2)
     material_derivatives[i][0] =
-        -150. / 64 * u_sh * u_sh * (-3 * std::tanh(50 * points[i][0]) + 5) *
-        (1 - std::tanh(50 * points[i][0]) * std::tanh(50 * points[i][0]));
+        -75. / 64 * u_sh * u_sh * (-3 * std::tanh(25 * points[i][0]) + 5) *
+        (1 - std::tanh(25 * points[i][0]) * std::tanh(25 * points[i][0]));
     material_derivatives[i][1] = 0.;
     material_derivatives[i][2] = 0.;
 
@@ -362,8 +362,8 @@ void Sapphire::BackgroundVelocityField<dim>::jacobian_list(
 
     // u_x = u_sh/8 * (-3*tanh(x) + 5)
     jacobians[i][0][0] =
-        -150. / 8 * u_sh *
-        (1 - std::tanh(50 * points[i][0]) * std::tanh(50 * points[i][0]));
+        -75. / 8 * u_sh *
+        (1 - std::tanh(25 * points[i][0]) * std::tanh(25 * points[i][0]));
     jacobians[i][0][1] = 0.;
     jacobians[i][0][2] = 0.;
 
