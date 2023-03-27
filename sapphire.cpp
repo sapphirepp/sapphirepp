@@ -408,11 +408,11 @@ void VFPEquationSolver::make_grid_shock() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   pcout << "Create refined grid around a shock" << std::endl;
   // double length_scale_system = 100.;
-  unsigned int n_cells_x = 300; 	// The grid is symmteric about x = 0 -> the
-				// number of cells must be an even number
-    Assert(n_cells_x % 2 == 0 ,
-         ExcMessage(
-             "The grid is symmetric about x = 0. The number of cells in the x-direction "));
+  unsigned int n_cells_x = 300;  // The grid is symmteric about x = 0 -> the
+                                 // number of cells must be an even number
+  Assert(n_cells_x % 2 == 0,
+         ExcMessage("The grid is symmetric about x = 0. The number of cells in "
+                    "the x-direction "));
 
   double p_min = 0.1;
   double p_max = 30;
@@ -464,20 +464,47 @@ void VFPEquationSolver::make_grid_shock() {
   // smallest step_size, compute the corresponding x
   // (asinh(smallest_step_size)), set this x to be delta_x, and compute a number
   // of step sizes in agreement with a given number of cells in the x-direction.
-  const double smallest_step_size = 1./200;
+  const double smallest_step_size = 1. / 200;
   const double delta_x0 = std::asinh(smallest_step_size);
-  const double delta_x = 0.01;
+  const double delta_x = 0.05;
 
-  std::vector<std::vector<double>> step_sizes{
-      std::vector<double>(n_cells_x), std::vector<double>(n_cells_p)};
-  for(unsigned int i = 0; i < n_cells_x/2; ++i)
-    step_sizes[0][n_cells_x/2 + i] = std::sinh(i * delta_x + delta_x0);
+  // std::vector<std::vector<double>> step_sizes{
+  //     std::vector<double>(n_cells_x), std::vector<double>(n_cells_p)};
+  // for(unsigned int i = 0; i < n_cells_x/2; ++i)
+  //   step_sizes[0][n_cells_x/2 + i] = std::sinh(i * delta_x + delta_x0);
 
   // The first part of the vector is still equal to zero and does not contribute
   // to the sum
+  // const double length = std::reduce(step_sizes[0].begin(),
+  // step_sizes[0].end()); std::vector<double>::iterator mid =
+  // step_sizes[0].begin() + n_cells_x/2; std::reverse_copy(mid,
+  // step_sizes[0].end(), step_sizes[0].begin());
+
+  // yet yet another method to setup the grid: To get a better control of the
+  // grid in shock zone, the grid around the shock should equidistant (in the
+  // shock width). And afterwards it cell sizes follow sinh
+  const double shock_width = 1. / 25;
+  const double step_size_shock = 1. / 100;
+  const unsigned int n_cells_shock = shock_width / step_size_shock;
+  const unsigned int additional_cells = 75;
+  const double start_sinh = std::asinh(step_size_shock);
+
+  std::vector<std::vector<double>> step_sizes{
+      std::vector<double>(2*n_cells_shock + 2*additional_cells),
+      std::vector<double>(n_cells_p)};
+
+  for (unsigned int i = 0; i < n_cells_shock; ++i)
+    step_sizes[0][n_cells_shock + additional_cells + i] = step_size_shock;
+
+  for (unsigned int i = 0; i < additional_cells; ++i)
+    step_sizes[0][2 * n_cells_shock + additional_cells + i] =
+        std::sinh(i * delta_x + start_sinh);
+
   const double length = std::reduce(step_sizes[0].begin(), step_sizes[0].end());
-  std::vector<double>::iterator mid = step_sizes[0].begin() + n_cells_x/2;
+  std::vector<double>::iterator mid =
+      step_sizes[0].begin() + n_cells_shock + additional_cells;
   std::reverse_copy(mid, step_sizes[0].end(), step_sizes[0].begin());
+
   Point<2> p1{-length, p_min};
   Point<2> p2{+length, p_max};
 
@@ -492,15 +519,14 @@ void VFPEquationSolver::make_grid_shock() {
   // std::vector<double> delta_h;
   // for (unsigned int i = 0; i < n_intervals; ++i) {
   //   double h =
-  //       ((intervals[i] - intervals[i + 1]) * length_scale_system) / n_cells[i];
+  //       ((intervals[i] - intervals[i + 1]) * length_scale_system) /
+  //       n_cells[i];
   //   delta_h.insert(delta_h.end(), n_cells[i], h);
   // }
   // std::vector<double> temp(delta_h);
   // std::reverse(temp.begin(), temp.end());
   // delta_h.insert(delta_h.end(), temp.begin(), temp.end());
 
-
-  
   // step_sizes[0] = delta_h;
   // p-direction
   double delta_h_p = (p_max - p_min) / n_cells_p;
