@@ -408,15 +408,15 @@ void VFPEquationSolver::make_grid_shock() {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   pcout << "Create refined grid around a shock" << std::endl;
   // double length_scale_system = 100.;
-  unsigned int n_cells_x = 256; 	// The grid is symmteric about x = 0 -> the
+  unsigned int n_cells_x = 300; 	// The grid is symmteric about x = 0 -> the
 				// number of cells must be an even number
     Assert(n_cells_x % 2 == 0 ,
          ExcMessage(
              "The grid is symmetric about x = 0. The number of cells in the x-direction "));
 
   double p_min = 0.1;
-  double p_max = 5;
-  unsigned int n_cells_p = 50;
+  double p_max = 30;
+  unsigned int n_cells_p = 128;
 
   // x - direction using a sinh(x) distribution of the step sizes: We have to
   // find a sample of the values of sinh(x), such that its sum equals
@@ -464,13 +464,14 @@ void VFPEquationSolver::make_grid_shock() {
   // smallest step_size, compute the corresponding x
   // (asinh(smallest_step_size)), set this x to be delta_x, and compute a number
   // of step sizes in agreement with a given number of cells in the x-direction.
-  const double smallest_step_size = 1./100;
-  const double delta_x = std::asinh(smallest_step_size);
+  const double smallest_step_size = 1./200;
+  const double delta_x0 = std::asinh(smallest_step_size);
+  const double delta_x = 0.01;
 
   std::vector<std::vector<double>> step_sizes{
       std::vector<double>(n_cells_x), std::vector<double>(n_cells_p)};
   for(unsigned int i = 0; i < n_cells_x/2; ++i)
-    step_sizes[0][n_cells_x/2 + i] = std::sinh((i + 1) * delta_x);
+    step_sizes[0][n_cells_x/2 + i] = std::sinh(i * delta_x + delta_x0);
 
   // The first part of the vector is still equal to zero and does not contribute
   // to the sum
@@ -1592,7 +1593,7 @@ void VFPEquationSolver::output_results(
     const std::string filename_h5 =
         vfp_solver_control.results_path + "/" +
         vfp_solver_control.simulation_id + "/f_" +
-        Utilities::int_to_string(time_step_number, 4) + ".h5";
+        std::to_string(time_step_number) + ".h5";
     DataOutBase::DataOutFilterFlags flags(false, true);
     DataOutBase::DataOutFilter data_filter(flags);
     data_out.write_filtered_data(data_filter);

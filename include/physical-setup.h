@@ -99,7 +99,7 @@ class BackgroundVelocityField : public dealii::Function<dim> {
  private:
   // Numerical constants
   double pi = 2 * std::acos(0.);
-  const double u_sh = 1./30;
+  const double u_sh = 1./10;
 };
 }  // namespace Sapphire
 #endif
