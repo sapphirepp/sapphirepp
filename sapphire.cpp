@@ -1455,11 +1455,21 @@ void VFPEquationSolver::output_results(
         vfp_solver_control.results_path + "/" +
             vfp_solver_control.simulation_id + "/",
         "f", time_step_number, mpi_communicator, 3, 8);
-  else if (vfp_solver_control.format == "hdf5")
-    Assert(false, ExcNotImplemented("Currentlty it is not implemented to store "
-                                    "the simulation results in hdf5 format."));
+  else if (vfp_solver_control.format == "hdf5") {
+    const std::string filename_h5 =
+        vfp_solver_control.results_path + "/" +
+        vfp_solver_control.simulation_id + "/f_" +
+        Utilities::int_to_string(time_step_number, 4) + ".h5";
+    DataOutBase::DataOutFilterFlags flags(false, true);
+    DataOutBase::DataOutFilter data_filter(flags);
+    data_out.write_filtered_data(data_filter);
+    data_out.write_hdf5_parallel(data_filter, filename_h5, mpi_communicator);
+    // Assert(false, ExcNotImplemented("Currentlty it is not implemented to
+    // store "
+    //                                 "the simulation results in hdf5
+    //                                 format."));
+  }
 }
-
 }  // namespace Sapphire
 
 int main(int argc, char *argv[]) {
