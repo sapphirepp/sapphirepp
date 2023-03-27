@@ -77,6 +77,7 @@ class VFPSolverControl {
   std::string results_path;
   std::string simulation_id;
   std::string format;
+  unsigned int output_frequency;
 
   VFPSolverControl(const std::string& file_path);
   void print_settings(std::ostream& os) const;

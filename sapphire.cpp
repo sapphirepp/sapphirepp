@@ -334,8 +334,12 @@ void VFPEquationSolver::run() {
     {
       // NOTE: I cannot create TimerOutput::Scope inside output_results(),
       // because it is declared const.
-      TimerOutput::Scope timer_section(timer, "Output");
-      output_results(time_step_number);
+      if (static_cast<unsigned int>(time_step_number) %
+              vfp_solver_control.output_frequency ==
+          0) {
+        TimerOutput::Scope timer_section(timer, "Output");
+        output_results(time_step_number);
+      }
     }
   }
   pcout << "The simulation ended. \n";
