@@ -85,6 +85,10 @@ void Sapphire::VFPSolverControl::declare_parameters() {
     parameter_handler.declare_entry(
         "Format", "vtu", dealii::Patterns::Selection("vtu|hdf5"),
         "The format in which the simulation output will be stored.");
+    parameter_handler.declare_entry("Output frequency", "1",
+                                    dealii::Patterns::Integer(0),
+                                    "The frequence at which output files will "
+                                    "be written. (In units of time steps)");
   }
   parameter_handler.leave_subsection();
 }
@@ -159,5 +163,6 @@ void Sapphire::VFPSolverControl::get_parameters() {
     results_path = parameter_handler.get("Results folder");
     simulation_id = parameter_handler.get("Simulation identifier");
     format = parameter_handler.get("Format");
+    output_frequency = parameter_handler.get_integer("Output frequency");
   }
 }
