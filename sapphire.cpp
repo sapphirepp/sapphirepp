@@ -702,7 +702,6 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                     // Ap_coordinate_1,coordinate_2 * \phi
                     copy_data.cell_matrix(i, j) +=
                         fe_v.shape_grad(i, q_index)[dim_ps - 1] *
-                        q_points[q_index][dim_ps - 1] *
                         jacobians_vel[q_index][coordinate_1][coordinate_2] *
                         adv_mat_products[3 * coordinate_1 -
                                          coordinate_1 * (coordinate_1 + 1) / 2 +
