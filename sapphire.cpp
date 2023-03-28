@@ -418,8 +418,8 @@ void VFPEquationSolver::make_grid_shock() {
          ExcMessage("The grid is symmetric about x = 0. The number of cells in "
                     "the x-direction "));
 
-  double p_min = 0.1;
-  double p_max = 30;
+  double p_min = std::log(0.1);
+  double p_max = std::log(30);
   unsigned int n_cells_p = 128;
 
   // x - direction using a sinh(x) distribution of the step sizes: We have to
@@ -468,9 +468,9 @@ void VFPEquationSolver::make_grid_shock() {
   // smallest step_size, compute the corresponding x
   // (asinh(smallest_step_size)), set this x to be delta_x, and compute a number
   // of step sizes in agreement with a given number of cells in the x-direction.
-  const double smallest_step_size = 1. / 200;
-  const double delta_x0 = std::asinh(smallest_step_size);
-  const double delta_x = 0.05;
+  // const double smallest_step_size = 1. / 200;
+  // const double delta_x0 = std::asinh(smallest_step_size);
+  // const double delta_x = 0.01;
 
   // std::vector<std::vector<double>> step_sizes{
   //     std::vector<double>(n_cells_x), std::vector<double>(n_cells_p)};
@@ -490,7 +490,7 @@ void VFPEquationSolver::make_grid_shock() {
   const double shock_width = 1. / 25;
   const double step_size_shock = 1. / 100;
   const unsigned int n_cells_shock = shock_width / step_size_shock;
-  const unsigned int additional_cells = 75;
+  const unsigned int additional_cells = 50;
   const double start_sinh = std::asinh(step_size_shock);
 
   std::vector<std::vector<double>> step_sizes{
@@ -500,6 +500,7 @@ void VFPEquationSolver::make_grid_shock() {
   for (unsigned int i = 0; i < n_cells_shock; ++i)
     step_sizes[0][n_cells_shock + additional_cells + i] = step_size_shock;
 
+  const double delta_x = 0.01;
   for (unsigned int i = 0; i < additional_cells; ++i)
     step_sizes[0][2 * n_cells_shock + additional_cells + i] =
         std::sinh(i * delta_x + start_sinh);

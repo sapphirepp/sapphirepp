@@ -22,7 +22,7 @@ class VFPSolverControl {
       TermFlags::spatial_advection | TermFlags::momentum | TermFlags::collision | TermFlags::magnetic | TermFlags::source;
 
   // This variabale controls if p is linear or logarithmic
-  static constexpr bool logarithmic_p = false;
+  static constexpr bool logarithmic_p = true;
 
   // Deactivating the spatial advection term is equivalent to assuming a
   // homogeneous distribution function (i.e. a distribution function which does

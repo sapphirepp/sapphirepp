@@ -73,7 +73,7 @@ void Sapphire::ScatteringFrequency<dim>::value_list(
   static_cast<void>(component);
   // EXAMPLES:
   // Constant scattering frequency
-  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 0.3);
+  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 5.);
 }
 // explicit instantiation
 template class Sapphire::ScatteringFrequency<1>;
@@ -99,9 +99,9 @@ void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
   // 1D Gaussian (isotropic)
   // values[0] = 0.01 * std::exp(-(std::pow(p[0], 2)));
   // 2D Gaussian (isotropic)
-  // double momentum = std::exp(p[1]);
-  double momentum = p[1];
-  values[0] = 5. * std::exp(-std::pow(p[0]-1., 2)) *
+  double momentum = std::exp(p[1]);
+  // double momentum = p[1];
+  values[0] = 0.1 * std::exp(-std::pow(p[0]-1., 2)) *
       std::exp(-std::pow(momentum - 3, 2) / 0.25) /
               (4 * 3.14159 * momentum * momentum);
   // 2D pulsating Gaussian (isotropic, time dependent)
