@@ -1,4 +1,5 @@
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/data_out_base.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/index_set.h>
@@ -1621,13 +1622,44 @@ void VFPEquationSolver::output_results(
             vfp_solver_control.simulation_id + "/",
         "f", time_step_number, mpi_communicator, 4, 8);
   else if (vfp_solver_control.format == "hdf5") {
-    const std::string filename_h5 = vfp_solver_control.results_path + "/" +
-                                    vfp_solver_control.simulation_id + "/f_" +
-                                    std::to_string(time_step_number) + ".h5";
-    DataOutBase::DataOutFilterFlags flags(false, true);
+    // I follow this pull request: https://github.com/dealii/dealii/pull/14958
+    const std::string xdmf_file = vfp_solver_control.results_path + "/" +
+                                  vfp_solver_control.simulation_id + "/f.xdmf";
+    const std::string result_file_h5 = vfp_solver_control.results_path + "/" +
+                                       vfp_solver_control.simulation_id +
+                                       "/f.h5";
+    // https://dealii.org/developer/doxygen/deal.II/structDataOutBase_1_1DataOutFilterFlags.html
+    // Whether or not to filter out duplicate vertices and associated values.
+    // Setting this value to true will drastically reduce the output data size
+    // but will result in an output file that does not faithfully represent the
+    // actual data if the data corresponds to discontinuous fields. In
+    // particular, along subdomain boundaries the data will still be
+    // discontinuous, while it will look like a continuous field inside of the
+    // subdomain. NOTE: I suspect that discontinuous elements produce
+    // discontinuous fields, but I do not know.
+    const bool filter_duplicate_vertices{false};
+    const bool xdmf_hdf5_output{true};
+    const bool write_mesh_hdf5{true};
+
+    DataOutBase::DataOutFilterFlags flags(filter_duplicate_vertices,
+                                          xdmf_hdf5_output);
     DataOutBase::DataOutFilter data_filter(flags);
+    // / Filter the data and store it in data_filter
     data_out.write_filtered_data(data_filter);
-    data_out.write_hdf5_parallel(data_filter, filename_h5, mpi_communicator);
+    // set the HDF5 compression level Future versions of dealii will allow to
+    // set the compression level: compare pull request.
+    // dealii::DataOutBase::Hdf5Flags hdf5Flags; hdf5Flags.compression_level =
+    // dealii::DataOutBase::CompressionLevel::best_compression;
+    // dataOut.set_flags(dealii::DataOutBase::Hdf5Flags(hdf5Flags));
+
+    data_out.write_hdf5_parallel(data_filter, write_mesh_hdf5, result_file_h5,
+                                 result_file_h5, mpi_communicator);
+
+    std::vector<XDMFEntry> xdmf_entries;
+    auto new_xdmf_entry = data_out.create_xdmf_entry(
+        data_filter, result_file_h5, time_step_number, mpi_communicator);
+    xdmf_entries.push_back(new_xdmf_entry);
+    data_out.write_xdmf_file(xdmf_entries, xdmf_file, mpi_communicator);
     // Assert(false, ExcNotImplemented("Currentlty it is not implemented to
     // store "
     //                                 "the simulation results in hdf5
