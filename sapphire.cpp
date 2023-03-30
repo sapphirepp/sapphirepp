@@ -194,7 +194,8 @@ class VFPEquationSolver {
   void low_storage_explicit_runge_kutta(const double time,
                                         const double time_step);
   // Output
-  void output_results(const unsigned int time_step_number) const;
+  void output_results(const unsigned int time_step_number,
+                      std::vector<XDMFEntry> &xdmf_entries) const;
 
   // auxiliary functions
   template <int dim>
@@ -306,7 +307,8 @@ void VFPEquationSolver::run() {
   // the moment where the ghost cells are filled.
   locally_relevant_current_solution = initial_condition;
   // Output t = 0
-  output_results(0);
+  std::vector<XDMFEntry> xdmf_entries;
+  output_results(0, xdmf_entries);
 
   // Assemble the dg matrix for t = 0
   assemble_dg_matrix(0);
@@ -339,7 +341,7 @@ void VFPEquationSolver::run() {
               vfp_solver_control.output_frequency ==
           0) {
         TimerOutput::Scope timer_section(timer, "Output");
-        output_results(time_step_number);
+        output_results(time_step_number, xdmf_entries);
       }
     }
   }
@@ -1430,7 +1432,8 @@ void VFPEquationSolver::low_storage_explicit_runge_kutta(
 }
 
 void VFPEquationSolver::output_results(
-    const unsigned int time_step_number) const {
+    const unsigned int time_step_number,
+    std::vector<XDMFEntry> &xdmf_entries) const {
   DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the solution
@@ -1454,18 +1457,19 @@ void VFPEquationSolver::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_solver_control.polynomial_degree);
+
+  // Path to the results folder
+  const std::string path = vfp_solver_control.results_path + "/" +
+                           vfp_solver_control.simulation_id + "/";
   if (vfp_solver_control.format == "vtu")
-    data_out.write_vtu_with_pvtu_record(
-        vfp_solver_control.results_path + "/" +
-            vfp_solver_control.simulation_id + "/",
-        "f", time_step_number, mpi_communicator, 4, 8);
+    data_out.write_vtu_with_pvtu_record(path, "f", time_step_number,
+                                        mpi_communicator, 4, 8);
   else if (vfp_solver_control.format == "hdf5") {
     // I follow this pull request: https://github.com/dealii/dealii/pull/14958
-    const std::string xdmf_file = vfp_solver_control.results_path + "/" +
-                                  vfp_solver_control.simulation_id + "/f.xdmf";
-    const std::string result_file_h5 = vfp_solver_control.results_path + "/" +
-                                       vfp_solver_control.simulation_id +
-                                       "/f.h5";
+    const std::string filename_h5 =
+        "f_" + Utilities::int_to_string(time_step_number, 4) + ".h5";
+    const std::string filename_mesh = "mesh.h5";
+    const std::string xdmf_file = "f.xdmf";
     // https://dealii.org/developer/doxygen/deal.II/structDataOutBase_1_1DataOutFilterFlags.html
     // Whether or not to filter out duplicate vertices and associated values.
     // Setting this value to true will drastically reduce the output data size
@@ -1477,7 +1481,6 @@ void VFPEquationSolver::output_results(
     // discontinuous fields, but I do not know.
     const bool filter_duplicate_vertices{false};
     const bool xdmf_hdf5_output{true};
-    const bool write_mesh_hdf5{true};
 
     DataOutBase::DataOutFilterFlags flags(filter_duplicate_vertices,
                                           xdmf_hdf5_output);
@@ -1489,21 +1492,27 @@ void VFPEquationSolver::output_results(
     // dealii::DataOutBase::Hdf5Flags hdf5Flags; hdf5Flags.compression_level =
     // dealii::DataOutBase::CompressionLevel::best_compression;
     // dataOut.set_flags(dealii::DataOutBase::Hdf5Flags(hdf5Flags));
+    const bool write_mesh_hdf5 = time_step_number == 0 ? true : false;
 
-    data_out.write_hdf5_parallel(data_filter, write_mesh_hdf5, result_file_h5,
-                                 result_file_h5, mpi_communicator);
+    data_out.write_hdf5_parallel(data_filter, write_mesh_hdf5,
+                                 path + filename_mesh, path + filename_h5,
+                                 mpi_communicator);
 
-    std::vector<XDMFEntry> xdmf_entries;
     auto new_xdmf_entry = data_out.create_xdmf_entry(
-        data_filter, result_file_h5, time_step_number, mpi_communicator);
+        data_filter, filename_mesh,
+        "f_" + Utilities::int_to_string(time_step_number, 4) + ".h5",
+        time_step_number, mpi_communicator);
     xdmf_entries.push_back(new_xdmf_entry);
-    data_out.write_xdmf_file(xdmf_entries, xdmf_file, mpi_communicator);
+    // NOTE: For now I a writing the xdmf file in every time step. That is
+    // unnecessary. There is missing a function add entry to xdmf_file
+    data_out.write_xdmf_file(xdmf_entries, path + xdmf_file, mpi_communicator);
     // Assert(false, ExcNotImplemented("Currentlty it is not implemented to
     // store "
     //                                 "the simulation results in hdf5
     //                                 format."));
   }
 }
+
 }  // namespace Sapphire
 
 int main(int argc, char *argv[]) {
