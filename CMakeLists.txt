@@ -18,7 +18,7 @@ deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever 
 project(Sapphire VERSION 0.9.0)
 option(vfp-equation-solver "Compile the VFP Equation Solver" ON )
 if(vfp-equation-solver)
-  add_subdirectory(src)
+  add_subdirectory(src/vfp)
   add_executable(sapphire sapphire.cpp)
   deal_ii_setup_target(sapphire)
   target_link_libraries(sapphire VFPSolverLib)
