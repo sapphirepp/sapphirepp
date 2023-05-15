@@ -17,12 +17,19 @@ deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever 
 
 project(Sapphire VERSION 0.9.0)
 option(vfp-equation-solver "Compile the VFP Equation Solver" ON )
+option(hydro-solver "Compile the Hydro Solver" ON )
 if(vfp-equation-solver)
   add_subdirectory(src/vfp)
   add_executable(sapphire sapphire.cpp)
   deal_ii_setup_target(sapphire)
   target_link_libraries(sapphire VFPSolverLib)
 endif(vfp-equation-solver)
+if(hydro-solver)
+  add_subdirectory(src/hydro)
+  add_executable(fluid fluid.cpp)
+  deal_ii_setup_target(fluid)
+  target_link_libraries(fluid HydroSolverLib)
+endif(hydro-solver)
 
 
 
