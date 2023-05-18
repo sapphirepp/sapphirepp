@@ -36,11 +36,12 @@ using namespace dealii;
  */
 class ExactSolution : public Function<1> {
 public:
-  ExactSolution(double time = 0.0) : Function<1>(1, time) {}
+  ExactSolution(double a = 1.0, double time = 0.0)
+      : Function<1>(1, time), a(a) {}
   void vector_value(const Point<1> &p, Vector<double> &values) const override;
 
 private:
-  const double a = 1.0;
+  const double a;
 };
 
 /**
@@ -50,8 +51,11 @@ private:
  */
 class InitialCondition : public Function<1> {
 public:
-  InitialCondition() = default;
+  InitialCondition(double a = 1.0) : Function<1>(1), a(a) {}
   void vector_value(const Point<1> &p, Vector<double> &values) const override;
+
+private:
+  const double a;
 };
 
 /**
@@ -75,6 +79,7 @@ private:
   void output_results() const;
 
   const static unsigned int dim = 1; // TODO: make this a template parameter
+  const double a = 1.0;
 
   Triangulation<dim> triangulation;
   const MappingQ1<dim> mapping;
@@ -84,8 +89,11 @@ private:
   const QGauss<dim> quadrature_formula;
   const QGauss<dim - 1> face_quadrature_formula;
 
+  AffineConstraints<double> constraints;
+
   SparsityPattern sparcity_pattern;
-  SparseMatrix<double> system_matrix;
+  SparseMatrix<double> mass_matrix;
+  SparseMatrix<double> system_matrix2;
 
   Vector<double> solution;
   Vector<double> old_solution;
