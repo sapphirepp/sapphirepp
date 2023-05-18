@@ -1,5 +1,7 @@
-#include "burgers-eq.h"
+#include "conservation-eq.h"
+
 #include <deal.II/base/mpi.h>
+
 #include <iostream>
 #include <mpi.h>
 
@@ -8,8 +10,8 @@ int main(int argc, char *argv[]) {
     using namespace Sapphire::Hydro;
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-    BurgersEq burgers_eq;
-    burgers_eq.run();
+    ConservationEq conservation_eq;
+    conservation_eq.run();
   } catch (std::exception &exc) {
     std::cerr << std::endl
               << std::endl
