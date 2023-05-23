@@ -27,29 +27,40 @@
 #include <fstream>
 #include <iostream>
 
-void Sapphire::Hydro::ExactSolution::vector_value(
-    const Point<1> &p, Vector<double> &values) const {
-  AssertDimension(values.size(), 1);
+template <int dim>
+void Sapphire::Hydro::ExactSolution<dim>::vector_value(
+    const Point<dim> &p, Vector<double> &values) const {
+  AssertThrow(dim == 1, ExcNotImplemented());
+  AssertDimension(values.size(), dim);
   values(0) = std::sin(numbers::PI * (p(0) - a * this->get_time()));
-  values(0) = 1.0;
+  // values(0) = 1.0;
 }
 
-void Sapphire::Hydro::InitialCondition::vector_value(
-    const Point<1> &p, Vector<double> &values) const {
-  ExactSolution(a, 0.0).vector_value(p, values);
+// explicit template instantiation
+template class Sapphire::Hydro::ExactSolution<1>;
+
+template <int dim>
+void Sapphire::Hydro::InitialCondition<dim>::vector_value(
+    const Point<dim> &p, Vector<double> &values) const {
+  ExactSolution<dim>(a, 0.0).vector_value(p, values);
 }
 
-Sapphire::Hydro::ConservationEq::ConservationEq()
+// explicit template instantiation
+template class Sapphire::Hydro::InitialCondition<1>;
+
+template <int dim>
+Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
     : mapping(), fe(1), dof_handler(triangulation),
       quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree()) {
   std::cout << "Setup conservation equation" << std::endl;
+  AssertThrow(dim == 1, ExcNotImplemented());
   time = 0.0;
   time_step = 0.01;
   timestep_number = 0;
 }
 
-void Sapphire::Hydro::ConservationEq::make_grid() {
+template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
   std::cout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
@@ -58,7 +69,7 @@ void Sapphire::Hydro::ConservationEq::make_grid() {
             << triangulation.n_active_cells() << std::endl;
 }
 
-void Sapphire::Hydro::ConservationEq::setup_system() {
+template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
   std::cout << "Setup system" << std::endl;
 
   dof_handler.distribute_dofs(fe);
@@ -74,13 +85,14 @@ void Sapphire::Hydro::ConservationEq::setup_system() {
   old_solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
 
-  VectorTools::interpolate(dof_handler, InitialCondition(a), solution);
+  VectorTools::interpolate(dof_handler, InitialCondition<dim>(a), solution);
 
   constraints.clear();
   constraints.close();
 }
 
-void Sapphire::Hydro::ConservationEq::assemble_system() {
+template <int dim>
+void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
   std::cout << "Assemble system" << std::endl;
 
   FEValues<dim> fe_values(mapping, fe, quadrature_formula,
@@ -260,11 +272,11 @@ void Sapphire::Hydro::ConservationEq::assemble_system() {
   // system_matrix.add(theta * time_step, dg_matrix);
 
   /** constant solution */
-  // mass_matrix.vmult(tmp, old_solution);
-  // system_rhs = tmp;
+  mass_matrix.vmult(tmp, old_solution);
+  system_rhs = tmp;
 }
 
-void Sapphire::Hydro::ConservationEq::solve() {
+template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
   std::cout << "Solve" << std::endl;
 
   SolverControl solver_control(1000, 1e-12);
@@ -283,11 +295,12 @@ void Sapphire::Hydro::ConservationEq::solve() {
             << std::endl;
 }
 
-void Sapphire::Hydro::ConservationEq::output_results() const {
+template <int dim>
+void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
   std::cout << "Output results" << std::endl;
 
   Vector<double> exact_solution(dof_handler.n_dofs());
-  VectorTools::interpolate(dof_handler, ExactSolution(a, time + time_step),
+  VectorTools::interpolate(dof_handler, ExactSolution<dim>(a, time + time_step),
                            exact_solution);
   // VectorTools::interpolate(dof_handler, ExactSolution(a, time),
   // exact_solution);
@@ -311,7 +324,7 @@ void Sapphire::Hydro::ConservationEq::output_results() const {
   data_out.write_vtu(output);
 }
 
-void Sapphire::Hydro::ConservationEq::run() {
+template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
   std::cout << "Run conservation equation" << std::endl;
   make_grid();
   setup_system();
@@ -326,3 +339,6 @@ void Sapphire::Hydro::ConservationEq::run() {
     output_results();
   }
 }
+
+// explicit instantiation
+template class Sapphire::Hydro::ConservationEq<1>;

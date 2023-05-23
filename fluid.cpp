@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     using namespace Sapphire::Hydro;
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-    ConservationEq conservation_eq;
+    ConservationEq<1> conservation_eq;
     conservation_eq.run();
   } catch (std::exception &exc) {
     std::cerr << std::endl

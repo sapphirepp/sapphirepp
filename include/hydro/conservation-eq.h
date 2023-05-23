@@ -34,11 +34,11 @@ using namespace dealii;
  *
  *  \( u(x, t) = u_0(x - a \cdot t) \)
  */
-class ExactSolution : public Function<1> {
+template <int dim> class ExactSolution : public Function<dim> {
 public:
   ExactSolution(double a = 1.0, double time = 0.0)
-      : Function<1>(1, time), a(a) {}
-  void vector_value(const Point<1> &p, Vector<double> &values) const override;
+      : Function<dim>(dim, time), a(a) {}
+  void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
   const double a;
@@ -49,10 +49,10 @@ private:
  *
  * \( u_0(x) = sin(x) \)
  */
-class InitialCondition : public Function<1> {
+template <int dim> class InitialCondition : public Function<dim> {
 public:
-  InitialCondition(double a = 1.0) : Function<1>(1), a(a) {}
-  void vector_value(const Point<1> &p, Vector<double> &values) const override;
+  InitialCondition(double a = 1.0) : Function<dim>(dim), a(a) {}
+  void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
   const double a;
@@ -66,7 +66,7 @@ private:
  * where \( u \) is the solution and \( \mathbf{f}(u) \) is the flux function.
  * Here the flux is given by \( \mathbf{f}(u) = a u \) with \( a \) a constant.
  */
-class ConservationEq {
+template <int dim> class ConservationEq {
 public:
   ConservationEq();
   void run();
@@ -78,7 +78,6 @@ private:
   void solve();
   void output_results() const;
 
-  const static unsigned int dim = 1; // TODO: make this a template parameter
   const double a = 1.0;
 
   Triangulation<dim> triangulation;
