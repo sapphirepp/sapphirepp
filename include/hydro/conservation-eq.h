@@ -18,12 +18,16 @@
 #define HYDROSOLVER_CONSERVATIONEQ_H
 
 #include <deal.II/base/function.h>
+#include <deal.II/base/mpi.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
+
+#include <mpi.h>
 
 namespace Sapphire {
 namespace Hydro {
@@ -78,6 +82,8 @@ private:
   void solve();
   void output_results() const;
 
+  MPI_Comm mpi_communicator;
+
   const double a = 1.0;
 
   Triangulation<dim> triangulation;
@@ -102,6 +108,9 @@ private:
   double time;
   double time_step;
   unsigned int timestep_number;
+
+  ConditionalOStream pcout;
+  TimerOutput computing_timer;
 };
 
 } // namespace Hydro

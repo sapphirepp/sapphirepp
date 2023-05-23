@@ -50,10 +50,14 @@ template class Sapphire::Hydro::InitialCondition<1>;
 
 template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
-    : mapping(), fe(1), dof_handler(triangulation),
-      quadrature_formula(fe.tensor_degree() + 1),
-      face_quadrature_formula(fe.tensor_degree()) {
-  std::cout << "Setup conservation equation" << std::endl;
+    : mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
+      dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
+      face_quadrature_formula(fe.tensor_degree()),
+      pcout(std::cout,
+            (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
+      computing_timer(mpi_communicator, pcout, TimerOutput::never,
+                      TimerOutput::wall_times) {
+  pcout << "Setup conservation equation" << std::endl;
   AssertThrow(dim == 1, ExcNotImplemented());
   time = 0.0;
   time_step = 0.01;
@@ -61,16 +65,18 @@ Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
 }
 
 template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
-  std::cout << "Make grid" << std::endl;
+  TimerOutput::Scope t(computing_timer, "Make grid");
+  pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
   triangulation.refine_global(5);
-  std::cout << "  Number of active cells:       "
-            << triangulation.n_active_cells() << std::endl;
+  pcout << "  Number of active cells:       " << triangulation.n_active_cells()
+        << std::endl;
 }
 
 template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
-  std::cout << "Setup system" << std::endl;
+  TimerOutput::Scope t(computing_timer, "Setup system");
+  pcout << "Setup system" << std::endl;
 
   dof_handler.distribute_dofs(fe);
 
@@ -93,7 +99,8 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
 
 template <int dim>
 void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
-  std::cout << "Assemble system" << std::endl;
+  TimerOutput::Scope t(computing_timer, "Assemble system");
+  pcout << "Assemble system" << std::endl;
 
   FEValues<dim> fe_values(mapping, fe, quadrature_formula,
                           update_values | update_gradients |
@@ -277,7 +284,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 }
 
 template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
-  std::cout << "Solve" << std::endl;
+  TimerOutput::Scope t(computing_timer, "Solve");
+  pcout << "Solve" << std::endl;
 
   SolverControl solver_control(1000, 1e-12);
   SolverCG<Vector<double>> solver(solver_control);
@@ -291,13 +299,13 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
 
   // constraints.distribute(solution);
 
-  std::cout << "   " << solver_control.last_step() << " CG iterations."
-            << std::endl;
+  pcout << "   " << solver_control.last_step() << " CG iterations."
+        << std::endl;
 }
 
 template <int dim>
 void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
-  std::cout << "Output results" << std::endl;
+  pcout << "Output results" << std::endl;
 
   Vector<double> exact_solution(dof_handler.n_dofs());
   VectorTools::interpolate(dof_handler, ExactSolution<dim>(a, time + time_step),
@@ -325,19 +333,28 @@ void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
 }
 
 template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
-  std::cout << "Run conservation equation" << std::endl;
+  pcout << "Run conservation equation" << std::endl;
   make_grid();
   setup_system();
-  output_results();
+  {
+    TimerOutput::Scope t(computing_timer, "Output results");
+    output_results();
+  }
   timestep_number++;
 
   for (; time < 1; time += time_step, ++timestep_number) {
     old_solution = solution;
     assemble_system();
-    std::cout << "  Time: " << time << std::endl;
+    pcout << "  Time: " << time << std::endl;
     solve();
-    output_results();
+    {
+      TimerOutput::Scope t(computing_timer, "Output results");
+      output_results();
+    }
   }
+
+  computing_timer.print_summary();
+  computing_timer.reset();
 }
 
 // explicit instantiation
