@@ -93,7 +93,8 @@ private:
 
   SparsityPattern sparcity_pattern;
   SparseMatrix<double> mass_matrix;
-  SparseMatrix<double> system_matrix2;
+  SparseMatrix<double> dg_matrix;
+  SparseMatrix<double> system_matrix;
 
   Vector<double> solution;
   Vector<double> old_solution;
