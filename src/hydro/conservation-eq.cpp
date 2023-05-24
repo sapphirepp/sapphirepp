@@ -17,7 +17,8 @@
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/precondition_block.h>
+#include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
 
@@ -222,6 +223,7 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
               // upwind flux
               const double eta = 1.0;
+              // const double eta = 0.0; // central flux
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
                   0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
@@ -501,19 +503,21 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
   pcout << "Solve" << std::endl;
 
   SolverControl solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> solver(solver_control);
+  // SolverCG<Vector<double>> solver(solver_control);
+  SolverRichardson<Vector<double>> solver(solver_control);
 
-  // PreconditionSSOR<SparseMatrix<double>> preconditioner;
-  // preconditioner.initialize(system_matrix, 1.2);
+  // PreconditionBlockJacobi preconditioner;
+  // preconditioner.initialize(system_matrix);
 
-  PreconditionIdentity preconditioner;
+  PreconditionSSOR<SparseMatrix<double>> preconditioner;
+  preconditioner.initialize(system_matrix);
 
   solver.solve(system_matrix, solution, system_rhs, preconditioner);
 
   // constraints.distribute(solution);
 
-  pcout << "   " << solver_control.last_step() << " CG iterations."
-        << std::endl;
+  pcout << "   Solver converged in " << solver_control.last_step()
+        << " iterations." << std::endl;
 }
 
 template <int dim>
