@@ -173,6 +173,10 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
           const unsigned int &neighbor_face_no,
           const unsigned int &neighbor_subface_no,
           ScratchData<dim> &scratch_data, CopyData &copy_data) {
+        // supress unused variable warning
+        (void)subface_no;
+        (void)neighbor_subface_no;
+
         FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
         fe_face_values.reinit(cell, face_no);
 
@@ -212,6 +216,33 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
               copy_data_face.cell_dg_matrix_22(i, j) -=
                   0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values_neighbor.shape_value(i, q_index) *
+                   fe_face_values_neighbor.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              // upwind flux
+              const double eta = 1.0;
+
+              copy_data_face.cell_dg_matrix_11(i, j) +=
+                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values.shape_value(i, q_index) *
+                   fe_face_values.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              copy_data_face.cell_dg_matrix_21(i, j) -=
+                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values_neighbor.shape_value(i, q_index) *
+                   fe_face_values.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              copy_data_face.cell_dg_matrix_12(i, j) -=
+                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values.shape_value(i, q_index) *
+                   fe_face_values_neighbor.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              copy_data_face.cell_dg_matrix_22(i, j) +=
+                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
