@@ -55,6 +55,15 @@ void Sapphire::Hydro::InitialCondition<dim>::vector_value(
 template class Sapphire::Hydro::InitialCondition<1>;
 
 template <int dim>
+void Sapphire::Hydro::BoundaryValues<dim>::vector_value(
+    const Point<dim> &p, Vector<double> &values) const {
+  ExactSolution<dim>(a, this->get_time()).vector_value(p, values);
+}
+
+// explicit template instantiation
+template class Sapphire::Hydro::BoundaryValues<1>;
+
+template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
     : mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
       dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
@@ -150,19 +159,35 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
     // const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
+    BoundaryValues<dim> boundary_values(a, time);
+    // std::vector<double> boundary_values_vector(
+    //     fe_face_values.get_quadrature_points().size());
+    // boundary_values.value_list(fe_face_values.get_quadrature_points(),
+    //                            boundary_values_vector);
+    Vector<double> boundary_value(dim);
+
     for (const unsigned int q_index :
          fe_face_values.quadrature_point_indices()) {
+      const double v_dot_n = a * fe_face_values.normal_vector(q_index)[0];
 
-      for (const unsigned int i : fe_face_values.dof_indices()) {
-        for (const unsigned int j : fe_face_values.dof_indices()) {
+      if (v_dot_n > 0.0) { // outflow boundary
+        for (const unsigned int i : fe_face_values.dof_indices()) {
+          for (const unsigned int j : fe_face_values.dof_indices()) {
 
-          copy_data.cell_dg_matrix(i, j) +=
-              0.5 * a *
-              (std::abs(fe_face_values.normal_vector(q_index)[0]) +
-               fe_face_values.normal_vector(q_index)[0]) *
-              (fe_face_values.shape_value(i, q_index) *
-               fe_face_values.shape_value(j, q_index) *
-               fe_face_values.JxW(q_index));
+            copy_data.cell_dg_matrix(i, j) +=
+                v_dot_n * fe_face_values.shape_value(i, q_index) *
+                fe_face_values.shape_value(j, q_index) *
+                fe_face_values.JxW(q_index);
+          }
+        }
+      } else { // inflow boundary
+        for (const unsigned int i : fe_face_values.dof_indices()) {
+          boundary_values.vector_value(fe_face_values.quadrature_point(q_index),
+                                       boundary_value);
+
+          copy_data.cell_rhs(i) += -v_dot_n * boundary_value[0] *
+                                   fe_face_values.shape_value(i, q_index) *
+                                   fe_face_values.JxW(q_index);
         }
       }
     }
@@ -484,6 +509,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_time_step() {
   const double theta = 0.5; // Cranc-Nicholson
   // const double theta = 1.0; // Backward Euler
 
+  system_rhs *= time_step;
+
   mass_matrix.vmult(tmp, old_solution);
   system_rhs.add(1.0, tmp);
 
@@ -559,13 +586,13 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
   }
 
   for (; time < 1;) {
+    time += time_step, ++timestep_number;
     pcout << "  Time: " << time << std::endl;
     old_solution = solution;
     assemble_system();
     // assemble_system_old();
     assemble_time_step();
     solve();
-    time += time_step, ++timestep_number;
     {
       TimerOutput::Scope t(computing_timer, "Output results");
       output_results();

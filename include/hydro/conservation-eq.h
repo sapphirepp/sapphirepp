@@ -63,6 +63,16 @@ private:
   const double a;
 };
 
+template <int dim> class BoundaryValues : public Function<dim> {
+public:
+  BoundaryValues(double a = 1.0, double time = 0.0)
+      : Function<dim>(dim, time), a(a) {}
+  void vector_value(const Point<dim> &p, Vector<double> &values) const override;
+
+private:
+  const double a;
+};
+
 template <int dim> class ScratchData {
 public:
   // Constructor
