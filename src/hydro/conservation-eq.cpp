@@ -467,27 +467,29 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_time_step() {
   Vector<double> tmp(dof_handler.n_dofs());
   // Euler step
 
-  tmp = 0;
-  mass_matrix.vmult(tmp, old_solution);
-  system_rhs.add(1.0, tmp);
-
-  tmp = 0;
-  dg_matrix.vmult(tmp, old_solution);
-  system_rhs.add(-time_step, tmp);
-
-  system_matrix.copy_from(mass_matrix);
-
-  // Theta method
-  // const double theta = 0.5;
-
+  // tmp = 0;
   // mass_matrix.vmult(tmp, old_solution);
   // system_rhs.add(1.0, tmp);
 
+  // tmp = 0;
   // dg_matrix.vmult(tmp, old_solution);
-  // system_rhs.add(-(1. - theta) * time_step, tmp);
+  // system_rhs.add(-time_step, tmp);
 
   // system_matrix.copy_from(mass_matrix);
-  // system_matrix.add(theta * time_step, dg_matrix);
+
+  // Theta method
+  // const double theta = 0.0; // Forward Euler
+  const double theta = 0.5; // Cranc-Nicholson
+  // const double theta = 1.0; // Backward Euler
+
+  mass_matrix.vmult(tmp, old_solution);
+  system_rhs.add(1.0, tmp);
+
+  dg_matrix.vmult(tmp, old_solution);
+  system_rhs.add(-(1. - theta) * time_step, tmp);
+
+  system_matrix.copy_from(mass_matrix);
+  system_matrix.add(theta * time_step, dg_matrix);
 
   /** constant solution */
   // mass_matrix.vmult(tmp, old_solution);
@@ -519,7 +521,7 @@ void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
   pcout << "Output results" << std::endl;
 
   Vector<double> exact_solution(dof_handler.n_dofs());
-  VectorTools::interpolate(dof_handler, ExactSolution<dim>(a, time + time_step),
+  VectorTools::interpolate(dof_handler, ExactSolution<dim>(a, time),
                            exact_solution);
   // VectorTools::interpolate(dof_handler, ExactSolution(a, time),
   // exact_solution);
@@ -551,15 +553,15 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
     TimerOutput::Scope t(computing_timer, "Output results");
     output_results();
   }
-  timestep_number++;
 
-  for (; time < 1; time += time_step, ++timestep_number) {
+  for (; time < 1;) {
     pcout << "  Time: " << time << std::endl;
     old_solution = solution;
     assemble_system();
     // assemble_system_old();
     assemble_time_step();
     solve();
+    time += time_step, ++timestep_number;
     {
       TimerOutput::Scope t(computing_timer, "Output results");
       output_results();
