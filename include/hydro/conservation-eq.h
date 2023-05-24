@@ -22,6 +22,7 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/sparse_matrix.h>
@@ -62,6 +63,92 @@ private:
   const double a;
 };
 
+template <int dim> class ScratchData {
+public:
+  // Constructor
+  ScratchData(const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
+              const Quadrature<dim> &quadrature,
+              const Quadrature<dim - 1> &face_quadrature,
+              const UpdateFlags update_flags = update_values |
+                                               update_gradients |
+                                               update_quadrature_points |
+                                               update_JxW_values,
+              const UpdateFlags face_update_flags = update_values |
+                                                    update_quadrature_points |
+                                                    update_JxW_values |
+                                                    update_normal_vectors |
+                                                    update_JxW_values,
+              const UpdateFlags neighbor_face_update_flags = update_values)
+      : fe_values(mapping, fe, quadrature, update_flags),
+        fe_face_values(mapping, fe, face_quadrature, face_update_flags),
+        fe_face_values_neighbor(mapping, fe, face_quadrature,
+                                neighbor_face_update_flags) {}
+
+  // Copy constructor
+  ScratchData(const ScratchData &scratch_data)
+      : fe_values(scratch_data.fe_values.get_mapping(),
+                  scratch_data.fe_values.get_fe(),
+                  scratch_data.fe_values.get_quadrature(),
+                  scratch_data.fe_values.get_update_flags()),
+        fe_face_values(scratch_data.fe_face_values.get_mapping(),
+                       scratch_data.fe_face_values.get_fe(),
+                       scratch_data.fe_face_values.get_quadrature(),
+                       scratch_data.fe_face_values.get_update_flags()),
+        fe_face_values_neighbor(
+            scratch_data.fe_face_values_neighbor.get_mapping(),
+            scratch_data.fe_face_values_neighbor.get_fe(),
+            scratch_data.fe_face_values_neighbor.get_quadrature(),
+            scratch_data.fe_face_values_neighbor.get_update_flags()) {}
+
+  FEValues<dim> fe_values;
+  FEFaceValues<dim> fe_face_values;
+  FEFaceValues<dim> fe_face_values_neighbor;
+};
+
+struct CopyDataFace {
+  FullMatrix<double> cell_dg_matrix_11;
+  FullMatrix<double> cell_dg_matrix_12;
+  FullMatrix<double> cell_dg_matrix_21;
+  FullMatrix<double> cell_dg_matrix_22;
+
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, const Iterator &neighbor_cell,
+              unsigned int dofs_per_cell) {
+    cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+
+    local_dof_indices_neighbor.resize(dofs_per_cell);
+    neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
+  }
+};
+
+struct CopyData {
+  FullMatrix<double> cell_mass_matrix;
+  FullMatrix<double> cell_dg_matrix;
+  Vector<double> cell_rhs;
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+  std::vector<CopyDataFace> face_data;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
+    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_rhs.reinit(dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+  }
+};
+
 /**
  * @brief Solve the simple conservation equation.
  *
@@ -79,12 +166,15 @@ private:
   void make_grid();
   void setup_system();
   void assemble_system();
+  void assemble_system_old();
+  void assemble_time_step();
   void solve();
   void output_results() const;
 
   MPI_Comm mpi_communicator;
 
-  const double a = 1.0;
+  const double a = 0.5;
+  // const double a = 1.0;
 
   Triangulation<dim> triangulation;
   const MappingQ1<dim> mapping;

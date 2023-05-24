@@ -21,6 +21,8 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
 
+#include <deal.II/meshworker/mesh_loop.h>
+
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 
@@ -32,8 +34,11 @@ void Sapphire::Hydro::ExactSolution<dim>::vector_value(
     const Point<dim> &p, Vector<double> &values) const {
   AssertThrow(dim == 1, ExcNotImplemented());
   AssertDimension(values.size(), dim);
-  values(0) = std::sin(numbers::PI * (p(0) - a * this->get_time()));
+  // values(0) = std::sin(numbers::PI * (p(0) - a * this->get_time()));
   // values(0) = 1.0;
+  const double sigma = 0.1;
+  values(0) = std::exp(-(p[0] - a * this->get_time()) *
+                       (p[0] - a * this->get_time()) / (2.0 * sigma * sigma));
 }
 
 // explicit template instantiation
@@ -60,6 +65,7 @@ Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
   pcout << "Setup conservation equation" << std::endl;
   AssertThrow(dim == 1, ExcNotImplemented());
   time = 0.0;
+  // time_step = 0.001;
   time_step = 0.01;
   timestep_number = 0;
 }
@@ -69,7 +75,8 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(5);
+  triangulation.refine_global(7);
+  // triangulation.refine_global(5);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
 }
@@ -99,6 +106,176 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
 
 template <int dim>
 void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
+  TimerOutput::Scope t(computing_timer, "Assemble system");
+  pcout << "Assemble system" << std::endl;
+
+  mass_matrix = 0;
+  dg_matrix = 0;
+  system_matrix = 0;
+  system_rhs = 0;
+
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
+
+  const auto cell_worker = [&](const Iterator &cell,
+                               ScratchData<dim> &scratch_data,
+                               CopyData &copy_data) {
+    FEValues<dim> &fe_values = scratch_data.fe_values;
+
+    fe_values.reinit(cell);
+    const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
+
+    copy_data.reinit(cell, n_dofs);
+
+    for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
+      for (const unsigned int i : fe_values.dof_indices()) {
+        for (const unsigned int j : fe_values.dof_indices()) {
+          copy_data.cell_mass_matrix(i, j) +=
+              (fe_values.shape_value(i, q_index) *
+               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
+          copy_data.cell_dg_matrix(i, j) -=
+              a * (fe_values.shape_grad(i, q_index)[0] *
+                   fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
+        }
+      }
+    }
+  };
+
+  const auto boundary_worker = [&](const Iterator &cell,
+                                   const unsigned int &face_no,
+                                   ScratchData<dim> &scratch_data,
+                                   CopyData &copy_data) {
+    scratch_data.fe_face_values.reinit(cell, face_no);
+    const FEFaceValuesBase<dim> &fe_face_values = scratch_data.fe_face_values;
+
+    // const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
+
+    for (const unsigned int q_index :
+         fe_face_values.quadrature_point_indices()) {
+
+      for (const unsigned int i : fe_face_values.dof_indices()) {
+        for (const unsigned int j : fe_face_values.dof_indices()) {
+
+          copy_data.cell_dg_matrix(i, j) +=
+              0.5 * a *
+              (std::abs(fe_face_values.normal_vector(q_index)[0]) +
+               fe_face_values.normal_vector(q_index)[0]) *
+              (fe_face_values.shape_value(i, q_index) *
+               fe_face_values.shape_value(j, q_index) *
+               fe_face_values.JxW(q_index));
+        }
+      }
+    }
+  };
+
+  const auto face_worker =
+      [&](const Iterator &cell, const unsigned int &face_no,
+          const unsigned int &subface_no, const Iterator &neighbor_cell,
+          const unsigned int &neighbor_face_no,
+          const unsigned int &neighbor_subface_no,
+          ScratchData<dim> &scratch_data, CopyData &copy_data) {
+        FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
+        fe_face_values.reinit(cell, face_no);
+
+        FEFaceValues<dim> &fe_face_values_neighbor =
+            scratch_data.fe_face_values_neighbor;
+        fe_face_values_neighbor.reinit(neighbor_cell, neighbor_face_no);
+
+        copy_data.face_data.emplace_back();
+        CopyDataFace &copy_data_face = copy_data.face_data.back();
+
+        const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
+        copy_data_face.reinit(cell, neighbor_cell, n_dofs);
+
+        for (const unsigned int q_index :
+             fe_face_values.quadrature_point_indices()) {
+
+          for (const unsigned int i : fe_face_values.dof_indices()) {
+            for (const unsigned int j : fe_face_values.dof_indices()) {
+
+              copy_data_face.cell_dg_matrix_11(i, j) +=
+                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values.shape_value(i, q_index) *
+                   fe_face_values.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              copy_data_face.cell_dg_matrix_21(i, j) -=
+                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values_neighbor.shape_value(i, q_index) *
+                   fe_face_values.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              copy_data_face.cell_dg_matrix_12(i, j) +=
+                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values.shape_value(i, q_index) *
+                   fe_face_values_neighbor.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+
+              copy_data_face.cell_dg_matrix_22(i, j) -=
+                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  (fe_face_values_neighbor.shape_value(i, q_index) *
+                   fe_face_values_neighbor.shape_value(j, q_index) *
+                   fe_face_values.JxW(q_index));
+            }
+          }
+        }
+      };
+
+  const auto copier = [&](const CopyData &c) {
+    constraints.distribute_local_to_global(c.cell_mass_matrix,
+                                           c.local_dof_indices, mass_matrix);
+    constraints.distribute_local_to_global(c.cell_dg_matrix,
+                                           c.local_dof_indices, dg_matrix);
+    constraints.distribute_local_to_global(c.cell_rhs, c.local_dof_indices,
+                                           system_rhs);
+
+    for (auto &cdf : c.face_data) {
+      constraints.distribute_local_to_global(cdf.cell_dg_matrix_11,
+                                             cdf.local_dof_indices,
+                                             cdf.local_dof_indices, dg_matrix);
+      constraints.distribute_local_to_global(cdf.cell_dg_matrix_21,
+                                             cdf.local_dof_indices_neighbor,
+                                             cdf.local_dof_indices, dg_matrix);
+      constraints.distribute_local_to_global(
+          cdf.cell_dg_matrix_12, cdf.local_dof_indices,
+          cdf.local_dof_indices_neighbor, dg_matrix);
+      constraints.distribute_local_to_global(
+          cdf.cell_dg_matrix_22, cdf.local_dof_indices_neighbor,
+          cdf.local_dof_indices_neighbor, dg_matrix);
+
+      // for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i) {
+      //   for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
+      //     dg_matrix.add(cdf.local_dof_indices[i], cdf.local_dof_indices[j],
+      //                   cdf.cell_dg_matrix_11(i, j));
+      //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
+      //                   cdf.local_dof_indices[j], cdf.cell_dg_matrix_12(i,
+      //                   j));
+      //     dg_matrix.add(cdf.local_dof_indices[i],
+      //                   cdf.local_dof_indices_neighbor[j],
+      //                   cdf.cell_dg_matrix_21(i, j));
+      //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
+      //                   cdf.local_dof_indices_neighbor[j],
+      //                   cdf.cell_dg_matrix_22(i, j));
+      //   }
+      // }
+    }
+  };
+
+  ScratchData<dim> scratch_data(mapping, fe, quadrature_formula,
+                                face_quadrature_formula);
+  CopyData copy_data;
+  pcout << "Assembling System Matrices" << std::endl;
+
+  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
+                        cell_worker, copier, scratch_data, copy_data,
+                        MeshWorker::assemble_own_cells |
+                            MeshWorker::assemble_boundary_faces |
+                            MeshWorker::assemble_own_interior_faces_once,
+                        boundary_worker, face_worker);
+  pcout << "   Done" << std::endl;
+}
+
+template <int dim>
+void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
   TimerOutput::Scope t(computing_timer, "Assemble system");
   pcout << "Assemble system" << std::endl;
 
@@ -145,10 +322,6 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
           cell_mass_matrix(i, j) +=
               (fe_values.shape_value(i, q_index) *
                fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-          // cell_dg_matrix(i, j) +=
-          //     a * (fe_values.shape_value(i, q_index) *
-          //          fe_values.shape_value(j, q_index) *
-          //          fe_values.JxW(q_index));
           cell_dg_matrix(i, j) -=
               a * (fe_values.shape_grad(i, q_index)[0] *
                    fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
@@ -180,21 +353,20 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
           for (const unsigned int i : fe_face_values.dof_indices()) {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
-              cell_dg_matrix_11(i, j) -=
+              cell_dg_matrix_11(i, j) +=
                   0.5 * a *
-                  (std::abs(fe_face_values.normal_vector(q_index)[0]) -
+                  (std::abs(fe_face_values.normal_vector(q_index)[0]) +
                    fe_face_values.normal_vector(q_index)[0]) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
-                   fe_values.JxW(q_index));
+                   fe_face_values.JxW(q_index));
             }
           }
         }
 
         cell->get_dof_indices(local_dof_indices);
-        // constraints.distribute_local_to_global(
-        //     cell_dg_matrix_11, local_dof_indices, local_dof_indices,
-        //     dg_matrix);
+        constraints.distribute_local_to_global(
+            cell_dg_matrix_11, local_dof_indices, local_dof_indices, dg_matrix);
       } else {
 
         fe_face_values.reinit(cell, face_no);
@@ -215,25 +387,25 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
                   0.5 * a * fe_face_values.normal_vector(q_index)[0] *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
-                   fe_values.JxW(q_index));
+                   fe_face_values.JxW(q_index));
 
               cell_dg_matrix_21(i, j) -=
                   0.5 * a * fe_face_values.normal_vector(q_index)[0] *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
-                   fe_values.JxW(q_index));
+                   fe_face_values.JxW(q_index));
 
               cell_dg_matrix_12(i, j) +=
                   0.5 * a * fe_face_values.normal_vector(q_index)[0] *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
-                   fe_values.JxW(q_index));
+                   fe_face_values.JxW(q_index));
 
               cell_dg_matrix_22(i, j) -=
                   0.5 * a * fe_face_values.normal_vector(q_index)[0] *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
-                   fe_values.JxW(q_index));
+                   fe_face_values.JxW(q_index));
             }
           }
         }
@@ -254,15 +426,23 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
       }
     }
   }
+}
+
+template <int dim>
+void Sapphire::Hydro::ConservationEq<dim>::assemble_time_step() {
+  TimerOutput::Scope t(computing_timer, "Time step");
+  pcout << "Time step" << std::endl;
 
   Vector<double> tmp(dof_handler.n_dofs());
   // Euler step
 
+  tmp = 0;
   mass_matrix.vmult(tmp, old_solution);
   system_rhs.add(1.0, tmp);
 
+  tmp = 0;
   dg_matrix.vmult(tmp, old_solution);
-  system_rhs.add(time_step, tmp);
+  system_rhs.add(-time_step, tmp);
 
   system_matrix.copy_from(mass_matrix);
 
@@ -279,8 +459,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
   // system_matrix.add(theta * time_step, dg_matrix);
 
   /** constant solution */
-  mass_matrix.vmult(tmp, old_solution);
-  system_rhs = tmp;
+  // mass_matrix.vmult(tmp, old_solution);
+  // system_rhs = tmp;
 }
 
 template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
@@ -343,9 +523,11 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
   timestep_number++;
 
   for (; time < 1; time += time_step, ++timestep_number) {
+    pcout << "  Time: " << time << std::endl;
     old_solution = solution;
     assemble_system();
-    pcout << "  Time: " << time << std::endl;
+    // assemble_system_old();
+    assemble_time_step();
     solve();
     {
       TimerOutput::Scope t(computing_timer, "Output results");
