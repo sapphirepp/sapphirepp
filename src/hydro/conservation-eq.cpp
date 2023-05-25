@@ -35,7 +35,7 @@ void Sapphire::Hydro::ExactSolution<dim>::vector_value(
     const Point<dim> &p, Vector<double> &values) const {
   AssertThrow(dim == 1, ExcNotImplemented());
   AssertDimension(values.size(), dim);
-  // values(0) = std::sin(numbers::PI * (p(0) - a * this->get_time()));
+  // values(0) = std::sin(numbers::PI * (p(0) - beta[0] * this->get_time()));
   // values(0) = 1.0;
   const double sigma = 0.1;
   values(0) = std::exp(-(p - beta * this->get_time()) *
@@ -222,30 +222,31 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
+          const double v_dot_n = beta * fe_face_values.normal_vector(q_index);
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * v_dot_n *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_21(i, j) -=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * v_dot_n *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_12(i, j) +=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * v_dot_n *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_22(i, j) -=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * v_dot_n *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -255,25 +256,25 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
               // const double eta = 0.0; // central flux
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_21(i, j) -=
-                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_12(i, j) -=
-                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_22(i, j) +=
-                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
