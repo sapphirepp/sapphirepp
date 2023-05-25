@@ -41,12 +41,12 @@ using namespace dealii;
  */
 template <int dim> class ExactSolution : public Function<dim> {
 public:
-  ExactSolution(double a = 1.0, double time = 0.0)
-      : Function<dim>(dim, time), a(a) {}
+  ExactSolution(const Tensor<1, dim> &beta, const double time = 0.0)
+      : Function<dim>(dim, time), beta(beta) {}
   void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
-  const double a;
+  const Tensor<1, dim> beta;
 };
 
 /**
@@ -56,21 +56,22 @@ private:
  */
 template <int dim> class InitialCondition : public Function<dim> {
 public:
-  InitialCondition(double a = 1.0) : Function<dim>(dim), a(a) {}
+  InitialCondition(const Tensor<1, dim> &beta)
+      : Function<dim>(dim), beta(beta) {}
   void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
-  const double a;
+  const Tensor<1, dim> beta;
 };
 
 template <int dim> class BoundaryValues : public Function<dim> {
 public:
-  BoundaryValues(double a = 1.0, double time = 0.0)
-      : Function<dim>(dim, time), a(a) {}
+  BoundaryValues(const Tensor<1, dim> &beta, const double time = 0.0)
+      : Function<dim>(dim, time), beta(beta) {}
   void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
-  const double a;
+  const Tensor<1, dim> beta;
 };
 
 template <int dim> class ScratchData {
@@ -169,7 +170,7 @@ struct CopyData {
  */
 template <int dim> class ConservationEq {
 public:
-  ConservationEq();
+  ConservationEq(const Tensor<1, dim> &beta);
   void run();
 
 private:
@@ -181,10 +182,9 @@ private:
   void solve();
   void output_results() const;
 
-  MPI_Comm mpi_communicator;
+  const Tensor<1, dim> beta;
 
-  const double a = 0.5;
-  // const double a = 1.0;
+  MPI_Comm mpi_communicator;
 
   Triangulation<dim> triangulation;
   const MappingQ1<dim> mapping;

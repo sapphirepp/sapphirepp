@@ -38,8 +38,8 @@ void Sapphire::Hydro::ExactSolution<dim>::vector_value(
   // values(0) = std::sin(numbers::PI * (p(0) - a * this->get_time()));
   // values(0) = 1.0;
   const double sigma = 0.1;
-  values(0) = std::exp(-(p[0] - a * this->get_time()) *
-                       (p[0] - a * this->get_time()) / (2.0 * sigma * sigma));
+  values(0) = std::exp(-(p - beta * this->get_time()) *
+                       (p - beta * this->get_time()) / (2.0 * sigma * sigma));
 }
 
 // explicit template instantiation
@@ -48,7 +48,7 @@ template class Sapphire::Hydro::ExactSolution<1>;
 template <int dim>
 void Sapphire::Hydro::InitialCondition<dim>::vector_value(
     const Point<dim> &p, Vector<double> &values) const {
-  ExactSolution<dim>(a, 0.0).vector_value(p, values);
+  ExactSolution<dim>(beta, 0.0).vector_value(p, values);
 }
 
 // explicit template instantiation
@@ -57,15 +57,15 @@ template class Sapphire::Hydro::InitialCondition<1>;
 template <int dim>
 void Sapphire::Hydro::BoundaryValues<dim>::vector_value(
     const Point<dim> &p, Vector<double> &values) const {
-  ExactSolution<dim>(a, this->get_time()).vector_value(p, values);
+  ExactSolution<dim>(beta, this->get_time()).vector_value(p, values);
 }
 
 // explicit template instantiation
 template class Sapphire::Hydro::BoundaryValues<1>;
 
 template <int dim>
-Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
-    : mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
+Sapphire::Hydro::ConservationEq<dim>::ConservationEq(const Tensor<1, dim> &beta)
+    : beta(beta), mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
       dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree()),
       pcout(std::cout,
@@ -74,6 +74,9 @@ Sapphire::Hydro::ConservationEq<dim>::ConservationEq()
                       TimerOutput::wall_times) {
   pcout << "Setup conservation equation" << std::endl;
   AssertThrow(dim == 1, ExcNotImplemented());
+
+  pcout << "  beta = " << beta << std::endl;
+
   time = 0.0;
   // time_step = 0.001;
   time_step = 0.01;
@@ -108,7 +111,7 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
   old_solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
 
-  VectorTools::interpolate(dof_handler, InitialCondition<dim>(a), solution);
+  VectorTools::interpolate(dof_handler, InitialCondition<dim>(beta), solution);
 
   constraints.clear();
   constraints.close();
@@ -143,8 +146,9 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
               (fe_values.shape_value(i, q_index) *
                fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
           copy_data.cell_dg_matrix(i, j) -=
-              a * (fe_values.shape_grad(i, q_index)[0] *
-                   fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
+              beta *
+              (fe_values.shape_grad(i, q_index) *
+               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
         }
       }
     }
@@ -159,7 +163,7 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
     // const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
-    BoundaryValues<dim> boundary_values(a, time);
+    BoundaryValues<dim> boundary_values(beta, time);
     // std::vector<double> boundary_values_vector(
     //     fe_face_values.get_quadrature_points().size());
     // boundary_values.value_list(fe_face_values.get_quadrature_points(),
@@ -168,7 +172,7 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
     for (const unsigned int q_index :
          fe_face_values.quadrature_point_indices()) {
-      const double v_dot_n = a * fe_face_values.normal_vector(q_index)[0];
+      const double v_dot_n = beta * fe_face_values.normal_vector(q_index);
 
       if (v_dot_n > 0.0) { // outflow boundary
         for (const unsigned int i : fe_face_values.dof_indices()) {
@@ -223,25 +227,25 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_21(i, j) -=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_12(i, j) +=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_22(i, j) -=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -251,25 +255,25 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
               // const double eta = 0.0; // central flux
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_21(i, j) -=
-                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_12(i, j) -=
-                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_22(i, j) +=
-                  0.5 * eta * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * eta * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -380,9 +384,9 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
           cell_mass_matrix(i, j) +=
               (fe_values.shape_value(i, q_index) *
                fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-          cell_dg_matrix(i, j) -=
-              a * (fe_values.shape_grad(i, q_index)[0] *
-                   fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
+          cell_dg_matrix(i, j) -= beta * (fe_values.shape_grad(i, q_index) *
+                                          fe_values.shape_value(j, q_index) *
+                                          fe_values.JxW(q_index));
         }
       }
     }
@@ -412,9 +416,9 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               cell_dg_matrix_11(i, j) +=
-                  0.5 * a *
-                  (std::abs(fe_face_values.normal_vector(q_index)[0]) +
-                   fe_face_values.normal_vector(q_index)[0]) *
+                  0.5 *
+                  (std::abs(beta * fe_face_values.normal_vector(q_index)) +
+                   beta * fe_face_values.normal_vector(q_index)) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -442,25 +446,25 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               cell_dg_matrix_11(i, j) +=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               cell_dg_matrix_21(i, j) -=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               cell_dg_matrix_12(i, j) +=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               cell_dg_matrix_22(i, j) -=
-                  0.5 * a * fe_face_values.normal_vector(q_index)[0] *
+                  0.5 * beta * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -552,7 +556,7 @@ void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
   pcout << "Output results" << std::endl;
 
   Vector<double> exact_solution(dof_handler.n_dofs());
-  VectorTools::interpolate(dof_handler, ExactSolution<dim>(a, time),
+  VectorTools::interpolate(dof_handler, ExactSolution<dim>(beta, time),
                            exact_solution);
   // VectorTools::interpolate(dof_handler, ExactSolution(a, time),
   // exact_solution);
