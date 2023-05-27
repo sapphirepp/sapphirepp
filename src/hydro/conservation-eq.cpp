@@ -33,10 +33,13 @@
 template <int dim>
 void Sapphire::Hydro::ExactSolution<dim>::vector_value(
     const Point<dim> &p, Vector<double> &values) const {
-  AssertThrow(dim == 1, ExcNotImplemented());
-  AssertDimension(values.size(), dim);
-  // values(0) = std::sin(numbers::PI * (p(0) - beta[0] * this->get_time()));
+  AssertDimension(values.size(), this->n_components);
   // values(0) = 1.0;
+  // Tensor<1, dim> normal;
+  // normal[0] = 0.0;
+  // normal[1] = 1.0;
+  // normal /= normal.norm();
+  // values(0) = std::sin(numbers::PI * normal * (p - beta * this->get_time()));
   const double sigma = 0.1;
   values(0) = std::exp(-(p - beta * this->get_time()) *
                        (p - beta * this->get_time()) / (2.0 * sigma * sigma));
@@ -44,6 +47,8 @@ void Sapphire::Hydro::ExactSolution<dim>::vector_value(
 
 // explicit template instantiation
 template class Sapphire::Hydro::ExactSolution<1>;
+template class Sapphire::Hydro::ExactSolution<2>;
+template class Sapphire::Hydro::ExactSolution<3>;
 
 template <int dim>
 void Sapphire::Hydro::InitialCondition<dim>::vector_value(
@@ -53,6 +58,8 @@ void Sapphire::Hydro::InitialCondition<dim>::vector_value(
 
 // explicit template instantiation
 template class Sapphire::Hydro::InitialCondition<1>;
+template class Sapphire::Hydro::InitialCondition<2>;
+template class Sapphire::Hydro::InitialCondition<3>;
 
 template <int dim>
 void Sapphire::Hydro::BoundaryValues<dim>::vector_value(
@@ -62,24 +69,26 @@ void Sapphire::Hydro::BoundaryValues<dim>::vector_value(
 
 // explicit template instantiation
 template class Sapphire::Hydro::BoundaryValues<1>;
+template class Sapphire::Hydro::BoundaryValues<2>;
+template class Sapphire::Hydro::BoundaryValues<3>;
 
 template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(const Tensor<1, dim> &beta)
     : beta(beta), mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
       dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
-      face_quadrature_formula(fe.tensor_degree()),
+      face_quadrature_formula(fe.tensor_degree() + 1),
       pcout(std::cout,
             (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
       computing_timer(mpi_communicator, pcout, TimerOutput::never,
                       TimerOutput::wall_times) {
   pcout << "Setup conservation equation" << std::endl;
-  AssertThrow(dim == 1, ExcNotImplemented());
 
   pcout << "  beta = " << beta << std::endl;
 
   time = 0.0;
   // time_step = 0.001;
-  time_step = 0.01;
+  // time_step = 0.01;
+  time_step = 0.05;
   timestep_number = 0;
 }
 
@@ -88,8 +97,8 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(7);
-  // triangulation.refine_global(5);
+  // triangulation.refine_global(7);
+  triangulation.refine_global(5);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
 }
@@ -168,7 +177,7 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
     //     fe_face_values.get_quadrature_points().size());
     // boundary_values.value_list(fe_face_values.get_quadrature_points(),
     //                            boundary_values_vector);
-    Vector<double> boundary_value(dim);
+    Vector<double> boundary_value(1);
 
     for (const unsigned int q_index :
          fe_face_values.quadrature_point_indices()) {
@@ -252,8 +261,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
                    fe_face_values.JxW(q_index));
 
               // upwind flux
-              const double eta = 1.0;
-              // const double eta = 0.0; // central flux
+              // const double eta = 1.0;
+              const double eta = 0.0; // central flux
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
                   0.5 * eta * std::abs(v_dot_n) *
@@ -610,3 +619,4 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
 
 // explicit instantiation
 template class Sapphire::Hydro::ConservationEq<1>;
+template class Sapphire::Hydro::ConservationEq<2>;

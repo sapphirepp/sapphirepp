@@ -10,9 +10,11 @@ int main(int argc, char *argv[]) {
     using namespace Sapphire::Hydro;
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-    const unsigned int dim = 1;
+    // const unsigned int dim = 1;
+    const unsigned int dim = 2;
     const Tensor<1, dim> beta({-0.5});
-    // const Tensor<1, dim> beta({+0.5});
+    // const Tensor<1, dim> beta({+0.5, 0.0});
+    // const Tensor<1, dim> beta({0, +0.5});
     ConservationEq<dim> conservation_eq(beta);
     conservation_eq.run();
   } catch (std::exception &exc) {

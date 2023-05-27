@@ -42,7 +42,7 @@ using namespace dealii;
 template <int dim> class ExactSolution : public Function<dim> {
 public:
   ExactSolution(const Tensor<1, dim> &beta, const double time = 0.0)
-      : Function<dim>(dim, time), beta(beta) {}
+      : Function<dim>(1, time), beta(beta) {}
   void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
@@ -56,8 +56,7 @@ private:
  */
 template <int dim> class InitialCondition : public Function<dim> {
 public:
-  InitialCondition(const Tensor<1, dim> &beta)
-      : Function<dim>(dim), beta(beta) {}
+  InitialCondition(const Tensor<1, dim> &beta) : Function<dim>(1), beta(beta) {}
   void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
@@ -67,7 +66,7 @@ private:
 template <int dim> class BoundaryValues : public Function<dim> {
 public:
   BoundaryValues(const Tensor<1, dim> &beta, const double time = 0.0)
-      : Function<dim>(dim, time), beta(beta) {}
+      : Function<dim>(1, time), beta(beta) {}
   void vector_value(const Point<dim> &p, Vector<double> &values) const override;
 
 private:
