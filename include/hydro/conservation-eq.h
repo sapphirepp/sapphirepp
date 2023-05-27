@@ -43,7 +43,8 @@ template <int dim> class ExactSolution : public Function<dim> {
 public:
   ExactSolution(const Tensor<1, dim> &beta, const double time = 0.0)
       : Function<dim>(1, time), beta(beta) {}
-  void vector_value(const Point<dim> &p, Vector<double> &values) const override;
+  double value(const Point<dim> &p,
+               const unsigned int component = 0) const override;
 
 private:
   const Tensor<1, dim> beta;
@@ -57,7 +58,8 @@ private:
 template <int dim> class InitialCondition : public Function<dim> {
 public:
   InitialCondition(const Tensor<1, dim> &beta) : Function<dim>(1), beta(beta) {}
-  void vector_value(const Point<dim> &p, Vector<double> &values) const override;
+  double value(const Point<dim> &p,
+               const unsigned int component = 0) const override;
 
 private:
   const Tensor<1, dim> beta;
@@ -67,7 +69,8 @@ template <int dim> class BoundaryValues : public Function<dim> {
 public:
   BoundaryValues(const Tensor<1, dim> &beta, const double time = 0.0)
       : Function<dim>(1, time), beta(beta) {}
-  void vector_value(const Point<dim> &p, Vector<double> &values) const override;
+  double value(const Point<dim> &p,
+               const unsigned int component = 0) const override;
 
 private:
   const Tensor<1, dim> beta;
@@ -180,6 +183,7 @@ private:
   void assemble_time_step();
   void solve();
   void output_results() const;
+  void process_results();
 
   const Tensor<1, dim> beta;
 
@@ -203,6 +207,8 @@ private:
   Vector<double> solution;
   Vector<double> old_solution;
   Vector<double> system_rhs;
+
+  Vector<float> error_with_time;
 
   double time;
   double time_step;

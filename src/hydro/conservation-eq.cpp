@@ -31,18 +31,17 @@
 #include <iostream>
 
 template <int dim>
-void Sapphire::Hydro::ExactSolution<dim>::vector_value(
-    const Point<dim> &p, Vector<double> &values) const {
-  AssertDimension(values.size(), this->n_components);
-  // values(0) = 1.0;
+double Sapphire::Hydro::ExactSolution<dim>::value(const Point<dim> &p,
+                                                  const unsigned int) const {
+  // return 1.0;
   // Tensor<1, dim> normal;
   // normal[0] = 0.0;
   // normal[1] = 1.0;
   // normal /= normal.norm();
-  // values(0) = std::sin(numbers::PI * normal * (p - beta * this->get_time()));
+  // return std::sin(numbers::PI * normal * (p - beta * this->get_time()));
   const double sigma = 0.1;
-  values(0) = std::exp(-(p - beta * this->get_time()) *
-                       (p - beta * this->get_time()) / (2.0 * sigma * sigma));
+  return std::exp(-(p - beta * this->get_time()) *
+                  (p - beta * this->get_time()) / (2.0 * sigma * sigma));
 }
 
 // explicit template instantiation
@@ -51,9 +50,9 @@ template class Sapphire::Hydro::ExactSolution<2>;
 template class Sapphire::Hydro::ExactSolution<3>;
 
 template <int dim>
-void Sapphire::Hydro::InitialCondition<dim>::vector_value(
-    const Point<dim> &p, Vector<double> &values) const {
-  ExactSolution<dim>(beta, 0.0).vector_value(p, values);
+double Sapphire::Hydro::InitialCondition<dim>::value(
+    const Point<dim> &p, const unsigned int component) const {
+  return ExactSolution<dim>(beta, 0.0).value(p, component);
 }
 
 // explicit template instantiation
@@ -62,9 +61,9 @@ template class Sapphire::Hydro::InitialCondition<2>;
 template class Sapphire::Hydro::InitialCondition<3>;
 
 template <int dim>
-void Sapphire::Hydro::BoundaryValues<dim>::vector_value(
-    const Point<dim> &p, Vector<double> &values) const {
-  ExactSolution<dim>(beta, this->get_time()).vector_value(p, values);
+double Sapphire::Hydro::BoundaryValues<dim>::value(
+    const Point<dim> &p, const unsigned int component) const {
+  return ExactSolution<dim>(beta, this->get_time()).value(p, component);
 }
 
 // explicit template instantiation
@@ -76,7 +75,7 @@ template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(const Tensor<1, dim> &beta)
     : beta(beta), mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
       dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
-      face_quadrature_formula(fe.tensor_degree() + 1),
+      face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
       pcout(std::cout,
             (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
       computing_timer(mpi_communicator, pcout, TimerOutput::never,
@@ -261,8 +260,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
                    fe_face_values.JxW(q_index));
 
               // upwind flux
-              // const double eta = 1.0;
-              const double eta = 0.0; // central flux
+              const double eta = 1.0;
+              // const double eta = 0.0; // central flux
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
                   0.5 * eta * std::abs(v_dot_n) *
@@ -590,6 +589,52 @@ void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
   data_out.write_vtu(output);
 }
 
+template <int dim>
+void Sapphire::Hydro::ConservationEq<dim>::process_results() {
+  TimerOutput::Scope t(computing_timer, "Process results");
+  pcout << "Process results" << std::endl;
+
+  Vector<float> difference_per_cell(triangulation.n_active_cells());
+  ExactSolution<dim> exact_solution_function(beta, time);
+
+  // Use different quadrature for error computation
+  const QTrapezoid<1> q_trapez;
+  const QIterated<dim> q_iterated(q_trapez, fe.degree * 2 + 1);
+
+  VectorTools::integrate_difference(
+      mapping, dof_handler, solution, exact_solution_function,
+      difference_per_cell, q_iterated, VectorTools::L2_norm);
+  float L2_error = VectorTools::compute_global_error(
+      triangulation, difference_per_cell, VectorTools::L2_norm);
+  pcout << "   L2 error:\t\t" << L2_error << std::endl;
+
+  VectorTools::integrate_difference(
+      mapping, dof_handler, solution, exact_solution_function,
+      difference_per_cell, q_iterated, VectorTools::Linfty_norm);
+  float Linf_error = VectorTools::compute_global_error(
+      triangulation, difference_per_cell, VectorTools::Linfty_norm);
+  pcout << "   L-infinity error:\t" << Linf_error << std::endl;
+
+  // pcout << "   OLD QUADATURE" << std::endl;
+
+  // VectorTools::integrate_difference(
+  //     mapping, dof_handler, solution, exact_solution_function,
+  //     difference_per_cell, quadrature_formula, VectorTools::L2_norm);
+  // float L2_error_old = VectorTools::compute_global_error(
+  //     triangulation, difference_per_cell, VectorTools::L2_norm);
+  // pcout << "   L2 error:\t\t" << L2_error_old << std::endl;
+
+  // VectorTools::integrate_difference(
+  //     mapping, dof_handler, solution, exact_solution_function,
+  //     difference_per_cell, quadrature_formula, VectorTools::Linfty_norm);
+  // float Linf_error_old = VectorTools::compute_global_error(
+  //     triangulation, difference_per_cell, VectorTools::Linfty_norm);
+  // pcout << "   L-infinity error:\t" << Linf_error_old << std::endl;
+
+  error_with_time.grow_or_shrink(error_with_time.size() + 1);
+  error_with_time[error_with_time.size() - 1] = L2_error;
+}
+
 template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
   pcout << "Run conservation equation" << std::endl;
   make_grid();
@@ -611,10 +656,16 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
       TimerOutput::Scope t(computing_timer, "Output results");
       output_results();
     }
+    process_results();
   }
 
   computing_timer.print_summary();
   computing_timer.reset();
+
+  if (pcout.is_active()) {
+    pcout << "   L2 error with time:" << std::endl;
+    error_with_time.print(pcout.get_stream());
+  }
 }
 
 // explicit instantiation
