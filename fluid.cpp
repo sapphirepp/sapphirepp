@@ -5,14 +5,13 @@
 #include <iostream>
 #include <mpi.h>
 
-namespace Sapphire {
-namespace Hydro {
+namespace PhysicalSetup {
 using namespace dealii;
 
 /**
  * @brief Exact analytical solution of constant linear advection equation.
  *
- *  \( u(x, t) = u_0(x - a \cdot t) \)
+ *  \f$ u(x, t) = u_0(x - a \cdot t) \F$
  */
 template <int dim> class ExactSolution : public Function<dim> {
 public:
@@ -41,7 +40,7 @@ private:
 /**
  * @brief Iniitial condition for the conservation equation.
  *
- * \( u_0(x) = sin(x) \)
+ * \f$ u_0(x) = sin(x) \f$
  */
 template <int dim> class InitialCondition : public Function<dim> {
 public:
@@ -70,8 +69,7 @@ private:
   const Tensor<1, dim> beta;
 };
 
-} // namespace Hydro
-} // namespace Sapphire
+} // namespace PhysicalSetup
 
 int main(int argc, char *argv[]) {
   try {
@@ -85,9 +83,9 @@ int main(int argc, char *argv[]) {
     // const Tensor<1, dim> beta({+0.5, 0.0});
     // const Tensor<1, dim> beta({0, +0.5});
 
-    InitialCondition<dim> initial_condition(beta);
-    BoundaryValues<dim> boundary_values(beta);
-    ExactSolution<dim> exact_solution(beta);
+    PhysicalSetup::InitialCondition<dim> initial_condition(beta);
+    PhysicalSetup::BoundaryValues<dim> boundary_values(beta);
+    PhysicalSetup::ExactSolution<dim> exact_solution(beta);
 
     ConservationEq<dim> conservation_eq(beta, &initial_condition,
                                         &boundary_values, &exact_solution);

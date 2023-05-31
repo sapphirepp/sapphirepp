@@ -7,10 +7,11 @@
  *
  * @copyright Copyright (c) 2023
  *
- * We consider the conservation equation
- * \( \frac{\partial u}{\partial t} + \nabla \cdot \mathbf{f}(u) = 0 \)
- * where \( u \) is the solution and \( \mathbf{f}(u) \) is the flux function.
- * Here the flux is given by \( \mathbf{f}(u) = a u \) with \( a \) a constant.
+ * We consider the linear constant advection equation
+ * \f$ \frac{\partial u}{\partial t} + \nabla \cdot \mathbf{f}(u) = 0 \f$
+ * where \f$ u \f$ is the solution and \f$ \mathbf{f}(u) \f$ is the flux
+ * function. Here the flux is given by \f$ \mathbf{f}(u) = a u \f$ with \f$ a
+ * \f$ a constant.
  *
  */
 
@@ -124,9 +125,10 @@ struct CopyData {
  * @brief Solve the simple conservation equation.
  *
  * This class solves the conservation equation
- * \( \frac{\partial u}{\partial t} + \nabla \cdot \mathbf{f}(u) = 0 \)
- * where \( u \) is the solution and \( \mathbf{f}(u) \) is the flux function.
- * Here the flux is given by \( \mathbf{f}(u) = a u \) with \( a \) a constant.
+ * \f$ \frac{\partial u}{\partial t} + \nabla \cdot \mathbf{f}(u) = 0 \f$
+ * where \f$ u \f$ is the solution and \f$ \mathbf{f}(u) \f$ is the flux
+ * function. Here the flux is given by \f$ \mathbf{f}(u) = a u \f$ with \f$ a
+ * \f$ a constant.
  */
 template <int dim> class ConservationEq {
 public:
