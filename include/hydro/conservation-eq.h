@@ -34,48 +34,6 @@ namespace Sapphire {
 namespace Hydro {
 using namespace dealii;
 
-/**
- * @brief Exact analytical solution of the conservation equation.
- *
- *  \( u(x, t) = u_0(x - a \cdot t) \)
- */
-template <int dim> class ExactSolution : public Function<dim> {
-public:
-  ExactSolution(const Tensor<1, dim> &beta, const double time = 0.0)
-      : Function<dim>(1, time), beta(beta) {}
-  double value(const Point<dim> &p,
-               const unsigned int component = 0) const override;
-
-private:
-  const Tensor<1, dim> beta;
-};
-
-/**
- * @brief Iniitial condition for the conservation equation.
- *
- * \( u_0(x) = sin(x) \)
- */
-template <int dim> class InitialCondition : public Function<dim> {
-public:
-  InitialCondition(const Tensor<1, dim> &beta) : Function<dim>(1), beta(beta) {}
-  double value(const Point<dim> &p,
-               const unsigned int component = 0) const override;
-
-private:
-  const Tensor<1, dim> beta;
-};
-
-template <int dim> class BoundaryValues : public Function<dim> {
-public:
-  BoundaryValues(const Tensor<1, dim> &beta, const double time = 0.0)
-      : Function<dim>(1, time), beta(beta) {}
-  double value(const Point<dim> &p,
-               const unsigned int component = 0) const override;
-
-private:
-  const Tensor<1, dim> beta;
-};
-
 template <int dim> class ScratchData {
 public:
   // Constructor

@@ -31,47 +31,6 @@
 #include <iostream>
 
 template <int dim>
-double Sapphire::Hydro::ExactSolution<dim>::value(const Point<dim> &p,
-                                                  const unsigned int) const {
-  // return 1.0;
-  // Tensor<1, dim> normal;
-  // normal[0] = 0.0;
-  // normal[1] = 1.0;
-  // normal /= normal.norm();
-  // return std::sin(numbers::PI * normal * (p - beta * this->get_time()));
-  const double sigma = 0.1;
-  return std::exp(-(p - beta * this->get_time()) *
-                  (p - beta * this->get_time()) / (2.0 * sigma * sigma));
-}
-
-// explicit template instantiation
-template class Sapphire::Hydro::ExactSolution<1>;
-template class Sapphire::Hydro::ExactSolution<2>;
-template class Sapphire::Hydro::ExactSolution<3>;
-
-template <int dim>
-double Sapphire::Hydro::InitialCondition<dim>::value(
-    const Point<dim> &p, const unsigned int component) const {
-  return ExactSolution<dim>(beta, 0.0).value(p, component);
-}
-
-// explicit template instantiation
-template class Sapphire::Hydro::InitialCondition<1>;
-template class Sapphire::Hydro::InitialCondition<2>;
-template class Sapphire::Hydro::InitialCondition<3>;
-
-template <int dim>
-double Sapphire::Hydro::BoundaryValues<dim>::value(
-    const Point<dim> &p, const unsigned int component) const {
-  return ExactSolution<dim>(beta, this->get_time()).value(p, component);
-}
-
-// explicit template instantiation
-template class Sapphire::Hydro::BoundaryValues<1>;
-template class Sapphire::Hydro::BoundaryValues<2>;
-template class Sapphire::Hydro::BoundaryValues<3>;
-
-template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
     const Tensor<1, dim> &beta, Function<dim> *initial_condition,
     Function<dim> *boundary_values, Function<dim> *exact_solution)
@@ -123,7 +82,7 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
   old_solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
 
-  VectorTools::interpolate(dof_handler, InitialCondition<dim>(beta), solution);
+  VectorTools::interpolate(dof_handler, *initial_condition, solution);
 
   constraints.clear();
   constraints.close();
@@ -175,7 +134,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
     // const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
-    BoundaryValues<dim> boundary_values(beta, time);
+    // BoundaryValues<dim> boundary_values(beta, time);
+    boundary_values->set_time(time);
     // std::vector<double> boundary_values_vector(
     //     fe_face_values.get_quadrature_points().size());
     // boundary_values.value_list(fe_face_values.get_quadrature_points(),
@@ -198,8 +158,8 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
         }
       } else { // inflow boundary
         for (const unsigned int i : fe_face_values.dof_indices()) {
-          boundary_values.vector_value(fe_face_values.quadrature_point(q_index),
-                                       boundary_value);
+          boundary_values->vector_value(
+              fe_face_values.quadrature_point(q_index), boundary_value);
 
           copy_data.cell_rhs(i) += -v_dot_n * boundary_value[0] *
                                    fe_face_values.shape_value(i, q_index) *
@@ -568,9 +528,9 @@ template <int dim>
 void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
   pcout << "Output results" << std::endl;
 
-  Vector<double> exact_solution(dof_handler.n_dofs());
-  VectorTools::interpolate(dof_handler, ExactSolution<dim>(beta, time),
-                           exact_solution);
+  Vector<double> exact_solution_values(dof_handler.n_dofs());
+  exact_solution->set_time(time);
+  VectorTools::interpolate(dof_handler, *exact_solution, exact_solution_values);
   // VectorTools::interpolate(dof_handler, ExactSolution(a, time),
   // exact_solution);
 
@@ -578,7 +538,7 @@ void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
 
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution, "Solution");
-  data_out.add_data_vector(exact_solution, "ExactSolution");
+  data_out.add_data_vector(exact_solution_values, "ExactSolution");
 
   data_out.build_patches();
 
@@ -599,22 +559,23 @@ void Sapphire::Hydro::ConservationEq<dim>::process_results() {
   pcout << "Process results" << std::endl;
 
   Vector<float> difference_per_cell(triangulation.n_active_cells());
-  ExactSolution<dim> exact_solution_function(beta, time);
+  // ExactSolution<dim> exact_solution_function(beta, time);
+  exact_solution->set_time(time);
 
   // Use different quadrature for error computation
   const QTrapezoid<1> q_trapez;
   const QIterated<dim> q_iterated(q_trapez, fe.degree * 2 + 1);
 
-  VectorTools::integrate_difference(
-      mapping, dof_handler, solution, exact_solution_function,
-      difference_per_cell, q_iterated, VectorTools::L2_norm);
+  VectorTools::integrate_difference(mapping, dof_handler, solution,
+                                    *exact_solution, difference_per_cell,
+                                    q_iterated, VectorTools::L2_norm);
   float L2_error = VectorTools::compute_global_error(
       triangulation, difference_per_cell, VectorTools::L2_norm);
   pcout << "   L2 error:\t\t" << L2_error << std::endl;
 
-  VectorTools::integrate_difference(
-      mapping, dof_handler, solution, exact_solution_function,
-      difference_per_cell, q_iterated, VectorTools::Linfty_norm);
+  VectorTools::integrate_difference(mapping, dof_handler, solution,
+                                    *exact_solution, difference_per_cell,
+                                    q_iterated, VectorTools::Linfty_norm);
   float Linf_error = VectorTools::compute_global_error(
       triangulation, difference_per_cell, VectorTools::Linfty_norm);
   pcout << "   L-infinity error:\t" << Linf_error << std::endl;
@@ -622,14 +583,14 @@ void Sapphire::Hydro::ConservationEq<dim>::process_results() {
   // pcout << "   OLD QUADATURE" << std::endl;
 
   // VectorTools::integrate_difference(
-  //     mapping, dof_handler, solution, exact_solution_function,
+  //     mapping, dof_handler, solution, exact_solution,
   //     difference_per_cell, quadrature_formula, VectorTools::L2_norm);
   // float L2_error_old = VectorTools::compute_global_error(
   //     triangulation, difference_per_cell, VectorTools::L2_norm);
   // pcout << "   L2 error:\t\t" << L2_error_old << std::endl;
 
   // VectorTools::integrate_difference(
-  //     mapping, dof_handler, solution, exact_solution_function,
+  //     mapping, dof_handler, solution, exact_solution,
   //     difference_per_cell, quadrature_formula, VectorTools::Linfty_norm);
   // float Linf_error_old = VectorTools::compute_global_error(
   //     triangulation, difference_per_cell, VectorTools::Linfty_norm);
