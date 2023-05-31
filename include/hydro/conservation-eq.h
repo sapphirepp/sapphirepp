@@ -172,7 +172,8 @@ struct CopyData {
  */
 template <int dim> class ConservationEq {
 public:
-  ConservationEq(const Tensor<1, dim> &beta);
+  ConservationEq(const Tensor<1, dim> &beta, Function<dim> *initial_condition,
+                 Function<dim> *boundary_values, Function<dim> *exact_solution);
   void run();
 
 private:
@@ -186,6 +187,9 @@ private:
   void process_results();
 
   const Tensor<1, dim> beta;
+  Function<dim> *initial_condition;
+  Function<dim> *boundary_values;
+  Function<dim> *exact_solution;
 
   MPI_Comm mpi_communicator;
 

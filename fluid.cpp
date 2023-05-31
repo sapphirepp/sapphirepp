@@ -15,7 +15,14 @@ int main(int argc, char *argv[]) {
     const Tensor<1, dim> beta({-0.5});
     // const Tensor<1, dim> beta({+0.5, 0.0});
     // const Tensor<1, dim> beta({0, +0.5});
-    ConservationEq<dim> conservation_eq(beta);
+
+    // TODO: Activate MPI/OPM
+    InitialCondition<dim> initial_condition(beta);
+    BoundaryValues<dim> boundary_values(beta);
+    ExactSolution<dim> exact_solution(beta);
+
+    ConservationEq<dim> conservation_eq(beta, &initial_condition,
+                                        &boundary_values, &exact_solution);
     conservation_eq.run();
   } catch (std::exception &exc) {
     std::cerr << std::endl

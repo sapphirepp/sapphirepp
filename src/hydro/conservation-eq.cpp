@@ -72,8 +72,12 @@ template class Sapphire::Hydro::BoundaryValues<2>;
 template class Sapphire::Hydro::BoundaryValues<3>;
 
 template <int dim>
-Sapphire::Hydro::ConservationEq<dim>::ConservationEq(const Tensor<1, dim> &beta)
-    : beta(beta), mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
+Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
+    const Tensor<1, dim> &beta, Function<dim> *initial_condition,
+    Function<dim> *boundary_values, Function<dim> *exact_solution)
+    : beta(beta), initial_condition(initial_condition),
+      boundary_values(boundary_values), exact_solution(exact_solution),
+      mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
       dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
       pcout(std::cout,
@@ -671,3 +675,4 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
 // explicit instantiation
 template class Sapphire::Hydro::ConservationEq<1>;
 template class Sapphire::Hydro::ConservationEq<2>;
+template class Sapphire::Hydro::ConservationEq<3>;
