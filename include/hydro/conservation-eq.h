@@ -149,7 +149,7 @@ private:
   Function<dim> *boundary_values;
   Function<dim> *exact_solution;
 
-  MPI_Comm mpi_communicator;
+  // MPI_Comm mpi_communicator;
 
   Triangulation<dim> triangulation;
   const MappingQ1<dim> mapping;

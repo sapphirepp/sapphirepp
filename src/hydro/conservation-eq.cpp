@@ -36,13 +36,16 @@ Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
     Function<dim> *boundary_values, Function<dim> *exact_solution)
     : beta(beta), initial_condition(initial_condition),
       boundary_values(boundary_values), exact_solution(exact_solution),
-      mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
-      dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
+      // mpi_communicator(MPI_COMM_WORLD),
+      mapping(), fe(1), dof_handler(triangulation),
+      quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
-      pcout(std::cout,
-            (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
-      computing_timer(mpi_communicator, pcout, TimerOutput::never,
-                      TimerOutput::wall_times) {
+      // pcout(std::cout,
+      //       (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
+      pcout(std::cout, true),
+      // computing_timer(mpi_communicator, pcout, TimerOutput::never,
+      // TimerOutput::wall_times) {
+      computing_timer(pcout, TimerOutput::never, TimerOutput::wall_times) {
   pcout << "Setup conservation equation" << std::endl;
 
   pcout << "  beta = " << beta << std::endl;

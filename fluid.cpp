@@ -10,7 +10,7 @@ namespace Hydro {
 using namespace dealii;
 
 /**
- * @brief Exact analytical solution of the conservation equation.
+ * @brief Exact analytical solution of constant linear advection equation.
  *
  *  \( u(x, t) = u_0(x - a \cdot t) \)
  */
@@ -18,6 +18,7 @@ template <int dim> class ExactSolution : public Function<dim> {
 public:
   ExactSolution(const Tensor<1, dim> &beta, const double time = 0.0)
       : Function<dim>(1, time), beta(beta) {}
+
   double value(const Point<dim> &p,
                const unsigned int component = 0) const override {
     (void)component; // supress unused variable warning
@@ -45,6 +46,7 @@ private:
 template <int dim> class InitialCondition : public Function<dim> {
 public:
   InitialCondition(const Tensor<1, dim> &beta) : Function<dim>(1), beta(beta) {}
+
   double value(const Point<dim> &p,
                const unsigned int component = 0) const override {
     return ExactSolution<dim>(beta, 0.0).value(p, component);
@@ -58,6 +60,7 @@ template <int dim> class BoundaryValues : public Function<dim> {
 public:
   BoundaryValues(const Tensor<1, dim> &beta, const double time = 0.0)
       : Function<dim>(1, time), beta(beta) {}
+
   double value(const Point<dim> &p,
                const unsigned int component = 0) const override {
     return ExactSolution<dim>(beta, this->get_time()).value(p, component);
@@ -77,11 +80,11 @@ int main(int argc, char *argv[]) {
 
     // const unsigned int dim = 1;
     const unsigned int dim = 2;
+    // const unsigned int dim = 3;
     const Tensor<1, dim> beta({-0.5});
     // const Tensor<1, dim> beta({+0.5, 0.0});
     // const Tensor<1, dim> beta({0, +0.5});
 
-    // TODO: Activate MPI/OPM
     InitialCondition<dim> initial_condition(beta);
     BoundaryValues<dim> boundary_values(beta);
     ExactSolution<dim> exact_solution(beta);
