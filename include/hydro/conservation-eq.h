@@ -20,6 +20,7 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/smartpointer.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_dgq.h>
@@ -147,9 +148,9 @@ private:
   void process_results();
 
   const Tensor<1, dim> beta;
-  Function<dim> *initial_condition;
-  Function<dim> *boundary_values;
-  Function<dim> *exact_solution;
+  const SmartPointer<Function<dim>> initial_condition;
+  const SmartPointer<Function<dim>> boundary_values;
+  const SmartPointer<Function<dim>> exact_solution;
 
   // MPI_Comm mpi_communicator;
 
