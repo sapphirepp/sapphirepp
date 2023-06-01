@@ -21,6 +21,7 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/smartpointer.h>
+#include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_dgq.h>
@@ -133,7 +134,8 @@ struct CopyData {
  */
 template <int dim> class ConservationEq {
 public:
-  ConservationEq(const Tensor<1, dim> &beta, Function<dim> *initial_condition,
+  ConservationEq(TensorFunction<1, dim, double> *beta,
+                 Function<dim> *initial_condition,
                  Function<dim> *boundary_values, Function<dim> *exact_solution);
   void run();
 
@@ -147,7 +149,7 @@ private:
   void output_results() const;
   void process_results();
 
-  const Tensor<1, dim> beta;
+  const SmartPointer<TensorFunction<1, dim, double>> beta;
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;

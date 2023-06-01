@@ -32,7 +32,7 @@
 
 template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
-    const Tensor<1, dim> &beta, Function<dim> *initial_condition,
+    TensorFunction<1, dim, double> *beta, Function<dim> *initial_condition,
     Function<dim> *boundary_values, Function<dim> *exact_solution)
     : beta(beta), initial_condition(initial_condition),
       boundary_values(boundary_values), exact_solution(exact_solution),
@@ -48,7 +48,10 @@ Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
       computing_timer(pcout, TimerOutput::never, TimerOutput::wall_times) {
   pcout << "Setup conservation equation" << std::endl;
 
-  pcout << "  beta = " << beta << std::endl;
+  Point<dim> x({1, 1});
+  Tensor<1, dim> beta_value = this->beta->value(x);
+  pcout << "  beta(x=[" << x << "]) = [" << beta_value << "]" << std::endl;
+  pcout << "  beta*x = " << beta_value * x << std::endl;
 
   time = 0.0;
   // time_step = 0.001;
@@ -62,8 +65,8 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  // triangulation.refine_global(7);
-  triangulation.refine_global(5);
+  triangulation.refine_global(7);
+  // triangulation.refine_global(5);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
 }
@@ -101,6 +104,9 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
   system_matrix = 0;
   system_rhs = 0;
 
+  beta->set_time(time);
+  boundary_values->set_time(time);
+
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
 
   const auto cell_worker = [&](const Iterator &cell,
@@ -110,17 +116,19 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
     fe_values.reinit(cell);
     const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
+    Tensor<1, dim> beta_value;
 
     copy_data.reinit(cell, n_dofs);
 
     for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
+      beta_value = beta->value(fe_values.quadrature_point(q_index));
       for (const unsigned int i : fe_values.dof_indices()) {
         for (const unsigned int j : fe_values.dof_indices()) {
           copy_data.cell_mass_matrix(i, j) +=
               (fe_values.shape_value(i, q_index) *
                fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
           copy_data.cell_dg_matrix(i, j) -=
-              beta *
+              beta_value *
               (fe_values.shape_grad(i, q_index) *
                fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
         }
@@ -138,7 +146,7 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
     // const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
     // BoundaryValues<dim> boundary_values(beta, time);
-    boundary_values->set_time(time);
+    // boundary_values->set_time(time);
     // std::vector<double> boundary_values_vector(
     //     fe_face_values.get_quadrature_points().size());
     // boundary_values.value_list(fe_face_values.get_quadrature_points(),
@@ -147,7 +155,9 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
     for (const unsigned int q_index :
          fe_face_values.quadrature_point_indices()) {
-      const double v_dot_n = beta * fe_face_values.normal_vector(q_index);
+      const double v_dot_n =
+          beta->value(fe_face_values.quadrature_point(q_index)) *
+          fe_face_values.normal_vector(q_index);
 
       if (v_dot_n > 0.0) { // outflow boundary
         for (const unsigned int i : fe_face_values.dof_indices()) {
@@ -197,7 +207,9 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
 
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
-          const double v_dot_n = beta * fe_face_values.normal_vector(q_index);
+          const double v_dot_n =
+              beta->value(fe_face_values.quadrature_point(q_index)) *
+              fe_face_values.normal_vector(q_index);
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             for (const unsigned int j : fe_face_values.dof_indices()) {
@@ -342,6 +354,10 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
   FullMatrix<double> cell_dg_matrix_21(fe.dofs_per_cell, fe.dofs_per_cell);
   FullMatrix<double> cell_dg_matrix_22(fe.dofs_per_cell, fe.dofs_per_cell);
 
+  Tensor<1, dim> beta_value;
+  beta->set_time(time);
+  boundary_values->set_time(time);
+
   mass_matrix = 0;
   dg_matrix = 0;
   system_matrix = 0;
@@ -355,14 +371,16 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
     fe_values.reinit(cell);
 
     for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
+      beta_value = beta->value(fe_values.quadrature_point(q_index));
       for (const unsigned int i : fe_values.dof_indices()) {
         for (const unsigned int j : fe_values.dof_indices()) {
           cell_mass_matrix(i, j) +=
               (fe_values.shape_value(i, q_index) *
                fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-          cell_dg_matrix(i, j) -= beta * (fe_values.shape_grad(i, q_index) *
-                                          fe_values.shape_value(j, q_index) *
-                                          fe_values.JxW(q_index));
+          cell_dg_matrix(i, j) -=
+              beta_value *
+              (fe_values.shape_grad(i, q_index) *
+               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
         }
       }
     }
@@ -387,14 +405,16 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
         fe_face_values.reinit(cell, face_no);
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
+          beta_value = beta->value(fe_face_values.quadrature_point(q_index));
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               cell_dg_matrix_11(i, j) +=
                   0.5 *
-                  (std::abs(beta * fe_face_values.normal_vector(q_index)) +
-                   beta * fe_face_values.normal_vector(q_index)) *
+                  (std::abs(beta_value *
+                            fe_face_values.normal_vector(q_index)) +
+                   beta_value * fe_face_values.normal_vector(q_index)) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -417,30 +437,31 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
 
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
+          beta_value = beta->value(fe_face_values.quadrature_point(q_index));
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               cell_dg_matrix_11(i, j) +=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               cell_dg_matrix_21(i, j) -=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               cell_dg_matrix_12(i, j) +=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               cell_dg_matrix_22(i, j) -=
-                  0.5 * beta * fe_face_values.normal_vector(q_index) *
+                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));

@@ -9,32 +9,110 @@ namespace PhysicalSetup {
 using namespace dealii;
 
 /**
- * @brief Exact analytical solution of constant linear advection equation.
+ * @brief Velocity field for a rigid rotator.
  *
- * \f$ u(x, t) = u_0(\vec{x} - \vec{\beta} t) \F$
- * with
- * \f$ u_0(\vec{x}) =  ... \f$
+ * \f$ \vec{\beta}(\vec{x}, t) = \omega (y \vec{e}_x - x \vec{e}_y) \F$
  *
  * \tparam dim: space dimension
  */
-template <int dim> class ExactSolution : public Function<dim> {
+template <int dim> class VelocityField : public TensorFunction<1, dim, double> {
 public:
-  ExactSolution(const Tensor<1, dim> &beta, const double time = 0.0)
+  VelocityField(const double &omega, const double time = 0.0)
+      : TensorFunction<1, dim, double>(time), omega(omega) {}
+
+  Tensor<1, dim> value(const Point<dim> &p) const override {
+    AssertDimension(dim, 2);
+
+    Tensor<1, dim> values;
+    values[0] = omega * p[1];
+    values[1] = -omega * p[0];
+    // values[0] = 0.3;
+    // values[1] = 0;
+    return values;
+  }
+
+  // void vector_value(const Point<dim> &p,
+  //                   Vector<double> &values) const override {
+  //   AssertDimension(values.size(), this->n_components);
+  //   AssertDimension(dim, 2);
+
+  //   values[0] = omega * p[1];
+  //   values[1] = -omega * p[0];
+  //   values[0] = 0.5;
+  //   values[1] = 0;
+  // }
+
+private:
+  const double omega;
+};
+
+/**
+ * @brief Exact analytical solution of rigid rotator.
+ *
+ * \tparam dim: space dimension
+ */
+template <int dim> class ExactSolutionRigidRotator : public Function<dim> {
+public:
+  ExactSolutionRigidRotator(const double &omega, const double time = 0.0)
+      : Function<dim>(1, time), omega(omega) {}
+
+  double value(const Point<dim> &p,
+               const unsigned int component = 0) const override {
+    AssertIndexRange(component, 1);
+    AssertDimension(dim, 2);
+
+    Point<dim> x;
+    x[0] = p[0] * std::cos(omega * this->get_time()) -
+           p[1] * std::sin(omega * this->get_time());
+    x[1] = p[0] * std::sin(omega * this->get_time()) +
+           p[1] * std::cos(omega * this->get_time());
+
+    const double width = 0.2;
+    const double length = 0.7;
+
+    if ((std::abs(x[0]) < width) && (std::abs(x[1]) < length))
+      return 1.0;
+    if ((std::abs(x[1]) < width) && (std::abs(x[0]) < length))
+      return 1.0;
+
+    return 0.0;
+  }
+
+private:
+  const double omega;
+};
+
+/**
+ * @brief Exact analytical solution of constant linear advection equation.
+ *
+ * \f$ u(\vec{x}, t) = u_0(\vec{x} - \vec{\beta} t) \F$
+ * with
+ * // \f$ u_0(\vec{x}) =  1 \f$
+ * // \f$ u_0(\vec{x}) =  \sin(\pi * \hat{n} \cdot \vec{x}) \f$
+ * \f$ u_0(\vec{x}) =  \exp(-\vec{x} \cdot \vec{x} / (2 \sigma^2)) \f$
+ *
+ * \tparam dim: space dimension
+ */
+template <int dim> class ExactSolutionConstantAdvection : public Function<dim> {
+public:
+  ExactSolutionConstantAdvection(const Tensor<1, dim> &beta,
+                                 const double time = 0.0)
       : Function<dim>(1, time), beta(beta) {}
 
   double value(const Point<dim> &p,
                const unsigned int component = 0) const override {
-    (void)component; // supress unused variable warning
+    AssertIndexRange(component, 1);
+
+    const Point<dim> x = p - beta * this->get_time();
 
     // return 1.0;
-    Tensor<1, dim> normal;
-    normal[0] = 1.0;
-    normal[1] = 1.0;
-    normal /= normal.norm();
-    return std::sin(numbers::PI * normal * (p - beta * this->get_time()));
+    // Tensor<1, dim> normal;
+    // normal[0] = 1.0;
+    // normal[1] = 1.0;
+    // normal /= normal.norm();
+    // return std::sin(numbers::PI * normal * x);
     const double sigma = 0.1;
-    return std::exp(-(p - beta * this->get_time()) *
-                    (p - beta * this->get_time()) / (2.0 * sigma * sigma));
+    return std::exp(-(x * x) / (2.0 * sigma * sigma));
   }
 
 private:
@@ -95,18 +173,22 @@ int main(int argc, char *argv[]) {
     // const unsigned int dim = 1;
     const unsigned int dim = 2;
     // const unsigned int dim = 3;
-    const Tensor<1, dim> beta({-0.5});
+
+    const double omega = 0.5;
+    PhysicalSetup::VelocityField<dim> beta(omega);
+    PhysicalSetup::ExactSolutionRigidRotator<dim> exact_solution(omega);
+
+    // const Tensor<1, dim> beta({-0.5});
     // const Tensor<1, dim> beta({+0.5, 0.0});
     // const Tensor<1, dim> beta({0, +0.5});
-
-    PhysicalSetup::ExactSolution<dim> exact_solution(beta);
-    SmartPointer<Function<dim>> exact_solution_ptr(&exact_solution);
+    // PhysicalSetup::ExactSolutionConstantAdvection<dim> exact_solution(beta);
 
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
+    // SmartPointer<Function<dim>> exact_solution_ptr(&exact_solution);
     // PhysicalSetup::BoundaryValues<dim> boundary_values(exact_solution_ptr);
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
 
-    ConservationEq<dim> conservation_eq(beta, &initial_condition,
+    ConservationEq<dim> conservation_eq(&beta, &initial_condition,
                                         &boundary_values, &exact_solution);
     conservation_eq.run();
   } catch (std::exception &exc) {
