@@ -1,6 +1,7 @@
 #include "conservation-eq.h"
 
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/multithread_info.h>
 
 #include <iostream>
 #include <mpi.h>
@@ -15,9 +16,10 @@ using namespace dealii;
  *
  * \tparam dim: space dimension
  */
-template <int dim> class VelocityField : public TensorFunction<1, dim, double> {
+template <int dim>
+class VelocityFieldRigidRotator : public TensorFunction<1, dim, double> {
 public:
-  VelocityField(const double &omega, const double time = 0.0)
+  VelocityFieldRigidRotator(const double &omega, const double time = 0.0)
       : TensorFunction<1, dim, double>(time), omega(omega) {}
 
   Tensor<1, dim> value(const Point<dim> &p) const override {
@@ -26,21 +28,20 @@ public:
     Tensor<1, dim> values;
     values[0] = omega * p[1];
     values[1] = -omega * p[0];
-    // values[0] = 0.3;
-    // values[1] = 0;
     return values;
   }
 
-  // void vector_value(const Point<dim> &p,
-  //                   Vector<double> &values) const override {
-  //   AssertDimension(values.size(), this->n_components);
-  //   AssertDimension(dim, 2);
+  Tensor<2, dim> gradient(const Point<dim> &p) const override {
+    (void)p; // suppress unused parameter warning
+    AssertDimension(dim, 2);
 
-  //   values[0] = omega * p[1];
-  //   values[1] = -omega * p[0];
-  //   values[0] = 0.5;
-  //   values[1] = 0;
-  // }
+    Tensor<2, dim> values;
+    values[0][0] = 0.0;
+    values[0][1] = omega;
+    values[1][0] = -omega;
+    values[1][1] = 0.0;
+    return values;
+  }
 
 private:
   const double omega;
@@ -80,6 +81,38 @@ public:
 
 private:
   const double omega;
+};
+
+/**
+ * @brief Constant velocity field.
+ *
+ * \tparam dim: space dimension
+ */
+template <int dim>
+class ConstantVelocityField : public TensorFunction<1, dim, double> {
+public:
+  ConstantVelocityField(const Tensor<1, dim> &beta)
+      : TensorFunction<1, dim, double>(), beta(beta) {}
+
+  Tensor<1, dim> value(const Point<dim> &p) const override {
+    (void)p; // suppress unused parameter warning
+
+    return beta;
+  }
+
+  Tensor<2, dim> gradient(const Point<dim> &p) const override {
+    (void)p; // suppress unused parameter warning
+
+    Tensor<2, dim> values;
+    values[0][0] = 0.0;
+    values[0][1] = 0.0;
+    values[1][0] = 0.0;
+    values[1][1] = 0.0;
+    return values;
+  }
+
+private:
+  const Tensor<1, dim> beta;
 };
 
 /**
@@ -168,20 +201,29 @@ private:
 int main(int argc, char *argv[]) {
   try {
     using namespace Sapphire::Hydro;
-    dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+    // dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+    // 1); //Only use MPI on one core
+    dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
+        argc, argv); // Use TBB multithreading
+
+    std::cout << "n_cores = " << dealii::MultithreadInfo::n_cores()
+              << std::endl;
+    std::cout << "n_threads = " << dealii::MultithreadInfo::n_threads()
+              << std::endl;
 
     // const unsigned int dim = 1;
     const unsigned int dim = 2;
     // const unsigned int dim = 3;
 
     const double omega = 0.5;
-    PhysicalSetup::VelocityField<dim> beta(omega);
+    PhysicalSetup::VelocityFieldRigidRotator<dim> beta(omega);
     PhysicalSetup::ExactSolutionRigidRotator<dim> exact_solution(omega);
 
-    // const Tensor<1, dim> beta({-0.5});
-    // const Tensor<1, dim> beta({+0.5, 0.0});
-    // const Tensor<1, dim> beta({0, +0.5});
-    // PhysicalSetup::ExactSolutionConstantAdvection<dim> exact_solution(beta);
+    // const Tensor<1, dim> v({-0.5});
+    // const Tensor<1, dim> v({+0.5, 0.0});
+    // const Tensor<1, dim> v({0, +0.5});
+    // PhysicalSetup::ConstantVelocityField<dim> beta(v);
+    // PhysicalSetup::ExactSolutionConstantAdvection<dim> exact_solution(v);
 
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
     // SmartPointer<Function<dim>> exact_solution_ptr(&exact_solution);

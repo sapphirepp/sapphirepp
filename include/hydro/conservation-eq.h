@@ -154,7 +154,7 @@ private:
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;
 
-  // MPI_Comm mpi_communicator;
+  MPI_Comm mpi_communicator;
 
   Triangulation<dim> triangulation;
   const MappingQ1<dim> mapping;
