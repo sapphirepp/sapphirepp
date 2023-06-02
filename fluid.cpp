@@ -12,7 +12,7 @@ using namespace dealii;
 /**
  * @brief Velocity field for a rigid rotator.
  *
- * \f$ \vec{\beta}(\vec{x}, t) = \omega (y \vec{e}_x - x \vec{e}_y) \F$
+ * \f$ \mathbf{\beta}(\v{x}, t) = \omega (y \mathbf{e}_x - x \mathbf{e}_y) \f$
  *
  * \tparam dim: space dimension
  */
@@ -118,11 +118,11 @@ private:
 /**
  * @brief Exact analytical solution of constant linear advection equation.
  *
- * \f$ u(\vec{x}, t) = u_0(\vec{x} - \vec{\beta} t) \F$
+ * \f$ u(x, t) = u_0(x - \beta t) \f$
  * with
- * // \f$ u_0(\vec{x}) =  1 \f$
- * // \f$ u_0(\vec{x}) =  \sin(\pi * \hat{n} \cdot \vec{x}) \f$
- * \f$ u_0(\vec{x}) =  \exp(-\vec{x} \cdot \vec{x} / (2 \sigma^2)) \f$
+ * <!-- \f$ u_0(\mathbf{x}) =  1 \f$ -->
+ * <!-- \f$ u_0(\mathbf{x}) =  \sin(\pi * \hat{n} \cdot \mathbf{x}) \f$ -->
+ * \f$ u_0(\mathbf{x}) =  \exp(-\mathbf{x} \cdot \mathbf{x} / (2 \sigma^2)) \f$
  *
  * \tparam dim: space dimension
  */
@@ -153,9 +153,9 @@ private:
 };
 
 /**
- * @brief Iniitial condition extracted from an exact solution.
+ * @brief Initial condition extracted from an exact solution.
  *
- * \f$ u_0(\vec{x}) = u(\vec{x}, t = 0) \f$
+ * \f$ u_0(\mathbf{x}) = u(\mathbf{x}, t = 0) \f$
  *
  * \tparam dim: space dimension
  */
@@ -177,7 +177,7 @@ private:
 /**
  * @brief Boundary values extracted from an exact solution.
  *
- * \f$ u_b(\vec{x}, t) = u(\vec{x}, t) \f$
+ * \f$ u_b(\mathbf{x}, t) = u(\mathbf{x}, t) \f$
  *
  * @tparam dim: space dimension
  */
@@ -215,7 +215,9 @@ int main(int argc, char *argv[]) {
     const unsigned int dim = 2;
     // const unsigned int dim = 3;
 
-    const double omega = 0.5;
+    const double omega = 0.2;
+    // const double omega = 2 * numbers::PI; //Full circle
+    // const double omega = numbers::PI; // Half circle
     PhysicalSetup::VelocityFieldRigidRotator<dim> beta(omega);
     PhysicalSetup::ExactSolutionRigidRotator<dim> exact_solution(omega);
 

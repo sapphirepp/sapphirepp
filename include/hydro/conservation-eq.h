@@ -7,11 +7,10 @@
  *
  * @copyright Copyright (c) 2023
  *
- * We consider the linear constant advection equation
+ * We consider the conservation equation
  * \f$ \frac{\partial u}{\partial t} + \nabla \cdot \mathbf{f}(u) = 0 \f$
  * where \f$ u \f$ is the solution and \f$ \mathbf{f}(u) \f$ is the flux
- * function. Here the flux is given by \f$ \mathbf{f}(u) = a u \f$ with \f$ a
- * \f$ a constant.
+ * function.
  *
  */
 
@@ -124,16 +123,30 @@ struct CopyData {
 };
 
 /**
- * @brief Solve the simple conservation equation.
+ * @brief Solve the linear advection equation.
  *
- * This class solves the conservation equation
- * \f$ \frac{\partial u}{\partial t} + \nabla \cdot \mathbf{f}(u) = 0 \f$
- * where \f$ u \f$ is the solution and \f$ \mathbf{f}(u) \f$ is the flux
- * function. Here the flux is given by \f$ \mathbf{f}(u) = a u \f$ with \f$ a
- * \f$ a constant.
+ * This class solves the linear advection equation
+ * \f$ \frac{\partial u}{\partial t} + \nabla \cdot (\mathbf{\beta}(\mathbf{x})
+ * u) = 0 \f$
+ * where \f$ u(\mathbf{x}, t) \f$ is the solution and the flux is \f$
+ * \mathbf{f}(u) = \mathbf{\beta}(\mathbf{x}) u \f$. The initial condition is
+ * given by \f$ u(\mathbf{x}, 0) = u_0(\mathbf{x}) \f$ and the boundary
+ * condition is given by \f$ u(\mathbf{x}, t) = u_b(\mathbf{x}, t) \f$.
+ *
+ * \tparam dim dimension of the problem
  */
 template <int dim> class ConservationEq {
 public:
+  /**
+   * @brief Construct a new Conservation Eq object
+   *
+   *
+   * @param beta wind vector field \f$ \mathbf{\beta}(\mathbf{x}) \f$
+   * @param initial_condition initial condition \f$ u_0(\mathbf{x}) \f$
+   * @param boundary_values boundary values \f$ u_b(\mathbf{x}, t) \f$
+   * @param exact_solution exact solution for comparison \f$ u(\mathbf{x}, t)
+   * \f$
+   */
   ConservationEq(TensorFunction<1, dim, double> *beta,
                  Function<dim> *initial_condition,
                  Function<dim> *boundary_values, Function<dim> *exact_solution);
