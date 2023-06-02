@@ -153,6 +153,31 @@ private:
 };
 
 /**
+ * @brief Exact solution of Burgers' equation.
+ *
+ * \f$ u(x, t) = \Theta(x - t/2) \f$
+ * with \f$ \Theta(x) \f$ being the Heaviside step function.
+ *
+ * \tparam dim: space dimension (must be 1)
+ */
+template <int dim> class ExactSolutionBurgerEq : public Function<dim> {
+public:
+  ExactSolutionBurgerEq(const double time = 0.0) : Function<dim>(1, time) {
+    AssertDimension(dim, 1);
+  }
+
+  double value(const Point<dim> &p,
+               const unsigned int component = 0) const override {
+    (void)component; // suppress unused parameter warning
+    // return std::sin(numbers::PI * p[0]);
+    if (p[0] > this->get_time() / 2.0)
+      return 1.0;
+    else
+      return 0.0;
+  }
+};
+
+/**
  * @brief Initial condition extracted from an exact solution.
  *
  * \f$ u_0(\mathbf{x}) = u(\mathbf{x}, t = 0) \f$
@@ -212,29 +237,41 @@ int main(int argc, char *argv[]) {
               << std::endl;
 
     // const unsigned int dim = 1;
-    const unsigned int dim = 2;
+    // const unsigned int dim = 2;
     // const unsigned int dim = 3;
 
-    const double omega = 0.2;
-    // const double omega = 2 * numbers::PI; //Full circle
-    // const double omega = numbers::PI; // Half circle
-    PhysicalSetup::VelocityFieldRigidRotator<dim> beta(omega);
-    PhysicalSetup::ExactSolutionRigidRotator<dim> exact_solution(omega);
+    // const double omega = 0.2;
+    // // const double omega = 2 * numbers::PI; //Full circle
+    // // const double omega = numbers::PI; // Half circle
+    // PhysicalSetup::VelocityFieldRigidRotator<dim> beta(omega);
+    // PhysicalSetup::ExactSolutionRigidRotator<dim> exact_solution(omega);
 
-    // const Tensor<1, dim> v({-0.5});
-    // const Tensor<1, dim> v({+0.5, 0.0});
-    // const Tensor<1, dim> v({0, +0.5});
-    // PhysicalSetup::ConstantVelocityField<dim> beta(v);
-    // PhysicalSetup::ExactSolutionConstantAdvection<dim> exact_solution(v);
+    // // const Tensor<1, dim> v({-0.5});
+    // // const Tensor<1, dim> v({+0.5, 0.0});
+    // // const Tensor<1, dim> v({0, +0.5});
+    // // PhysicalSetup::ConstantVelocityField<dim> beta(v);
+    // // PhysicalSetup::ExactSolutionConstantAdvection<dim> exact_solution(v);
 
+    // PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
+    // // SmartPointer<Function<dim>> exact_solution_ptr(&exact_solution);
+    // // PhysicalSetup::BoundaryValues<dim>
+    // boundary_values(exact_solution_ptr); PhysicalSetup::InitialCondition<dim>
+    // initial_condition(&exact_solution);
+
+    // ConservationEq<dim> conservation_eq(&beta, &initial_condition,
+    //                                     &boundary_values, &exact_solution);
+
+    // conservation_eq.run();
+
+    const unsigned int dim = 1;
+    PhysicalSetup::ExactSolutionBurgerEq<dim> exact_solution;
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
-    // SmartPointer<Function<dim>> exact_solution_ptr(&exact_solution);
-    // PhysicalSetup::BoundaryValues<dim> boundary_values(exact_solution_ptr);
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
 
-    ConservationEq<dim> conservation_eq(&beta, &initial_condition,
-                                        &boundary_values, &exact_solution);
-    conservation_eq.run();
+    BurgersEq<dim> burgers_eq(&initial_condition, &boundary_values,
+                              &exact_solution);
+    burgers_eq.run();
+
   } catch (std::exception &exc) {
     std::cerr << std::endl
               << std::endl
