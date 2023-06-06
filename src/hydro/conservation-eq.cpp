@@ -668,9 +668,8 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(Function<dim> *initial_condition,
       mapping(), fe(1), dof_handler(triangulation),
       quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
-      time(0.0),
-      // time_step(0.01),
-      time_step(0.05),
+      time(0.0), time_step(0.001),
+      // time_step(0.05),
       // time_step(0.1),
       timestep_number(0),
       pcout(std::cout,
@@ -687,6 +686,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
   triangulation.refine_global(7);
+  // triangulation.refine_global(9);
   // triangulation.refine_global(5);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
@@ -719,7 +719,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
   TimerOutput::Scope t(computing_timer, "Assemble system");
   pcout << "Assemble system" << std::endl;
 
-  // TODO_BE: The assemble system function has to be changed to Burgers' eq
+  // TODO_BE: Optimise this function
 
   mass_matrix = 0;
   dg_matrix = 0;
@@ -738,12 +738,13 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
     fe_values.reinit(cell);
     const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
     Tensor<1, dim> beta_value;
+    std::vector<double> old_solution_values(n_dofs);
+    fe_values.get_function_values(old_solution, old_solution_values);
 
     copy_data.reinit(cell, n_dofs);
 
     for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
-      // TODO_BE
-      beta_value[0] = 0.5;
+      beta_value[0] = 0.5 * old_solution_values[q_index];
       for (const unsigned int i : fe_values.dof_indices()) {
         for (const unsigned int j : fe_values.dof_indices()) {
           copy_data.cell_mass_matrix(i, j) +=
@@ -765,8 +766,9 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
     scratch_data.fe_face_values.reinit(cell, face_no);
     const FEFaceValuesBase<dim> &fe_face_values = scratch_data.fe_face_values;
 
-    // const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
+    const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
+    // TODO_BE: Inflow boundary condition
     // BoundaryValues<dim> boundary_values(beta, time);
     // boundary_values->set_time(time);
     // std::vector<double> boundary_values_vector(
@@ -774,11 +776,13 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
     // boundary_values.value_list(fe_face_values.get_quadrature_points(),
     //                            boundary_values_vector);
     Vector<double> boundary_value(1);
+    std::vector<double> old_solution_values(n_dofs);
+    fe_face_values.get_function_values(old_solution, old_solution_values);
 
     for (const unsigned int q_index :
          fe_face_values.quadrature_point_indices()) {
-      // TODO_BE
-      const double v_dot_n = 0.5 * fe_face_values.normal_vector(q_index)[0];
+      const double v_dot_n = 0.5 * old_solution_values[q_index] *
+                             fe_face_values.normal_vector(q_index)[0];
 
       if (v_dot_n > 0.0) { // outflow boundary
         for (const unsigned int i : fe_face_values.dof_indices()) {
@@ -826,33 +830,44 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
         const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
         copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
+        std::vector<double> old_solution_values_1(n_dofs);
+        fe_face_values.get_function_values(old_solution, old_solution_values_1);
+        std::vector<double> old_solution_values_2(n_dofs);
+        fe_face_values_neighbor.get_function_values(old_solution,
+                                                    old_solution_values_2);
+
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
-          const double v_dot_n = 0.5 * fe_face_values.normal_vector(q_index)[0];
+
+          // TODO_BE: Implement flux limiter
+          const double v_dot_n_1 = 0.5 * old_solution_values_1[q_index] *
+                                   fe_face_values.normal_vector(q_index)[0];
+          const double v_dot_n_2 = 0.5 * old_solution_values_2[q_index] *
+                                   fe_face_values.normal_vector(q_index)[0];
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             for (const unsigned int j : fe_face_values.dof_indices()) {
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  0.5 * v_dot_n *
+                  0.5 * v_dot_n_1 *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_21(i, j) -=
-                  0.5 * v_dot_n *
+                  0.5 * v_dot_n_1 *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_12(i, j) +=
-                  0.5 * v_dot_n *
+                  0.5 * v_dot_n_2 *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_22(i, j) -=
-                  0.5 * v_dot_n *
+                  0.5 * v_dot_n_2 *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -862,25 +877,25 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
               // const double eta = 0.0; // central flux
 
               copy_data_face.cell_dg_matrix_11(i, j) +=
-                  0.5 * eta * std::abs(v_dot_n) *
+                  0.5 * eta * std::abs(v_dot_n_1) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_21(i, j) -=
-                  0.5 * eta * std::abs(v_dot_n) *
+                  0.5 * eta * std::abs(v_dot_n_1) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_12(i, j) -=
-                  0.5 * eta * std::abs(v_dot_n) *
+                  0.5 * eta * std::abs(v_dot_n_2) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
               copy_data_face.cell_dg_matrix_22(i, j) +=
-                  0.5 * eta * std::abs(v_dot_n) *
+                  0.5 * eta * std::abs(v_dot_n_2) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
@@ -947,14 +962,11 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_time_step() {
   TimerOutput::Scope t(computing_timer, "Time step");
   pcout << "Time step" << std::endl;
 
-  // TODO_BE: Has to be changed to Burgers eq
+  // Use only explicit time stepping because non-linear
 
   Vector<double> tmp(dof_handler.n_dofs());
 
-  // Theta method
-  // const double theta = 0.0; // Forward Euler
-  const double theta = 0.5; // Cranc-Nicholson
-  // const double theta = 1.0; // Backward Euler
+  // Forward Euler
 
   system_rhs *= time_step;
 
@@ -962,14 +974,11 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_time_step() {
   system_rhs.add(1.0, tmp);
 
   dg_matrix.vmult(tmp, old_solution);
-  system_rhs.add(-(1. - theta) * time_step, tmp);
+  system_rhs.add(-time_step, tmp);
+
+  // TODO_BE: Implement RK4
 
   system_matrix.copy_from(mass_matrix);
-  system_matrix.add(theta * time_step, dg_matrix);
-
-  /** constant solution */
-  // mass_matrix.vmult(tmp, old_solution);
-  // system_rhs = tmp;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve() {
