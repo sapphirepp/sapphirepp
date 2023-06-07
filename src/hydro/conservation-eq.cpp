@@ -703,7 +703,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
   sparcity_pattern.copy_from(dsp);
 
   mass_matrix.reinit(sparcity_pattern);
-  dg_matrix.reinit(sparcity_pattern);
   system_matrix.reinit(sparcity_pattern);
 
   solution.reinit(dof_handler.n_dofs());
@@ -718,10 +717,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
   constraints.close();
 }
 
-/**
- * @brief
- * @tparam dim
- */
 template <int dim>
 void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
   TimerOutput::Scope t(computing_timer, "Assemble mass matrix");
@@ -759,17 +754,15 @@ void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
   ScratchData<dim> scratch_data(mapping, fe, quadrature_formula,
                                 face_quadrature_formula);
   CopyData copy_data;
-  pcout << "Assembling Mass Matrix" << std::endl;
 
   MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
                         cell_worker, copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells);
-  pcout << "   Done" << std::endl;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
   TimerOutput::Scope t(computing_timer, "Assemble DG vector");
-  pcout << "Assemble DG vector" << std::endl;
+  pcout << "    Assemble DG vector" << std::endl;
 
   dg_vector = 0;
   boundary_values->set_time(time);
@@ -910,7 +903,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
 
             // TODO_BE: Implement upwind flux
             //  upwind flux
-            const double eta = 1.0;
+            // const double eta = 1.0;
             // const double eta = 0.0; // central flux
 
             // copy_data_face.cell_dg_matrix_11(i, j) +=
@@ -955,7 +948,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
   ScratchData<dim> scratch_data(mapping, fe, quadrature_formula,
                                 face_quadrature_formula);
   CopyData copy_data;
-  pcout << "Assembling DG Vector" << std::endl;
 
   MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
                         cell_worker, copier, scratch_data, copy_data,
@@ -963,261 +955,21 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
                             MeshWorker::assemble_boundary_faces |
                             MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker, face_worker);
-  pcout << "   Done" << std::endl;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
   TimerOutput::Scope t(computing_timer, "Assemble system");
-  pcout << "Assemble system" << std::endl;
+  pcout << "    Assemble system" << std::endl;
 
-  // mass_matrix = 0;
-  // dg_matrix = 0;
   system_matrix = 0;
   system_rhs = 0;
 
   /** Nothing to do here, RHS of equation is zero */
-
-  // boundary_values->set_time(time);
-
-  // using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-
-  // const auto cell_worker = [&](const Iterator &cell,
-  //                              ScratchData<dim> &scratch_data,
-  //                              CopyData &copy_data) {
-  //   FEValues<dim> &fe_values = scratch_data.fe_values;
-
-  //   fe_values.reinit(cell);
-  //   const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
-  //   Tensor<1, dim> beta_value;
-  //   std::vector<double> old_solution_values(n_dofs);
-  //   fe_values.get_function_values(old_solution, old_solution_values);
-
-  //   copy_data.reinit(cell, n_dofs);
-
-  //   for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
-  //     beta_value[0] = 0.5 * old_solution_values[q_index];
-  //     for (const unsigned int i : fe_values.dof_indices()) {
-  //       for (const unsigned int j : fe_values.dof_indices()) {
-  //         copy_data.cell_mass_matrix(i, j) +=
-  //             (fe_values.shape_value(i, q_index) *
-  //              fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-  //         copy_data.cell_dg_matrix(i, j) -=
-  //             beta_value *
-  //             (fe_values.shape_grad(i, q_index) *
-  //              fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-  //       }
-  //     }
-  //   }
-  // };
-
-  // const auto boundary_worker = [&](const Iterator &cell,
-  //                                  const unsigned int &face_no,
-  //                                  ScratchData<dim> &scratch_data,
-  //                                  CopyData &copy_data) {
-  //   scratch_data.fe_face_values.reinit(cell, face_no);
-  //   const FEFaceValuesBase<dim> &fe_face_values =
-  //   scratch_data.fe_face_values;
-
-  //   const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
-
-  //   // TODO_BE: Inflow boundary condition
-  //   // BoundaryValues<dim> boundary_values(beta, time);
-  //   // boundary_values->set_time(time);
-  //   // std::vector<double> boundary_values_vector(
-  //   //     fe_face_values.get_quadrature_points().size());
-  //   // boundary_values.value_list(fe_face_values.get_quadrature_points(),
-  //   //                            boundary_values_vector);
-  //   Vector<double> boundary_value(1);
-  //   std::vector<double> old_solution_values(n_dofs);
-  //   fe_face_values.get_function_values(old_solution, old_solution_values);
-
-  //   for (const unsigned int q_index :
-  //        fe_face_values.quadrature_point_indices()) {
-  //     const double v_dot_n = 0.5 * old_solution_values[q_index] *
-  //                            fe_face_values.normal_vector(q_index)[0];
-
-  //     if (v_dot_n > 0.0) { // outflow boundary
-  //       for (const unsigned int i : fe_face_values.dof_indices()) {
-  //         for (const unsigned int j : fe_face_values.dof_indices()) {
-
-  //           copy_data.cell_dg_matrix(i, j) +=
-  //               v_dot_n * fe_face_values.shape_value(i, q_index) *
-  //               fe_face_values.shape_value(j, q_index) *
-  //               fe_face_values.JxW(q_index);
-  //         }
-  //       }
-  //     } else { // inflow boundary
-  //       for (const unsigned int i : fe_face_values.dof_indices()) {
-  //         boundary_values->vector_value(
-  //             fe_face_values.quadrature_point(q_index), boundary_value);
-
-  //         copy_data.cell_rhs(i) += -v_dot_n * boundary_value[0] *
-  //                                  fe_face_values.shape_value(i, q_index) *
-  //                                  fe_face_values.JxW(q_index);
-  //       }
-  //     }
-  //   }
-  // };
-
-  // const auto face_worker =
-  //     [&](const Iterator &cell, const unsigned int &face_no,
-  //         const unsigned int &subface_no, const Iterator &neighbor_cell,
-  //         const unsigned int &neighbor_face_no,
-  //         const unsigned int &neighbor_subface_no,
-  //         ScratchData<dim> &scratch_data, CopyData &copy_data) {
-  //       // supress unused variable warning
-  //       (void)subface_no;
-  //       (void)neighbor_subface_no;
-
-  //       FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
-  //       fe_face_values.reinit(cell, face_no);
-
-  //       FEFaceValues<dim> &fe_face_values_neighbor =
-  //           scratch_data.fe_face_values_neighbor;
-  //       fe_face_values_neighbor.reinit(neighbor_cell, neighbor_face_no);
-
-  //       copy_data.face_data.emplace_back();
-  //       CopyDataFace &copy_data_face = copy_data.face_data.back();
-
-  //       const unsigned int n_dofs =
-  //       fe_face_values.get_fe().n_dofs_per_cell();
-  //       copy_data_face.reinit(cell, neighbor_cell, n_dofs);
-
-  //       std::vector<double> old_solution_values_1(n_dofs);
-  //       fe_face_values.get_function_values(old_solution,
-  //       old_solution_values_1); std::vector<double>
-  //       old_solution_values_2(n_dofs);
-  //       fe_face_values_neighbor.get_function_values(old_solution,
-  //                                                   old_solution_values_2);
-
-  //       for (const unsigned int q_index :
-  //            fe_face_values.quadrature_point_indices()) {
-
-  //         // TODO_BE: Implement flux limiter
-  //         const double v_dot_n_1 = 0.5 * old_solution_values_1[q_index] *
-  //                                  fe_face_values.normal_vector(q_index)[0];
-  //         const double v_dot_n_2 = 0.5 * old_solution_values_2[q_index] *
-  //                                  fe_face_values.normal_vector(q_index)[0];
-
-  //         for (const unsigned int i : fe_face_values.dof_indices()) {
-  //           for (const unsigned int j : fe_face_values.dof_indices()) {
-
-  //             copy_data_face.cell_dg_matrix_11(i, j) +=
-  //                 0.5 * v_dot_n_1 *
-  //                 (fe_face_values.shape_value(i, q_index) *
-  //                  fe_face_values.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             copy_data_face.cell_dg_matrix_21(i, j) -=
-  //                 0.5 * v_dot_n_1 *
-  //                 (fe_face_values_neighbor.shape_value(i, q_index) *
-  //                  fe_face_values.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             copy_data_face.cell_dg_matrix_12(i, j) +=
-  //                 0.5 * v_dot_n_2 *
-  //                 (fe_face_values.shape_value(i, q_index) *
-  //                  fe_face_values_neighbor.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             copy_data_face.cell_dg_matrix_22(i, j) -=
-  //                 0.5 * v_dot_n_2 *
-  //                 (fe_face_values_neighbor.shape_value(i, q_index) *
-  //                  fe_face_values_neighbor.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             // upwind flux
-  //             const double eta = 1.0;
-  //             // const double eta = 0.0; // central flux
-
-  //             copy_data_face.cell_dg_matrix_11(i, j) +=
-  //                 0.5 * eta * std::abs(v_dot_n_1) *
-  //                 (fe_face_values.shape_value(i, q_index) *
-  //                  fe_face_values.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             copy_data_face.cell_dg_matrix_21(i, j) -=
-  //                 0.5 * eta * std::abs(v_dot_n_1) *
-  //                 (fe_face_values_neighbor.shape_value(i, q_index) *
-  //                  fe_face_values.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             copy_data_face.cell_dg_matrix_12(i, j) -=
-  //                 0.5 * eta * std::abs(v_dot_n_2) *
-  //                 (fe_face_values.shape_value(i, q_index) *
-  //                  fe_face_values_neighbor.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-
-  //             copy_data_face.cell_dg_matrix_22(i, j) +=
-  //                 0.5 * eta * std::abs(v_dot_n_2) *
-  //                 (fe_face_values_neighbor.shape_value(i, q_index) *
-  //                  fe_face_values_neighbor.shape_value(j, q_index) *
-  //                  fe_face_values.JxW(q_index));
-  //           }
-  //         }
-  //       }
-  //     };
-
-  // const auto copier = [&](const CopyData &c) {
-  //   constraints.distribute_local_to_global(c.cell_mass_matrix,
-  //                                          c.local_dof_indices, mass_matrix);
-  //   constraints.distribute_local_to_global(c.cell_dg_matrix,
-  //                                          c.local_dof_indices, dg_matrix);
-  //   constraints.distribute_local_to_global(c.cell_rhs, c.local_dof_indices,
-  //                                          system_rhs);
-
-  //   for (auto &cdf : c.face_data) {
-  //     constraints.distribute_local_to_global(cdf.cell_dg_matrix_11,
-  //                                            cdf.local_dof_indices,
-  //                                            cdf.local_dof_indices,
-  //                                            dg_matrix);
-  //     constraints.distribute_local_to_global(cdf.cell_dg_matrix_21,
-  //                                            cdf.local_dof_indices_neighbor,
-  //                                            cdf.local_dof_indices,
-  //                                            dg_matrix);
-  //     constraints.distribute_local_to_global(
-  //         cdf.cell_dg_matrix_12, cdf.local_dof_indices,
-  //         cdf.local_dof_indices_neighbor, dg_matrix);
-  //     constraints.distribute_local_to_global(
-  //         cdf.cell_dg_matrix_22, cdf.local_dof_indices_neighbor,
-  //         cdf.local_dof_indices_neighbor, dg_matrix);
-
-  //     // for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i) {
-  //     //   for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
-  //     //     dg_matrix.add(cdf.local_dof_indices[i],
-  //     cdf.local_dof_indices[j],
-  //     //                   cdf.cell_dg_matrix_11(i, j));
-  //     //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-  //     //                   cdf.local_dof_indices[j], cdf.cell_dg_matrix_12(i,
-  //     //                   j));
-  //     //     dg_matrix.add(cdf.local_dof_indices[i],
-  //     //                   cdf.local_dof_indices_neighbor[j],
-  //     //                   cdf.cell_dg_matrix_21(i, j));
-  //     //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-  //     //                   cdf.local_dof_indices_neighbor[j],
-  //     //                   cdf.cell_dg_matrix_22(i, j));
-  //     //   }
-  //     // }
-  //   }
-  // };
-
-  // ScratchData<dim> scratch_data(mapping, fe, quadrature_formula,
-  //                               face_quadrature_formula);
-  // CopyData copy_data;
-  // pcout << "Assembling System Matrices" << std::endl;
-
-  // MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-  //                       cell_worker, copier, scratch_data, copy_data,
-  //                       MeshWorker::assemble_own_cells |
-  //                           MeshWorker::assemble_boundary_faces |
-  //                           MeshWorker::assemble_own_interior_faces_once,
-  //                       boundary_worker, face_worker);
-  // pcout << "   Done" << std::endl;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   TimerOutput::Scope t(computing_timer, "Time step");
-  pcout << "Time step" << std::endl;
+  pcout << "  Time step" << std::endl;
 
   old_solution = solution;
 
@@ -1250,7 +1002,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
   TimerOutput::Scope t(computing_timer, "Solve linear system");
-  pcout << "Solve linear system" << std::endl;
+  pcout << "    Solve linear system" << std::endl;
 
   SolverControl solver_control(1000, 1e-12);
   // SolverCG<Vector<double>> solver(solver_control);
@@ -1266,13 +1018,13 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
 
   // constraints.distribute(solution);
 
-  pcout << "   Solver converged in " << solver_control.last_step()
+  pcout << "      Solver converged in " << solver_control.last_step()
         << " iterations." << std::endl;
 }
 
 template <int dim>
 void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
-  pcout << "Output results" << std::endl;
+  pcout << "  Output results" << std::endl;
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
   exact_solution->set_time(time);
@@ -1301,7 +1053,7 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {
   TimerOutput::Scope t(computing_timer, "Process results");
-  pcout << "Process results" << std::endl;
+  pcout << "  Process results" << std::endl;
 
   Vector<float> difference_per_cell(triangulation.n_active_cells());
   exact_solution->set_time(time);
@@ -1315,14 +1067,14 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {
                                     q_iterated, VectorTools::L2_norm);
   float L2_error = VectorTools::compute_global_error(
       triangulation, difference_per_cell, VectorTools::L2_norm);
-  pcout << "   L2 error:\t\t" << L2_error << std::endl;
+  pcout << "    L2 error:\t\t" << L2_error << std::endl;
 
   VectorTools::integrate_difference(mapping, dof_handler, solution,
                                     *exact_solution, difference_per_cell,
                                     q_iterated, VectorTools::Linfty_norm);
   float Linf_error = VectorTools::compute_global_error(
       triangulation, difference_per_cell, VectorTools::Linfty_norm);
-  pcout << "   L-infinity error:\t" << Linf_error << std::endl;
+  pcout << "    L-infinity error:\t" << Linf_error << std::endl;
 
   error_with_time.grow_or_shrink(error_with_time.size() + 1);
   error_with_time[error_with_time.size() - 1] = L2_error;
@@ -1343,8 +1095,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
   const unsigned int n_steps = int(time_end / time_step);
 
   for (unsigned int i = 0; i < n_steps; ++i) {
-    pcout << " Step " << timestep_number << "/" << n_steps << std::endl;
-    pcout << "  Time: " << time << std::endl;
+    pcout << "Step " << timestep_number << "/" << n_steps << " (time = " << time
+          << ")" << std::endl;
     perform_time_step();
     {
       TimerOutput::Scope t(computing_timer, "Output results");
