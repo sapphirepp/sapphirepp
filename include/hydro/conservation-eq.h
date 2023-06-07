@@ -84,6 +84,9 @@ struct CopyDataFace {
   FullMatrix<double> cell_dg_matrix_21;
   FullMatrix<double> cell_dg_matrix_22;
 
+  Vector<double> cell_vector_1;
+  Vector<double> cell_vector_2;
+
   std::vector<types::global_dof_index> local_dof_indices;
   std::vector<types::global_dof_index> local_dof_indices_neighbor;
 
@@ -95,6 +98,9 @@ struct CopyDataFace {
     cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
     cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
 
+    cell_vector_1.reinit(dofs_per_cell);
+    cell_vector_2.reinit(dofs_per_cell);
+
     local_dof_indices.resize(dofs_per_cell);
     cell->get_dof_indices(local_dof_indices);
 
@@ -104,9 +110,11 @@ struct CopyDataFace {
 };
 
 struct CopyData {
+  // TODO_BE: optimize memory layout
   FullMatrix<double> cell_mass_matrix;
   FullMatrix<double> cell_dg_matrix;
   Vector<double> cell_rhs;
+  Vector<double> cell_vector;
   std::vector<types::global_dof_index> local_dof_indices;
   std::vector<types::global_dof_index> local_dof_indices_neighbor;
   std::vector<CopyDataFace> face_data;
@@ -116,6 +124,7 @@ struct CopyData {
     cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
     cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
     cell_rhs.reinit(dofs_per_cell);
+    cell_vector.reinit(dofs_per_cell);
 
     local_dof_indices.resize(dofs_per_cell);
     cell->get_dof_indices(local_dof_indices);
@@ -229,9 +238,18 @@ public:
 private:
   void make_grid();
   void setup_system();
+  void assemble_mass_matrix();
+  void assemble_dg_vector();
   void assemble_system();
-  void assemble_time_step();
-  void solve();
+  /**
+   * @brief Solve the linear system
+   *
+   * This function solves the linear system \f$ M \mathbf{u} = \mathbf{b} \f$
+   * where \f$ M \f$ is the mass matrix, \f$ \mathbf{u} \f$ is the solution
+   * vector and \f$ \mathbf{b} \f$ is the right hand side vector.
+   */
+  void solve_linear_system();
+  void perform_time_step();
   void output_results() const;
   void process_results();
 
@@ -257,7 +275,17 @@ private:
   SparseMatrix<double> system_matrix;
 
   Vector<double> solution;
+
+  // solution at the current intermediate time step, used to calculate the flux
+  Vector<double> current_solution;
+
+  // solution of the last time step
   Vector<double> old_solution;
+
+  // vector of the fluxes at the current intermediate time step
+  Vector<double> dg_vector;
+
+  // right hand side of the linear system \f$ \mathbf{b} \f$
   Vector<double> system_rhs;
 
   Vector<float> error_with_time;
