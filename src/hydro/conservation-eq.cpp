@@ -760,6 +760,26 @@ void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
                         MeshWorker::assemble_own_cells);
 }
 
+template <int dim>
+double Sapphire::Hydro::BurgersEq<dim>::compute_numerical_flux(
+    const Tensor<1, dim> &flux_1, const Tensor<1, dim> &flux_2,
+    const Tensor<1, dim> &n) const {
+  double numerical_flux = 0;
+
+  // TODO_BE: Implement flux limiter
+
+  // central flux
+  numerical_flux += 0.5 * (flux_1 + flux_2) * n;
+
+  //  upwind flux
+  const double eta = 1.0;
+  // const double eta = 0.0; // central flux
+
+  numerical_flux += 0.5 * eta * (std::abs(flux_1 * n) - std::abs(flux_2 * n));
+
+  return numerical_flux;
+}
+
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
   TimerOutput::Scope t(computing_timer, "Assemble DG vector");
   pcout << "    Assemble DG vector" << std::endl;
@@ -878,57 +898,28 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
         fe_face_values_neighbor.get_function_values(current_solution,
                                                     current_solution_values_2);
 
+        Tensor<1, dim> flux_1, flux_2;
+        double flux_dot_n;
+
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
 
-          // TODO_BE: Implement flux limiter
-          const double f_dot_n_1 = 0.5 * current_solution_values_1[q_index] *
-                                   current_solution_values_1[q_index] *
-                                   fe_face_values.normal_vector(q_index)[0];
-          const double f_dot_n_2 = 0.5 * current_solution_values_2[q_index] *
-                                   current_solution_values_2[q_index] *
-                                   fe_face_values.normal_vector(q_index)[0];
+          flux_1[0] = 0.5 * current_solution_values_1[q_index] *
+                      current_solution_values_1[q_index];
+          flux_2[0] = 0.5 * current_solution_values_2[q_index] *
+                      current_solution_values_2[q_index];
+
+          flux_dot_n = compute_numerical_flux(
+              flux_1, flux_2, fe_face_values.normal_vector(q_index));
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
-
             copy_data_face.cell_vector_1(i) +=
-                0.5 * (f_dot_n_1 + f_dot_n_2) *
-                (fe_face_values.shape_value(i, q_index) *
-                 fe_face_values.JxW(q_index));
+                flux_dot_n * fe_face_values.shape_value(i, q_index) *
+                fe_face_values.JxW(q_index);
 
             copy_data_face.cell_vector_2(i) -=
-                0.5 * (f_dot_n_1 + f_dot_n_2) *
-                (fe_face_values_neighbor.shape_value(i, q_index) *
-                 fe_face_values.JxW(q_index));
-
-            // TODO_BE: Implement upwind flux
-            //  upwind flux
-            // const double eta = 1.0;
-            // const double eta = 0.0; // central flux
-
-            // copy_data_face.cell_dg_matrix_11(i, j) +=
-            //     0.5 * eta * std::abs(v_dot_n_1) *
-            //     (fe_face_values.shape_value(i, q_index) *
-            //      fe_face_values.shape_value(j, q_index) *
-            //      fe_face_values.JxW(q_index));
-
-            // copy_data_face.cell_dg_matrix_21(i, j) -=
-            //     0.5 * eta * std::abs(v_dot_n_1) *
-            //     (fe_face_values_neighbor.shape_value(i, q_index) *
-            //      fe_face_values.shape_value(j, q_index) *
-            //      fe_face_values.JxW(q_index));
-
-            // copy_data_face.cell_dg_matrix_12(i, j) -=
-            //     0.5 * eta * std::abs(v_dot_n_2) *
-            //     (fe_face_values.shape_value(i, q_index) *
-            //      fe_face_values_neighbor.shape_value(j, q_index) *
-            //      fe_face_values.JxW(q_index));
-
-            // copy_data_face.cell_dg_matrix_22(i, j) +=
-            //     0.5 * eta * std::abs(v_dot_n_2) *
-            //     (fe_face_values_neighbor.shape_value(i, q_index) *
-            //      fe_face_values_neighbor.shape_value(j, q_index) *
-            //      fe_face_values.JxW(q_index));
+                flux_dot_n * fe_face_values_neighbor.shape_value(i, q_index) *
+                fe_face_values.JxW(q_index);
           }
         }
       };

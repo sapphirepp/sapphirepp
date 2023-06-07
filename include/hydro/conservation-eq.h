@@ -239,6 +239,9 @@ private:
   void make_grid();
   void setup_system();
   void assemble_mass_matrix();
+  double compute_numerical_flux(const Tensor<1, dim> &flux_1,
+                                const Tensor<1, dim> &flux_2,
+                                const Tensor<1, dim> &n) const;
   void assemble_dg_vector();
   void assemble_system();
   /**
