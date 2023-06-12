@@ -668,8 +668,9 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(Function<dim> *initial_condition,
       mapping(), fe(1), dof_handler(triangulation),
       quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
-      time(0.0), time_step(0.001),
-      // time_step(0.05),
+      time(0.0),
+      // time_step(0.001),
+      time_step(0.005),
       // time_step(0.1),
       timestep_number(0),
       pcout(std::cout,
@@ -785,7 +786,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
   pcout << "    Assemble DG vector" << std::endl;
 
   dg_vector = 0;
-  boundary_values->set_time(time);
+  boundary_values->set_time(current_time);
 
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
 
@@ -967,28 +968,93 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   current_solution = old_solution;
 
   // Use only explicit time stepping because non-linear
-
-  assemble_system();
-  assemble_dg_vector();
-
   Vector<double> tmp(dof_handler.n_dofs());
 
-  // Forward Euler
+  /** Forward Euler */
 
-  system_rhs.add(-1.0, dg_vector);
+  // assemble_system();
+  // assemble_dg_vector();
 
-  system_rhs *= time_step;
+  // system_rhs.add(-1.0, dg_vector);
 
-  mass_matrix.vmult(tmp, current_solution);
-  system_rhs.add(1.0, tmp);
+  // system_rhs *= time_step;
 
+  // mass_matrix.vmult(tmp, current_solution);
+  // system_rhs.add(1.0, tmp);
+
+  // system_matrix.copy_from(mass_matrix);
+
+  // solve_linear_system();
+  // time += time_step;
+  // timestep_number++;
+
+  /** RK4 */
+  // Butcher's array
+  Vector<double> a({0.5, 0.5, 1.});
+  Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
+  Vector<double> c({0., 0.5, 0.5, 1.});
+  int i = 0;
+
+  Vector<double> k1(dof_handler.n_dofs());
+  i = 0;
+  tmp = 0;
+  current_time = time + c[i] * time_step;
+  current_solution = old_solution;
+  assemble_system();
+  assemble_dg_vector();
   system_matrix.copy_from(mass_matrix);
-
+  system_rhs.add(-1.0, dg_vector);
   solve_linear_system();
-  time += time_step;
-  timestep_number++;
+  k1 = solution;
 
-  // TODO_BE: Implement RK4
+  Vector<double> k2(dof_handler.n_dofs());
+  i = 1;
+  tmp = 0;
+  current_time = time + c[i] * time_step;
+  current_solution = old_solution;
+  current_solution.add(a[i - 1] * time_step, k1);
+  assemble_system();
+  assemble_dg_vector();
+  system_matrix.copy_from(mass_matrix);
+  system_rhs.add(-1.0, dg_vector);
+  solve_linear_system();
+  k2 = solution;
+
+  Vector<double> k3(dof_handler.n_dofs());
+  i = 2;
+  tmp = 0;
+  current_time = time + c[i] * time_step;
+  current_solution = old_solution;
+  current_solution.add(a[i - 1] * time_step, k2);
+  assemble_system();
+  assemble_dg_vector();
+  system_matrix.copy_from(mass_matrix);
+  system_rhs.add(-1.0, dg_vector);
+  solve_linear_system();
+  k3 = solution;
+
+  Vector<double> k4(dof_handler.n_dofs());
+  i = 3;
+  tmp = 0;
+  current_time = time + c[i] * time_step;
+  current_solution = old_solution;
+  current_solution.add(a[i - 1] * time_step, k3);
+  assemble_system();
+  assemble_dg_vector();
+  system_matrix.copy_from(mass_matrix);
+  system_rhs.add(-1.0, dg_vector);
+  solve_linear_system();
+  k4 = solution;
+
+  time += time_step;
+  // solution = old_solution(time_step / 6.) * (k1 + 2. * k2 + 2. * k3 + k4);
+  solution = old_solution;
+  solution.add(b[0] * time_step, k1);
+  solution.add(b[1] * time_step, k2);
+  solution.add(b[2] * time_step, k3);
+  solution.add(b[3] * time_step, k4);
+
+  timestep_number++;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {

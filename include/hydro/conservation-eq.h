@@ -293,6 +293,7 @@ private:
   Vector<float> error_with_time;
 
   double time;
+  double current_time;
   double time_step;
   unsigned int timestep_number;
 
