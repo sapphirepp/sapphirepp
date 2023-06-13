@@ -765,18 +765,29 @@ template <int dim>
 double Sapphire::Hydro::BurgersEq<dim>::compute_numerical_flux(
     const Tensor<1, dim> &flux_1, const Tensor<1, dim> &flux_2,
     const Tensor<1, dim> &n) const {
-  double numerical_flux = 0;
+  const FluxType flux_type = FluxType::Upwind;
 
+  double numerical_flux = 0;
   // TODO_BE: Implement flux limiter
 
-  // central flux
-  numerical_flux += 0.5 * (flux_1 + flux_2) * n;
+  switch (flux_type) {
+  case FluxType::Central: {
+    numerical_flux += 0.5 * (flux_1 + flux_2) * n;
+    break;
+  }
 
-  //  upwind flux
-  const double eta = 1.0;
-  // const double eta = 0.0; // central flux
+  case FluxType::Upwind: {
+    const double eta = 1.0;
+    numerical_flux += 0.5 * (flux_1 + flux_2) * n;
+    numerical_flux += 0.5 * eta * (std::abs(flux_1 * n) - std::abs(flux_2 * n));
+    break;
+  }
 
-  numerical_flux += 0.5 * eta * (std::abs(flux_1 * n) - std::abs(flux_2 * n));
+  default:
+    // TODO_BE: Assert(false) or throw?
+    Assert(false, ExcNotImplemented());
+    break;
+  }
 
   return numerical_flux;
 }
@@ -963,97 +974,101 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   TimerOutput::Scope t(computing_timer, "Time step");
   pcout << "  Time step" << std::endl;
 
+  const TimeSteppingScheme scheme = TimeSteppingScheme::ExplicitRK;
+
   old_solution = solution;
-
   current_solution = old_solution;
-
-  // Use only explicit time stepping because non-linear
   Vector<double> tmp(dof_handler.n_dofs());
 
-  /** Forward Euler */
+  switch (scheme) {
+  case TimeSteppingScheme::ForwardEuler: {
+    assemble_system();
+    assemble_dg_vector();
 
-  // assemble_system();
-  // assemble_dg_vector();
+    system_rhs.add(-1.0, dg_vector);
+    system_rhs *= time_step;
 
-  // system_rhs.add(-1.0, dg_vector);
+    mass_matrix.vmult(tmp, current_solution);
+    system_rhs.add(1.0, tmp);
 
-  // system_rhs *= time_step;
+    system_matrix.copy_from(mass_matrix);
 
-  // mass_matrix.vmult(tmp, current_solution);
-  // system_rhs.add(1.0, tmp);
+    solve_linear_system();
+    break;
+  }
 
-  // system_matrix.copy_from(mass_matrix);
+  case TimeSteppingScheme::ExplicitRK: {
+    // Butcher's array
+    Vector<double> a({0.5, 0.5, 1.});
+    Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
+    Vector<double> c({0., 0.5, 0.5, 1.});
+    int i = 0;
 
-  // solve_linear_system();
-  // time += time_step;
-  // timestep_number++;
+    Vector<double> k1(dof_handler.n_dofs());
+    i = 0;
+    tmp = 0;
+    current_time = time + c[i] * time_step;
+    current_solution = old_solution;
+    assemble_system();
+    assemble_dg_vector();
+    system_matrix.copy_from(mass_matrix);
+    system_rhs.add(-1.0, dg_vector);
+    solve_linear_system();
+    k1 = solution;
 
-  /** RK4 */
-  // Butcher's array
-  Vector<double> a({0.5, 0.5, 1.});
-  Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
-  Vector<double> c({0., 0.5, 0.5, 1.});
-  int i = 0;
+    Vector<double> k2(dof_handler.n_dofs());
+    i = 1;
+    tmp = 0;
+    current_time = time + c[i] * time_step;
+    current_solution = old_solution;
+    current_solution.add(a[i - 1] * time_step, k1);
+    assemble_system();
+    assemble_dg_vector();
+    system_matrix.copy_from(mass_matrix);
+    system_rhs.add(-1.0, dg_vector);
+    solve_linear_system();
+    k2 = solution;
 
-  Vector<double> k1(dof_handler.n_dofs());
-  i = 0;
-  tmp = 0;
-  current_time = time + c[i] * time_step;
-  current_solution = old_solution;
-  assemble_system();
-  assemble_dg_vector();
-  system_matrix.copy_from(mass_matrix);
-  system_rhs.add(-1.0, dg_vector);
-  solve_linear_system();
-  k1 = solution;
+    Vector<double> k3(dof_handler.n_dofs());
+    i = 2;
+    tmp = 0;
+    current_time = time + c[i] * time_step;
+    current_solution = old_solution;
+    current_solution.add(a[i - 1] * time_step, k2);
+    assemble_system();
+    assemble_dg_vector();
+    system_matrix.copy_from(mass_matrix);
+    system_rhs.add(-1.0, dg_vector);
+    solve_linear_system();
+    k3 = solution;
 
-  Vector<double> k2(dof_handler.n_dofs());
-  i = 1;
-  tmp = 0;
-  current_time = time + c[i] * time_step;
-  current_solution = old_solution;
-  current_solution.add(a[i - 1] * time_step, k1);
-  assemble_system();
-  assemble_dg_vector();
-  system_matrix.copy_from(mass_matrix);
-  system_rhs.add(-1.0, dg_vector);
-  solve_linear_system();
-  k2 = solution;
+    Vector<double> k4(dof_handler.n_dofs());
+    i = 3;
+    tmp = 0;
+    current_time = time + c[i] * time_step;
+    current_solution = old_solution;
+    current_solution.add(a[i - 1] * time_step, k3);
+    assemble_system();
+    assemble_dg_vector();
+    system_matrix.copy_from(mass_matrix);
+    system_rhs.add(-1.0, dg_vector);
+    solve_linear_system();
+    k4 = solution;
 
-  Vector<double> k3(dof_handler.n_dofs());
-  i = 2;
-  tmp = 0;
-  current_time = time + c[i] * time_step;
-  current_solution = old_solution;
-  current_solution.add(a[i - 1] * time_step, k2);
-  assemble_system();
-  assemble_dg_vector();
-  system_matrix.copy_from(mass_matrix);
-  system_rhs.add(-1.0, dg_vector);
-  solve_linear_system();
-  k3 = solution;
+    solution = old_solution;
+    solution.add(b[0] * time_step, k1);
+    solution.add(b[1] * time_step, k2);
+    solution.add(b[2] * time_step, k3);
+    solution.add(b[3] * time_step, k4);
+    break;
+  }
 
-  Vector<double> k4(dof_handler.n_dofs());
-  i = 3;
-  tmp = 0;
-  current_time = time + c[i] * time_step;
-  current_solution = old_solution;
-  current_solution.add(a[i - 1] * time_step, k3);
-  assemble_system();
-  assemble_dg_vector();
-  system_matrix.copy_from(mass_matrix);
-  system_rhs.add(-1.0, dg_vector);
-  solve_linear_system();
-  k4 = solution;
+  default:
+    Assert(false, ExcNotImplemented());
+    break;
+  }
 
   time += time_step;
-  // solution = old_solution(time_step / 6.) * (k1 + 2. * k2 + 2. * k3 + k4);
-  solution = old_solution;
-  solution.add(b[0] * time_step, k1);
-  solution.add(b[1] * time_step, k2);
-  solution.add(b[2] * time_step, k3);
-  solution.add(b[3] * time_step, k4);
-
   timestep_number++;
 }
 
