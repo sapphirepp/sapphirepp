@@ -429,7 +429,7 @@ void Sapphire::UpwindFlux<dim>::compute_matrix_sum(
     double p = std::exp(momentum);
     for (int i = 0; i < matrix_size * matrix_size; ++i)
       matrix_sum[i] =
-          -n_p * (gamma / p *
+          -n_p * (gamma / p * particle_properties.mass *
                       (material_derivative[0] * advection_matrices[0][i] +
                        material_derivative[1] * advection_matrices[1][i] +
                        material_derivative[2] * advection_matrices[2][i]) +
@@ -443,9 +443,10 @@ void Sapphire::UpwindFlux<dim>::compute_matrix_sum(
     for (int i = 0; i < matrix_size * matrix_size; ++i)
       matrix_sum[i] =
           -n_p *
-          (gamma * (material_derivative[0] * advection_matrices[0][i] +
-                    material_derivative[1] * advection_matrices[1][i] +
-                    material_derivative[2] * advection_matrices[2][i]) +
+          (gamma * particle_properties.mass *
+               (material_derivative[0] * advection_matrices[0][i] +
+                material_derivative[1] * advection_matrices[1][i] +
+                material_derivative[2] * advection_matrices[2][i]) +
            momentum *
                (jacobian[0][0] * adv_mat_products[0][i] +
                 jacobian[1][1] * adv_mat_products[3][i] +

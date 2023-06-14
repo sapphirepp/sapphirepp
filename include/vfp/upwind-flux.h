@@ -63,6 +63,7 @@ class UpwindFlux {
   std::vector<std::vector<double>> eigenvectors_advection_matrices;
 
   // Physical input
+  ParticleProperties particle_properties;
   BackgroundVelocityField<dim> background_velocity_field;
   ParticleVelocity<dim> particle_velocity_func;
   ParticleGamma<dim> particle_gamma_func;
