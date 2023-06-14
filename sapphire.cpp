@@ -795,7 +795,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                 copy_data.cell_matrix(i, j) -=
                     fe_v.shape_value(i, q_index) * particle_properties.charge *
                     magnetic_field_values[q_index][coordinate] /
-                    particle_gammas[q_index] *
+                    (particle_gammas[q_index] * particle_properties.mass) *
                     generator_rotation_matrices[coordinate](component_i,
                                                             component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -805,7 +805,7 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
                 copy_data.cell_matrix(i, j) -=
                     fe_v.shape_value(i, q_index) * particle_properties.charge *
                     magnetic_field_values[q_index][coordinate] /
-                    transport_only.gamma *
+                    (transport_only.gamma * particle_properties.mass) *
                     generator_rotation_matrices[coordinate](component_i,
                                                             component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -899,16 +899,16 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
             } else {
               // Momentum part
               for (unsigned int coordinate = 0; coordinate < 3; ++coordinate) {
-                // \grad_phi * \gamma du^k/ dt * A_k \phi
+                // \grad_phi * \gamma * mass * du^k/ dt * A_k \phi
                 copy_data.cell_matrix(i, j) +=
                     fe_v.shape_grad(i, q_index)[dim_ps - 1] *
-                    particle_gammas[q_index] *
+                    particle_gammas[q_index] * particle_properties.mass *
                     material_derivative_vel[q_index][coordinate] *
                     advection_matrices[coordinate](component_i, component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
-                // \phi v * du^k/dt * A_k * \phi
+                // \phi m * v * du^k/dt * A_k * \phi
                 copy_data.cell_matrix(i, j) +=
-                    fe_v.shape_value(i, q_index) *
+                    fe_v.shape_value(i, q_index) * particle_properties.mass *
                     particle_velocities[q_index] *
                     material_derivative_vel[q_index][coordinate] *
                     advection_matrices[coordinate](component_i, component_j) *

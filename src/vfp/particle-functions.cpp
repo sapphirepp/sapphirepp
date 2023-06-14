@@ -16,6 +16,7 @@ void Sapphire::ParticleVelocity<dim>::value_list(
         (logarithmic_p ? std::exp(points[i][dim - 1]) : points[i][dim - 1]);
     velocities[i] = p / std::sqrt(p * p + 1 / (reference_values.gamma *
                                                reference_values.gamma));
+    // add mass tomorrow
   }
 }
 
@@ -37,6 +38,7 @@ void Sapphire::ParticleGamma<dim>::value_list(
         (logarithmic_p ? std::exp(points[i][dim - 1]) : points[i][dim - 1]);
     gammas[i] = std::sqrt(
         p * p + 1 / (reference_values.gamma * reference_values.gamma));
+    				// add mass tomorrow
   }
 }
 
