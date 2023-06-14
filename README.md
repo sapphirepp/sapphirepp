@@ -211,17 +211,18 @@ copied (or renamed) to `vfp-equation.prm`.
 ### Reference values
 
 All computations are done in dimensionless units. The units are
-	| Type           | Definition                           | Reference                                        |
-	|:---------------|:-------------------------------------|:-------------------------------------------------|
-	| Length         | \(x^{*} = x/r_{g,0}\)                | \(r_{g,0} = \gamma_{0} m_{0} v_{0}/q_{0} B_{0}\) |
-	| Time           | \(t^{*} = t \omega_{g,0}\)           | \(\omega_{g,0} = q_{0} B_{0}/ \gamma_{0} m_{0}\) |
-	| Velocity       | \(v^{*} = v/v_{0} \)                 | \(v_{0} = r_{g,0} \omega_{g,0} \)                |
-	| Energy         | \(E^{*} = E/E_{0} \)                 | \(E_{0} = \gamma_{0} m_{0} {v_{0}}^{2} \)        |
-	| Momentum       | \(p^{*} = p/p_{0} \)                 | \(p_{0} = \gamma_{0} m_{0} v_{0} \)              |
-	| Lorentz factor | \(\gamma^{*} = \gamma / \gamma_{0}\) | \(\gamma_{0} =(1 - {v^{*}}^2)^{-1/2}\)           |
-	| Mass           | \(m^{*} = m / m_{0} \)               |                                                  |
-	| Charge         | \(q^{*} = q / q_{0} \)               |                                                  |
-	| Magnetic field | \(B^{*} = B/ B_{0} \)                |                                                  |
+
+| Type           | Definition                           | Reference                                        |
+|:---------------|:-------------------------------------|:-------------------------------------------------|
+| Length         | \(x^{*} = x/r_{g,0}\)                | \(r_{g,0} = \gamma_{0} m_{0} v_{0}/q_{0} B_{0}\) |
+| Time           | \(t^{*} = t \omega_{g,0}\)           | \(\omega_{g,0} = q_{0} B_{0}/ \gamma_{0} m_{0}\) |
+| Velocity       | \(v^{*} = v/v_{0} \)                 | \(v_{0} = r_{g,0} \omega_{g,0} \)                |
+| Energy         | \(E^{*} = E/E_{0} \)                 | \(E_{0} = \gamma_{0} m_{0} c^{2} \)              |
+| Momentum       | \(p^{*} = p/p_{0} \)                 | \(p_{0} = \gamma_{0} m_{0} v_{0} \)              |
+| Lorentz factor | \(\gamma^{*} = \gamma / \gamma_{0}\) | \(\gamma_{0} =(1 - (v_{0}/c)^2)^{-1/2}\)     |
+| Mass           | \(m^{*} = m / m_{0} \)               |                                                  |
+| Charge         | \(q^{*} = q / q_{0} \)               |                                                  |
+| Magnetic field | \(B^{*} = B/ B_{0} \)                |                                                  |
 
 All quantities with a zero subscript are reference values, which are set by the
 user. The values \(E_{0}, p_{0}\) and \(\gamma_{0}\) are not independent. The
