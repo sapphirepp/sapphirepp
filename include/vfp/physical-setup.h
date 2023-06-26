@@ -98,7 +98,7 @@ class BackgroundVelocityField : public dealii::Function<dim> {
 
  private:
   // Numerical constants
-  double pi = 2 * std::acos(0.);
+  const double pi = 2 * std::acos(0.);
   const double u_sh = 1./10;
   const double compression_ratio = 4.;
   const double shock_width = 1/25.;
