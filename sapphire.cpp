@@ -492,7 +492,7 @@ void VFPEquationSolver::make_grid_shock() {
   // shock width). And afterwards it cell sizes follow sinh
   const double shock_width = 1. / 25;
   const double step_size_shock = 1. / 100;
-  const unsigned int n_cells_shock = shock_width / step_size_shock;
+  const unsigned int n_cells_shock = 4 * shock_width / step_size_shock;
   const unsigned int additional_cells = 50;
   const double start_sinh = std::asinh(step_size_shock);
 
