@@ -101,9 +101,15 @@ void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
   // 2D Gaussian (isotropic)
   double momentum = std::exp(p[1]);
   // double momentum = p[1];
-  values[0] = 0.1 * std::exp(-std::pow(p[0] - 1., 2)) *
-              std::exp(-std::pow(momentum - 3, 2) / 0.25) /
-              (4 * 3.14159 * momentum * momentum);
+  double pi = 2 * std::acos(0.);
+  double sigma_x = 1./50;
+  double sigma_p = 1./50;
+  double p_0 = 3;
+  values[0] = 0.1 * std::exp(-std::pow(p[0], 2) / (2 * sigma_x * sigma_x)) *
+              std::exp(-std::pow(momentum - p_0, 2) / (2 * sigma_p * sigma_p)) /
+              (2 * pi * sigma_p * sigma_x);
+
+  // (4 * 3.14159 * momentum);
   // 2D pulsating Gaussian (isotropic, time dependent)
   // values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
   //               std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
