@@ -73,7 +73,7 @@ void Sapphire::ScatteringFrequency<dim>::value_list(
   static_cast<void>(component);
   // EXAMPLES:
   // Constant scattering frequency
-  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 5.);
+  std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 10.);
 }
 // explicit instantiation
 template class Sapphire::ScatteringFrequency<1>;
@@ -102,9 +102,9 @@ void Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
   double momentum = std::exp(p[1]);
   // double momentum = p[1];
   double pi = 2 * std::acos(0.);
-  double sigma_x = 1./50;
-  double sigma_p = 1./50;
-  double p_0 = 3;
+  double sigma_x = 1./25;
+  double sigma_p = 1./25;
+  double p_0 = 1.;
   values[0] = 0.1 * std::exp(-std::pow(p[0], 2) / (2 * sigma_x * sigma_x)) *
               std::exp(-std::pow(momentum - p_0, 2) / (2 * sigma_p * sigma_p)) /
               (2 * pi * sigma_p * sigma_x);
