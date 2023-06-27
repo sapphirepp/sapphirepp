@@ -8,12 +8,10 @@
 
 #include <cmath>
 #include <vector>
-// NOTE: All physical quantities are dimensionless. The reference values are
-// defined in the reference-values.h header.
-#include "reference-values.h"
 
 namespace Sapphire {
-
+// NOTE: All physical quantities are dimensionless. The reference values are
+// defined in the reference-values.h header.
 struct ParticleProperties {
   const double mass = 1.;
   const double charge = 1.;
@@ -22,14 +20,11 @@ struct ParticleProperties {
 struct TransportOnly {
   // In the transport-only case (i.e. no dependence on p) the energy of the
   // particles has to be given.
-  const double energy = 1.;
+  const double gamma = 3.;
   // Compute the partilces Lorentz factor gamma and its velocity
-  ParticleProperties particle_properties;
-  const double gamma = energy / particle_properties.mass;
-  ReferenceValues reference_values;
-  const double velocity =
-      std::sqrt(1 - 1 / std::pow((reference_values.gamma * gamma), 2));
+  const double velocity = std::sqrt(1 - 1 / std::pow((gamma * gamma), 2));
 };
+
 // Initial values
 template <int dim>
 class InitialValueFunction : public dealii::Function<dim> {
