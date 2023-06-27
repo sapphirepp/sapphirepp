@@ -675,16 +675,16 @@ void VFPEquationSolver::assemble_dg_matrix(const double time) {
               for (unsigned int coordinate = 0; coordinate < 3; ++coordinate) {
                 // \grad_phi * 1/v du^k/ dt * A_k \phi
                 copy_data.cell_matrix(i, j) +=
-                    fe_v.shape_grad(i, q_index)[dim_ps - 1] * 1. /
+                    fe_v.shape_grad(i, q_index)[dim_ps - 1] /
                     particle_velocities[q_index] *
                     material_derivative_vel[q_index][coordinate] *
                     advection_matrices[coordinate](component_i, component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
-                // \phi (v - 1/v) * du^k/dt * A_k * \phi
-                copy_data.cell_matrix(i, j) +=
-                    fe_v.shape_value(i, q_index) *
-                    (particle_velocities[q_index] -
-                     1. / particle_velocities[q_index]) *
+                // -\phi m/(gamma * p) * du^k/dt * A_k * \phi
+                copy_data.cell_matrix(i, j) -=
+                    fe_v.shape_value(i, q_index) * particle_properties.mass /
+                    (particle_gammas[q_index] *
+                     std::exp(q_points[q_index][dim_ps - 1])) *
                     material_derivative_vel[q_index][coordinate] *
                     advection_matrices[coordinate](component_i, component_j) *
                     fe_v.shape_value(j, q_index) * JxW[q_index];
