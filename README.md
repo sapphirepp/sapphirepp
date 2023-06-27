@@ -453,13 +453,15 @@ If the momentum terms are **not** included in the simulation, we speak of the
 particles are only transported and **not** accelerated. An implication of this
 is that the expansion coefficients do not depend on \(p\). In this case it is
 necessary to set the energy of the particles. This can be done in the file
-`include/physical-setup.h`. There is
+`include/vfp/physical-setup.h`. There is a
 
 ```cpp
 struct TransportOnly {
   // In the transport-only case (i.e. no dependence on p) the energy of the
   // particles has to be given.
-  const double energy = 1.;
+  const double gamma = 3.;
+  // Compute the particles' velocity
+  const double velocity = std::sqrt(1 - 1 / std::pow((gamma * gamma), 2));
 };
 
 ```
