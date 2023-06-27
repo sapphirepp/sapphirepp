@@ -210,40 +210,30 @@ copied (or renamed) to `vfp-equation.prm`.
 
 ### Reference values
 
-All computations are done in dimensionless units. The units are
+All computations are done in dimensionless units. The reference quantities are
+used to define these units can be found in `include/vfp/referencevalues.h`.
 
-| Type           | Definition                           | Reference                                        |
-|:---------------|:-------------------------------------|:-------------------------------------------------|
-| Length         | \(x^{*} = x/r_{g,0}\)                | \(r_{g,0} = \gamma_{0} m_{0} v_{0}/q_{0} B_{0}\) |
-| Time           | \(t^{*} = t \omega_{g,0}\)           | \(\omega_{g,0} = q_{0} B_{0}/ \gamma_{0} m_{0}\) |
-| Velocity       | \(v^{*} = v/v_{0} \)                 | \(v_{0} = r_{g,0} \omega_{g,0} \)                |
-| Energy         | \(E^{*} = E/E_{0} \)                 | \(E_{0} = \gamma_{0} m_{0} c^{2} \)              |
-| Momentum       | \(p^{*} = p/p_{0} \)                 | \(p_{0} = \gamma_{0} m_{0} v_{0} \)              |
-| Lorentz factor | \(\gamma^{*} = \gamma / \gamma_{0}\) | \(\gamma_{0} =(1 - (v_{0}/c)^2)^{-1/2}\)     |
-| Mass           | \(m^{*} = m / m_{0} \)               |                                                  |
-| Charge         | \(q^{*} = q / q_{0} \)               |                                                  |
-| Magnetic field | \(B^{*} = B/ B_{0} \)                |                                                  |
-
-All quantities with a zero subscript are reference values, which are set by the
-user. The values \(E_{0}, p_{0}\) and \(\gamma_{0}\) are not independent. The
-user only sets the reference energy, the other two quantities are computed. 
-
-The reference values are set in `include/reference-values.h`. There default
+The reference quantities are set in `include/reference-values.h`. There default
 values are
 
 ```cpp
 struct ReferenceValues {
   // reference values
-  const double energy = 10;       // GeV
-  const double mass = 0.9382721;  // GeV/c^2 (proton mass)
-  const double gamma = energy / mass;
+  const double mass = 1.672621923e-27;            // kg (proton mass)
   const double velocity = 299792458;              // m/s (speed of light)
   const double magnetic_field_strength = 1.e-10;  // Tesla (1 microGauss)
   const double charge = 1.602176634e-19;          // Coulmb ( elementary charge)
 };
 ```
-Except for the energy and the mass (which are in units of GeV and GeV/c^2)
-everything is in SI units.
+
+We use them to define
+
+| Type     | Definition                 | Reference                              |
+|:---------|:---------------------------|:---------------------------------------|
+| Length   | \(x^{*} = x/r_{g,0}\)      | \(r_{g,0} =  m_{0} c/q_{0} B_{0}\)     |
+| Time     | \(t^{*} = t \omega_{g,0}\) | \(\omega_{g,0} = q_{0} B_{0}/  m_{0}\) |
+| Momentum | \(p^{*} = p/p_{0} \)       | \(p_{0} =  m_{0} c \)                  |
+
 
 ### Initial Condition, Fields, Source and Collisions
 
