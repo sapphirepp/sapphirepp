@@ -421,10 +421,6 @@ void VFPEquationSolver::make_grid_shock() {
          ExcMessage("The grid is symmetric about x = 0. The number of cells in "
                     "the x-direction "));
 
-  double p_min = std::log(0.1);
-  double p_max = std::log(30);
-  unsigned int n_cells_p = 128;
-
   // x - direction using a sinh(x) distribution of the step sizes: We have to
   // find a sample of the values of sinh(x), such that its sum equals
   // length_scale_system/2. If use a uniform sample, i.e. if pick values at
@@ -496,9 +492,53 @@ void VFPEquationSolver::make_grid_shock() {
   const unsigned int additional_cells = 50;
   const double start_sinh = std::asinh(step_size_shock);
 
+  double p_min = std::log(0.1);
+  double p_max_estimate = std::log(100);
+  // unsigned int n_cells_p = 128;
+
+  // For the momentum grid, I would like to choose the resolution around the
+  // injection momentum be linear to resolve the point like injection, i.e. the
+  // standard deviation of the Gaussian needs to resolved. p_0 +- 2 * sigma_p is
+  // linear and the resolution 1./100.
+  const double injection_momentum = 6.;
+  const double delta_p_linear = 1. / 100;
+  const double sigma_p = 1. / 4;
+  const unsigned int n_cells_injection_p = 1 * sigma_p / delta_p_linear;
+  const double delta_p_log = 0.1;
+  const unsigned int additional_cells_p_plus =
+      (p_max_estimate -
+       std::log(injection_momentum + n_cells_injection_p * delta_p_linear)) /
+      delta_p_log;
+  const unsigned int additional_cells_p_minus =
+      (std::log(injection_momentum - n_cells_injection_p * delta_p_linear) -
+       p_min) /
+      delta_p_log;
+  // the rounding requires me to allow for correction cells to control that I
+  // get a more or less symmetric grid around the injection momentum
+  const unsigned int n_correction_cells = 100;
   std::vector<std::vector<double>> step_sizes{
       std::vector<double>(2 * n_cells_shock + 2 * additional_cells),
-      std::vector<double>(n_cells_p)};
+      std::vector<double>(2 * n_cells_injection_p + n_correction_cells + additional_cells_p_plus +
+                          additional_cells_p_minus)};
+
+  // momentum space p
+  for (unsigned int i = 0; i < additional_cells_p_minus; ++i)
+    step_sizes[1][i] = delta_p_log;
+  for (unsigned int i = additional_cells_p_minus, j = 0;
+       i < additional_cells_p_minus + 2 * n_cells_injection_p + n_correction_cells; ++i, ++j) {
+    double p_begin_linear = std::exp(
+        p_min + additional_cells_p_minus * delta_p_log);
+    double p_current = p_begin_linear + j * delta_p_linear;
+    step_sizes[1][i] = std::log(1 + delta_p_linear / p_current);
+  }
+  for (unsigned int i = additional_cells_p_minus + 2 * n_cells_injection_p + n_correction_cells;
+       i < additional_cells_p_minus + 2 * n_cells_injection_p + n_correction_cells +
+               additional_cells_p_plus;
+       ++i) {
+    step_sizes[1][i] = delta_p_log;
+  }
+  double p_max =
+      p_min + std::reduce(step_sizes[1].begin(), step_sizes[1].end());
 
   for (unsigned int i = 0; i < n_cells_shock; ++i)
     step_sizes[0][n_cells_shock + additional_cells + i] = step_size_shock;
@@ -537,8 +577,8 @@ void VFPEquationSolver::make_grid_shock() {
 
   // step_sizes[0] = delta_h;
   // p-direction
-  double delta_h_p = (p_max - p_min) / n_cells_p;
-  std::fill(step_sizes[1].begin(), step_sizes[1].end(), delta_h_p);
+  // double delta_h_p = (p_max - p_min) / n_cells_p;
+  // std::fill(step_sizes[1].begin(), step_sizes[1].end(), delta_h_p);
 
   GridGenerator::subdivided_hyper_rectangle(triangulation, step_sizes, p1, p2);
 
