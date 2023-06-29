@@ -226,14 +226,17 @@ struct ReferenceValues {
 };
 ```
 
-We use them to define
+We use them to define the dimensionless units, i.e.
 
 | Type     | Definition                 | Reference                              |
 |:---------|:---------------------------|:---------------------------------------|
 | Length   | \(x^{*} = x/r_{g,0}\)      | \(r_{g,0} =  m_{0} c/q_{0} B_{0}\)     |
 | Time     | \(t^{*} = t \omega_{g,0}\) | \(\omega_{g,0} = q_{0} B_{0}/  m_{0}\) |
 | Momentum | \(p^{*} = p/p_{0} \)       | \(p_{0} =  m_{0} c \)                  |
+| Velocity | \(v^{*} = v/v_{0} \)       | \(v_0 = c\)                            |
 
+Note the reference values are **not** used when solving the VFP equation. They
+are useful in post-processing the solution to produce physical results.
 
 ### Initial Condition, Fields, Source and Collisions
 
