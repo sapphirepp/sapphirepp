@@ -341,7 +341,8 @@ void VFPEquationSolver::run() {
               vfp_solver_control.output_frequency ==
           0) {
         TimerOutput::Scope timer_section(timer, "Output");
-        output_results(time_step_number, xdmf_entries);
+        output_results(time_step_number / vfp_solver_control.output_frequency,
+                       xdmf_entries);
       }
     }
   }
