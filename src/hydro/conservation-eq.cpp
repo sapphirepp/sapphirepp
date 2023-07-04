@@ -670,7 +670,7 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(Function<dim> *initial_condition,
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
       time(0.0),
       // time_step(0.001),
-      time_step(0.005),
+      time_step(0.002),
       // time_step(0.1),
       timestep_number(0),
       pcout(std::cout,
@@ -686,9 +686,9 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(7);
+  triangulation.refine_global(5);
+  // triangulation.refine_global(7);
   // triangulation.refine_global(9);
-  // triangulation.refine_global(5);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
 }
@@ -764,8 +764,10 @@ void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
 template <int dim>
 double Sapphire::Hydro::BurgersEq<dim>::compute_numerical_flux(
     const Tensor<1, dim> &flux_1, const Tensor<1, dim> &flux_2,
-    const Tensor<1, dim> &n) const {
-  const FluxType flux_type = FluxType::Upwind;
+    const Tensor<1, dim> &n, const double &value_1,
+    const double &value_2) const {
+  const FluxType flux_type = FluxType::LaxFriedrich;
+  // const FluxType flux_type = FluxType::Upwind;
 
   double numerical_flux = 0;
   // TODO_BE: Implement flux limiter
@@ -780,6 +782,13 @@ double Sapphire::Hydro::BurgersEq<dim>::compute_numerical_flux(
     const double eta = 1.0;
     numerical_flux += 0.5 * (flux_1 + flux_2) * n;
     numerical_flux += 0.5 * eta * (std::abs(flux_1 * n) - std::abs(flux_2 * n));
+    break;
+  }
+
+  case FluxType::LaxFriedrich: {
+    const double C = 3; // TODO_BE: Calculate C
+    numerical_flux += 0.5 * (flux_1 + flux_2) * n;
+    numerical_flux += 0.5 * C * (value_1 - value_2);
     break;
   }
 
@@ -816,7 +825,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
     copy_data.reinit(cell, n_dofs);
 
     for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
-      flux_value[0] = 0.5 * current_solution_values[q_index] *
+      flux_value[0] = beta * current_solution_values[q_index] *
                       current_solution_values[q_index];
 
       for (const unsigned int i : fe_values.dof_indices()) {
@@ -836,17 +845,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
 
     const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
-    // TODO_BE: Inflow boundary condition
-    // BoundaryValues<dim> boundary_values(beta, time);
-    // boundary_values->set_time(time);
-    // std::vector<double> boundary_values_vector(
-    //     fe_face_values.get_quadrature_points().size());
-    // boundary_values.value_list(fe_face_values.get_quadrature_points(),
-    //                            boundary_values_vector);
-    // Vector<double> boundary_value(1);
-
-    // TODO_BE: Use flux for inflow boundary condition
-    Tensor<1, dim> boundary_flux;
     double boundary_value;
     std::vector<double> current_solution_values(n_dofs);
     fe_face_values.get_function_values(current_solution,
@@ -854,7 +852,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
 
     for (const unsigned int q_index :
          fe_face_values.quadrature_point_indices()) {
-      const double f_dot_n = 0.5 * current_solution_values[q_index] *
+      const double f_dot_n = beta * current_solution_values[q_index] *
                              current_solution_values[q_index] *
                              fe_face_values.normal_vector(q_index)[0];
 
@@ -869,12 +867,13 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
         for (const unsigned int i : fe_face_values.dof_indices()) {
           boundary_value =
               boundary_values->value(fe_face_values.quadrature_point(q_index));
-          boundary_flux[0] = 0.5 * boundary_value * boundary_value;
+          const double boundary_f_dot_n =
+              beta * boundary_value * boundary_value *
+              fe_face_values.normal_vector(q_index)[0];
 
-          copy_data.cell_vector(i) +=
-              -(boundary_flux * fe_face_values.normal_vector(q_index)) *
-              fe_face_values.shape_value(i, q_index) *
-              fe_face_values.JxW(q_index);
+          copy_data.cell_vector(i) += boundary_f_dot_n *
+                                      fe_face_values.shape_value(i, q_index) *
+                                      fe_face_values.JxW(q_index);
         }
       }
     }
@@ -916,13 +915,15 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
         for (const unsigned int q_index :
              fe_face_values.quadrature_point_indices()) {
 
-          flux_1[0] = 0.5 * current_solution_values_1[q_index] *
+          flux_1[0] = beta * current_solution_values_1[q_index] *
                       current_solution_values_1[q_index];
-          flux_2[0] = 0.5 * current_solution_values_2[q_index] *
+          flux_2[0] = beta * current_solution_values_2[q_index] *
                       current_solution_values_2[q_index];
 
           flux_dot_n = compute_numerical_flux(
-              flux_1, flux_2, fe_face_values.normal_vector(q_index));
+              flux_1, flux_2, fe_face_values.normal_vector(q_index),
+              current_solution_values_1[q_index],
+              current_solution_values_2[q_index]);
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             copy_data_face.cell_vector_1(i) +=
@@ -1163,7 +1164,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
     output_results();
   }
 
-  const double time_end = 1.0;
+  // const double time_end = 1.0;
+  const double time_end = 0.4;
   const unsigned int n_steps = int(time_end / time_step);
 
   for (unsigned int i = 0; i < n_steps; ++i) {

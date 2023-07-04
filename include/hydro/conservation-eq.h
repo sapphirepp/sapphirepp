@@ -36,7 +36,7 @@ namespace Sapphire {
 namespace Hydro {
 using namespace dealii;
 
-enum class FluxType { Central, Upwind };
+enum class FluxType { Central, Upwind, LaxFriedrich };
 enum class TimeSteppingScheme { ForwardEuler, ExplicitRK };
 
 template <int dim> class ScratchData {
@@ -250,11 +250,16 @@ private:
    * @param flux_2 Flux on the second/neighbor side of the interface \f$
    * \mathbf{f}_- \f$
    * @param n Nommal vector of the interface \f$ \hat{n} \f$
+   * @param value_1 Value of the function on the first side of the interface \f$
+   * u_+ \f$
+   * @param value_2 Value of the function on the second/neighbor side of the
+   * interface \f$ u_- \f$
    * @return double Flux across the interface \f$ \hat{n} \cdot \mathbf{f} \f$
    */
   double compute_numerical_flux(const Tensor<1, dim> &flux_1,
                                 const Tensor<1, dim> &flux_2,
-                                const Tensor<1, dim> &n) const;
+                                const Tensor<1, dim> &n, const double &value_1,
+                                const double &value_2) const;
   void assemble_dg_vector();
   void assemble_system();
   /**
@@ -269,6 +274,8 @@ private:
   void output_results() const;
   void process_results();
 
+  // const double beta = 0.5; //< factor in front of the flux
+  const double beta = 1; //< factor in front of the flux
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;

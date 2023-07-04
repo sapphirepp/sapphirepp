@@ -169,11 +169,21 @@ public:
   double value(const Point<dim> &p,
                const unsigned int component = 0) const override {
     (void)component; // suppress unused parameter warning
+    Point<dim> x;
+
     // return std::sin(numbers::PI * p[0]);
-    if (p[0] > this->get_time() / 2.0)
+
+    // x[0] = p[0] - this->get_time() / 2.0;
+    // if (x[0] > 0.0)
+    //   return 1.0;
+    // else
+    //   return 0.0;
+
+    x[0] = p[0] - this->get_time() * 3.0;
+    if (x[0] > -0.5)
       return 1.0;
     else
-      return 0.0;
+      return 2.0;
   }
 };
 
