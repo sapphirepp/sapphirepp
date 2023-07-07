@@ -171,7 +171,7 @@ public:
     (void)component; // suppress unused parameter warning
     Point<dim> x;
 
-    // return std::sin(numbers::PI * p[0]);
+    // return -std::sin(numbers::PI * p[0]);
 
     // x[0] = p[0] - this->get_time() / 2.0;
     // if (x[0] > 0.0)

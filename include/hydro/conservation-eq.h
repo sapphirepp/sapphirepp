@@ -38,6 +38,7 @@ using namespace dealii;
 
 enum class FluxType { Central, Upwind, LaxFriedrich };
 enum class TimeSteppingScheme { ForwardEuler, ExplicitRK };
+enum class SlopeLimiter { none, CellAverage, MUSCL };
 
 template <int dim> class ScratchData {
 public:
@@ -270,12 +271,20 @@ private:
    * vector and \f$ \mathbf{b} \f$ is the right hand side vector.
    */
   void solve_linear_system();
+  Tensor<1, dim>
+  compute_limited_slope(const double &cell_average,
+                        const Tensor<1, dim> cell_average_grad,
+                        const std::vector<double> &neighbor_cell_averages,
+                        const std::vector<Tensor<1, dim>> &neighbor_distance,
+                        const unsigned int n_neighbors) const;
+  void slope_limiter();
   void perform_time_step();
   void output_results() const;
   void process_results();
 
   // const double beta = 0.5; //< factor in front of the flux
   const double beta = 1; //< factor in front of the flux
+  const SlopeLimiter limiter = SlopeLimiter::CellAverage;
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;
