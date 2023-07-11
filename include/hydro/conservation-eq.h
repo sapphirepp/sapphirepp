@@ -353,7 +353,11 @@ private:
 
   // const double beta = 0.5; //< factor in front of the flux
   const double beta = 1; //< factor in front of the flux
-  const SlopeLimiter limiter = SlopeLimiter::MinMod;
+
+  const TimeSteppingScheme scheme = TimeSteppingScheme::ForwardEuler;
+  const FluxType flux_type = FluxType::LaxFriedrich;
+  const SlopeLimiter limiter = SlopeLimiter::MUSCL;
+
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;

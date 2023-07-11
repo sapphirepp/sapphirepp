@@ -692,8 +692,8 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(Function<dim> *initial_condition,
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
       time(0.0),
       //
-      time_step(0.0005),
-      // time_step(0.001),
+      // time_step(0.0005),
+      time_step(0.001),
       // time_step(0.002),
       // time_step(0.1),
       timestep_number(0),
@@ -710,8 +710,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(5);
-  // triangulation.refine_global(7);
+  // triangulation.refine_global(5);
+  triangulation.refine_global(7);
   // triangulation.refine_global(9);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
@@ -790,12 +790,7 @@ double Sapphire::Hydro::BurgersEq<dim>::compute_numerical_flux(
     const Tensor<1, dim> &flux_1, const Tensor<1, dim> &flux_2,
     const Tensor<1, dim> &n, const double &value_1,
     const double &value_2) const {
-  const FluxType flux_type = FluxType::LaxFriedrich;
-  // const FluxType flux_type = FluxType::Upwind;
-
   double numerical_flux = 0;
-  // TODO_BE: Implement flux limiter
-
   switch (flux_type) {
   case FluxType::Central: {
     numerical_flux += 0.5 * (flux_1 + flux_2) * n;
@@ -1178,8 +1173,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   TimerOutput::Scope t(computing_timer, "Time step");
   pcout << "  Time step" << std::endl;
 
-  const TimeSteppingScheme scheme = TimeSteppingScheme::ForwardEuler;
-
   old_solution = solution;
   current_solution = old_solution;
   Vector<double> tmp(dof_handler.n_dofs());
@@ -1222,6 +1215,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
     system_matrix.copy_from(mass_matrix);
     system_rhs.add(-1.0, dg_vector);
     solve_linear_system();
+    slope_limiter();
     k1 = solution;
 
     Vector<double> k2(dof_handler.n_dofs());
@@ -1235,6 +1229,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
     system_matrix.copy_from(mass_matrix);
     system_rhs.add(-1.0, dg_vector);
     solve_linear_system();
+    slope_limiter();
     k2 = solution;
 
     Vector<double> k3(dof_handler.n_dofs());
@@ -1248,6 +1243,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
     system_matrix.copy_from(mass_matrix);
     system_rhs.add(-1.0, dg_vector);
     solve_linear_system();
+    slope_limiter();
     k3 = solution;
 
     Vector<double> k4(dof_handler.n_dofs());
@@ -1261,6 +1257,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
     system_matrix.copy_from(mass_matrix);
     system_rhs.add(-1.0, dg_vector);
     solve_linear_system();
+    slope_limiter();
     k4 = solution;
 
     solution = old_solution;
@@ -1268,6 +1265,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
     solution.add(b[1] * time_step, k2);
     solution.add(b[2] * time_step, k3);
     solution.add(b[3] * time_step, k4);
+    slope_limiter();
     break;
   }
 
