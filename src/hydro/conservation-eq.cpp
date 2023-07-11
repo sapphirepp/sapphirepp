@@ -30,6 +30,28 @@
 #include <fstream>
 #include <iostream>
 
+double Sapphire::Hydro::minmod(const std::vector<double> &values) {
+  auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
+  if ((*min_it) * (*max_it) < 0.0)
+    return 0.0;
+  else if (std::abs(*min_it) < std::abs(*max_it))
+    return *min_it;
+  else
+    return *max_it;
+}
+
+template <int dim>
+void Sapphire::Hydro::minmod(const std::vector<Tensor<1, dim>> &values,
+                             const unsigned int n,
+                             Tensor<1, dim> &return_value) {
+  std::vector<double> component_values(n);
+  for (unsigned int d = 0; d < dim; ++d) {
+    for (unsigned int i = 0; i < n; ++i)
+      component_values[i] = values[i][d];
+    return_value[d] = minmod(component_values);
+  }
+}
+
 template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
     TensorFunction<1, dim, double> *beta, Function<dim> *initial_condition,
@@ -688,8 +710,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  // triangulation.refine_global(5);
-  triangulation.refine_global(7);
+  triangulation.refine_global(5);
+  // triangulation.refine_global(7);
   // triangulation.refine_global(9);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
@@ -974,42 +996,62 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
 }
 
 template <int dim>
-dealii::Tensor<1, dim> Sapphire::Hydro::BurgersEq<dim>::compute_limited_slope(
+void Sapphire::Hydro::BurgersEq<dim>::compute_limited_slope(
     const double &cell_average, const Tensor<1, dim> cell_average_grad,
     const std::vector<double> &neighbor_cell_averages,
     const std::vector<Tensor<1, dim>> &neighbor_distance,
-    const unsigned int n_neighbors) const {
-  Tensor<1, dim> limited_slope;
-
+    const unsigned int n_neighbors, Tensor<1, dim> &limited_slope) const {
   switch (limiter) {
-  case SlopeLimiter::none: {
-    Assert(false, ExcMessage("Slope limiter is set to none, but this function "
-                             "should not be called"));
+  case SlopeLimiter::NoLimiter: {
+    Assert(false, ExcMessage("Slope limiter is set to NoLimiter, so this "
+                             "function should not be called"));
     limited_slope = cell_average_grad;
     break;
   }
 
   case SlopeLimiter::CellAverage: {
-    // Test case - remove!
+    // TODO_BE: remove test case
     limited_slope = 0;
     break;
   }
 
+  case SlopeLimiter::LinearReconstruction: {
+    // TODO_BE: remove test case
+    limited_slope = cell_average_grad;
+    break;
+  }
+
+  case SlopeLimiter::MinMod: {
+    std::vector<Tensor<1, dim>> slopes(n_neighbors + 1);
+    slopes[0] = cell_average_grad;
+    for (unsigned int i = 0; i < n_neighbors; ++i) {
+      slopes[i + 1] = (neighbor_cell_averages[i] - cell_average) /
+                      (neighbor_distance[i].norm_square() / 2.) *
+                      neighbor_distance[i];
+    }
+    minmod(slopes, n_neighbors + 1, limited_slope);
+    break;
+  }
+
   case SlopeLimiter::MUSCL: {
-    Assert(false, ExcNotImplemented());
-    (void)cell_average, neighbor_cell_averages, neighbor_distance, n_neighbors;
+    std::vector<Tensor<1, dim>> slopes(n_neighbors + 1);
+    slopes[0] = cell_average_grad;
+    for (unsigned int i = 0; i < n_neighbors; ++i) {
+      slopes[i + 1] = (neighbor_cell_averages[i] - cell_average) /
+                      neighbor_distance[i].norm_square() * neighbor_distance[i];
+    }
+    minmod(slopes, n_neighbors + 1, limited_slope);
+    break;
   }
 
   default:
     Assert(false, ExcNotImplemented());
     break;
   }
-
-  return limited_slope;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
-  if (limiter == SlopeLimiter::none)
+  if (limiter == SlopeLimiter::NoLimiter)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
   pcout << "    Slope limiter" << std::endl;
@@ -1021,28 +1063,22 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
 
   const auto cell_worker = [&](const Iterator &cell,
-                               ScratchData<dim> &scratch_data,
-                               CopyData &copy_data) {
+                               ScratchDataSlopeLimiter<dim> &scratch_data,
+                               CopyDataSlopeLimiter &copy_data) {
     FEValues<dim> &fe_values = scratch_data.fe_values;
+    FEValues<dim> &fe_values_neighbor = scratch_data.fe_values_neighbor;
+    FEValues<dim> &fe_values_interpolate = scratch_data.fe_values_interpolate;
 
     fe_values.reinit(cell);
-    // We need a different quadrature formula for the interpolation
-    const auto &points = fe.get_generalized_support_points();
-    Quadrature<dim> support_quadrature(points);
-    FEValues<dim> fe_values_interpolate(
-        mapping, fe, support_quadrature,
-        update_quadrature_points | update_jacobians | update_inverse_jacobians);
     fe_values_interpolate.reinit(cell);
-    // TODO_BE: Use modified CopyData and ScratchData
-    FEValues<dim> fe_values_neighbor(mapping, fe, quadrature_formula,
-                                     update_values | update_quadrature_points |
-                                         update_JxW_values);
+
     const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
     copy_data.reinit(cell, n_dofs);
 
-    std::vector<types::global_dof_index> local_dof_indices =
+    std::vector<types::global_dof_index> &local_dof_indices =
         copy_data.local_dof_indices;
-    std::vector<types::global_dof_index> local_dof_indices_neighbor(n_dofs);
+    std::vector<types::global_dof_index> &local_dof_indices_neighbor =
+        copy_data.local_dof_indices_neighbor;
     const Point<dim> cell_center = cell->center();
 
     // Calculate the average of current cell
@@ -1068,6 +1104,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     for (const auto face_no : cell->face_indices()) {
       if (!cell->at_boundary(face_no) && cell->neighbor(face_no)->is_active()) {
         auto neighbor = cell->neighbor(face_no);
+        // local_dof_indices_neighbor.resize(dofs_per_cell); //Not needed?
         neighbor->get_dof_indices(local_dof_indices_neighbor);
         fe_values_neighbor.reinit(neighbor);
 
@@ -1089,9 +1126,10 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     }
 
     // Calculate the limited slope
-    Tensor<1, dim> limited_slope = compute_limited_slope(
-        cell_average, cell_average_grad, neighbor_cell_averages,
-        neighbor_distance, n_neighbors);
+    Tensor<1, dim> limited_slope;
+    compute_limited_slope(cell_average, cell_average_grad,
+                          neighbor_cell_averages, neighbor_distance,
+                          n_neighbors, limited_slope);
 
     // To calculate the updated dof-values, we use a similar functionality as
     // VectroTools::interpolate
@@ -1113,24 +1151,20 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
                fe.conforming_space != FiniteElementData<dim>::H1,
            ExcNotImplemented());
 
-    std::vector<double> dof_values(n_dofs);
     fe.convert_generalized_support_point_values_to_dof_values(
-        support_point_values, dof_values);
-
-    // TODO_BE: make this more efficient, by using modified copy_data
-    for (unsigned int i = 0; i < n_dofs; ++i) {
-      copy_data.cell_vector(i) = dof_values[i];
-    }
+        support_point_values, copy_data.cell_vector);
   };
 
-  const auto copier = [&](const CopyData &c) {
+  const auto copier = [&](const CopyDataSlopeLimiter &c) {
     constraints.distribute_local_to_global(c.cell_vector, c.local_dof_indices,
                                            limited_solution);
   };
 
-  ScratchData<dim> scratch_data(mapping, fe, quadrature_formula,
-                                face_quadrature_formula);
-  CopyData copy_data;
+  Quadrature<dim> support_quadrature(fe.get_generalized_support_points());
+
+  ScratchDataSlopeLimiter<dim> scratch_data(mapping, fe, quadrature_formula,
+                                            support_quadrature);
+  CopyDataSlopeLimiter copy_data;
 
   // TODO_BE: Till end() or end_active()?
   MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),

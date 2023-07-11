@@ -38,7 +38,19 @@ using namespace dealii;
 
 enum class FluxType { Central, Upwind, LaxFriedrich };
 enum class TimeSteppingScheme { ForwardEuler, ExplicitRK };
-enum class SlopeLimiter { none, CellAverage, MUSCL };
+enum class SlopeLimiter {
+  NoLimiter,
+  CellAverage,
+  LinearReconstruction,
+  MinMod,
+  MUSCL
+};
+
+double minmod(const std::vector<double> &values);
+
+template <int dim>
+void minmod(const std::vector<Tensor<1, dim>> &values, const unsigned int n,
+            Tensor<1, dim> &return_value);
 
 template <int dim> class ScratchData {
 public:
@@ -131,6 +143,64 @@ struct CopyData {
     cell_vector.reinit(dofs_per_cell);
 
     local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+  }
+};
+
+template <int dim> class ScratchDataSlopeLimiter {
+public:
+  // Constructor
+  ScratchDataSlopeLimiter(
+      const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
+      const Quadrature<dim> &quadrature,
+      const Quadrature<dim> &support_quadrature,
+      const UpdateFlags update_flags = update_values | update_gradients |
+                                       update_quadrature_points |
+                                       update_JxW_values,
+      const UpdateFlags neighbor_update_flags = update_values |
+                                                update_quadrature_points |
+                                                update_JxW_values,
+      const UpdateFlags interpolate_update_flags = update_quadrature_points |
+                                                   update_jacobians |
+                                                   update_inverse_jacobians)
+      : fe_values(mapping, fe, quadrature, update_flags),
+        fe_values_neighbor(mapping, fe, quadrature, neighbor_update_flags),
+        fe_values_interpolate(mapping, fe, support_quadrature,
+                              interpolate_update_flags) {}
+
+  // Copy constructor
+  ScratchDataSlopeLimiter(const ScratchDataSlopeLimiter<dim> &scratch_data)
+      : fe_values(scratch_data.fe_values.get_mapping(),
+                  scratch_data.fe_values.get_fe(),
+                  scratch_data.fe_values.get_quadrature(),
+                  scratch_data.fe_values.get_update_flags()),
+        fe_values_neighbor(scratch_data.fe_values_neighbor.get_mapping(),
+                           scratch_data.fe_values_neighbor.get_fe(),
+                           scratch_data.fe_values_neighbor.get_quadrature(),
+                           scratch_data.fe_values_neighbor.get_update_flags()),
+        fe_values_interpolate(
+            scratch_data.fe_values_interpolate.get_mapping(),
+            scratch_data.fe_values_interpolate.get_fe(),
+            scratch_data.fe_values_interpolate.get_quadrature(),
+            scratch_data.fe_values_interpolate.get_update_flags()) {}
+
+  FEValues<dim> fe_values;
+  FEValues<dim> fe_values_neighbor;
+  FEValues<dim> fe_values_interpolate;
+};
+
+struct CopyDataSlopeLimiter {
+  std::vector<double> cell_vector;
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
+    // cell_vector.reinit(dofs_per_cell);
+    cell_vector.resize(dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    local_dof_indices_neighbor.resize(dofs_per_cell);
     cell->get_dof_indices(local_dof_indices);
   }
 };
@@ -271,12 +341,11 @@ private:
    * vector and \f$ \mathbf{b} \f$ is the right hand side vector.
    */
   void solve_linear_system();
-  Tensor<1, dim>
-  compute_limited_slope(const double &cell_average,
-                        const Tensor<1, dim> cell_average_grad,
-                        const std::vector<double> &neighbor_cell_averages,
-                        const std::vector<Tensor<1, dim>> &neighbor_distance,
-                        const unsigned int n_neighbors) const;
+  void compute_limited_slope(
+      const double &cell_average, const Tensor<1, dim> cell_average_grad,
+      const std::vector<double> &neighbor_cell_averages,
+      const std::vector<Tensor<1, dim>> &neighbor_distance,
+      const unsigned int n_neighbors, Tensor<1, dim> &limited_slope) const;
   void slope_limiter();
   void perform_time_step();
   void output_results() const;
@@ -284,7 +353,7 @@ private:
 
   // const double beta = 0.5; //< factor in front of the flux
   const double beta = 1; //< factor in front of the flux
-  const SlopeLimiter limiter = SlopeLimiter::CellAverage;
+  const SlopeLimiter limiter = SlopeLimiter::MinMod;
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;
