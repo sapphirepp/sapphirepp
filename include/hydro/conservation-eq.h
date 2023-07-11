@@ -36,14 +36,15 @@ namespace Sapphire {
 namespace Hydro {
 using namespace dealii;
 
-enum class FluxType { Central, Upwind, LaxFriedrich };
 enum class TimeSteppingScheme { ForwardEuler, ExplicitRK };
+enum class FluxType { Central, Upwind, LaxFriedrich };
 enum class SlopeLimiter {
   NoLimiter,
   CellAverage,
   LinearReconstruction,
   MinMod,
-  MUSCL
+  MUSCL,
+  GerneralizedSlopeLimiter
 };
 
 double minmod(const std::vector<double> &values);
@@ -356,7 +357,7 @@ private:
 
   const TimeSteppingScheme scheme = TimeSteppingScheme::ForwardEuler;
   const FluxType flux_type = FluxType::LaxFriedrich;
-  const SlopeLimiter limiter = SlopeLimiter::MUSCL;
+  const SlopeLimiter limiter = SlopeLimiter::GerneralizedSlopeLimiter;
 
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
@@ -393,6 +394,7 @@ private:
   Vector<double> system_rhs;
 
   Vector<float> error_with_time;
+  Vector<float> mark_for_limiter;
 
   double time;
   double current_time;

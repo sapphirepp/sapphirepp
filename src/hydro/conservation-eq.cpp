@@ -52,6 +52,17 @@ void Sapphire::Hydro::minmod(const std::vector<Tensor<1, dim>> &values,
   }
 }
 
+// explicit instantiation
+template void
+Sapphire::Hydro::minmod<1>(const std::vector<Tensor<1, 1>> &values,
+                           const unsigned int n, Tensor<1, 1> &return_value);
+template void
+Sapphire::Hydro::minmod<2>(const std::vector<Tensor<1, 2>> &values,
+                           const unsigned int n, Tensor<1, 2> &return_value);
+template void
+Sapphire::Hydro::minmod<3>(const std::vector<Tensor<1, 3>> &values,
+                           const unsigned int n, Tensor<1, 3> &return_value);
+
 template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
     TensorFunction<1, dim, double> *beta, Function<dim> *initial_condition,
@@ -740,6 +751,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
 
   constraints.clear();
   constraints.close();
+
+  mark_for_limiter.reinit(triangulation.n_active_cells());
 }
 
 template <int dim>
@@ -1028,6 +1041,12 @@ void Sapphire::Hydro::BurgersEq<dim>::compute_limited_slope(
     break;
   }
 
+  case SlopeLimiter::GerneralizedSlopeLimiter:
+    // limited_slope[0] = 100;
+    break;
+    // Use MUSCL limiter
+    // TODO_BE: Make generalized limiting independent of limiter
+
   case SlopeLimiter::MUSCL: {
     std::vector<Tensor<1, dim>> slopes(n_neighbors + 1);
     slopes[0] = cell_average_grad;
@@ -1075,6 +1094,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     std::vector<types::global_dof_index> &local_dof_indices_neighbor =
         copy_data.local_dof_indices_neighbor;
     const Point<dim> cell_center = cell->center();
+    bool limit_cell = true;
 
     // Calculate the average of current cell
     double cell_average = 0;
@@ -1095,7 +1115,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     // Calculate the averages of the neighbour cells
     std::vector<double> neighbor_cell_averages(cell->n_faces());
     std::vector<Tensor<1, dim>> neighbor_distance(cell->n_faces());
-    int n_neighbors = 0;
+    std::vector<Point<dim>> face_centers(cell->n_faces());
+    unsigned int n_neighbors = 0;
     for (const auto face_no : cell->face_indices()) {
       if (!cell->at_boundary(face_no) && cell->neighbor(face_no)->is_active()) {
         auto neighbor = cell->neighbor(face_no);
@@ -1103,6 +1124,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
         neighbor->get_dof_indices(local_dof_indices_neighbor);
         fe_values_neighbor.reinit(neighbor);
 
+        face_centers[n_neighbors] = cell->face(face_no)->center();
         neighbor_distance[n_neighbors] = neighbor->center() - cell->center();
 
         neighbor_cell_averages[n_neighbors] = 0;
@@ -1119,35 +1141,91 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
         n_neighbors++;
       }
     }
+    // neighbor_cell_averages.resize(n_neighbors);
+    // neighbor_distance.resize(n_neighbors);
+    // face_centers.resize(n_neighbors);
 
-    // Calculate the limited slope
-    Tensor<1, dim> limited_slope;
-    compute_limited_slope(cell_average, cell_average_grad,
-                          neighbor_cell_averages, neighbor_distance,
-                          n_neighbors, limited_slope);
+    // Check if the cell is meets the criteria for limiting
+    if (limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
+      limit_cell = false;
 
-    // To calculate the updated dof-values, we use a similar functionality as
-    // VectroTools::interpolate
+      // TODO_BE: Check implementation - something goes wrong here :(
+      double face_flux = 0;
+      double face_value = 0;
+      std::vector<double> tmp_minmod(n_neighbors + 1);
 
-    // Calculate the support point values
-    const std::vector<Point<dim>> &support_points =
-        fe_values_interpolate.get_present_fe_values().get_quadrature_points();
-    AssertDimension(support_points.size(), n_dofs);
-    std::vector<Vector<double>> support_point_values(n_dofs, Vector<double>(1));
+      // TODO_BE: Check if it is possible to create a quadrature for this
+      //          independent of the cell
+      Quadrature<dim> face_center_quadrature(face_centers);
+      FEValues fe_vales_face_center(fe_values.get_fe(), face_center_quadrature,
+                                    update_values);
+      fe_vales_face_center.reinit(cell);
+      std::vector<double> face_center_values(n_neighbors);
+      fe_vales_face_center.get_function_values(solution, face_center_values);
 
-    for (unsigned int i = 0; i < n_dofs; ++i) {
-      support_point_values[i] =
-          cell_average + (support_points[i] - cell_center) * limited_slope;
+      for (unsigned int i_neighbor = 0; i_neighbor < n_neighbors;
+           i_neighbor++) {
+        // Tensor<1, dim> direction =
+        //     (face_centers[i_neighbor] - cell_center) /
+        //     (face_centers[i_neighbor] - cell_center).norm();
+        Tensor<1, dim> direction = neighbor_distance[i_neighbor] /
+                                   neighbor_distance[i_neighbor].norm();
+
+        face_value = face_center_values[i_neighbor];
+
+        tmp_minmod[0] = (face_value - cell_average);
+        for (unsigned int i2 = 0; i2 < n_neighbors; i2++) {
+          tmp_minmod[i2 + 1] = (neighbor_cell_averages[i2] - cell_average) *
+                               (neighbor_distance[i2] * direction) /
+                               neighbor_distance[i2].norm();
+        }
+        face_flux = cell_average + minmod(tmp_minmod);
+
+        if (std::abs(face_value - face_flux) > 1e-10) {
+          limit_cell = true;
+          break;
+        }
+      }
     }
 
-    // Transformation in these cases needed, not implemented!
-    Assert(fe.conforming_space != FiniteElementData<dim>::Hcurl &&
-               fe.conforming_space != FiniteElementData<dim>::Hdiv &&
-               fe.conforming_space != FiniteElementData<dim>::H1,
-           ExcNotImplemented());
+    mark_for_limiter[cell->active_cell_index()] = limit_cell ? 1.0 : 0.0;
 
-    fe.convert_generalized_support_point_values_to_dof_values(
-        support_point_values, copy_data.cell_vector);
+    if (limit_cell) {
+      // Calculate the limited slope
+      Tensor<1, dim> limited_slope;
+      compute_limited_slope(cell_average, cell_average_grad,
+                            neighbor_cell_averages, neighbor_distance,
+                            n_neighbors, limited_slope);
+
+      // To calculate the updated dof-values, we use a similar functionality
+      // as VectroTools::interpolate
+
+      // Calculate the support point values
+      const std::vector<Point<dim>> &support_points =
+          fe_values_interpolate.get_present_fe_values().get_quadrature_points();
+      AssertDimension(support_points.size(), n_dofs);
+      std::vector<Vector<double>> support_point_values(n_dofs,
+                                                       Vector<double>(1));
+
+      for (unsigned int i = 0; i < n_dofs; ++i) {
+        support_point_values[i] =
+            cell_average + (support_points[i] - cell_center) * limited_slope;
+      }
+
+      // Transformation in these cases needed, not implemented!
+      Assert(fe.conforming_space != FiniteElementData<dim>::Hcurl &&
+                 fe.conforming_space != FiniteElementData<dim>::Hdiv &&
+                 fe.conforming_space != FiniteElementData<dim>::H1,
+             ExcNotImplemented());
+
+      fe.convert_generalized_support_point_values_to_dof_values(
+          support_point_values, copy_data.cell_vector);
+    } else {
+      // No limiting, just copy the values
+      for (const unsigned int i : fe_values.dof_indices()) {
+        copy_data.cell_vector[i] = solution[local_dof_indices[i]];
+      }
+    }
   };
 
   const auto copier = [&](const CopyDataSlopeLimiter &c) {
@@ -1316,6 +1394,7 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution, "Solution");
   data_out.add_data_vector(exact_solution_values, "ExactSolution");
+  data_out.add_data_vector(mark_for_limiter, "LimiterMark");
 
   data_out.build_patches();
 
