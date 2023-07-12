@@ -224,31 +224,14 @@ public:
    * \f$
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
-            Function<dim> *exact_solution);
+            Function<dim> *exact_solution,
+            const HDSolverControl solver_control);
   void run();
 
 private:
   void make_grid();
   void setup_system();
   void assemble_mass_matrix();
-  // TODO_BE: implement compute_numerical_flux outside the class
-  /**
-   * @brief Compute the numerical flux
-   *
-   * @param flux_1 Flux on the first side of the interface \f$ \mathbf{f}_+ \f$
-   * @param flux_2 Flux on the second/neighbor side of the interface \f$
-   * \mathbf{f}_- \f$
-   * @param n Nommal vector of the interface \f$ \hat{n} \f$
-   * @param value_1 Value of the function on the first side of the interface \f$
-   * u_+ \f$
-   * @param value_2 Value of the function on the second/neighbor side of the
-   * interface \f$ u_- \f$
-   * @return double Flux across the interface \f$ \hat{n} \cdot \mathbf{f} \f$
-   */
-  double compute_numerical_flux(const Tensor<1, dim> &flux_1,
-                                const Tensor<1, dim> &flux_2,
-                                const Tensor<1, dim> &n, const double &value_1,
-                                const double &value_2) const;
   void assemble_dg_vector();
   void assemble_system();
   /**
@@ -259,11 +242,6 @@ private:
    * vector and \f$ \mathbf{b} \f$ is the right hand side vector.
    */
   void solve_linear_system();
-  void compute_limited_slope(
-      const double &cell_average, const Tensor<1, dim> cell_average_grad,
-      const std::vector<double> &neighbor_cell_averages,
-      const std::vector<Tensor<1, dim>> &neighbor_distance,
-      const unsigned int n_neighbors, Tensor<1, dim> &limited_slope) const;
   void slope_limiter();
   void perform_time_step();
   void output_results() const;
@@ -272,13 +250,11 @@ private:
   // const double beta = 0.5; //< factor in front of the flux
   const double beta = 1; //< factor in front of the flux
 
-  const TimeSteppingScheme scheme = TimeSteppingScheme::ForwardEuler;
-  const FluxType flux_type = FluxType::LaxFriedrich;
-  const SlopeLimiter limiter = SlopeLimiter::GerneralizedSlopeLimiter;
-
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;
+
+  const HDSolverControl solver_control;
 
   MPI_Comm mpi_communicator;
 
@@ -315,7 +291,6 @@ private:
 
   double time;
   double current_time;
-  double time_step;
   unsigned int timestep_number;
 
   ConditionalOStream pcout;

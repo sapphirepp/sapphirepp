@@ -34,19 +34,14 @@
 template <int dim>
 Sapphire::Hydro::BurgersEq<dim>::BurgersEq(Function<dim> *initial_condition,
                                            Function<dim> *boundary_values,
-                                           Function<dim> *exact_solution)
+                                           Function<dim> *exact_solution,
+                                           const HDSolverControl solver_control)
     : initial_condition(initial_condition), boundary_values(boundary_values),
-      exact_solution(exact_solution), mpi_communicator(MPI_COMM_WORLD),
-      mapping(), fe(1), dof_handler(triangulation),
-      quadrature_formula(fe.tensor_degree() + 1),
+      exact_solution(exact_solution), solver_control(solver_control),
+      mpi_communicator(MPI_COMM_WORLD), mapping(), fe(solver_control.fe_degree),
+      dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
-      time(0.0),
-      //
-      // time_step(0.0005),
-      time_step(0.001),
-      // time_step(0.002),
-      // time_step(0.1),
-      timestep_number(0),
+      time(0.0), timestep_number(0),
       pcout(std::cout,
             (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
       computing_timer(mpi_communicator, pcout, TimerOutput::never,
@@ -60,9 +55,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  // triangulation.refine_global(5);
-  triangulation.refine_global(7);
-  // triangulation.refine_global(9);
+  triangulation.refine_global(solver_control.refinement_level);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
 }
@@ -136,41 +129,6 @@ void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
   MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
                         cell_worker, copier, scratch_data, copy_data,
                         MeshWorker::assemble_own_cells);
-}
-
-template <int dim>
-double Sapphire::Hydro::BurgersEq<dim>::compute_numerical_flux(
-    const Tensor<1, dim> &flux_1, const Tensor<1, dim> &flux_2,
-    const Tensor<1, dim> &n, const double &value_1,
-    const double &value_2) const {
-  double numerical_flux = 0;
-  switch (flux_type) {
-  case FluxType::Central: {
-    numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-    break;
-  }
-
-  case FluxType::Upwind: {
-    const double eta = 1.0;
-    numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-    numerical_flux += 0.5 * eta * (std::abs(flux_1 * n) - std::abs(flux_2 * n));
-    break;
-  }
-
-  case FluxType::LaxFriedrich: {
-    const double C = 3; // TODO_BE: Calculate C
-    numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-    numerical_flux += 0.5 * C * (value_1 - value_2);
-    break;
-  }
-
-  default:
-    // TODO_BE: Assert(false) or throw?
-    Assert(false, ExcNotImplemented());
-    break;
-  }
-
-  return numerical_flux;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
@@ -295,7 +253,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
           flux_dot_n = compute_numerical_flux(
               flux_1, flux_2, fe_face_values.normal_vector(q_index),
               current_solution_values_1[q_index],
-              current_solution_values_2[q_index]);
+              current_solution_values_2[q_index], solver_control);
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             copy_data_face.cell_vector_1(i) +=
@@ -343,69 +301,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
   /** Nothing to do here, RHS of equation is zero */
 }
 
-template <int dim>
-void Sapphire::Hydro::BurgersEq<dim>::compute_limited_slope(
-    const double &cell_average, const Tensor<1, dim> cell_average_grad,
-    const std::vector<double> &neighbor_cell_averages,
-    const std::vector<Tensor<1, dim>> &neighbor_distance,
-    const unsigned int n_neighbors, Tensor<1, dim> &limited_slope) const {
-  switch (limiter) {
-  case SlopeLimiter::NoLimiter: {
-    Assert(false, ExcMessage("Slope limiter is set to NoLimiter, so this "
-                             "function should not be called"));
-    limited_slope = cell_average_grad;
-    break;
-  }
-
-  case SlopeLimiter::CellAverage: {
-    // TODO_BE: remove test case
-    limited_slope = 0;
-    break;
-  }
-
-  case SlopeLimiter::LinearReconstruction: {
-    // TODO_BE: remove test case
-    limited_slope = cell_average_grad;
-    break;
-  }
-
-  case SlopeLimiter::MinMod: {
-    std::vector<Tensor<1, dim>> slopes(n_neighbors + 1);
-    slopes[0] = cell_average_grad;
-    for (unsigned int i = 0; i < n_neighbors; ++i) {
-      slopes[i + 1] = (neighbor_cell_averages[i] - cell_average) /
-                      (neighbor_distance[i].norm_square() / 2.) *
-                      neighbor_distance[i];
-    }
-    minmod(slopes, n_neighbors + 1, limited_slope);
-    break;
-  }
-
-  case SlopeLimiter::GerneralizedSlopeLimiter:
-    // limited_slope[0] = 100;
-    break;
-    // Use MUSCL limiter
-    // TODO_BE: Make generalized limiting independent of limiter
-
-  case SlopeLimiter::MUSCL: {
-    std::vector<Tensor<1, dim>> slopes(n_neighbors + 1);
-    slopes[0] = cell_average_grad;
-    for (unsigned int i = 0; i < n_neighbors; ++i) {
-      slopes[i + 1] = (neighbor_cell_averages[i] - cell_average) /
-                      neighbor_distance[i].norm_square() * neighbor_distance[i];
-    }
-    minmod(slopes, n_neighbors + 1, limited_slope);
-    break;
-  }
-
-  default:
-    Assert(false, ExcNotImplemented());
-    break;
-  }
-}
-
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
-  if (limiter == SlopeLimiter::NoLimiter)
+  if (solver_control.limiter == SlopeLimiter::NoLimiter)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
   pcout << "    Slope limiter" << std::endl;
@@ -484,7 +381,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     // neighbor_distance.resize(n_neighbors);
 
     // Check if the cell is meets the criteria for limiting
-    if (limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
+    if (solver_control.limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
       limit_cell = false;
 
       // TODO_BE: Check implementation and improve performance
@@ -566,7 +463,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
       Tensor<1, dim> limited_slope;
       compute_limited_slope(cell_average, cell_average_grad,
                             neighbor_cell_averages, neighbor_distance,
-                            n_neighbors, limited_slope);
+                            n_neighbors, limited_slope, solver_control);
 
       // To calculate the updated dof-values, we use a similar functionality
       // as VectroTools::interpolate
@@ -627,7 +524,9 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   current_solution = old_solution;
   Vector<double> tmp(dof_handler.n_dofs());
 
-  switch (scheme) {
+  double time_step = solver_control.time_step;
+
+  switch (solver_control.scheme) {
   case TimeSteppingScheme::ForwardEuler: {
     assemble_system();
     assemble_dg_vector();
@@ -821,10 +720,10 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
     output_results();
   }
 
-  // const double time_end = 1.0;
-  const double time_end = 0.4;
-  const unsigned int n_steps = int(time_end / time_step);
+  const unsigned int n_steps =
+      int(solver_control.end_time / solver_control.time_step) + 1;
 
+  timestep_number++;
   for (unsigned int i = 0; i < n_steps; ++i) {
     pcout << "Step " << timestep_number << "/" << n_steps << " (time = " << time
           << ")" << std::endl;
