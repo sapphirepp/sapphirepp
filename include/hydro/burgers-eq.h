@@ -15,6 +15,7 @@
 #define HYDROSOLVER_BURGERSEQ_H
 
 #include "numerics.h"
+#include "output_module.h"
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/mpi.h>
@@ -34,6 +35,7 @@
 namespace Sapphire {
 namespace Hydro {
 using namespace dealii;
+using namespace Sapphire::Utils;
 
 // TODO_BE: Optimize memory management and make naming less ambiguous
 template <int dim> class ScratchDataDG {
@@ -225,7 +227,8 @@ public:
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
             Function<dim> *exact_solution,
-            const HDSolverControl &hd_solver_control);
+            const HDSolverControl &hd_solver_control = HDSolverControl(),
+            const OutputModule<dim> &output_module = OutputModule<dim>());
   void run();
 
 private:
@@ -255,6 +258,7 @@ private:
   const SmartPointer<Function<dim>> exact_solution;
 
   const HDSolverControl hd_solver_control;
+  const OutputModule<dim> output_module;
 
   MPI_Comm mpi_communicator;
 

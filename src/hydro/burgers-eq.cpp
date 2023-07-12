@@ -34,10 +34,11 @@
 template <int dim>
 Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
     Function<dim> *initial_condition, Function<dim> *boundary_values,
-    Function<dim> *exact_solution, const HDSolverControl &hd_solver_control)
+    Function<dim> *exact_solution, const HDSolverControl &hd_solver_control,
+    const OutputModule<dim> &output_module)
     : initial_condition(initial_condition), boundary_values(boundary_values),
       exact_solution(exact_solution), hd_solver_control(hd_solver_control),
-      mpi_communicator(MPI_COMM_WORLD), mapping(),
+      output_module(output_module), mpi_communicator(MPI_COMM_WORLD), mapping(),
       fe(hd_solver_control.fe_degree), dof_handler(triangulation),
       quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
@@ -47,7 +48,7 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
       computing_timer(mpi_communicator, pcout, TimerOutput::never,
                       TimerOutput::wall_times) {
   AssertDimension(dim, 1);
-  pcout << "Setup conservation equation" << std::endl;
+  output_module.init();
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
@@ -667,14 +668,8 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
 
   data_out.build_patches();
 
-  const std::string filename = "../results/solution-" +
-                               Utilities::int_to_string(timestep_number, 3) +
-                               ".vtu";
-  DataOutBase::VtkFlags vtk_flags;
-  vtk_flags.compression_level =
-      DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
-  data_out.set_flags(vtk_flags);
-  std::ofstream output(filename);
+  data_out.set_flags(output_module.get_vtk_flags());
+  std::ofstream output(output_module.get_filename(timestep_number));
   data_out.write_vtu(output);
 }
 

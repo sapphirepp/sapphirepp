@@ -1,5 +1,7 @@
 #include "burgers-eq.h"
 #include "conservation-eq.h"
+#include "numerics.h"
+#include "output_module.h"
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/multithread_info.h>
@@ -237,6 +239,8 @@ private:
 int main(int argc, char *argv[]) {
   try {
     using namespace Sapphire::Hydro;
+    using namespace Sapphire::Utils;
+
     // dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
     // 1); //Only use MPI on one core
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
@@ -287,8 +291,10 @@ int main(int argc, char *argv[]) {
         /*end_time*/ 0.4, /*refinement_level*/ 7, /*max_iterations*/ 1000,
         /*tolerance*/ 1e-12);
 
+    OutputModule<dim> output_module("../results");
+
     BurgersEq<dim> burgers_eq(&initial_condition, &boundary_values,
-                              &exact_solution, solver_control);
+                              &exact_solution, solver_control, output_module);
     burgers_eq.run();
 
   } catch (std::exception &exc) {
