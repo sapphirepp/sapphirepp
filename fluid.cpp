@@ -1,3 +1,4 @@
+#include "burgers-eq.h"
 #include "conservation-eq.h"
 
 #include <deal.II/base/mpi.h>
