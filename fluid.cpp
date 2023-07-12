@@ -279,11 +279,13 @@ int main(int argc, char *argv[]) {
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
 
-    HDSolverControl solver_control(TimeSteppingScheme::ExplicitRK,
-                                   FluxType::LaxFriedrich,
-                                   SlopeLimiter::GerneralizedSlopeLimiter,
-                                   /*fe_degree*/ 1, /*time_step*/ 0.001,
-                                   /*end_time*/ 0.4, /*refinement_level*/ 9);
+    // TODO_BE: Fix problem in MUSCL limiter
+    HDSolverControl solver_control(
+        TimeSteppingScheme::ForwardEuler, FluxType::LaxFriedrich,
+        SlopeLimiter::GerneralizedSlopeLimiter,
+        /*fe_degree*/ 1, /*time_step*/ 0.001,
+        /*end_time*/ 0.4, /*refinement_level*/ 7, /*max_iterations*/ 1000,
+        /*tolerance*/ 1e-12);
 
     BurgersEq<dim> burgers_eq(&initial_condition, &boundary_values,
                               &exact_solution, solver_control);

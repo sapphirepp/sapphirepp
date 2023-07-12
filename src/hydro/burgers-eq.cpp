@@ -32,14 +32,14 @@
 #include <iostream>
 
 template <int dim>
-Sapphire::Hydro::BurgersEq<dim>::BurgersEq(Function<dim> *initial_condition,
-                                           Function<dim> *boundary_values,
-                                           Function<dim> *exact_solution,
-                                           const HDSolverControl solver_control)
+Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
+    Function<dim> *initial_condition, Function<dim> *boundary_values,
+    Function<dim> *exact_solution, const HDSolverControl &hd_solver_control)
     : initial_condition(initial_condition), boundary_values(boundary_values),
-      exact_solution(exact_solution), solver_control(solver_control),
-      mpi_communicator(MPI_COMM_WORLD), mapping(), fe(solver_control.fe_degree),
-      dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
+      exact_solution(exact_solution), hd_solver_control(hd_solver_control),
+      mpi_communicator(MPI_COMM_WORLD), mapping(),
+      fe(hd_solver_control.fe_degree), dof_handler(triangulation),
+      quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
       time(0.0), timestep_number(0),
       pcout(std::cout,
@@ -55,7 +55,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
   pcout << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(solver_control.refinement_level);
+  triangulation.refine_global(hd_solver_control.refinement_level);
   pcout << "  Number of active cells:       " << triangulation.n_active_cells()
         << std::endl;
 }
@@ -79,7 +79,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
   dg_vector.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
 
-  VectorTools::interpolate(dof_handler, *initial_condition, solution);
+  VectorTools::interpolate(mapping, dof_handler, *initial_condition, solution);
 
   constraints.clear();
   constraints.close();
@@ -253,7 +253,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
           flux_dot_n = compute_numerical_flux(
               flux_1, flux_2, fe_face_values.normal_vector(q_index),
               current_solution_values_1[q_index],
-              current_solution_values_2[q_index], solver_control);
+              current_solution_values_2[q_index], hd_solver_control);
 
           for (const unsigned int i : fe_face_values.dof_indices()) {
             copy_data_face.cell_vector_1(i) +=
@@ -302,7 +302,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
-  if (solver_control.limiter == SlopeLimiter::NoLimiter)
+  if (hd_solver_control.limiter == SlopeLimiter::NoLimiter)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
   pcout << "    Slope limiter" << std::endl;
@@ -381,7 +381,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     // neighbor_distance.resize(n_neighbors);
 
     // Check if the cell is meets the criteria for limiting
-    if (solver_control.limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
+    if (hd_solver_control.limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
       limit_cell = false;
 
       // TODO_BE: Check implementation and improve performance
@@ -463,7 +463,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
       Tensor<1, dim> limited_slope;
       compute_limited_slope(cell_average, cell_average_grad,
                             neighbor_cell_averages, neighbor_distance,
-                            n_neighbors, limited_slope, solver_control);
+                            n_neighbors, limited_slope, hd_solver_control);
 
       // To calculate the updated dof-values, we use a similar functionality
       // as VectroTools::interpolate
@@ -524,9 +524,9 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   current_solution = old_solution;
   Vector<double> tmp(dof_handler.n_dofs());
 
-  double time_step = solver_control.time_step;
+  double time_step = hd_solver_control.time_step;
 
-  switch (solver_control.scheme) {
+  switch (hd_solver_control.scheme) {
   case TimeSteppingScheme::ForwardEuler: {
     assemble_system();
     assemble_dg_vector();
@@ -547,7 +547,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   }
 
   case TimeSteppingScheme::ExplicitRK: {
-    // TODO_BE: Implement slope limiter for RK
     //  Butcher's array
     Vector<double> a({0.5, 0.5, 1.});
     Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
@@ -631,7 +630,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
   TimerOutput::Scope t(computing_timer, "Solve linear system");
   pcout << "    Solve linear system" << std::endl;
 
-  SolverControl solver_control(1000, 1e-12);
+  SolverControl solver_control(hd_solver_control.max_iterations,
+                               hd_solver_control.tolerance);
   // SolverCG<Vector<double>> solver(solver_control);
   SolverRichardson<Vector<double>> solver(solver_control);
 
@@ -655,10 +655,8 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
   exact_solution->set_time(time);
-  // TODO_BE: Also speciy mapping because why not...
-  VectorTools::interpolate(dof_handler, *exact_solution, exact_solution_values);
-  // VectorTools::interpolate(dof_handler, ExactSolution(a, time),
-  // exact_solution);
+  VectorTools::interpolate(mapping, dof_handler, *exact_solution,
+                           exact_solution_values);
 
   DataOut<dim> data_out;
 
@@ -721,7 +719,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
   }
 
   const unsigned int n_steps =
-      int(solver_control.end_time / solver_control.time_step) + 1;
+      int(hd_solver_control.end_time / hd_solver_control.time_step) + 1;
 
   timestep_number++;
   for (unsigned int i = 0; i < n_steps; ++i) {

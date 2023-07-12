@@ -225,7 +225,7 @@ public:
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
             Function<dim> *exact_solution,
-            const HDSolverControl solver_control);
+            const HDSolverControl &hd_solver_control);
   void run();
 
 private:
@@ -234,6 +234,8 @@ private:
   void assemble_mass_matrix();
   void assemble_dg_vector();
   void assemble_system();
+  void slope_limiter();
+  void perform_time_step();
   /**
    * @brief Solve the linear system
    *
@@ -242,8 +244,6 @@ private:
    * vector and \f$ \mathbf{b} \f$ is the right hand side vector.
    */
   void solve_linear_system();
-  void slope_limiter();
-  void perform_time_step();
   void output_results() const;
   void process_results();
 
@@ -254,7 +254,7 @@ private:
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;
 
-  const HDSolverControl solver_control;
+  const HDSolverControl hd_solver_control;
 
   MPI_Comm mpi_communicator;
 

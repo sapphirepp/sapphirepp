@@ -10,6 +10,9 @@
 #ifndef HYDROSOLVER_NUMERICS_H
 #define HYDROSOLVER_NUMERICS_H
 
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/solver_control.h>
+
 #include <deal.II/lac/vector.h>
 
 namespace Sapphire {
@@ -33,17 +36,24 @@ public:
       const FluxType flux_type = FluxType::Central,
       const SlopeLimiter limiter = SlopeLimiter::NoLimiter,
       const unsigned int fe_degree = 1, const double time_step = 0.1,
-      const double end_time = 1.0, const unsigned int refinement_level = 1)
+      const double end_time = 1.0, const unsigned int refinement_level = 1,
+      const unsigned int max_iterations = 1000, const double tolerance = 1e-12)
       : scheme(scheme), flux_type(flux_type), limiter(limiter),
         fe_degree(fe_degree), time_step(time_step), end_time(end_time),
-        refinement_level(refinement_level){};
+        refinement_level(refinement_level), max_iterations(max_iterations),
+        tolerance(tolerance){};
 
   // Copy constructor
-  HDSolverControl(const HDSolverControl &solver_control)
-      : scheme(solver_control.scheme), flux_type(solver_control.flux_type),
-        limiter(solver_control.limiter), fe_degree(solver_control.fe_degree),
-        time_step(solver_control.time_step), end_time(solver_control.end_time),
-        refinement_level(solver_control.refinement_level){};
+  HDSolverControl(const HDSolverControl &hd_solver_control)
+      : scheme(hd_solver_control.scheme),
+        flux_type(hd_solver_control.flux_type),
+        limiter(hd_solver_control.limiter),
+        fe_degree(hd_solver_control.fe_degree),
+        time_step(hd_solver_control.time_step),
+        end_time(hd_solver_control.end_time),
+        refinement_level(hd_solver_control.refinement_level),
+        max_iterations(hd_solver_control.max_iterations),
+        tolerance(hd_solver_control.tolerance){};
 
   const TimeSteppingScheme scheme;
   const FluxType flux_type;
@@ -53,6 +63,9 @@ public:
   const double time_step;
   const double end_time;
   const unsigned int refinement_level;
+
+  const unsigned int max_iterations;
+  const double tolerance;
 };
 
 double minmod(const std::vector<double> &values);
