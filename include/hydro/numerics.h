@@ -4,7 +4,6 @@
  * @brief Implement numerical functions to solve the hydrodynamics equations
  * @version 0.1
  * @date 2023-07-12
- *
  */
 
 #ifndef HYDROSOLVER_NUMERICS_H
@@ -44,16 +43,7 @@ public:
         tolerance(tolerance){};
 
   // Copy constructor
-  HDSolverControl(const HDSolverControl &hd_solver_control)
-      : scheme(hd_solver_control.scheme),
-        flux_type(hd_solver_control.flux_type),
-        limiter(hd_solver_control.limiter),
-        fe_degree(hd_solver_control.fe_degree),
-        time_step(hd_solver_control.time_step),
-        end_time(hd_solver_control.end_time),
-        refinement_level(hd_solver_control.refinement_level),
-        max_iterations(hd_solver_control.max_iterations),
-        tolerance(hd_solver_control.tolerance){};
+  HDSolverControl(const HDSolverControl &hd_solver_control) = default;
 
   const TimeSteppingScheme scheme;
   const FluxType flux_type;

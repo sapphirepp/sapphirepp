@@ -44,26 +44,28 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
       face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
       time(0.0), timestep_number(0),
       pcout(std::cout,
-            (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
+            (Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
+                (DEBUG_LEVEL >= 0)),
       computing_timer(mpi_communicator, pcout, TimerOutput::never,
                       TimerOutput::wall_times) {
   AssertDimension(dim, 1);
+  DEBUG_PRINT(pcout, 0, "Create BurgersEq");
   output_module.init();
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {
   TimerOutput::Scope t(computing_timer, "Make grid");
-  pcout << "Make grid" << std::endl;
+  DEBUG_PRINT(pcout, 1, "Make grid");
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
   triangulation.refine_global(hd_solver_control.refinement_level);
-  pcout << "  Number of active cells:       " << triangulation.n_active_cells()
-        << std::endl;
+  DEBUG_PRINT(pcout, 3,
+              "Number of active cells:\t" << triangulation.n_active_cells());
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
   TimerOutput::Scope t(computing_timer, "Setup system");
-  pcout << "Setup system" << std::endl;
+  DEBUG_PRINT(pcout, 1, "Setup system");
 
   dof_handler.distribute_dofs(fe);
 
@@ -91,7 +93,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
 template <int dim>
 void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
   TimerOutput::Scope t(computing_timer, "Assemble mass matrix");
-  pcout << "Assemble mass matrix" << std::endl;
+  DEBUG_PRINT(pcout, 1, "Assemble mass matrix");
 
   mass_matrix = 0;
 
@@ -134,7 +136,7 @@ void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
   TimerOutput::Scope t(computing_timer, "Assemble DG vector");
-  pcout << "    Assemble DG vector" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Assemble DG vector");
 
   dg_vector = 0;
   boundary_values->set_time(current_time);
@@ -294,7 +296,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
   TimerOutput::Scope t(computing_timer, "Assemble system");
-  pcout << "    Assemble system" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Assemble system");
 
   system_matrix = 0;
   system_rhs = 0;
@@ -306,7 +308,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
   if (hd_solver_control.limiter == SlopeLimiter::NoLimiter)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
-  pcout << "    Slope limiter" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Slope limiter");
 
   Vector<double> limited_solution(dof_handler.n_dofs());
 
@@ -519,7 +521,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   TimerOutput::Scope t(computing_timer, "Time step");
-  pcout << "  Time step" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Time step");
 
   old_solution = solution;
   current_solution = old_solution;
@@ -629,7 +631,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
   TimerOutput::Scope t(computing_timer, "Solve linear system");
-  pcout << "    Solve linear system" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Solve linear system");
 
   SolverControl solver_control(hd_solver_control.max_iterations,
                                hd_solver_control.tolerance);
@@ -646,13 +648,14 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
 
   // constraints.distribute(solution);
 
-  pcout << "      Solver converged in " << solver_control.last_step()
-        << " iterations." << std::endl;
+  DEBUG_PRINT(pcout, 3,
+              "Solver converged in " << solver_control.last_step()
+                                     << " iterations.");
 }
 
 template <int dim>
 void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
-  pcout << "  Output results" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Output results");
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
   exact_solution->set_time(time);
@@ -675,7 +678,7 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {
   TimerOutput::Scope t(computing_timer, "Process results");
-  pcout << "  Process results" << std::endl;
+  DEBUG_PRINT(pcout, 2, "Process results");
 
   Vector<float> difference_per_cell(triangulation.n_active_cells());
   exact_solution->set_time(time);
@@ -689,21 +692,21 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {
                                     q_iterated, VectorTools::L2_norm);
   float L2_error = VectorTools::compute_global_error(
       triangulation, difference_per_cell, VectorTools::L2_norm);
-  pcout << "    L2 error:\t\t" << L2_error << std::endl;
+  DEBUG_PRINT(pcout, 3, "L2 error:\t\t" << L2_error);
 
   VectorTools::integrate_difference(mapping, dof_handler, solution,
                                     *exact_solution, difference_per_cell,
                                     q_iterated, VectorTools::Linfty_norm);
   float Linf_error = VectorTools::compute_global_error(
       triangulation, difference_per_cell, VectorTools::Linfty_norm);
-  pcout << "    L-infinity error:\t" << Linf_error << std::endl;
+  DEBUG_PRINT(pcout, 3, "L-infinity error:\t" << Linf_error);
 
   error_with_time.grow_or_shrink(error_with_time.size() + 1);
   error_with_time[error_with_time.size() - 1] = L2_error;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
-  pcout << "Run conservation equation" << std::endl;
+  DEBUG_PRINT(pcout, 0, "Run BurgersEq");
   make_grid();
   setup_system();
   assemble_mass_matrix();
@@ -714,12 +717,12 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
   }
 
   const unsigned int n_steps =
-      int(hd_solver_control.end_time / hd_solver_control.time_step) + 1;
+      int(hd_solver_control.end_time / hd_solver_control.time_step);
 
-  timestep_number++;
   for (unsigned int i = 0; i < n_steps; ++i) {
-    pcout << "Step " << timestep_number << "/" << n_steps << " (time = " << time
-          << ")" << std::endl;
+    DEBUG_PRINT(pcout, 1,
+                "Step " << timestep_number + 1 << "/" << n_steps << " (time = "
+                        << time + hd_solver_control.time_step << ")");
     perform_time_step();
     {
       TimerOutput::Scope t(computing_timer, "Output results");
@@ -731,7 +734,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
   computing_timer.print_summary();
   computing_timer.reset();
 
-  if (pcout.is_active()) {
+  if (pcout.is_active() && DEBUG_LEVEL >= 3) {
     pcout << "   L2 error with time:" << std::endl;
     error_with_time.print(pcout.get_stream());
   }

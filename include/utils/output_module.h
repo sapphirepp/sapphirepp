@@ -22,6 +22,18 @@
 #include <iostream>
 #include <string>
 
+#include <iostream>
+
+#define DEBUG_LEVEL 1
+
+#define DEBUG_PRINT(ostream, level, message)                                   \
+  if (level <= DEBUG_LEVEL) {                                                  \
+    for (int i = 0; i < level; ++i) {                                          \
+      ostream << "  ";                                                         \
+    }                                                                          \
+    ostream << message << std::endl;                                           \
+  }
+
 namespace Sapphire {
 namespace Utils {
 using namespace dealii;

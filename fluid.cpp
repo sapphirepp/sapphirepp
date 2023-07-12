@@ -246,10 +246,10 @@ int main(int argc, char *argv[]) {
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
         argc, argv); // Use TBB multithreading
 
-    std::cout << "n_cores = " << dealii::MultithreadInfo::n_cores()
-              << std::endl;
-    std::cout << "n_threads = " << dealii::MultithreadInfo::n_threads()
-              << std::endl;
+    DEBUG_PRINT(std::cout, 3,
+                "n_cores = " << dealii::MultithreadInfo::n_cores());
+    DEBUG_PRINT(std::cout, 3,
+                "n_threads = " << dealii::MultithreadInfo::n_threads());
 
     // const unsigned int dim = 1;
     // const unsigned int dim = 2;
