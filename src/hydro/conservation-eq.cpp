@@ -1082,6 +1082,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     FEValues<dim> &fe_values = scratch_data.fe_values;
     FEValues<dim> &fe_values_neighbor = scratch_data.fe_values_neighbor;
     FEValues<dim> &fe_values_interpolate = scratch_data.fe_values_interpolate;
+    FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
 
     fe_values.reinit(cell);
     fe_values_interpolate.reinit(cell);
@@ -1115,7 +1116,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     // Calculate the averages of the neighbour cells
     std::vector<double> neighbor_cell_averages(cell->n_faces());
     std::vector<Tensor<1, dim>> neighbor_distance(cell->n_faces());
-    std::vector<Point<dim>> face_centers(cell->n_faces());
     unsigned int n_neighbors = 0;
     for (const auto face_no : cell->face_indices()) {
       if (!cell->at_boundary(face_no) && cell->neighbor(face_no)->is_active()) {
@@ -1124,7 +1124,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
         neighbor->get_dof_indices(local_dof_indices_neighbor);
         fe_values_neighbor.reinit(neighbor);
 
-        face_centers[n_neighbors] = cell->face(face_no)->center();
         neighbor_distance[n_neighbors] = neighbor->center() - cell->center();
 
         neighbor_cell_averages[n_neighbors] = 0;
@@ -1143,49 +1142,81 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     }
     // neighbor_cell_averages.resize(n_neighbors);
     // neighbor_distance.resize(n_neighbors);
-    // face_centers.resize(n_neighbors);
 
     // Check if the cell is meets the criteria for limiting
     if (limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
       limit_cell = false;
 
-      // TODO_BE: Check implementation - something goes wrong here :(
+      // TODO_BE: Check implementation and improve performance
       double face_flux = 0;
       double face_value = 0;
       std::vector<double> tmp_minmod(n_neighbors + 1);
 
-      // TODO_BE: Check if it is possible to create a quadrature for this
-      //          independent of the cell
-      Quadrature<dim> face_center_quadrature(face_centers);
-      FEValues fe_vales_face_center(fe_values.get_fe(), face_center_quadrature,
-                                    update_values);
-      fe_vales_face_center.reinit(cell);
-      std::vector<double> face_center_values(n_neighbors);
-      fe_vales_face_center.get_function_values(solution, face_center_values);
+      // // TODO_BE: Check if it is possible to create a quadrature for this
+      // //          independent of the cell
+      // Quadrature<dim> face_center_quadrature(face_centers);
+      // FEValues fe_vales_face_center(fe_values.get_fe(),
+      // face_center_quadrature,
+      //                               update_values);
+      // fe_vales_face_center.reinit(cell);
+      // std::vector<double> face_center_values(n_neighbors);
+      // fe_vales_face_center.get_function_values(solution, face_center_values);
 
-      for (unsigned int i_neighbor = 0; i_neighbor < n_neighbors;
-           i_neighbor++) {
-        // Tensor<1, dim> direction =
-        //     (face_centers[i_neighbor] - cell_center) /
-        //     (face_centers[i_neighbor] - cell_center).norm();
-        Tensor<1, dim> direction = neighbor_distance[i_neighbor] /
-                                   neighbor_distance[i_neighbor].norm();
+      unsigned int i_neighbor = 0;
+      for (const auto face_no : cell->face_indices()) {
+        if (!cell->at_boundary(face_no) &&
+            cell->neighbor(face_no)->is_active()) {
+          // auto &face_center = cell->face(face_no)->center();
+          // Tensor<1, dim> direction =
+          //     (face_centers[i_neighbor] - cell_center) /
+          //     (face_centers[i_neighbor] - cell_center).norm();
+          Tensor<1, dim> direction = neighbor_distance[i_neighbor] /
+                                     neighbor_distance[i_neighbor].norm();
 
-        face_value = face_center_values[i_neighbor];
+          // face_value = face_center_values[i_neighbor];
 
-        tmp_minmod[0] = (face_value - cell_average);
-        for (unsigned int i2 = 0; i2 < n_neighbors; i2++) {
-          tmp_minmod[i2 + 1] = (neighbor_cell_averages[i2] - cell_average) *
-                               (neighbor_distance[i2] * direction) /
-                               neighbor_distance[i2].norm();
-        }
+          // Calculate face value using integration
+          fe_face_values.reinit(cell, face_no);
+
+          // // Average via get_function_values
+          // std::vector<double>
+          // face_solution(fe_face_values.n_quadrature_points);
+          // fe_face_values.get_function_values(solution, face_solution);
+          // face_value =
+          //     std::accumulate(face_solution.begin(), face_solution.end(),
+          //     0.0) / face_solution.size();
+
+          // Average via integration
+          double weight = 0;
+          face_value = 0;
+          for (const unsigned int q_index :
+               fe_face_values.quadrature_point_indices()) {
+            for (const unsigned int i : fe_face_values.dof_indices()) {
+              face_value += solution[local_dof_indices[i]] *
+                            fe_face_values.shape_value(i, q_index) *
+                            fe_face_values.JxW(q_index);
+            }
+            weight += fe_face_values.JxW(q_index);
+          }
+          face_value /= weight;
+
+          tmp_minmod[0] = (face_value - cell_average);
+          for (unsigned int i2 = 0; i2 < n_neighbors; i2++) {
+            tmp_minmod[i2 + 1] = (neighbor_cell_averages[i2] - cell_average) *
+                                 (neighbor_distance[i2] * direction) /
+                                 neighbor_distance[i2].norm();
+          }
         face_flux = cell_average + minmod(tmp_minmod);
 
         if (std::abs(face_value - face_flux) > 1e-10) {
           limit_cell = true;
           break;
         }
+        i_neighbor++;
+        }
       }
+      if (!limit_cell)
+        AssertDimension(i_neighbor, n_neighbors);
     }
 
     mark_for_limiter[cell->active_cell_index()] = limit_cell ? 1.0 : 0.0;
@@ -1236,7 +1267,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
   Quadrature<dim> support_quadrature(fe.get_generalized_support_points());
 
   ScratchDataSlopeLimiter<dim> scratch_data(mapping, fe, quadrature_formula,
-                                            support_quadrature);
+                                            support_quadrature,
+                                            face_quadrature_formula);
   CopyDataSlopeLimiter copy_data;
 
   // TODO_BE: Till end() or end_active()?

@@ -155,6 +155,7 @@ public:
       const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
       const Quadrature<dim> &quadrature,
       const Quadrature<dim> &support_quadrature,
+      const Quadrature<dim - 1> &face_quadrature,
       const UpdateFlags update_flags = update_values | update_gradients |
                                        update_quadrature_points |
                                        update_JxW_values,
@@ -163,11 +164,14 @@ public:
                                                 update_JxW_values,
       const UpdateFlags interpolate_update_flags = update_quadrature_points |
                                                    update_jacobians |
-                                                   update_inverse_jacobians)
+                                                   update_inverse_jacobians,
+      const UpdateFlags face_update_flags = update_quadrature_points |
+                                            update_values | update_JxW_values)
       : fe_values(mapping, fe, quadrature, update_flags),
         fe_values_neighbor(mapping, fe, quadrature, neighbor_update_flags),
         fe_values_interpolate(mapping, fe, support_quadrature,
-                              interpolate_update_flags) {}
+                              interpolate_update_flags),
+        fe_face_values(mapping, fe, face_quadrature, face_update_flags) {}
 
   // Copy constructor
   ScratchDataSlopeLimiter(const ScratchDataSlopeLimiter<dim> &scratch_data)
@@ -183,11 +187,16 @@ public:
             scratch_data.fe_values_interpolate.get_mapping(),
             scratch_data.fe_values_interpolate.get_fe(),
             scratch_data.fe_values_interpolate.get_quadrature(),
-            scratch_data.fe_values_interpolate.get_update_flags()) {}
+            scratch_data.fe_values_interpolate.get_update_flags()),
+        fe_face_values(scratch_data.fe_face_values.get_mapping(),
+                       scratch_data.fe_face_values.get_fe(),
+                       scratch_data.fe_face_values.get_quadrature(),
+                       scratch_data.fe_face_values.get_update_flags()) {}
 
   FEValues<dim> fe_values;
   FEValues<dim> fe_values_neighbor;
   FEValues<dim> fe_values_interpolate;
+  FEFaceValues<dim> fe_face_values;
 };
 
 struct CopyDataSlopeLimiter {
