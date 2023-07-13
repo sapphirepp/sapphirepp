@@ -50,7 +50,6 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
                       TimerOutput::wall_times) {
   AssertDimension(dim, 1);
   DEBUG_PRINT(pcout, 0, "Create BurgersEq");
-  output_module.init();
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::make_grid() {

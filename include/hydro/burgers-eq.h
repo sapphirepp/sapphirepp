@@ -227,7 +227,7 @@ public:
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
             Function<dim> *exact_solution,
-            const HDSolverControl &hd_solver_control = HDSolverControl(),
+            const HDSolverControl &hd_solver_control,
             const OutputModule<dim> &output_module = OutputModule<dim>());
   void run();
 

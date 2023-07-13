@@ -39,9 +39,9 @@ template <int dim>
 double Sapphire::Hydro::compute_numerical_flux(
     const Tensor<1, dim> &flux_1, const Tensor<1, dim> &flux_2,
     const Tensor<1, dim> &n, const double &value_1, const double &value_2,
-    const HDSolverControl &solver_control) {
+    const HDSolverControl &hd_solver_control) {
   double numerical_flux = 0;
-  switch (solver_control.flux_type) {
+  switch (hd_solver_control.flux_type) {
   case FluxType::Central: {
     numerical_flux += 0.5 * (flux_1 + flux_2) * n;
     break;
@@ -74,15 +74,15 @@ double Sapphire::Hydro::compute_numerical_flux(
 template double Sapphire::Hydro::compute_numerical_flux<1>(
     const Tensor<1, 1> &flux_1, const Tensor<1, 1> &flux_2,
     const Tensor<1, 1> &n, const double &value_1, const double &value_2,
-    const HDSolverControl &solver_control);
+    const HDSolverControl &hd_solver_control);
 template double Sapphire::Hydro::compute_numerical_flux<2>(
     const Tensor<1, 2> &flux_1, const Tensor<1, 2> &flux_2,
     const Tensor<1, 2> &n, const double &value_1, const double &value_2,
-    const HDSolverControl &solver_control);
+    const HDSolverControl &hd_solver_control);
 template double Sapphire::Hydro::compute_numerical_flux<3>(
     const Tensor<1, 3> &flux_1, const Tensor<1, 3> &flux_2,
     const Tensor<1, 3> &n, const double &value_1, const double &value_2,
-    const HDSolverControl &solver_control);
+    const HDSolverControl &hd_solver_control);
 
 template <int dim>
 void Sapphire::Hydro::compute_limited_slope(
@@ -90,8 +90,8 @@ void Sapphire::Hydro::compute_limited_slope(
     const std::vector<double> &neighbor_cell_averages,
     const std::vector<Tensor<1, dim>> &neighbor_distance,
     const unsigned int n_neighbors, Tensor<1, dim> &limited_slope,
-    const HDSolverControl &solver_control) {
-  switch (solver_control.limiter) {
+    const HDSolverControl &hd_solver_control) {
+  switch (hd_solver_control.limiter) {
   case SlopeLimiter::NoLimiter: {
     Assert(false, ExcMessage("Slope limiter is set to NoLimiter, so this "
                              "function should not be called"));
@@ -143,16 +143,16 @@ template void Sapphire::Hydro::compute_limited_slope<1>(
     const std::vector<double> &neighbor_cell_averages,
     const std::vector<Tensor<1, 1>> &neighbor_distance,
     const unsigned int n_neighbors, Tensor<1, 1> &limited_slope,
-    const HDSolverControl &solver_control);
+    const HDSolverControl &hd_solver_control);
 template void Sapphire::Hydro::compute_limited_slope<2>(
     const double &cell_average, const Tensor<1, 2> cell_average_grad,
     const std::vector<double> &neighbor_cell_averages,
     const std::vector<Tensor<1, 2>> &neighbor_distance,
     const unsigned int n_neighbors, Tensor<1, 2> &limited_slope,
-    const HDSolverControl &solver_control);
+    const HDSolverControl &hd_solver_control);
 template void Sapphire::Hydro::compute_limited_slope<3>(
     const double &cell_average, const Tensor<1, 3> cell_average_grad,
     const std::vector<double> &neighbor_cell_averages,
     const std::vector<Tensor<1, 3>> &neighbor_distance,
     const unsigned int n_neighbors, Tensor<1, 3> &limited_slope,
-    const HDSolverControl &solver_control);
+    const HDSolverControl &hd_solver_control);

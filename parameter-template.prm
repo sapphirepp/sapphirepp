@@ -1,29 +1,63 @@
-# Rename the file to vfp-equation.prm and
-# set the parameters as needed
+# Listing of Parameters
+# ---------------------
+subsection Hydrodynamics
+  subsection Finite element
+    # Polynomial degree of finite element
+    set Polynomial degree = 1
+  end
 
-subsection Mesh
-  set Point 1 = -5., 0., -5.
-  set Point 2 = 5., 5., 5.
-  set Number of cells = 16, 16, 16
-  set Periodicity = false, false, false
+  subsection Linear solver
+    # Maximum number of iterations
+    set Max iterations = 1000
+
+    # Tolerance of solver
+    set Tolerance      = 1e-12
+  end
+
+  subsection Mesh
+    # Refinement level of mesh
+    set Refinement level = 1
+  end
+
+  subsection Numerical flux
+    # Numerical flux
+    set Numerical flux = Lax-Friedrichs
+  end
+
+  subsection Solpe limiter
+    # Slope limiter
+    set Solpe limiter = No limiter
+  end
+
+  subsection Time stepping
+    # End time of simulation
+    set End time  = 1.0
+
+    # Time stepping scheme
+    set Scheme    = Forward Euler
+
+    # Time step size
+    set Time step = 0.1
+  end
+
 end
 
-subsection Time stepping
-  set Method = Crank-Nicolson
-  set Time step size = 0.1
-  set Final time = 20
-end
-
-subsection Expansion
-  set Expansion order = 1
-end
-
-subsection Finite element
-  set Polynomial degree = 1
-end
 
 subsection Output
- set Results folder = ./results
- set Simulation identifier = 001
- set Format = vtu
+  # The format in which the simulation output will be stored.
+  set Format                = vtu
+
+  # The frequence at which output files will be written. (In units of time
+  # steps)
+  set Output frequency      = 1
+
+  # Path to the folder in which the simulation results will be stored. Without
+  # a trailing slash.
+  set Results folder        = ./results
+
+  # Name of the simulation run. It will be used to create a subdirectory in
+  # the results folder.
+  set Simulation identifier = 001
 end
+
+

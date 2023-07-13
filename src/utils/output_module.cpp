@@ -1,10 +1,15 @@
 #include "output_module.h"
 
-template <int dim> void Sapphire::Utils::OutputModule<dim>::init() const {
+template <int dim>
+void Sapphire::Utils::OutputModule<dim>::init(
+    const ParameterHandler &prm) const {
+  // TODO_BE: change
   // create output directory
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) {
     std::filesystem::create_directory(output_path);
   }
+
+  prm.print_parameters(output_path / "log.prm", ParameterHandler::Short);
 }
 
 template <int dim>

@@ -5,6 +5,7 @@
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/multithread_info.h>
+#include <deal.II/base/parameter_handler.h>
 
 #include <iostream>
 #include <mpi.h>
@@ -241,6 +242,10 @@ int main(int argc, char *argv[]) {
     using namespace Sapphire::Hydro;
     using namespace Sapphire::Utils;
 
+    DEBUG_PRINT(std::cout, 3, argc);
+    for (int i = 3; i < argc; ++i)
+      DEBUG_PRINT(std::cout, 3, argv[i]);
+
     // dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
     // 1); //Only use MPI on one core
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
@@ -283,18 +288,28 @@ int main(int argc, char *argv[]) {
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
 
-    // TODO_BE: Fix problem in MUSCL limiter
-    HDSolverControl solver_control(
-        TimeSteppingScheme::ForwardEuler, FluxType::LaxFriedrich,
-        SlopeLimiter::GerneralizedSlopeLimiter,
-        /*fe_degree*/ 1, /*time_step*/ 0.001,
-        /*end_time*/ 0.4, /*refinement_level*/ 7, /*max_iterations*/ 1000,
-        /*tolerance*/ 1e-12);
+    ParameterHandler prm;
+    HDSolverControl::declare_parameters(prm);
+    OutputModule<dim>::declare_parameters(prm);
+    OutputModule<dim>::save_template_parameter(prm,
+                                               "../parameter-template.prm");
 
-    OutputModule<dim> output_module("../results");
+    std::string parameter_filename = "../parameter.prm";
+    if (argc > 1)
+      parameter_filename = argv[1];
+    DEBUG_PRINT(std::cout, 0, parameter_filename);
+    prm.parse_input(parameter_filename);
+    if (DEBUG_LEVEL >= 2) {
+      prm.print_parameters(std::cout, ParameterHandler::PRM);
+    }
+
+    // TODO_BE: Fix problem in MUSCL limiter
+    HDSolverControl hd_solver_control = HDSolverControl::parse_parameters(prm);
+    OutputModule<dim> output_module = OutputModule<dim>::parse_parameters(prm);
 
     BurgersEq<dim> burgers_eq(&initial_condition, &boundary_values,
-                              &exact_solution, solver_control, output_module);
+                              &exact_solution, hd_solver_control,
+                              output_module);
     burgers_eq.run();
 
   } catch (std::exception &exc) {
