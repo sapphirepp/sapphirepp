@@ -66,7 +66,7 @@ public:
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
             Function<dim> *exact_solution, ParameterHandler &prm,
-            const OutputModule<dim> &output_module = OutputModule<dim>());
+            const OutputModule<dim> &output_module, const double beta = 1.0);
 
   static void declare_parameters(ParameterHandler &prm) {
     HDSolverControl::declare_parameters(prm);
@@ -95,15 +95,14 @@ private:
   void output_results() const;
   void process_results();
 
-  // const double beta = 0.5; //< factor in front of the flux
-  const double beta = 1; //< factor in front of the flux
-
   const SmartPointer<Function<dim>> initial_condition;
   const SmartPointer<Function<dim>> boundary_values;
   const SmartPointer<Function<dim>> exact_solution;
 
-  const HDSolverControl hd_solver_control;
+  HDSolverControl hd_solver_control;
   const OutputModule<dim> output_module;
+
+  const double beta; //< factor in front of the flux
 
   MPI_Comm mpi_communicator;
 
@@ -136,7 +135,7 @@ private:
   Vector<double> system_rhs;
 
   std::vector<float> error_with_time;
-  Vector<float> mark_for_limiter;
+  Vector<float> mark_cell_for_limiter;
 
   double time;
   double current_time;

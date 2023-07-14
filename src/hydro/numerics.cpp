@@ -48,16 +48,16 @@ double Sapphire::Hydro::compute_numerical_flux(
   }
 
   case FluxType::Upwind: {
-    const double eta = 1.0;
     numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-    numerical_flux += 0.5 * eta * (std::abs(flux_1 * n) - std::abs(flux_2 * n));
+    numerical_flux += 0.5 * hd_solver_control.Upwind_eta *
+                      (std::abs(flux_1 * n) - std::abs(flux_2 * n));
     break;
   }
 
-  case FluxType::LaxFriedrich: {
-    const double C = 3; // TODO_BE: Calculate C
+  case FluxType::LaxFriedrichs: {
     numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-    numerical_flux += 0.5 * C * (value_1 - value_2);
+    numerical_flux +=
+        0.5 * hd_solver_control.LaxFriedrichs_C * (value_1 - value_2);
     break;
   }
 
@@ -113,11 +113,6 @@ void Sapphire::Hydro::compute_limited_slope(
     minmod(slopes, n_neighbors + 1, limited_slope);
     break;
   }
-
-  case SlopeLimiter::GerneralizedSlopeLimiter:
-    break;
-    // Use MUSCL limiter
-    // TODO_BE: Make generalized limiting independent of limiter
 
   case SlopeLimiter::MUSCL: {
     std::vector<Tensor<1, dim>> slopes(n_neighbors + 1);

@@ -24,9 +24,12 @@ subsection Hydrodynamics
     set Numerical flux = Lax-Friedrichs
   end
 
-  subsection Solpe limiter
+  subsection Slope limiter
     # Slope limiter
-    set Solpe limiter = No limiter
+    set Slope limiter           = No limiter
+
+    # Criterion on which cells the slope limiter should apply
+    set Slope limiter criterion = Never
   end
 
   subsection Time stepping

@@ -284,6 +284,7 @@ int main(int argc, char *argv[]) {
     // conservation_eq.run();
 
     const unsigned int dim = 1;
+    const double beta = 1.0;
     PhysicalSetup::ExactSolutionBurgerEq<dim> exact_solution;
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
@@ -304,9 +305,8 @@ int main(int argc, char *argv[]) {
 
     OutputModule<dim> output_module(prm);
 
-    // TODO_BE: Fix problem in MUSCL limiter
     BurgersEq<dim> burgers_eq(&initial_condition, &boundary_values,
-                              &exact_solution, prm, output_module);
+                              &exact_solution, prm, output_module, beta);
     burgers_eq.run();
 
   } catch (std::exception &exc) {

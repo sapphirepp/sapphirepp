@@ -179,10 +179,11 @@ template <int dim>
 Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
     Function<dim> *initial_condition, Function<dim> *boundary_values,
     Function<dim> *exact_solution, ParameterHandler &prm,
-    const OutputModule<dim> &output_module)
+    const OutputModule<dim> &output_module, const double beta)
     : initial_condition(initial_condition), boundary_values(boundary_values),
       exact_solution(exact_solution), hd_solver_control(prm),
-      output_module(output_module), mpi_communicator(MPI_COMM_WORLD), mapping(),
+      output_module(output_module), beta(beta),
+      mpi_communicator(MPI_COMM_WORLD), mapping(),
       fe(hd_solver_control.fe_degree), dof_handler(triangulation),
       quadrature_formula(fe.tensor_degree() + 1),
       face_quadrature_formula(fe.tensor_degree() + 1),
@@ -229,7 +230,10 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::setup_system() {
   constraints.clear();
   constraints.close();
 
-  mark_for_limiter.reinit(triangulation.n_active_cells());
+  mark_cell_for_limiter.reinit(triangulation.n_active_cells());
+  if (hd_solver_control.limiter_criterion == SlopeLimiterCriterion::Always) {
+    mark_cell_for_limiter = 1.0;
+  }
 }
 
 template <int dim>
@@ -413,7 +417,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
-  if (hd_solver_control.limiter == SlopeLimiter::NoLimiter)
+  if (hd_solver_control.limiter_criterion == SlopeLimiterCriterion::Never)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
   DEBUG_PRINT(pcout, 2, "Slope limiter");
@@ -443,7 +447,18 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     std::vector<types::global_dof_index> &local_dof_indices_neighbor =
         copy_data.local_dof_indices_neighbor;
     const Point<dim> cell_center = cell->center();
+
     bool limit_cell = true;
+    if (hd_solver_control.limiter_criterion == SlopeLimiterCriterion::Never) {
+      limit_cell = false;
+    }
+    if (!limit_cell) {
+      mark_cell_for_limiter[cell->active_cell_index()] = 0.0;
+      for (const unsigned int i : fe_values.dof_indices()) {
+        copy_data.cell_vector[i] = solution[local_dof_indices[i]];
+      }
+      return;
+    }
 
     // Calculate the average of current cell
     double cell_average = 0;
@@ -489,7 +504,8 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     }
 
     // Check if the cell is meets the criteria for limiting
-    if (hd_solver_control.limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
+    if (hd_solver_control.limiter_criterion ==
+        SlopeLimiterCriterion::GerneralizedSlopeLimiter) {
       limit_cell = false;
 
       double face_flux = 0;
@@ -538,7 +554,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
         AssertDimension(i_neighbor, n_neighbors);
     }
 
-    mark_for_limiter[cell->active_cell_index()] = limit_cell ? 1.0 : 0.0;
+    mark_cell_for_limiter[cell->active_cell_index()] = limit_cell ? 1.0 : 0.0;
 
     if (limit_cell) {
       // Calculate the limited slope
@@ -746,7 +762,7 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution, "Solution");
   data_out.add_data_vector(exact_solution_values, "ExactSolution");
-  data_out.add_data_vector(mark_for_limiter, "LimiterMark");
+  data_out.add_data_vector(mark_cell_for_limiter, "LimitCell");
 
   data_out.build_patches(fe.tensor_degree());
 
@@ -794,6 +810,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::init() {
   setup_system();
   assemble_mass_matrix();
   // assemble_system();
+  hd_solver_control.LaxFriedrichs_C = 3.0; // TODO_BE: Calculate C
   {
     TimerOutput::Scope t(computing_timer, "Output results");
     output_results();
