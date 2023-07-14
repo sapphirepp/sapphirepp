@@ -32,16 +32,9 @@ enum class SlopeLimiter {
 
 class HDSolverControl {
 public:
-  HDSolverControl(const TimeSteppingScheme scheme, const FluxType flux_type,
-                  const SlopeLimiter limiter, const unsigned int fe_degree,
-                  const double time_step, const double end_time,
-                  const unsigned int refinement_level,
-                  const unsigned int max_iterations, const double tolerance)
-      : scheme(scheme), flux_type(flux_type), limiter(limiter),
-        fe_degree(fe_degree), time_step(time_step), end_time(end_time),
-        refinement_level(refinement_level), max_iterations(max_iterations),
-        tolerance(tolerance){};
   HDSolverControl(const HDSolverControl &hd_solver_control) = default;
+  HDSolverControl(ParameterHandler &prm)
+      : HDSolverControl(HDSolverControl::parse_parameters(prm)){};
   ~HDSolverControl() = default;
 
   static void declare_parameters(ParameterHandler &prm) {
@@ -174,6 +167,17 @@ public:
 
   const unsigned int max_iterations;
   const double tolerance;
+
+private:
+  HDSolverControl(const TimeSteppingScheme scheme, const FluxType flux_type,
+                  const SlopeLimiter limiter, const unsigned int fe_degree,
+                  const double time_step, const double end_time,
+                  const unsigned int refinement_level,
+                  const unsigned int max_iterations, const double tolerance)
+      : scheme(scheme), flux_type(flux_type), limiter(limiter),
+        fe_degree(fe_degree), time_step(time_step), end_time(end_time),
+        refinement_level(refinement_level), max_iterations(max_iterations),
+        tolerance(tolerance){};
 };
 
 double minmod(const std::vector<double> &values);

@@ -19,6 +19,7 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/smartpointer.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
@@ -29,6 +30,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
+#include <deal.II/numerics/data_out.h>
 
 #include <mpi.h>
 
@@ -36,169 +38,6 @@ namespace Sapphire {
 namespace Hydro {
 using namespace dealii;
 using namespace Sapphire::Utils;
-
-// TODO_BE: Optimize memory management and make naming less ambiguous
-template <int dim> class ScratchDataDG {
-public:
-  // Constructor
-  ScratchDataDG(const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
-                const Quadrature<dim> &quadrature,
-                const Quadrature<dim - 1> &face_quadrature,
-                const UpdateFlags update_flags = update_values |
-                                                 update_gradients |
-                                                 update_quadrature_points |
-                                                 update_JxW_values,
-                const UpdateFlags face_update_flags = update_values |
-                                                      update_quadrature_points |
-                                                      update_JxW_values |
-                                                      update_normal_vectors |
-                                                      update_JxW_values,
-                const UpdateFlags neighbor_face_update_flags = update_values)
-      : fe_values(mapping, fe, quadrature, update_flags),
-        fe_face_values(mapping, fe, face_quadrature, face_update_flags),
-        fe_face_values_neighbor(mapping, fe, face_quadrature,
-                                neighbor_face_update_flags) {}
-
-  // Copy constructor
-  ScratchDataDG(const ScratchDataDG &scratch_data)
-      : fe_values(scratch_data.fe_values.get_mapping(),
-                  scratch_data.fe_values.get_fe(),
-                  scratch_data.fe_values.get_quadrature(),
-                  scratch_data.fe_values.get_update_flags()),
-        fe_face_values(scratch_data.fe_face_values.get_mapping(),
-                       scratch_data.fe_face_values.get_fe(),
-                       scratch_data.fe_face_values.get_quadrature(),
-                       scratch_data.fe_face_values.get_update_flags()),
-        fe_face_values_neighbor(
-            scratch_data.fe_face_values_neighbor.get_mapping(),
-            scratch_data.fe_face_values_neighbor.get_fe(),
-            scratch_data.fe_face_values_neighbor.get_quadrature(),
-            scratch_data.fe_face_values_neighbor.get_update_flags()) {}
-
-  FEValues<dim> fe_values;
-  FEFaceValues<dim> fe_face_values;
-  FEFaceValues<dim> fe_face_values_neighbor;
-};
-
-struct CopyDataFaceDG {
-  FullMatrix<double> cell_dg_matrix_11;
-  FullMatrix<double> cell_dg_matrix_12;
-  FullMatrix<double> cell_dg_matrix_21;
-  FullMatrix<double> cell_dg_matrix_22;
-
-  Vector<double> cell_vector_1;
-  Vector<double> cell_vector_2;
-
-  std::vector<types::global_dof_index> local_dof_indices;
-  std::vector<types::global_dof_index> local_dof_indices_neighbor;
-
-  template <typename Iterator>
-  void reinit(const Iterator &cell, const Iterator &neighbor_cell,
-              unsigned int dofs_per_cell) {
-    cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
-
-    cell_vector_1.reinit(dofs_per_cell);
-    cell_vector_2.reinit(dofs_per_cell);
-
-    local_dof_indices.resize(dofs_per_cell);
-    cell->get_dof_indices(local_dof_indices);
-
-    local_dof_indices_neighbor.resize(dofs_per_cell);
-    neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
-  }
-};
-
-struct CopyDataDG {
-  // TODO_BE: optimize memory layout
-  FullMatrix<double> cell_mass_matrix;
-  FullMatrix<double> cell_dg_matrix;
-  Vector<double> cell_rhs;
-  Vector<double> cell_vector;
-  std::vector<types::global_dof_index> local_dof_indices;
-  std::vector<types::global_dof_index> local_dof_indices_neighbor;
-  std::vector<CopyDataFaceDG> face_data;
-
-  template <typename Iterator>
-  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
-    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_rhs.reinit(dofs_per_cell);
-    cell_vector.reinit(dofs_per_cell);
-
-    local_dof_indices.resize(dofs_per_cell);
-    cell->get_dof_indices(local_dof_indices);
-  }
-};
-
-template <int dim> class ScratchDataSlopeLimiter {
-public:
-  // Constructor
-  ScratchDataSlopeLimiter(
-      const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
-      const Quadrature<dim> &quadrature,
-      const Quadrature<dim> &support_quadrature,
-      const Quadrature<dim - 1> &face_quadrature,
-      const UpdateFlags update_flags = update_values | update_gradients |
-                                       update_quadrature_points |
-                                       update_JxW_values,
-      const UpdateFlags neighbor_update_flags = update_values |
-                                                update_quadrature_points |
-                                                update_JxW_values,
-      const UpdateFlags interpolate_update_flags = update_quadrature_points |
-                                                   update_jacobians |
-                                                   update_inverse_jacobians,
-      const UpdateFlags face_update_flags = update_quadrature_points |
-                                            update_values | update_JxW_values)
-      : fe_values(mapping, fe, quadrature, update_flags),
-        fe_values_neighbor(mapping, fe, quadrature, neighbor_update_flags),
-        fe_values_interpolate(mapping, fe, support_quadrature,
-                              interpolate_update_flags),
-        fe_face_values(mapping, fe, face_quadrature, face_update_flags) {}
-
-  // Copy constructor
-  ScratchDataSlopeLimiter(const ScratchDataSlopeLimiter<dim> &scratch_data)
-      : fe_values(scratch_data.fe_values.get_mapping(),
-                  scratch_data.fe_values.get_fe(),
-                  scratch_data.fe_values.get_quadrature(),
-                  scratch_data.fe_values.get_update_flags()),
-        fe_values_neighbor(scratch_data.fe_values_neighbor.get_mapping(),
-                           scratch_data.fe_values_neighbor.get_fe(),
-                           scratch_data.fe_values_neighbor.get_quadrature(),
-                           scratch_data.fe_values_neighbor.get_update_flags()),
-        fe_values_interpolate(
-            scratch_data.fe_values_interpolate.get_mapping(),
-            scratch_data.fe_values_interpolate.get_fe(),
-            scratch_data.fe_values_interpolate.get_quadrature(),
-            scratch_data.fe_values_interpolate.get_update_flags()),
-        fe_face_values(scratch_data.fe_face_values.get_mapping(),
-                       scratch_data.fe_face_values.get_fe(),
-                       scratch_data.fe_face_values.get_quadrature(),
-                       scratch_data.fe_face_values.get_update_flags()) {}
-
-  FEValues<dim> fe_values;
-  FEValues<dim> fe_values_neighbor;
-  FEValues<dim> fe_values_interpolate;
-  FEFaceValues<dim> fe_face_values;
-};
-
-struct CopyDataSlopeLimiter {
-  std::vector<double> cell_vector;
-  std::vector<types::global_dof_index> local_dof_indices;
-  std::vector<types::global_dof_index> local_dof_indices_neighbor;
-
-  template <typename Iterator>
-  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
-    // cell_vector.reinit(dofs_per_cell);
-    cell_vector.resize(dofs_per_cell);
-
-    local_dof_indices.resize(dofs_per_cell);
-    local_dof_indices_neighbor.resize(dofs_per_cell);
-    cell->get_dof_indices(local_dof_indices);
-  }
-};
 
 /**
  * @brief Solve Burgers' equation.
@@ -226,9 +65,15 @@ public:
    * \f$
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
-            Function<dim> *exact_solution,
-            const HDSolverControl &hd_solver_control,
+            Function<dim> *exact_solution, ParameterHandler &prm,
             const OutputModule<dim> &output_module = OutputModule<dim>());
+
+  static void declare_parameters(ParameterHandler &prm) {
+    HDSolverControl::declare_parameters(prm);
+  };
+
+  void init();
+  void do_timestep();
   void run();
 
 private:
@@ -290,7 +135,7 @@ private:
   // right hand side of the linear system \f$ \mathbf{b} \f$
   Vector<double> system_rhs;
 
-  Vector<float> error_with_time;
+  std::vector<float> error_with_time;
   Vector<float> mark_for_limiter;
 
   double time;

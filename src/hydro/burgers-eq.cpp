@@ -31,18 +31,187 @@
 #include <fstream>
 #include <iostream>
 
+// TODO_BE: Optimize memory management and make naming less ambiguous
+
+namespace Sapphire {
+namespace Hydro {
+using namespace dealii;
+template <int dim> class ScratchDataDG {
+public:
+  // Constructor
+  ScratchDataDG(const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
+                const Quadrature<dim> &quadrature,
+                const Quadrature<dim - 1> &face_quadrature,
+                const UpdateFlags update_flags = update_values |
+                                                 update_gradients |
+                                                 update_quadrature_points |
+                                                 update_JxW_values,
+                const UpdateFlags face_update_flags = update_values |
+                                                      update_quadrature_points |
+                                                      update_JxW_values |
+                                                      update_normal_vectors |
+                                                      update_JxW_values,
+                const UpdateFlags neighbor_face_update_flags = update_values)
+      : fe_values(mapping, fe, quadrature, update_flags),
+        fe_face_values(mapping, fe, face_quadrature, face_update_flags),
+        fe_face_values_neighbor(mapping, fe, face_quadrature,
+                                neighbor_face_update_flags) {}
+
+  // Copy constructor
+  ScratchDataDG(const ScratchDataDG &scratch_data)
+      : fe_values(scratch_data.fe_values.get_mapping(),
+                  scratch_data.fe_values.get_fe(),
+                  scratch_data.fe_values.get_quadrature(),
+                  scratch_data.fe_values.get_update_flags()),
+        fe_face_values(scratch_data.fe_face_values.get_mapping(),
+                       scratch_data.fe_face_values.get_fe(),
+                       scratch_data.fe_face_values.get_quadrature(),
+                       scratch_data.fe_face_values.get_update_flags()),
+        fe_face_values_neighbor(
+            scratch_data.fe_face_values_neighbor.get_mapping(),
+            scratch_data.fe_face_values_neighbor.get_fe(),
+            scratch_data.fe_face_values_neighbor.get_quadrature(),
+            scratch_data.fe_face_values_neighbor.get_update_flags()) {}
+
+  FEValues<dim> fe_values;
+  FEFaceValues<dim> fe_face_values;
+  FEFaceValues<dim> fe_face_values_neighbor;
+};
+
+struct CopyDataFaceDG {
+  FullMatrix<double> cell_dg_matrix_11;
+  FullMatrix<double> cell_dg_matrix_12;
+  FullMatrix<double> cell_dg_matrix_21;
+  FullMatrix<double> cell_dg_matrix_22;
+
+  Vector<double> cell_vector_1;
+  Vector<double> cell_vector_2;
+
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, const Iterator &neighbor_cell,
+              unsigned int dofs_per_cell) {
+    cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+
+    cell_vector_1.reinit(dofs_per_cell);
+    cell_vector_2.reinit(dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+
+    local_dof_indices_neighbor.resize(dofs_per_cell);
+    neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
+  }
+};
+
+struct CopyDataDG {
+  // TODO_BE: optimize memory layout
+  FullMatrix<double> cell_mass_matrix;
+  FullMatrix<double> cell_dg_matrix;
+  Vector<double> cell_rhs;
+  Vector<double> cell_vector;
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+  std::vector<CopyDataFaceDG> face_data;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
+    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
+    cell_rhs.reinit(dofs_per_cell);
+    cell_vector.reinit(dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+  }
+};
+
+template <int dim> class ScratchDataSlopeLimiter {
+public:
+  // Constructor
+  ScratchDataSlopeLimiter(
+      const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
+      const Quadrature<dim> &quadrature,
+      const Quadrature<dim> &support_quadrature,
+      const Quadrature<dim - 1> &face_quadrature,
+      const UpdateFlags update_flags = update_values | update_gradients |
+                                       update_quadrature_points |
+                                       update_JxW_values,
+      const UpdateFlags neighbor_update_flags = update_values |
+                                                update_quadrature_points |
+                                                update_JxW_values,
+      const UpdateFlags interpolate_update_flags = update_quadrature_points |
+                                                   update_jacobians |
+                                                   update_inverse_jacobians,
+      const UpdateFlags face_update_flags = update_quadrature_points |
+                                            update_values | update_JxW_values)
+      : fe_values(mapping, fe, quadrature, update_flags),
+        fe_values_neighbor(mapping, fe, quadrature, neighbor_update_flags),
+        fe_values_interpolate(mapping, fe, support_quadrature,
+                              interpolate_update_flags),
+        fe_face_values(mapping, fe, face_quadrature, face_update_flags) {}
+
+  // Copy constructor
+  ScratchDataSlopeLimiter(const ScratchDataSlopeLimiter<dim> &scratch_data)
+      : fe_values(scratch_data.fe_values.get_mapping(),
+                  scratch_data.fe_values.get_fe(),
+                  scratch_data.fe_values.get_quadrature(),
+                  scratch_data.fe_values.get_update_flags()),
+        fe_values_neighbor(scratch_data.fe_values_neighbor.get_mapping(),
+                           scratch_data.fe_values_neighbor.get_fe(),
+                           scratch_data.fe_values_neighbor.get_quadrature(),
+                           scratch_data.fe_values_neighbor.get_update_flags()),
+        fe_values_interpolate(
+            scratch_data.fe_values_interpolate.get_mapping(),
+            scratch_data.fe_values_interpolate.get_fe(),
+            scratch_data.fe_values_interpolate.get_quadrature(),
+            scratch_data.fe_values_interpolate.get_update_flags()),
+        fe_face_values(scratch_data.fe_face_values.get_mapping(),
+                       scratch_data.fe_face_values.get_fe(),
+                       scratch_data.fe_face_values.get_quadrature(),
+                       scratch_data.fe_face_values.get_update_flags()) {}
+
+  FEValues<dim> fe_values;
+  FEValues<dim> fe_values_neighbor;
+  FEValues<dim> fe_values_interpolate;
+  FEFaceValues<dim> fe_face_values;
+};
+
+struct CopyDataSlopeLimiter {
+  std::vector<double> cell_vector;
+  std::vector<types::global_dof_index> local_dof_indices;
+  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+  template <typename Iterator>
+  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
+    // cell_vector.reinit(dofs_per_cell);
+    cell_vector.resize(dofs_per_cell);
+
+    local_dof_indices.resize(dofs_per_cell);
+    local_dof_indices_neighbor.resize(dofs_per_cell);
+    cell->get_dof_indices(local_dof_indices);
+  }
+};
+
+} // namespace Hydro
+} // namespace Sapphire
+
 template <int dim>
 Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
     Function<dim> *initial_condition, Function<dim> *boundary_values,
-    Function<dim> *exact_solution, const HDSolverControl &hd_solver_control,
+    Function<dim> *exact_solution, ParameterHandler &prm,
     const OutputModule<dim> &output_module)
     : initial_condition(initial_condition), boundary_values(boundary_values),
-      exact_solution(exact_solution), hd_solver_control(hd_solver_control),
+      exact_solution(exact_solution), hd_solver_control(prm),
       output_module(output_module), mpi_communicator(MPI_COMM_WORLD), mapping(),
       fe(hd_solver_control.fe_degree), dof_handler(triangulation),
       quadrature_formula(fe.tensor_degree() + 1),
-      face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
-      time(0.0), timestep_number(0),
+      face_quadrature_formula(fe.tensor_degree() + 1),
       pcout(std::cout,
             (Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
                 (DEBUG_LEVEL >= 0)),
@@ -625,7 +794,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::perform_time_step() {
   }
 
   time += time_step;
-  timestep_number++;
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
@@ -698,12 +866,18 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {
       triangulation, difference_per_cell, VectorTools::Linfty_norm);
   DEBUG_PRINT(pcout, 3, "L-infinity error:\t" << Linf_error);
 
-  error_with_time.grow_or_shrink(error_with_time.size() + 1);
-  error_with_time[error_with_time.size() - 1] = L2_error;
+  error_with_time.push_back(L2_error);
 }
 
-template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
-  DEBUG_PRINT(pcout, 0, "Run BurgersEq");
+template <int dim> void Sapphire::Hydro::BurgersEq<dim>::init() {
+  DEBUG_PRINT(pcout, 0, "Init BurgersEq");
+  time = 0.0;
+  timestep_number = 0;
+  error_with_time.clear();
+  error_with_time.reserve(
+      (unsigned int)(hd_solver_control.end_time / hd_solver_control.time_step) /
+      output_module.output_frequency);
+
   make_grid();
   setup_system();
   assemble_mass_matrix();
@@ -712,28 +886,42 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
     TimerOutput::Scope t(computing_timer, "Output results");
     output_results();
   }
+}
 
-  const unsigned int n_steps =
-      int(hd_solver_control.end_time / hd_solver_control.time_step);
-
-  for (unsigned int i = 0; i < n_steps; ++i) {
-    DEBUG_PRINT(pcout, 1,
-                "Step " << timestep_number + 1 << "/" << n_steps << " (time = "
-                        << time + hd_solver_control.time_step << ")");
-    perform_time_step();
-    if (timestep_number % output_module.output_frequency == 0) {
+template <int dim> void Sapphire::Hydro::BurgersEq<dim>::do_timestep() {
+  DEBUG_PRINT(pcout, 1,
+              "Timestep " << timestep_number + 1
+                          << " (time = " << time + hd_solver_control.time_step
+                          << "/" << hd_solver_control.end_time << ")");
+  perform_time_step();
+  timestep_number++;
+  if (timestep_number % output_module.output_frequency == 0) {
+    {
       TimerOutput::Scope t(computing_timer, "Output results");
       output_results();
     }
     process_results();
   }
+}
+
+template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
+  DEBUG_PRINT(pcout, 0, "Run BurgersEq");
+  init();
+  while (time < hd_solver_control.end_time) {
+    do_timestep();
+  }
 
   computing_timer.print_summary();
   computing_timer.reset();
 
-  if (pcout.is_active() && DEBUG_LEVEL >= 3) {
+  if (pcout.is_active() && DEBUG_LEVEL >= 2) {
     pcout << "   L2 error with time:" << std::endl;
-    error_with_time.print(pcout.get_stream());
+    pcout << "   ";
+    for (const auto &e : error_with_time) {
+      // pcout << e << " ";
+      printf("%.2e ", e);
+    }
+    pcout << std::endl;
   }
 }
 

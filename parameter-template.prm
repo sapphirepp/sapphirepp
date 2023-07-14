@@ -44,20 +44,26 @@ end
 
 
 subsection Output
+  # The base file name for the output files.
+  set Base file name               = solution
+
   # The format in which the simulation output will be stored.
-  set Format                = vtu
+  set Format                       = vtu
+
+  # The number of digits used for the counter in the output file names.
+  set Number of digits for counter = 4
 
   # The frequence at which output files will be written. (In units of time
   # steps)
-  set Output frequency      = 1
+  set Output frequency             = 1
 
   # Path to the folder in which the simulation results will be stored. Without
   # a trailing slash.
-  set Results folder        = ./results
+  set Results folder               = ./results
 
   # Name of the simulation run. It will be used to create a subdirectory in
   # the results folder.
-  set Simulation identifier = 001
+  set Simulation identifier        = 
 end
 
 

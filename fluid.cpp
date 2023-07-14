@@ -289,8 +289,8 @@ int main(int argc, char *argv[]) {
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
 
     ParameterHandler prm;
-    HDSolverControl::declare_parameters(prm);
     OutputModule<dim>::declare_parameters(prm);
+    BurgersEq<dim>::declare_parameters(prm);
     prm.print_parameters("../parameter-template.prm", ParameterHandler::PRM);
 
     std::string parameter_filename = "../parameter.prm";
@@ -302,13 +302,11 @@ int main(int argc, char *argv[]) {
       prm.print_parameters(std::cout, ParameterHandler::PRM);
     }
 
-    // TODO_BE: Fix problem in MUSCL limiter
-    HDSolverControl hd_solver_control = HDSolverControl::parse_parameters(prm);
-    OutputModule<dim> output_module = OutputModule<dim>::parse_parameters(prm);
+    OutputModule<dim> output_module(prm);
 
+    // TODO_BE: Fix problem in MUSCL limiter
     BurgersEq<dim> burgers_eq(&initial_condition, &boundary_values,
-                              &exact_solution, hd_solver_control,
-                              output_module);
+                              &exact_solution, prm, output_module);
     burgers_eq.run();
 
   } catch (std::exception &exc) {

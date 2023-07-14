@@ -62,7 +62,6 @@ double Sapphire::Hydro::compute_numerical_flux(
   }
 
   default:
-    // TODO_BE: Assert(false) or throw?
     Assert(false, ExcNotImplemented());
     break;
   }

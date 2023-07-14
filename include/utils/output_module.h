@@ -43,13 +43,9 @@ enum class OutputFormat { vtu, pvtu, hdf5 };
 
 template <int dim> class OutputModule {
 public:
-  OutputModule(const std::string &results_path,
-               const std::string &simulation_id, const OutputFormat &format,
-               const unsigned int &output_frequency)
-      : results_path(results_path), simulation_id(simulation_id),
-        output_path(this->results_path / this->simulation_id), format(format),
-        output_frequency(output_frequency){};
   OutputModule(const OutputModule<dim> &output_module) = default;
+  OutputModule(ParameterHandler &prm)
+      : OutputModule(OutputModule::parse_parameters(prm)){};
   ~OutputModule() = default;
 
   static void declare_parameters(ParameterHandler &prm) {
@@ -58,11 +54,17 @@ public:
         "Results folder", "./results", dealii::Patterns::Anything(),
         "Path to the folder in which the simulation results will be stored. "
         "Without a trailing slash.");
-    prm.declare_entry("Simulation identifier", "001",
-                      dealii::Patterns::Anything(),
+    prm.declare_entry("Simulation identifier", "", dealii::Patterns::Anything(),
                       "Name of the simulation run. It will be "
                       "used to create a subdirectory "
                       "in the results folder.");
+    prm.declare_entry("Base file name", "solution",
+                      dealii::Patterns::Anything(),
+                      "The base file name for the output files.");
+    prm.declare_entry("Number of digits for counter", "4",
+                      dealii::Patterns::Integer(0),
+                      "The number of digits used for the counter in the "
+                      "output file names.");
     prm.declare_entry(
         "Format", "vtu", dealii::Patterns::Selection("vtu|pvtu|hdf5"),
         "The format in which the simulation output will be stored.");
@@ -79,6 +81,9 @@ public:
     // std::string results_path = "";
     std::string results_path = prm.get("Results folder");
     std::string simulation_id = prm.get("Simulation identifier");
+    std::string base_file_name = prm.get("Base file name");
+    unsigned int n_digits_for_counter =
+        prm.get_integer("Number of digits for counter");
     OutputFormat format;
     s = prm.get("Format");
     if (s == "vtu")
@@ -92,8 +97,8 @@ public:
     unsigned int output_frequency = prm.get_integer("Output frequency");
     prm.leave_subsection(); // subsection Output
 
-    OutputModule output_module(results_path, simulation_id, format,
-                               output_frequency);
+    OutputModule output_module(results_path, simulation_id, base_file_name,
+                               n_digits_for_counter, format, output_frequency);
     output_module.init(prm);
     return output_module;
   };
@@ -111,16 +116,26 @@ public:
     write_results(data_out, time_step_number, mpi_communicator, xdmf_entries);
   };
 
+  const unsigned int output_frequency;
+
 private:
+  OutputModule(const std::string &results_path,
+               const std::string &simulation_id,
+               const std::string &base_file_name,
+               const unsigned int &n_digits_for_counter,
+               const OutputFormat &format, const unsigned int &output_frequency)
+      : output_frequency(output_frequency), results_path(results_path),
+        simulation_id(simulation_id),
+        output_path(this->results_path / this->simulation_id),
+        base_file_name(base_file_name),
+        n_digits_for_counter(n_digits_for_counter), format(format){};
+
   const std::filesystem::path results_path;
   const std::string simulation_id;
-  const std::string base_file_name = "solution";
-  const unsigned int n_digits_for_counter = 4;
   const std::filesystem::path output_path;
+  const std::string base_file_name;
+  const unsigned int n_digits_for_counter;
   const OutputFormat format;
-
-public:
-  const unsigned int output_frequency;
 };
 
 } // namespace Utils
