@@ -24,14 +24,12 @@
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/meshworker/mesh_loop.h>
-
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
 #include <iostream>
-
-// TODO_BE: Optimize memory management and make naming less ambiguous
 
 namespace Sapphire {
 namespace Hydro {
@@ -49,8 +47,7 @@ public:
                 const UpdateFlags face_update_flags = update_values |
                                                       update_quadrature_points |
                                                       update_JxW_values |
-                                                      update_normal_vectors |
-                                                      update_JxW_values,
+                                                      update_normal_vectors,
                 const UpdateFlags neighbor_face_update_flags = update_values)
       : fe_values(mapping, fe, quadrature, update_flags),
         fe_face_values(mapping, fe, face_quadrature, face_update_flags),
@@ -79,11 +76,6 @@ public:
 };
 
 struct CopyDataFaceDG {
-  FullMatrix<double> cell_dg_matrix_11;
-  FullMatrix<double> cell_dg_matrix_12;
-  FullMatrix<double> cell_dg_matrix_21;
-  FullMatrix<double> cell_dg_matrix_22;
-
   Vector<double> cell_vector_1;
   Vector<double> cell_vector_2;
 
@@ -93,11 +85,6 @@ struct CopyDataFaceDG {
   template <typename Iterator>
   void reinit(const Iterator &cell, const Iterator &neighbor_cell,
               unsigned int dofs_per_cell) {
-    cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
-
     cell_vector_1.reinit(dofs_per_cell);
     cell_vector_2.reinit(dofs_per_cell);
 
@@ -110,20 +97,12 @@ struct CopyDataFaceDG {
 };
 
 struct CopyDataDG {
-  // TODO_BE: optimize memory layout
-  FullMatrix<double> cell_mass_matrix;
-  FullMatrix<double> cell_dg_matrix;
-  Vector<double> cell_rhs;
   Vector<double> cell_vector;
   std::vector<types::global_dof_index> local_dof_indices;
-  std::vector<types::global_dof_index> local_dof_indices_neighbor;
   std::vector<CopyDataFaceDG> face_data;
 
   template <typename Iterator>
   void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
-    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_rhs.reinit(dofs_per_cell);
     cell_vector.reinit(dofs_per_cell);
 
     local_dof_indices.resize(dofs_per_cell);
@@ -140,16 +119,11 @@ public:
       const Quadrature<dim> &support_quadrature,
       const Quadrature<dim - 1> &face_quadrature,
       const UpdateFlags update_flags = update_values | update_gradients |
-                                       update_quadrature_points |
                                        update_JxW_values,
       const UpdateFlags neighbor_update_flags = update_values |
-                                                update_quadrature_points |
                                                 update_JxW_values,
-      const UpdateFlags interpolate_update_flags = update_quadrature_points |
-                                                   update_jacobians |
-                                                   update_inverse_jacobians,
-      const UpdateFlags face_update_flags = update_quadrature_points |
-                                            update_values | update_JxW_values)
+      const UpdateFlags interpolate_update_flags = update_quadrature_points,
+      const UpdateFlags face_update_flags = update_values | update_JxW_values)
       : fe_values(mapping, fe, quadrature, update_flags),
         fe_values_neighbor(mapping, fe, quadrature, neighbor_update_flags),
         fe_values_interpolate(mapping, fe, support_quadrature,
@@ -189,7 +163,7 @@ struct CopyDataSlopeLimiter {
 
   template <typename Iterator>
   void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
-    // cell_vector.reinit(dofs_per_cell);
+    cell_vector.clear();
     cell_vector.resize(dofs_per_cell);
 
     local_dof_indices.resize(dofs_per_cell);
@@ -263,43 +237,8 @@ void Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix() {
   TimerOutput::Scope t(computing_timer, "Assemble mass matrix");
   DEBUG_PRINT(pcout, 1, "Assemble mass matrix");
 
-  mass_matrix = 0;
-
-  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-
-  // TODO_BE: Use specialised ScratchDataDG and CopyData
-  const auto cell_worker = [&](const Iterator &cell,
-                               ScratchDataDG<dim> &scratch_data,
-                               CopyDataDG &copy_data) {
-    FEValues<dim> &fe_values = scratch_data.fe_values;
-
-    fe_values.reinit(cell);
-    const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
-    copy_data.reinit(cell, n_dofs);
-
-    for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
-      for (const unsigned int i : fe_values.dof_indices()) {
-        for (const unsigned int j : fe_values.dof_indices()) {
-          copy_data.cell_mass_matrix(i, j) +=
-              (fe_values.shape_value(i, q_index) *
-               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-        }
-      }
-    }
-  };
-
-  const auto copier = [&](const CopyDataDG &c) {
-    constraints.distribute_local_to_global(c.cell_mass_matrix,
-                                           c.local_dof_indices, mass_matrix);
-  };
-
-  ScratchDataDG<dim> scratch_data(mapping, fe, quadrature_formula,
-                                  face_quadrature_formula);
-  CopyDataDG copy_data;
-
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-                        cell_worker, copier, scratch_data, copy_data,
-                        MeshWorker::assemble_own_cells);
+  MatrixCreator::create_mass_matrix(mapping, dof_handler, quadrature_formula,
+                                    mass_matrix);
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
@@ -454,12 +393,13 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector() {
                                   face_quadrature_formula);
   CopyDataDG copy_data;
 
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-                        cell_worker, copier, scratch_data, copy_data,
-                        MeshWorker::assemble_own_cells |
-                            MeshWorker::assemble_boundary_faces |
-                            MeshWorker::assemble_own_interior_faces_once,
-                        boundary_worker, face_worker);
+  const auto filtered_iterator_range =
+      dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
+  MeshWorker::mesh_loop(
+      filtered_iterator_range, cell_worker, copier, scratch_data, copy_data,
+      MeshWorker::assemble_own_cells | MeshWorker::assemble_boundary_faces |
+          MeshWorker::assemble_own_interior_faces_once,
+      boundary_worker, face_worker);
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::assemble_system() {
@@ -528,7 +468,6 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
     for (const auto face_no : cell->face_indices()) {
       if (!cell->at_boundary(face_no) && cell->neighbor(face_no)->is_active()) {
         auto neighbor = cell->neighbor(face_no);
-        // local_dof_indices_neighbor.resize(dofs_per_cell); //Not needed?
         neighbor->get_dof_indices(local_dof_indices_neighbor);
         fe_values_neighbor.reinit(neighbor);
 
@@ -548,53 +487,25 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
         n_neighbors++;
       }
     }
-    // neighbor_cell_averages.resize(n_neighbors);
-    // neighbor_distance.resize(n_neighbors);
 
     // Check if the cell is meets the criteria for limiting
     if (hd_solver_control.limiter == SlopeLimiter::GerneralizedSlopeLimiter) {
       limit_cell = false;
 
-      // TODO_BE: Check implementation and improve performance
       double face_flux = 0;
       double face_value = 0;
       std::vector<double> tmp_minmod(n_neighbors + 1);
-
-      // // TODO_BE: Check if it is possible to create a quadrature for this
-      // //          independent of the cell
-      // Quadrature<dim> face_center_quadrature(face_centers);
-      // FEValues fe_vales_face_center(fe_values.get_fe(),
-      // face_center_quadrature,
-      //                               update_values);
-      // fe_vales_face_center.reinit(cell);
-      // std::vector<double> face_center_values(n_neighbors);
-      // fe_vales_face_center.get_function_values(solution, face_center_values);
 
       unsigned int i_neighbor = 0;
       for (const auto face_no : cell->face_indices()) {
         if (!cell->at_boundary(face_no) &&
             cell->neighbor(face_no)->is_active()) {
-          // auto &face_center = cell->face(face_no)->center();
-          // Tensor<1, dim> direction =
-          //     (face_centers[i_neighbor] - cell_center) /
-          //     (face_centers[i_neighbor] - cell_center).norm();
+          fe_face_values.reinit(cell, face_no);
+
           Tensor<1, dim> direction = neighbor_distance[i_neighbor] /
                                      neighbor_distance[i_neighbor].norm();
 
-          // face_value = face_center_values[i_neighbor];
-
-          // Calculate face value using integration
-          fe_face_values.reinit(cell, face_no);
-
-          // // Average via get_function_values
-          // std::vector<double>
-          // face_solution(fe_face_values.n_quadrature_points);
-          // fe_face_values.get_function_values(solution, face_solution);
-          // face_value =
-          //     std::accumulate(face_solution.begin(), face_solution.end(),
-          //     0.0) / face_solution.size();
-
-          // Average via integration
+          // Calculate the average of current face
           double weight = 0;
           face_value = 0;
           for (const unsigned int q_index :
@@ -679,9 +590,10 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::slope_limiter() {
                                             face_quadrature_formula);
   CopyDataSlopeLimiter copy_data;
 
-  // TODO_BE: Till end() or end_active()?
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-                        cell_worker, copier, scratch_data, copy_data,
+  const auto filtered_iterator_range =
+      dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
+  MeshWorker::mesh_loop(filtered_iterator_range, cell_worker, copier,
+                        scratch_data, copy_data,
                         MeshWorker::assemble_own_cells);
 
   solution = limited_solution;
