@@ -39,11 +39,16 @@ namespace Sapphire {
 namespace Utils {
 using namespace dealii;
 
+enum class OutputFormat { vtu, pvtu, hdf5 };
+
 template <int dim> class OutputModule {
 public:
-  OutputModule(const std::string &output_path,
-               const std::string &base_file_name)
-      : output_path(output_path), base_file_name(base_file_name){};
+  OutputModule(const std::string &results_path,
+               const std::string &simulation_id, const OutputFormat &format,
+               const unsigned int &output_frequency)
+      : results_path(results_path), simulation_id(simulation_id),
+        output_path(this->results_path / this->simulation_id), format(format),
+        output_frequency(output_frequency){};
   OutputModule(const OutputModule<dim> &output_module) = default;
   ~OutputModule() = default;
 
@@ -59,7 +64,7 @@ public:
                       "used to create a subdirectory "
                       "in the results folder.");
     prm.declare_entry(
-        "Format", "vtu", dealii::Patterns::Selection("vtu|hdf5"),
+        "Format", "vtu", dealii::Patterns::Selection("vtu|pvtu|hdf5"),
         "The format in which the simulation output will be stored.");
     prm.declare_entry("Output frequency", "1", dealii::Patterns::Integer(0),
                       "The frequence at which output files will "
@@ -74,33 +79,48 @@ public:
     // std::string results_path = "";
     std::string results_path = prm.get("Results folder");
     std::string simulation_id = prm.get("Simulation identifier");
+    OutputFormat format;
     s = prm.get("Format");
-    std::string format = s;
+    if (s == "vtu")
+      format = OutputFormat::vtu;
+    else if (s == "pvtu")
+      format = OutputFormat::pvtu;
+    else if (s == "hdf5")
+      format = OutputFormat::hdf5;
+    else
+      AssertThrow(false, ExcNotImplemented());
     unsigned int output_frequency = prm.get_integer("Output frequency");
     prm.leave_subsection(); // subsection Output
 
-    (void)output_frequency;
-
-    OutputModule output_module(results_path, simulation_id);
+    OutputModule output_module(results_path, simulation_id, format,
+                               output_frequency);
     output_module.init(prm);
     return output_module;
   };
 
-  static void save_template_parameter(
-      const ParameterHandler &prm,
-      const std::string &template_filename = "parameter-template.prm") {
-    prm.print_parameters(template_filename, ParameterHandler::PRM);
+  void init(const ParameterHandler &prm) const;
+  void write_results(DataOut<dim> &data_out,
+                     const unsigned int time_step_number,
+                     const MPI_Comm &mpi_communicator,
+                     std::vector<XDMFEntry> &xdmf_entries) const;
+  void write_results(DataOut<dim> &data_out,
+                     const unsigned int time_step_number,
+                     const MPI_Comm &mpi_communicator = MPI_COMM_WORLD) const {
+    Assert(format != OutputFormat::hdf5, ExcNotImplemented());
+    std::vector<XDMFEntry> xdmf_entries(0);
+    write_results(data_out, time_step_number, mpi_communicator, xdmf_entries);
   };
 
-  // TODO_BE: print log paramfile
-  void init(const ParameterHandler &prm) const;
-  std::filesystem::path get_filename(const unsigned int time_step_number) const;
-  DataOutBase::VtkFlags get_vtk_flags() const;
-
 private:
-  // TODO_BE: change
+  const std::filesystem::path results_path;
+  const std::string simulation_id;
+  const std::string base_file_name = "solution";
+  const unsigned int n_digits_for_counter = 4;
   const std::filesystem::path output_path;
-  const std::string base_file_name;
+  const OutputFormat format;
+
+public:
+  const unsigned int output_frequency;
 };
 
 } // namespace Utils

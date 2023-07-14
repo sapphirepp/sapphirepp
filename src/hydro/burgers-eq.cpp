@@ -668,11 +668,9 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
   data_out.add_data_vector(exact_solution_values, "ExactSolution");
   data_out.add_data_vector(mark_for_limiter, "LimiterMark");
 
-  data_out.build_patches();
+  data_out.build_patches(fe.tensor_degree());
 
-  data_out.set_flags(output_module.get_vtk_flags());
-  std::ofstream output(output_module.get_filename(timestep_number));
-  data_out.write_vtu(output);
+  output_module.write_results(data_out, timestep_number, mpi_communicator);
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {
@@ -723,7 +721,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::run() {
                 "Step " << timestep_number + 1 << "/" << n_steps << " (time = "
                         << time + hd_solver_control.time_step << ")");
     perform_time_step();
-    {
+    if (timestep_number % output_module.output_frequency == 0) {
       TimerOutput::Scope t(computing_timer, "Output results");
       output_results();
     }

@@ -291,8 +291,7 @@ int main(int argc, char *argv[]) {
     ParameterHandler prm;
     HDSolverControl::declare_parameters(prm);
     OutputModule<dim>::declare_parameters(prm);
-    OutputModule<dim>::save_template_parameter(prm,
-                                               "../parameter-template.prm");
+    prm.print_parameters("../parameter-template.prm", ParameterHandler::PRM);
 
     std::string parameter_filename = "../parameter.prm";
     if (argc > 1)
