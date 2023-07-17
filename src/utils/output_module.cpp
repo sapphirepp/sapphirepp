@@ -1,5 +1,8 @@
 #include "output_module.h"
 
+#include <fstream>
+#include <iostream>
+
 template <int dim>
 Sapphire::Utils::OutputModule<dim>::OutputModule(
     const Sapphire::Utils::ParameterParser &prm)

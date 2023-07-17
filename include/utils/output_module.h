@@ -3,7 +3,7 @@
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Define OutputModule class
  * @version 0.1
- * @date 2023-07-12
+ * @date 2023-07-17
  */
 
 #ifndef SAPPHIREUTISL_OUTPUTMODULE_H
@@ -13,19 +13,12 @@
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/smartpointer.h>
-#include <deal.II/lac/vector.h>
 #include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/vector_tools.h>
 
 #include <mpi.h>
 
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <string>
-
-#include <iostream>
 
 #define DEBUG_LEVEL 1
 

@@ -1,7 +1,7 @@
 /**
  * @file parameter_parser.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement parameter parser class
+ * @brief Implement ParameterParser class
  * @version 0.1
  * @date 2023-07-17
  */

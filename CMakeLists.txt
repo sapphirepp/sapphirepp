@@ -16,9 +16,9 @@ find_package(deal.II 9.4.0 REQUIRED
 deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
 
 project(Sapphire VERSION 0.9.0)
+add_subdirectory(src/utils)
 option(vfp-equation-solver "Compile the VFP Equation Solver" ON )
 option(hydro-solver "Compile the Hydro Solver" ON )
-add_subdirectory(src/utils)
 if(vfp-equation-solver)
   add_subdirectory(src/vfp)
   add_executable(sapphire sapphire.cpp)
