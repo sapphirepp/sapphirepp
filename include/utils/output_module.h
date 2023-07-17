@@ -47,16 +47,7 @@ public:
 
   void init(const ParameterHandler &prm) const;
   void write_results(DataOut<dim> &data_out,
-                     const unsigned int time_step_number,
-                     const MPI_Comm &mpi_communicator,
-                     std::vector<XDMFEntry> &xdmf_entries) const;
-  void write_results(DataOut<dim> &data_out,
-                     const unsigned int time_step_number,
-                     const MPI_Comm &mpi_communicator = MPI_COMM_WORLD) const {
-    Assert(format != OutputFormat::hdf5, ExcNotImplemented());
-    std::vector<XDMFEntry> xdmf_entries(0);
-    write_results(data_out, time_step_number, mpi_communicator, xdmf_entries);
-  };
+                     const unsigned int time_step_number);
 
   const unsigned int output_frequency;
 
@@ -67,6 +58,9 @@ private:
   const std::string base_file_name;
   const unsigned int n_digits_for_counter;
   const OutputFormat format;
+
+  const MPI_Comm mpi_communicator;
+  std::vector<XDMFEntry> xdmf_entries;
 };
 
 } // namespace Utils

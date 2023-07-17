@@ -748,8 +748,7 @@ template <int dim> void Sapphire::Hydro::BurgersEq<dim>::solve_linear_system() {
                                      << " iterations.");
 }
 
-template <int dim>
-void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
+template <int dim> void Sapphire::Hydro::BurgersEq<dim>::output_results() {
   DEBUG_PRINT(pcout, 2, "Output results");
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
@@ -766,7 +765,7 @@ void Sapphire::Hydro::BurgersEq<dim>::output_results() const {
 
   data_out.build_patches(fe.tensor_degree());
 
-  output_module.write_results(data_out, timestep_number, mpi_communicator);
+  output_module.write_results(data_out, timestep_number);
 }
 
 template <int dim> void Sapphire::Hydro::BurgersEq<dim>::process_results() {

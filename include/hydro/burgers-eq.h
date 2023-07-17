@@ -88,7 +88,7 @@ private:
    * vector and \f$ \mathbf{b} \f$ is the right hand side vector.
    */
   void solve_linear_system();
-  void output_results() const;
+  void output_results();
   void process_results();
 
   const SmartPointer<Function<dim>> initial_condition;
@@ -96,7 +96,7 @@ private:
   const SmartPointer<Function<dim>> exact_solution;
 
   HDSolverControl hd_solver_control;
-  const OutputModule<dim> output_module;
+  OutputModule<dim> output_module;
 
   const double beta; //< factor in front of the flux
 

@@ -8,7 +8,7 @@ Sapphire::Utils::OutputModule<dim>::OutputModule(
       output_path(this->results_path / this->simulation_id),
       base_file_name(prm.out_base_file_name),
       n_digits_for_counter(prm.out_n_digits_for_counter),
-      format(prm.out_format) {
+      format(prm.out_format), mpi_communicator(MPI_COMM_WORLD) {
   init(prm.get_parameter_handler());
 };
 
@@ -35,9 +35,7 @@ void Sapphire::Utils::OutputModule<dim>::init(
 
 template <int dim>
 void Sapphire::Utils::OutputModule<dim>::write_results(
-    DataOut<dim> &data_out, const unsigned int time_step_number,
-    const MPI_Comm &mpi_communicator,
-    std::vector<XDMFEntry> &xdmf_entries) const {
+    DataOut<dim> &data_out, const unsigned int time_step_number) {
   Assert(time_step_number % output_frequency == 0, ExcInternalError());
   const unsigned int counter = time_step_number / output_frequency;
 
@@ -99,6 +97,7 @@ void Sapphire::Utils::OutputModule<dim>::write_results(
         data_filter, filename_mesh,
         "f_" + Utilities::int_to_string(counter, n_digits_for_counter) + ".h5",
         counter, mpi_communicator);
+    // TODO: Change this, append lines to xmdf file instead
     xdmf_entries.push_back(new_xdmf_entry);
     // NOTE: For now I a writing the xdmf file in every time step. That is
     // unnecessary. There is missing a function add entry to xdmf_file
