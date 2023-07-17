@@ -25,5 +25,22 @@ if(vfp-equation-solver)
   target_link_libraries(sapphire VFPSolverLib)
 endif(vfp-equation-solver)
 
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    # Configuration file for Doxygen
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile)
+
+    # Generate the Doxyfile from the template
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+    # Add custom target for Doxygen documentation
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating Doxygen documentation"
+        VERBATIM
+    )
+endif()
 
 
