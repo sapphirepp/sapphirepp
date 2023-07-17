@@ -9,164 +9,20 @@
 #ifndef HYDROSOLVER_NUMERICS_H
 #define HYDROSOLVER_NUMERICS_H
 
+#include "parameter_parser.h"
+
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_control.h>
 
 #include <deal.II/lac/vector.h>
 
-#include <deal.II/base/parameter_handler.h>
-
 namespace Sapphire {
 namespace Hydro {
 using namespace dealii;
 
-enum class TimeSteppingScheme { ForwardEuler, ExplicitRK };
-enum class FluxType { Central, Upwind, LaxFriedrichs };
-enum class SlopeLimiter { NoLimiter, LinearReconstruction, MinMod, MUSCL };
-enum class SlopeLimiterCriterion { Never, Always, GerneralizedSlopeLimiter };
-
 class HDSolverControl {
 public:
-  HDSolverControl(const HDSolverControl &hd_solver_control) = default;
-  HDSolverControl(ParameterHandler &prm)
-      : HDSolverControl(HDSolverControl::parse_parameters(prm)){};
-  ~HDSolverControl() = default;
-
-  static void declare_parameters(ParameterHandler &prm) {
-    prm.enter_subsection("Hydrodynamics");
-
-    prm.enter_subsection("Time stepping");
-    prm.declare_entry("Scheme", "Forward Euler",
-                      Patterns::Selection("Forward Euler|Explicit RK"),
-                      "Time stepping scheme");
-    prm.declare_entry("Time step", "0.1", Patterns::Double(0.0),
-                      "Time step size");
-    prm.declare_entry("End time", "1.0", Patterns::Double(0.0),
-                      "End time of simulation");
-    prm.leave_subsection(); // subsection Time stepping
-
-    prm.enter_subsection("Finite element");
-    prm.declare_entry("Polynomial degree", "1", Patterns::Integer(1),
-                      "Polynomial degree of finite element");
-    prm.leave_subsection(); // subsection Finite element
-
-    prm.enter_subsection("Mesh");
-    prm.declare_entry("Refinement level", "1", Patterns::Integer(0),
-                      "Refinement level of mesh");
-    prm.leave_subsection(); // subsection Mesh
-
-    prm.enter_subsection("Numerical flux");
-    prm.declare_entry("Numerical flux", "Lax-Friedrichs",
-                      Patterns::Selection("Central|Upwind|Lax-Friedrichs"),
-                      "Numerical flux");
-    prm.leave_subsection(); // subsection Numerical flux
-
-    prm.enter_subsection("Slope limiter");
-    prm.declare_entry(
-        "Slope limiter", "No limiter",
-        Patterns::Selection("No limiter|Linear reconstruction|MinMod|MUSCL"),
-        "Slope limiter");
-    prm.declare_entry(
-        "Slope limiter criterion", "Never",
-        Patterns::Selection("Never|Always|Generalized slope limiter"),
-        "Criterion on which cells the slope limiter should apply");
-    prm.leave_subsection(); // subsection Slope limiter
-
-    prm.enter_subsection("Linear solver");
-    prm.declare_entry("Max iterations", "1000", Patterns::Integer(0),
-                      "Maximum number of iterations");
-    prm.declare_entry("Tolerance", "1e-12", Patterns::Double(0.0),
-                      "Tolerance of solver");
-    prm.leave_subsection(); // subsection Linear solver
-
-    prm.leave_subsection(); // subsection Hydrodynamics
-  };
-
-  static HDSolverControl parse_parameters(ParameterHandler &prm) {
-    std::string s;
-    // TODO_BE: understand why this path does not work
-    //  std::vector<std::string> path = {"Hydrodynamics", "Time stepping"};
-    //  s = prm.get(path, "Solver");
-
-    prm.enter_subsection("Hydrodynamics");
-
-    prm.enter_subsection("Time stepping");
-    TimeSteppingScheme scheme;
-    s = prm.get("Scheme");
-    if (s == "Forward Euler")
-      scheme = TimeSteppingScheme::ForwardEuler;
-    else if (s == "Explicit RK")
-      scheme = TimeSteppingScheme::ExplicitRK;
-    else
-      AssertThrow(false, ExcNotImplemented());
-    double time_step = prm.get_double("Time step");
-    double end_time = prm.get_double("End time");
-    prm.leave_subsection(); // subsection Time stepping
-
-    prm.enter_subsection("Finite element");
-    unsigned int fe_degree = prm.get_integer("Polynomial degree");
-    prm.leave_subsection(); // subsection Finite element
-
-    prm.enter_subsection("Mesh");
-    unsigned int refinement_level = prm.get_integer("Refinement level");
-    prm.leave_subsection(); // subsection Mesh
-
-    prm.enter_subsection("Numerical flux");
-    FluxType flux_type;
-    s = prm.get("Numerical flux");
-    if (s == "Central")
-      flux_type = FluxType::Central;
-    else if (s == "Upwind")
-      flux_type = FluxType::Upwind;
-    else if (s == "Lax-Friedrichs")
-      flux_type = FluxType::LaxFriedrichs;
-    else
-      AssertThrow(false, ExcNotImplemented());
-    prm.leave_subsection(); // subsection Numerical flux
-
-    prm.enter_subsection("Slope limiter");
-    SlopeLimiter limiter;
-    s = prm.get("Slope limiter");
-    if (s == "No limiter")
-      limiter = SlopeLimiter::NoLimiter;
-    else if (s == "Linear reconstruction")
-      limiter = SlopeLimiter::LinearReconstruction;
-    else if (s == "MinMod")
-      limiter = SlopeLimiter::MinMod;
-    else if (s == "MUSCL")
-      limiter = SlopeLimiter::MUSCL;
-    else
-      AssertThrow(false, ExcNotImplemented());
-    SlopeLimiterCriterion limiter_criterion;
-    s = prm.get("Slope limiter criterion");
-    if (s == "Never")
-      limiter_criterion = SlopeLimiterCriterion::Never;
-    else if (s == "Always")
-      limiter_criterion = SlopeLimiterCriterion::Always;
-    else if (s == "Generalized slope limiter")
-      limiter_criterion = SlopeLimiterCriterion::GerneralizedSlopeLimiter;
-    else
-      AssertThrow(false, ExcNotImplemented());
-    if (limiter == SlopeLimiter::NoLimiter) {
-      Assert(
-          limiter_criterion == SlopeLimiterCriterion::Never,
-          ExcMessage(
-              "No slope limiter is selected, but a slope limiter criterion is "
-              "selected"));
-    }
-    prm.leave_subsection(); // subsection Slope limiter
-
-    prm.enter_subsection("Linear solver");
-    unsigned int max_iterations = prm.get_integer("Max iterations");
-    double tolerance = prm.get_double("Tolerance");
-    prm.leave_subsection(); // subsection Linear solver
-
-    prm.leave_subsection(); // subsection Hydrodynamics
-
-    return HDSolverControl(scheme, flux_type, limiter, limiter_criterion,
-                           fe_degree, time_step, end_time, refinement_level,
-                           max_iterations, tolerance);
-  };
+  HDSolverControl(const Sapphire::Utils::ParameterParser &prm);
 
   const TimeSteppingScheme scheme;
   const FluxType flux_type;
@@ -183,19 +39,6 @@ public:
 
   double Upwind_eta = 1.0; //< Parameter controling upwind or central flux
   double LaxFriedrichs_C;
-
-private:
-  HDSolverControl(const TimeSteppingScheme &scheme, const FluxType &flux_type,
-                  const SlopeLimiter &limiter,
-                  const SlopeLimiterCriterion &limiter_criterion,
-                  const unsigned int &fe_degree, const double &time_step,
-                  const double &end_time, const unsigned int &refinement_level,
-                  const unsigned int &max_iterations, const double &tolerance)
-      : scheme(scheme), flux_type(flux_type), limiter(limiter),
-        limiter_criterion(limiter_criterion), fe_degree(fe_degree),
-        time_step(time_step), end_time(end_time),
-        refinement_level(refinement_level), max_iterations(max_iterations),
-        tolerance(tolerance){};
 };
 
 double minmod(const std::vector<double> &values);

@@ -178,7 +178,7 @@ struct CopyDataSlopeLimiter {
 template <int dim>
 Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
     Function<dim> *initial_condition, Function<dim> *boundary_values,
-    Function<dim> *exact_solution, ParameterHandler &prm,
+    Function<dim> *exact_solution, const ParameterParser &prm,
     const OutputModule<dim> &output_module, const double beta)
     : initial_condition(initial_condition), boundary_values(boundary_values),
       exact_solution(exact_solution), hd_solver_control(prm),

@@ -1,6 +1,18 @@
 #include "output_module.h"
 
 template <int dim>
+Sapphire::Utils::OutputModule<dim>::OutputModule(
+    const Sapphire::Utils::ParameterParser &prm)
+    : output_frequency(prm.out_output_frequency),
+      results_path(prm.out_results_path), simulation_id(prm.out_simulation_id),
+      output_path(this->results_path / this->simulation_id),
+      base_file_name(prm.out_base_file_name),
+      n_digits_for_counter(prm.out_n_digits_for_counter),
+      format(prm.out_format) {
+  init(prm.get_parameter_handler());
+};
+
+template <int dim>
 void Sapphire::Utils::OutputModule<dim>::init(
     const ParameterHandler &prm) const {
   DEBUG_PRINT(std::cout, 0, "Initializing output module");

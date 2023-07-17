@@ -2,6 +2,7 @@
 #include "conservation-eq.h"
 #include "numerics.h"
 #include "output_module.h"
+#include "parameter_parser.h"
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/multithread_info.h>
@@ -289,19 +290,12 @@ int main(int argc, char *argv[]) {
     PhysicalSetup::BoundaryValues<dim> boundary_values(&exact_solution);
     PhysicalSetup::InitialCondition<dim> initial_condition(&exact_solution);
 
-    ParameterHandler prm;
-    OutputModule<dim>::declare_parameters(prm);
-    BurgersEq<dim>::declare_parameters(prm);
-    prm.print_parameters("../parameter-template.prm", ParameterHandler::PRM);
-
     std::string parameter_filename = "../parameter.prm";
     if (argc > 1)
       parameter_filename = argv[1];
     DEBUG_PRINT(std::cout, 0, parameter_filename);
-    prm.parse_input(parameter_filename);
-    if (DEBUG_LEVEL >= 2) {
-      prm.print_parameters(std::cout, ParameterHandler::PRM);
-    }
+
+    ParameterParser prm(parameter_filename);
 
     OutputModule<dim> output_module(prm);
 

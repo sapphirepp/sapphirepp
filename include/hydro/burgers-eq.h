@@ -65,12 +65,8 @@ public:
    * \f$
    */
   BurgersEq(Function<dim> *initial_condition, Function<dim> *boundary_values,
-            Function<dim> *exact_solution, ParameterHandler &prm,
+            Function<dim> *exact_solution, const ParameterParser &prm,
             const OutputModule<dim> &output_module, const double beta = 1.0);
-
-  static void declare_parameters(ParameterHandler &prm) {
-    HDSolverControl::declare_parameters(prm);
-  };
 
   void init();
   void do_timestep();
