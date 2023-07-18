@@ -13,37 +13,52 @@
 
 #include <string>
 
-namespace Sapphire {
+namespace Sapphire
+{
 
-namespace Utils {
-enum class OutputFormat { vtu, pvtu, hdf5 };
-} // namespace Utils
+  namespace Utils
+  {
+    enum class OutputFormat
+    {
+      vtu,
+      pvtu,
+      hdf5
+    };
+  } // namespace Utils
 
-namespace Utils {
-using namespace dealii;
+  namespace Utils
+  {
+    using namespace dealii;
 
-class ParameterParser {
-public:
-  ParameterParser(const std::string &prm_file_name);
+    class ParameterParser
+    {
+    public:
+      ParameterParser(const std::string &prm_file_name);
 
-  const ParameterHandler &get_parameter_handler() const { return prm; }
+      const ParameterHandler &
+      get_parameter_handler() const
+      {
+        return prm;
+      }
 
-  /**Output parameter*/
-  std::string out_results_path;
-  std::string out_simulation_id;
-  std::string out_output_path;
-  std::string out_base_file_name;
-  unsigned int out_n_digits_for_counter;
-  Sapphire::Utils::OutputFormat out_format;
-  unsigned int out_output_frequency;
+      /**Output parameter*/
+      std::string                   out_results_path;
+      std::string                   out_simulation_id;
+      std::string                   out_output_path;
+      std::string                   out_base_file_name;
+      unsigned int                  out_n_digits_for_counter;
+      Sapphire::Utils::OutputFormat out_format;
+      unsigned int                  out_output_frequency;
 
-private:
-  void declare_parameters();
-  void parse_parameters();
+    private:
+      void
+      declare_parameters();
+      void
+      parse_parameters();
 
-  ParameterHandler prm;
-};
+      ParameterHandler prm;
+    };
 
-} // namespace Utils
+  } // namespace Utils
 } // namespace Sapphire
 #endif
