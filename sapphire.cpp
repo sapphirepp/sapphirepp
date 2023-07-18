@@ -69,6 +69,9 @@
 
 // own header files
 #include "compile-time-flags.h"
+#include "output_module.h"
+#include "parameter-flags.h"
+#include "parameter_parser.h"
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "physical-setup.h"
@@ -190,7 +193,7 @@ namespace Sapphire
   class VFPEquationSolver
   {
   public:
-    VFPEquationSolver(const VFPSolverControl &control);
+    VFPEquationSolver(const Utils::ParameterParser &prm);
     void
     run();
 
@@ -227,8 +230,7 @@ namespace Sapphire
     low_storage_explicit_runge_kutta(const double time, const double time_step);
     // Output
     void
-    output_results(const unsigned int      time_step_number,
-                   std::vector<XDMFEntry> &xdmf_entries) const;
+    output_results(const unsigned int time_step_number);
 
     // auxiliary functions
     template <int dim>
@@ -244,7 +246,8 @@ namespace Sapphire
     const unsigned int n_mpi_procs;
     const unsigned int rank;
 
-    ConditionalOStream pcout;
+    ConditionalOStream          pcout;
+    Utils::OutputModule<dim_ps> output_module;
 
     // NOTE: parallel::distributed:Triangulation does not allow 1D. This
     // excludes the 1D transport (i.e. no momentum terms) only case. But I would
@@ -300,12 +303,13 @@ namespace Sapphire
     TimerOutput timer;
   };
 
-  VFPEquationSolver::VFPEquationSolver(const VFPSolverControl &control)
-    : vfp_solver_control(control)
+  VFPEquationSolver::VFPEquationSolver(const Utils::ParameterParser &prm)
+    : vfp_solver_control(prm)
     , mpi_communicator(MPI_COMM_WORLD)
     , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
     , rank(Utilities::MPI::this_mpi_process(mpi_communicator))
     , pcout(std::cout, (rank == 0))
+    , output_module(prm)
     , triangulation(mpi_communicator)
     , dof_handler(triangulation)
     , mapping()
@@ -324,12 +328,12 @@ namespace Sapphire
     // It should be checked if the results folder exists and if not it should be
     // tried to create it
     // Only one processor needs to check and create the folder
-    if (rank == 0)
-      if (!std::filesystem::exists(vfp_solver_control.results_path + "/" +
-                                   vfp_solver_control.simulation_id))
-        std::filesystem::create_directories(vfp_solver_control.results_path +
-                                            "/" +
-                                            vfp_solver_control.simulation_id);
+    // if (rank == 0)
+    //   if (!std::filesystem::exists(vfp_solver_control.results_path + "/" +
+    //                                vfp_solver_control.simulation_id))
+    //     std::filesystem::create_directories(vfp_solver_control.results_path +
+    //                                         "/" +
+    //                                         vfp_solver_control.simulation_id);
   }
 
   void
@@ -349,7 +353,7 @@ namespace Sapphire
     locally_relevant_current_solution = initial_condition;
     // Output t = 0
     std::vector<XDMFEntry> xdmf_entries;
-    output_results(0, xdmf_entries);
+    output_results(0);
 
     // Assemble the dg matrix for t = 0
     assemble_dg_matrix(0);
@@ -381,13 +385,11 @@ namespace Sapphire
           // NOTE: I cannot create TimerOutput::Scope inside output_results(),
           // because it is declared const.
           if (static_cast<unsigned int>(time_step_number) %
-                vfp_solver_control.output_frequency ==
+                output_module.output_frequency ==
               0)
             {
               TimerOutput::Scope timer_section(timer, "Output");
-              output_results(time_step_number /
-                               vfp_solver_control.output_frequency,
-                             xdmf_entries);
+              output_results(time_step_number / output_module.output_frequency);
             }
         }
       }
@@ -1728,8 +1730,7 @@ namespace Sapphire
   }
 
   void
-  VFPEquationSolver::output_results(const unsigned int      time_step_number,
-                                    std::vector<XDMFEntry> &xdmf_entries) const
+  VFPEquationSolver::output_results(const unsigned int time_step_number)
   {
     DataOut<dim_ps> data_out;
     data_out.attach_dof_handler(dof_handler);
@@ -1756,68 +1757,7 @@ namespace Sapphire
 
     // Adapt the output to the polynomial degree of the shape functions
     data_out.build_patches(vfp_solver_control.polynomial_degree);
-
-    // Path to the results folder
-    const std::string path = vfp_solver_control.results_path + "/" +
-                             vfp_solver_control.simulation_id + "/";
-    if (vfp_solver_control.format == "vtu")
-      data_out.write_vtu_with_pvtu_record(
-        path, "f", time_step_number, mpi_communicator, 4, 8);
-    else if (vfp_solver_control.format == "hdf5")
-      {
-        // I follow this pull request:
-        // https://github.com/dealii/dealii/pull/14958
-        const std::string filename_h5 =
-          "f_" + Utilities::int_to_string(time_step_number, 4) + ".h5";
-        const std::string filename_mesh = "mesh.h5";
-        const std::string xdmf_file     = "f.xdmf";
-        // https://dealii.org/developer/doxygen/deal.II/structDataOutBase_1_1DataOutFilterFlags.html
-        // Whether or not to filter out duplicate vertices and associated
-        // values. Setting this value to true will drastically reduce the output
-        // data size but will result in an output file that does not faithfully
-        // represent the actual data if the data corresponds to discontinuous
-        // fields. In particular, along subdomain boundaries the data will still
-        // be discontinuous, while it will look like a continuous field inside
-        // of the subdomain. NOTE: I suspect that discontinuous elements produce
-        // discontinuous fields, but I do not know.
-        const bool filter_duplicate_vertices{false};
-        const bool xdmf_hdf5_output{true};
-
-        DataOutBase::DataOutFilterFlags flags(filter_duplicate_vertices,
-                                              xdmf_hdf5_output);
-        DataOutBase::DataOutFilter      data_filter(flags);
-        // / Filter the data and store it in data_filter
-        data_out.write_filtered_data(data_filter);
-        // set the HDF5 compression level Future versions of dealii will allow
-        // to set the compression level: compare pull request.
-        // dealii::DataOutBase::Hdf5Flags hdf5Flags; hdf5Flags.compression_level
-        // = dealii::DataOutBase::CompressionLevel::best_compression;
-        // dataOut.set_flags(dealii::DataOutBase::Hdf5Flags(hdf5Flags));
-        const bool write_mesh_hdf5 = time_step_number == 0 ? true : false;
-
-        data_out.write_hdf5_parallel(data_filter,
-                                     write_mesh_hdf5,
-                                     path + filename_mesh,
-                                     path + filename_h5,
-                                     mpi_communicator);
-
-        auto new_xdmf_entry = data_out.create_xdmf_entry(
-          data_filter,
-          filename_mesh,
-          "f_" + Utilities::int_to_string(time_step_number, 4) + ".h5",
-          time_step_number,
-          mpi_communicator);
-        xdmf_entries.push_back(new_xdmf_entry);
-        // NOTE: For now I a writing the xdmf file in every time step. That is
-        // unnecessary. There is missing a function add entry to xdmf_file
-        data_out.write_xdmf_file(xdmf_entries,
-                                 path + xdmf_file,
-                                 mpi_communicator);
-        // Assert(false, ExcNotImplemented("Currentlty it is not implemented to
-        // store "
-        //                                 "the simulation results in hdf5
-        //                                 format."));
-      }
+    output_module.write_results(data_out, time_step_number);
   }
 
 } // namespace Sapphire
@@ -1829,12 +1769,8 @@ main(int argc, char *argv[])
     {
       using namespace Sapphire;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-
-      VFPSolverControl vfp_solver_control("vfp-equation.prm");
-      if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-        vfp_solver_control.print_settings(std::cout);
-
-      VFPEquationSolver vfp_equation_solver(vfp_solver_control);
+      Utils::ParameterParser           parameter_parser("vfp-equation.prm");
+      VFPEquationSolver vfp_equation_solver(parameter_parser);
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)
