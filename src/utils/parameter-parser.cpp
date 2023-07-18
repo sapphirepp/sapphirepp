@@ -2,18 +2,23 @@
 
 #include <iostream>
 
+#include "sapphire-logstream.h"
+
 Sapphire::Utils::ParameterParser::ParameterParser(
   const std::string &prm_file_name)
 {
+  LogStream::Prefix p("ParameterParser", saplog);
   declare_parameters();
+  saplog << "Parsing input file \"" << prm_file_name << "\"" << std::endl;
   prm.parse_input(prm_file_name);
-  prm.print_parameters(std::cout, ParameterHandler::PRM);
   parse_parameters();
+  prm.log_parameters(saplog);
 }
 
 void
 Sapphire::Utils::ParameterParser::declare_parameters()
 {
+  saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("Output");
   {
     prm.declare_entry(
@@ -130,6 +135,7 @@ Sapphire::Utils::ParameterParser::declare_parameters()
 void
 Sapphire::Utils::ParameterParser::parse_parameters()
 {
+  saplog << "Parsing parameters" << std::endl;
   std::string s;
 
   prm.enter_subsection("Output");
