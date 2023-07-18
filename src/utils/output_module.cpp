@@ -95,7 +95,7 @@ void Sapphire::Utils::OutputModule<dim>::write_results(
 
     XDMFEntry new_xdmf_entry = data_out.create_xdmf_entry(
         data_filter, filename_mesh,
-        "f_" + Utilities::int_to_string(counter, n_digits_for_counter) + ".h5",
+        base_file_name + Utilities::int_to_string(counter, n_digits_for_counter) + ".h5",
         counter, mpi_communicator);
     // TODO: Change this, append lines to xmdf file instead
     xdmf_entries.push_back(new_xdmf_entry);
