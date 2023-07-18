@@ -11,6 +11,7 @@
 #include "numerics.h"
 #include "output-module.h"
 #include "parameter-parser.h"
+#include "sapphire-logstream.h"
 
 namespace PhysicalSetup
 {
@@ -288,6 +289,8 @@ main(int argc, char *argv[])
       using namespace Sapphire::Hydro;
       using namespace Sapphire::Utils;
 
+      Sapphire::saplog.depth_console(10);
+
       DEBUG_PRINT(std::cout, 3, argc);
       for (int i = 3; i < argc; ++i)
         DEBUG_PRINT(std::cout, 3, argv[i]);
@@ -345,6 +348,7 @@ main(int argc, char *argv[])
       DEBUG_PRINT(std::cout, 0, parameter_filename);
 
       ParameterParser prm(parameter_filename);
+      prm.write_template_parameters("../parameter-template.prm");
 
       OutputModule<dim> output_module(prm);
 

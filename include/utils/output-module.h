@@ -19,7 +19,7 @@
 #include <filesystem>
 #include <string>
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 0
 
 #define DEBUG_PRINT(ostream, level, message) \
   if (level <= DEBUG_LEVEL)                  \
