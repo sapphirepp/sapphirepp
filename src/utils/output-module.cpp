@@ -19,28 +19,29 @@ Sapphire::Utils::OutputModule<dim>::OutputModule(
   , format(prm.out_format)
   , mpi_communicator(MPI_COMM_WORLD)
 {
-  init(prm.get_parameter_handler());
+  init(prm);
 };
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::init(const ParameterHandler &prm) const
+Sapphire::Utils::OutputModule<dim>::init(
+  const Sapphire::Utils::ParameterParser &prm) const
 {
   LogStream::Prefix p("OutputModule", saplog);
   // create output directory
-  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
     {
       saplog << "Create results folder " << output_path << std::endl;
       std::filesystem::create_directory(output_path);
-      saplog << "Log parameter file" << std::endl;
-      prm.print_parameters(output_path / "log.prm", ParameterHandler::Short);
+
+      prm.write_parameters(output_path / "log.prm");
     }
 
 
   if (format == OutputFormat::vtu)
     {
       int comm_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+      MPI_Comm_size(mpi_communicator, &comm_size);
       Assert(comm_size == 1,
              ExcMessage("'vtu' format only works with a single "
                         "processor. Use 'pvtu' instead."));

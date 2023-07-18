@@ -26,11 +26,10 @@ namespace Sapphire
     public:
       ParameterParser(const std::string &prm_file_name);
 
-      const ParameterHandler &
-      get_parameter_handler() const
-      {
-        return prm;
-      }
+      void
+      write_parameters(const std::string &filename) const;
+      void
+      write_template_parameters(const std::string &filename);
 
       /**Output parameter*/
       std::string                   out_results_path;
@@ -78,6 +77,7 @@ namespace Sapphire
       parse_parameters();
 
       ParameterHandler prm;
+      const std::string prm_file_name;
     };
 
   } // namespace Utils

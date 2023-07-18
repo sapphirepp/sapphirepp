@@ -47,7 +47,7 @@ namespace Sapphire
       OutputModule(const Sapphire::Utils::ParameterParser &prm);
 
       void
-      init(const ParameterHandler &prm) const;
+      init(const Sapphire::Utils::ParameterParser &prm) const;
       void
       write_results(DataOut<dim>      &data_out,
                     const unsigned int time_step_number);

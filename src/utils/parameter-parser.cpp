@@ -7,6 +7,7 @@
 
 Sapphire::Utils::ParameterParser::ParameterParser(
   const std::string &prm_file_name)
+  : prm_file_name(prm_file_name)
 {
   LogStream::Prefix p("ParameterParser", saplog);
   declare_parameters();
@@ -14,6 +15,32 @@ Sapphire::Utils::ParameterParser::ParameterParser(
   prm.parse_input(prm_file_name);
   parse_parameters();
   prm.log_parameters(saplog);
+}
+
+void
+Sapphire::Utils::ParameterParser::write_parameters(
+  const std::string &filename) const
+{
+  LogStream::Prefix p("ParameterParser", saplog);
+  saplog << "Writing parameter file \"" << filename << "\"" << std::endl;
+  prm.print_parameters(filename, ParameterHandler::PRM);
+}
+
+void
+Sapphire::Utils::ParameterParser::write_template_parameters(
+  const std::string &filename)
+{
+  LogStream::Prefix p("ParameterParser", saplog);
+  saplog << "Writing template parameter file \"" << filename << "\""
+         << std::endl;
+  // The ParameterHandler is cleared, but the parameters stay the same, because
+  // parse_aprameters() is not called.
+  prm.clear();
+  declare_parameters();
+  prm.print_parameters(filename, ParameterHandler::PRM);
+
+  // restore original state
+  prm.parse_input(prm_file_name);
 }
 
 void
