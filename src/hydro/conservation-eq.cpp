@@ -30,135 +30,163 @@
 #include <fstream>
 #include <iostream>
 
-namespace Sapphire {
-namespace Hydro {
-using namespace dealii;
+namespace Sapphire
+{
+  namespace Hydro
+  {
+    using namespace dealii;
 
-template <int dim> class ScratchData {
-public:
-  // Constructor
-  ScratchData(const Mapping<dim> &mapping, const FiniteElement<dim> &fe,
-              const Quadrature<dim> &quadrature,
-              const Quadrature<dim - 1> &face_quadrature,
-              const UpdateFlags update_flags = update_values |
-                                               update_gradients |
-                                               update_quadrature_points |
-                                               update_JxW_values,
-              const UpdateFlags face_update_flags = update_values |
-                                                    update_quadrature_points |
-                                                    update_JxW_values |
-                                                    update_normal_vectors |
-                                                    update_JxW_values,
-              const UpdateFlags neighbor_face_update_flags = update_values)
-      : fe_values(mapping, fe, quadrature, update_flags),
-        fe_face_values(mapping, fe, face_quadrature, face_update_flags),
-        fe_face_values_neighbor(mapping, fe, face_quadrature,
-                                neighbor_face_update_flags) {}
+    template <int dim>
+    class ScratchData
+    {
+    public:
+      // Constructor
+      ScratchData(const Mapping<dim>        &mapping,
+                  const FiniteElement<dim>  &fe,
+                  const Quadrature<dim>     &quadrature,
+                  const Quadrature<dim - 1> &face_quadrature,
+                  const UpdateFlags          update_flags = update_values |
+                                                   update_gradients |
+                                                   update_quadrature_points |
+                                                   update_JxW_values,
+                  const UpdateFlags face_update_flags =
+                    update_values | update_quadrature_points |
+                    update_JxW_values | update_normal_vectors |
+                    update_JxW_values,
+                  const UpdateFlags neighbor_face_update_flags = update_values)
+        : fe_values(mapping, fe, quadrature, update_flags)
+        , fe_face_values(mapping, fe, face_quadrature, face_update_flags)
+        , fe_face_values_neighbor(mapping,
+                                  fe,
+                                  face_quadrature,
+                                  neighbor_face_update_flags)
+      {}
 
-  // Copy constructor
-  ScratchData(const ScratchData &scratch_data)
-      : fe_values(scratch_data.fe_values.get_mapping(),
-                  scratch_data.fe_values.get_fe(),
-                  scratch_data.fe_values.get_quadrature(),
-                  scratch_data.fe_values.get_update_flags()),
-        fe_face_values(scratch_data.fe_face_values.get_mapping(),
-                       scratch_data.fe_face_values.get_fe(),
-                       scratch_data.fe_face_values.get_quadrature(),
-                       scratch_data.fe_face_values.get_update_flags()),
-        fe_face_values_neighbor(
+      // Copy constructor
+      ScratchData(const ScratchData &scratch_data)
+        : fe_values(scratch_data.fe_values.get_mapping(),
+                    scratch_data.fe_values.get_fe(),
+                    scratch_data.fe_values.get_quadrature(),
+                    scratch_data.fe_values.get_update_flags())
+        , fe_face_values(scratch_data.fe_face_values.get_mapping(),
+                         scratch_data.fe_face_values.get_fe(),
+                         scratch_data.fe_face_values.get_quadrature(),
+                         scratch_data.fe_face_values.get_update_flags())
+        , fe_face_values_neighbor(
             scratch_data.fe_face_values_neighbor.get_mapping(),
             scratch_data.fe_face_values_neighbor.get_fe(),
             scratch_data.fe_face_values_neighbor.get_quadrature(),
-            scratch_data.fe_face_values_neighbor.get_update_flags()) {}
+            scratch_data.fe_face_values_neighbor.get_update_flags())
+      {}
 
-  FEValues<dim> fe_values;
-  FEFaceValues<dim> fe_face_values;
-  FEFaceValues<dim> fe_face_values_neighbor;
-};
+      FEValues<dim>     fe_values;
+      FEFaceValues<dim> fe_face_values;
+      FEFaceValues<dim> fe_face_values_neighbor;
+    };
 
-struct CopyDataFace {
-  FullMatrix<double> cell_dg_matrix_11;
-  FullMatrix<double> cell_dg_matrix_12;
-  FullMatrix<double> cell_dg_matrix_21;
-  FullMatrix<double> cell_dg_matrix_22;
+    struct CopyDataFace
+    {
+      FullMatrix<double> cell_dg_matrix_11;
+      FullMatrix<double> cell_dg_matrix_12;
+      FullMatrix<double> cell_dg_matrix_21;
+      FullMatrix<double> cell_dg_matrix_22;
 
-  Vector<double> cell_vector_1;
-  Vector<double> cell_vector_2;
+      Vector<double> cell_vector_1;
+      Vector<double> cell_vector_2;
 
-  std::vector<types::global_dof_index> local_dof_indices;
-  std::vector<types::global_dof_index> local_dof_indices_neighbor;
+      std::vector<types::global_dof_index> local_dof_indices;
+      std::vector<types::global_dof_index> local_dof_indices_neighbor;
 
-  template <typename Iterator>
-  void reinit(const Iterator &cell, const Iterator &neighbor_cell,
-              unsigned int dofs_per_cell) {
-    cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+      template <typename Iterator>
+      void
+      reinit(const Iterator &cell,
+             const Iterator &neighbor_cell,
+             unsigned int    dofs_per_cell)
+      {
+        cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
 
-    cell_vector_1.reinit(dofs_per_cell);
-    cell_vector_2.reinit(dofs_per_cell);
+        cell_vector_1.reinit(dofs_per_cell);
+        cell_vector_2.reinit(dofs_per_cell);
 
-    local_dof_indices.resize(dofs_per_cell);
-    cell->get_dof_indices(local_dof_indices);
+        local_dof_indices.resize(dofs_per_cell);
+        cell->get_dof_indices(local_dof_indices);
 
-    local_dof_indices_neighbor.resize(dofs_per_cell);
-    neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
-  }
-};
+        local_dof_indices_neighbor.resize(dofs_per_cell);
+        neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
+      }
+    };
 
-struct CopyData {
-  FullMatrix<double> cell_mass_matrix;
-  FullMatrix<double> cell_dg_matrix;
-  Vector<double> cell_rhs;
-  Vector<double> cell_vector;
-  std::vector<types::global_dof_index> local_dof_indices;
-  std::vector<types::global_dof_index> local_dof_indices_neighbor;
-  std::vector<CopyDataFace> face_data;
+    struct CopyData
+    {
+      FullMatrix<double>                   cell_mass_matrix;
+      FullMatrix<double>                   cell_dg_matrix;
+      Vector<double>                       cell_rhs;
+      Vector<double>                       cell_vector;
+      std::vector<types::global_dof_index> local_dof_indices;
+      std::vector<types::global_dof_index> local_dof_indices_neighbor;
+      std::vector<CopyDataFace>            face_data;
 
-  template <typename Iterator>
-  void reinit(const Iterator &cell, unsigned int dofs_per_cell) {
-    cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
-    cell_rhs.reinit(dofs_per_cell);
-    cell_vector.reinit(dofs_per_cell);
+      template <typename Iterator>
+      void
+      reinit(const Iterator &cell, unsigned int dofs_per_cell)
+      {
+        cell_mass_matrix.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix.reinit(dofs_per_cell, dofs_per_cell);
+        cell_rhs.reinit(dofs_per_cell);
+        cell_vector.reinit(dofs_per_cell);
 
-    local_dof_indices.resize(dofs_per_cell);
-    cell->get_dof_indices(local_dof_indices);
-  }
-};
+        local_dof_indices.resize(dofs_per_cell);
+        cell->get_dof_indices(local_dof_indices);
+      }
+    };
 
-} // namespace Hydro
+  } // namespace Hydro
 } // namespace Sapphire
 
 template <int dim>
 Sapphire::Hydro::ConservationEq<dim>::ConservationEq(
-    TensorFunction<1, dim, double> *beta, Function<dim> *initial_condition,
-    Function<dim> *boundary_values, Function<dim> *exact_solution)
-    : beta(beta), initial_condition(initial_condition),
-      boundary_values(boundary_values), exact_solution(exact_solution),
-      mpi_communicator(MPI_COMM_WORLD), mapping(), fe(1),
-      dof_handler(triangulation), quadrature_formula(fe.tensor_degree() + 1),
-      face_quadrature_formula(fe.tensor_degree() + 1), error_with_time(),
-      pcout(std::cout,
-            (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
-      computing_timer(mpi_communicator, pcout, TimerOutput::never,
-                      TimerOutput::wall_times) {
+  TensorFunction<1, dim, double> *beta,
+  Function<dim>                  *initial_condition,
+  Function<dim>                  *boundary_values,
+  Function<dim>                  *exact_solution)
+  : beta(beta)
+  , initial_condition(initial_condition)
+  , boundary_values(boundary_values)
+  , exact_solution(exact_solution)
+  , mpi_communicator(MPI_COMM_WORLD)
+  , mapping()
+  , fe(1)
+  , dof_handler(triangulation)
+  , quadrature_formula(fe.tensor_degree() + 1)
+  , face_quadrature_formula(fe.tensor_degree() + 1)
+  , error_with_time()
+  , pcout(std::cout, (Utilities::MPI::this_mpi_process(mpi_communicator) == 0))
+  , computing_timer(mpi_communicator,
+                    pcout,
+                    TimerOutput::never,
+                    TimerOutput::wall_times)
+{
   pcout << "Setup conservation equation" << std::endl;
 
   // Point<dim> x({1, 1});
-  Point<dim> x;
+  Point<dim>     x;
   Tensor<1, dim> beta_value = this->beta->value(x);
   pcout << "  beta(x=[" << x << "]) = [" << beta_value << "]" << std::endl;
 
   time = 0.0;
   // time_step = 0.001;
   // time_step = 0.01;
-  time_step = 0.05;
+  time_step       = 0.05;
   timestep_number = 0;
 }
 
-template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
+template <int dim>
+void
+Sapphire::Hydro::ConservationEq<dim>::make_grid()
+{
   TimerOutput::Scope t(computing_timer, "Make grid");
   pcout << "Make grid" << std::endl;
 
@@ -169,7 +197,10 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::make_grid() {
         << std::endl;
 }
 
-template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
+template <int dim>
+void
+Sapphire::Hydro::ConservationEq<dim>::setup_system()
+{
   TimerOutput::Scope t(computing_timer, "Setup system");
   pcout << "Setup system" << std::endl;
 
@@ -193,51 +224,56 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::setup_system() {
 }
 
 template <int dim>
-void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
+void
+Sapphire::Hydro::ConservationEq<dim>::assemble_system()
+{
   TimerOutput::Scope t(computing_timer, "Assemble system");
   pcout << "Assemble system" << std::endl;
 
-  mass_matrix = 0;
-  dg_matrix = 0;
+  mass_matrix   = 0;
+  dg_matrix     = 0;
   system_matrix = 0;
-  system_rhs = 0;
+  system_rhs    = 0;
 
   beta->set_time(time);
   boundary_values->set_time(time);
 
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
 
-  const auto cell_worker = [&](const Iterator &cell,
+  const auto cell_worker = [&](const Iterator   &cell,
                                ScratchData<dim> &scratch_data,
-                               CopyData &copy_data) {
+                               CopyData         &copy_data) {
     FEValues<dim> &fe_values = scratch_data.fe_values;
 
     fe_values.reinit(cell);
     const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
-    Tensor<1, dim> beta_value;
+    Tensor<1, dim>     beta_value;
 
     copy_data.reinit(cell, n_dofs);
 
-    for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
-      beta_value = beta->value(fe_values.quadrature_point(q_index));
-      for (const unsigned int i : fe_values.dof_indices()) {
-        for (const unsigned int j : fe_values.dof_indices()) {
-          copy_data.cell_mass_matrix(i, j) +=
-              (fe_values.shape_value(i, q_index) *
-               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-          copy_data.cell_dg_matrix(i, j) -=
-              beta_value *
-              (fe_values.shape_grad(i, q_index) *
-               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-        }
+    for (const unsigned int q_index : fe_values.quadrature_point_indices())
+      {
+        beta_value = beta->value(fe_values.quadrature_point(q_index));
+        for (const unsigned int i : fe_values.dof_indices())
+          {
+            for (const unsigned int j : fe_values.dof_indices())
+              {
+                copy_data.cell_mass_matrix(i, j) +=
+                  (fe_values.shape_value(i, q_index) *
+                   fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
+                copy_data.cell_dg_matrix(i, j) -=
+                  beta_value *
+                  (fe_values.shape_grad(i, q_index) *
+                   fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
+              }
+          }
       }
-    }
   };
 
-  const auto boundary_worker = [&](const Iterator &cell,
+  const auto boundary_worker = [&](const Iterator     &cell,
                                    const unsigned int &face_no,
-                                   ScratchData<dim> &scratch_data,
-                                   CopyData &copy_data) {
+                                   ScratchData<dim>   &scratch_data,
+                                   CopyData           &copy_data) {
     scratch_data.fe_face_values.reinit(cell, face_no);
     const FEFaceValuesBase<dim> &fe_face_values = scratch_data.fe_face_values;
 
@@ -251,202 +287,232 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system() {
     //                            boundary_values_vector);
     Vector<double> boundary_value(1);
 
-    for (const unsigned int q_index :
-         fe_face_values.quadrature_point_indices()) {
-      const double v_dot_n =
+    for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
+      {
+        const double v_dot_n =
           beta->value(fe_face_values.quadrature_point(q_index)) *
           fe_face_values.normal_vector(q_index);
 
-      if (v_dot_n > 0.0) { // outflow boundary
-        for (const unsigned int i : fe_face_values.dof_indices()) {
-          for (const unsigned int j : fe_face_values.dof_indices()) {
-
-            copy_data.cell_dg_matrix(i, j) +=
-                v_dot_n * fe_face_values.shape_value(i, q_index) *
-                fe_face_values.shape_value(j, q_index) *
-                fe_face_values.JxW(q_index);
+        if (v_dot_n > 0.0)
+          { // outflow boundary
+            for (const unsigned int i : fe_face_values.dof_indices())
+              {
+                for (const unsigned int j : fe_face_values.dof_indices())
+                  {
+                    copy_data.cell_dg_matrix(i, j) +=
+                      v_dot_n * fe_face_values.shape_value(i, q_index) *
+                      fe_face_values.shape_value(j, q_index) *
+                      fe_face_values.JxW(q_index);
+                  }
+              }
           }
-        }
-      } else { // inflow boundary
-        for (const unsigned int i : fe_face_values.dof_indices()) {
-          boundary_values->vector_value(
-              fe_face_values.quadrature_point(q_index), boundary_value);
+        else
+          { // inflow boundary
+            for (const unsigned int i : fe_face_values.dof_indices())
+              {
+                boundary_values->vector_value(
+                  fe_face_values.quadrature_point(q_index), boundary_value);
 
-          copy_data.cell_rhs(i) += -v_dot_n * boundary_value[0] *
-                                   fe_face_values.shape_value(i, q_index) *
-                                   fe_face_values.JxW(q_index);
-        }
+                copy_data.cell_rhs(i) +=
+                  -v_dot_n * boundary_value[0] *
+                  fe_face_values.shape_value(i, q_index) *
+                  fe_face_values.JxW(q_index);
+              }
+          }
       }
-    }
   };
 
-  const auto face_worker =
-      [&](const Iterator &cell, const unsigned int &face_no,
-          const unsigned int &subface_no, const Iterator &neighbor_cell,
-          const unsigned int &neighbor_face_no,
-          const unsigned int &neighbor_subface_no,
-          ScratchData<dim> &scratch_data, CopyData &copy_data) {
-        // supress unused variable warning
-        (void)subface_no;
-        (void)neighbor_subface_no;
+  const auto face_worker = [&](const Iterator     &cell,
+                               const unsigned int &face_no,
+                               const unsigned int &subface_no,
+                               const Iterator     &neighbor_cell,
+                               const unsigned int &neighbor_face_no,
+                               const unsigned int &neighbor_subface_no,
+                               ScratchData<dim>   &scratch_data,
+                               CopyData           &copy_data) {
+    // supress unused variable warning
+    (void)subface_no;
+    (void)neighbor_subface_no;
 
-        FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
-        fe_face_values.reinit(cell, face_no);
+    FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
+    fe_face_values.reinit(cell, face_no);
 
-        FEFaceValues<dim> &fe_face_values_neighbor =
-            scratch_data.fe_face_values_neighbor;
-        fe_face_values_neighbor.reinit(neighbor_cell, neighbor_face_no);
+    FEFaceValues<dim> &fe_face_values_neighbor =
+      scratch_data.fe_face_values_neighbor;
+    fe_face_values_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
-        copy_data.face_data.emplace_back();
-        CopyDataFace &copy_data_face = copy_data.face_data.back();
+    copy_data.face_data.emplace_back();
+    CopyDataFace &copy_data_face = copy_data.face_data.back();
 
-        const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
-        copy_data_face.reinit(cell, neighbor_cell, n_dofs);
+    const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
+    copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
-        for (const unsigned int q_index :
-             fe_face_values.quadrature_point_indices()) {
-          const double v_dot_n =
-              beta->value(fe_face_values.quadrature_point(q_index)) *
-              fe_face_values.normal_vector(q_index);
+    for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
+      {
+        const double v_dot_n =
+          beta->value(fe_face_values.quadrature_point(q_index)) *
+          fe_face_values.normal_vector(q_index);
 
-          for (const unsigned int i : fe_face_values.dof_indices()) {
-            for (const unsigned int j : fe_face_values.dof_indices()) {
-
-              copy_data_face.cell_dg_matrix_11(i, j) +=
+        for (const unsigned int i : fe_face_values.dof_indices())
+          {
+            for (const unsigned int j : fe_face_values.dof_indices())
+              {
+                copy_data_face.cell_dg_matrix_11(i, j) +=
                   0.5 * v_dot_n *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              copy_data_face.cell_dg_matrix_21(i, j) -=
+                copy_data_face.cell_dg_matrix_21(i, j) -=
                   0.5 * v_dot_n *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              copy_data_face.cell_dg_matrix_12(i, j) +=
+                copy_data_face.cell_dg_matrix_12(i, j) +=
                   0.5 * v_dot_n *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              copy_data_face.cell_dg_matrix_22(i, j) -=
+                copy_data_face.cell_dg_matrix_22(i, j) -=
                   0.5 * v_dot_n *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              // upwind flux
-              const double eta = 1.0;
-              // const double eta = 0.0; // central flux
+                // upwind flux
+                const double eta = 1.0;
+                // const double eta = 0.0; // central flux
 
-              copy_data_face.cell_dg_matrix_11(i, j) +=
+                copy_data_face.cell_dg_matrix_11(i, j) +=
                   0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              copy_data_face.cell_dg_matrix_21(i, j) -=
+                copy_data_face.cell_dg_matrix_21(i, j) -=
                   0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              copy_data_face.cell_dg_matrix_12(i, j) -=
+                copy_data_face.cell_dg_matrix_12(i, j) -=
                   0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
 
-              copy_data_face.cell_dg_matrix_22(i, j) +=
+                copy_data_face.cell_dg_matrix_22(i, j) +=
                   0.5 * eta * std::abs(v_dot_n) *
                   (fe_face_values_neighbor.shape_value(i, q_index) *
                    fe_face_values_neighbor.shape_value(j, q_index) *
                    fe_face_values.JxW(q_index));
-            }
+              }
           }
-        }
-      };
+      }
+  };
 
   const auto copier = [&](const CopyData &c) {
     constraints.distribute_local_to_global(c.cell_mass_matrix,
-                                           c.local_dof_indices, mass_matrix);
+                                           c.local_dof_indices,
+                                           mass_matrix);
     constraints.distribute_local_to_global(c.cell_dg_matrix,
-                                           c.local_dof_indices, dg_matrix);
-    constraints.distribute_local_to_global(c.cell_rhs, c.local_dof_indices,
+                                           c.local_dof_indices,
+                                           dg_matrix);
+    constraints.distribute_local_to_global(c.cell_rhs,
+                                           c.local_dof_indices,
                                            system_rhs);
 
-    for (auto &cdf : c.face_data) {
-      constraints.distribute_local_to_global(cdf.cell_dg_matrix_11,
-                                             cdf.local_dof_indices,
-                                             cdf.local_dof_indices, dg_matrix);
-      constraints.distribute_local_to_global(cdf.cell_dg_matrix_21,
-                                             cdf.local_dof_indices_neighbor,
-                                             cdf.local_dof_indices, dg_matrix);
-      constraints.distribute_local_to_global(
-          cdf.cell_dg_matrix_12, cdf.local_dof_indices,
-          cdf.local_dof_indices_neighbor, dg_matrix);
-      constraints.distribute_local_to_global(
-          cdf.cell_dg_matrix_22, cdf.local_dof_indices_neighbor,
-          cdf.local_dof_indices_neighbor, dg_matrix);
+    for (auto &cdf : c.face_data)
+      {
+        constraints.distribute_local_to_global(cdf.cell_dg_matrix_11,
+                                               cdf.local_dof_indices,
+                                               cdf.local_dof_indices,
+                                               dg_matrix);
+        constraints.distribute_local_to_global(cdf.cell_dg_matrix_21,
+                                               cdf.local_dof_indices_neighbor,
+                                               cdf.local_dof_indices,
+                                               dg_matrix);
+        constraints.distribute_local_to_global(cdf.cell_dg_matrix_12,
+                                               cdf.local_dof_indices,
+                                               cdf.local_dof_indices_neighbor,
+                                               dg_matrix);
+        constraints.distribute_local_to_global(cdf.cell_dg_matrix_22,
+                                               cdf.local_dof_indices_neighbor,
+                                               cdf.local_dof_indices_neighbor,
+                                               dg_matrix);
 
-      // for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i) {
-      //   for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
-      //     dg_matrix.add(cdf.local_dof_indices[i], cdf.local_dof_indices[j],
-      //                   cdf.cell_dg_matrix_11(i, j));
-      //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-      //                   cdf.local_dof_indices[j], cdf.cell_dg_matrix_12(i,
-      //                   j));
-      //     dg_matrix.add(cdf.local_dof_indices[i],
-      //                   cdf.local_dof_indices_neighbor[j],
-      //                   cdf.cell_dg_matrix_21(i, j));
-      //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-      //                   cdf.local_dof_indices_neighbor[j],
-      //                   cdf.cell_dg_matrix_22(i, j));
-      //   }
-      // }
-    }
+        // for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i) {
+        //   for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j) {
+        //     dg_matrix.add(cdf.local_dof_indices[i], cdf.local_dof_indices[j],
+        //                   cdf.cell_dg_matrix_11(i, j));
+        //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
+        //                   cdf.local_dof_indices[j], cdf.cell_dg_matrix_12(i,
+        //                   j));
+        //     dg_matrix.add(cdf.local_dof_indices[i],
+        //                   cdf.local_dof_indices_neighbor[j],
+        //                   cdf.cell_dg_matrix_21(i, j));
+        //     dg_matrix.add(cdf.local_dof_indices_neighbor[i],
+        //                   cdf.local_dof_indices_neighbor[j],
+        //                   cdf.cell_dg_matrix_22(i, j));
+        //   }
+        // }
+      }
   };
 
-  ScratchData<dim> scratch_data(mapping, fe, quadrature_formula,
+  ScratchData<dim> scratch_data(mapping,
+                                fe,
+                                quadrature_formula,
                                 face_quadrature_formula);
-  CopyData copy_data;
+  CopyData         copy_data;
   pcout << "Assembling System Matrices" << std::endl;
 
-  MeshWorker::mesh_loop(dof_handler.begin_active(), dof_handler.end(),
-                        cell_worker, copier, scratch_data, copy_data,
+  MeshWorker::mesh_loop(dof_handler.begin_active(),
+                        dof_handler.end(),
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
                         MeshWorker::assemble_own_cells |
-                            MeshWorker::assemble_boundary_faces |
-                            MeshWorker::assemble_own_interior_faces_once,
-                        boundary_worker, face_worker);
+                          MeshWorker::assemble_boundary_faces |
+                          MeshWorker::assemble_own_interior_faces_once,
+                        boundary_worker,
+                        face_worker);
   pcout << "   Done" << std::endl;
 }
 
 template <int dim>
-void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
+void
+Sapphire::Hydro::ConservationEq<dim>::assemble_system_old()
+{
   TimerOutput::Scope t(computing_timer, "Assemble system");
   pcout << "Assemble system" << std::endl;
 
-  FEValues<dim> fe_values(mapping, fe, quadrature_formula,
+  FEValues<dim> fe_values(mapping,
+                          fe,
+                          quadrature_formula,
                           update_values | update_gradients |
-                              update_quadrature_points | update_JxW_values);
+                            update_quadrature_points | update_JxW_values);
 
   FullMatrix<double> cell_mass_matrix(fe.dofs_per_cell, fe.dofs_per_cell);
   FullMatrix<double> cell_dg_matrix(fe.dofs_per_cell, fe.dofs_per_cell);
-  Vector<double> cell_rhs(fe.dofs_per_cell);
+  Vector<double>     cell_rhs(fe.dofs_per_cell);
 
   std::vector<types::global_dof_index> local_dof_indices(fe.dofs_per_cell);
   std::vector<types::global_dof_index> local_dof_indices_neighbor(
-      fe.dofs_per_cell);
+    fe.dofs_per_cell);
 
-  FEFaceValues<dim> fe_face_values(fe_values.get_fe(), face_quadrature_formula,
+  FEFaceValues<dim>  fe_face_values(fe_values.get_fe(),
+                                   face_quadrature_formula,
                                    update_values | update_quadrature_points |
-                                       update_normal_vectors |
-                                       update_JxW_values);
-  FEFaceValues<dim> fe_face_values_neighbor(
-      fe_values.get_fe(), face_quadrature_formula,
-      update_values | update_quadrature_points | update_normal_vectors |
-          update_JxW_values);
+                                     update_normal_vectors | update_JxW_values);
+  FEFaceValues<dim>  fe_face_values_neighbor(fe_values.get_fe(),
+                                            face_quadrature_formula,
+                                            update_values |
+                                              update_quadrature_points |
+                                              update_normal_vectors |
+                                              update_JxW_values);
   FullMatrix<double> cell_dg_matrix_11(fe.dofs_per_cell, fe.dofs_per_cell);
   FullMatrix<double> cell_dg_matrix_12(fe.dofs_per_cell, fe.dofs_per_cell);
   FullMatrix<double> cell_dg_matrix_21(fe.dofs_per_cell, fe.dofs_per_cell);
@@ -456,137 +522,167 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_system_old() {
   beta->set_time(time);
   boundary_values->set_time(time);
 
-  mass_matrix = 0;
-  dg_matrix = 0;
+  mass_matrix   = 0;
+  dg_matrix     = 0;
   system_matrix = 0;
-  system_rhs = 0;
+  system_rhs    = 0;
 
-  for (const auto &cell : dof_handler.active_cell_iterators()) {
-    cell_mass_matrix = 0;
-    cell_dg_matrix = 0;
-    cell_rhs = 0;
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+      cell_mass_matrix = 0;
+      cell_dg_matrix   = 0;
+      cell_rhs         = 0;
 
-    fe_values.reinit(cell);
+      fe_values.reinit(cell);
 
-    for (const unsigned int q_index : fe_values.quadrature_point_indices()) {
-      beta_value = beta->value(fe_values.quadrature_point(q_index));
-      for (const unsigned int i : fe_values.dof_indices()) {
-        for (const unsigned int j : fe_values.dof_indices()) {
-          cell_mass_matrix(i, j) +=
-              (fe_values.shape_value(i, q_index) *
-               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-          cell_dg_matrix(i, j) -=
-              beta_value *
-              (fe_values.shape_grad(i, q_index) *
-               fe_values.shape_value(j, q_index) * fe_values.JxW(q_index));
-        }
-      }
-    }
-
-    cell->get_dof_indices(local_dof_indices);
-    constraints.distribute_local_to_global(cell_mass_matrix, local_dof_indices,
-                                           mass_matrix);
-    constraints.distribute_local_to_global(cell_dg_matrix, local_dof_indices,
-                                           dg_matrix);
-    constraints.distribute_local_to_global(cell_rhs, local_dof_indices,
-                                           system_rhs);
-
-    // Face integration
-    for (const auto &face_no : cell->face_indices()) {
-      cell_dg_matrix_11 = 0;
-      cell_dg_matrix_12 = 0;
-      cell_dg_matrix_21 = 0;
-      cell_dg_matrix_22 = 0;
-
-      if (cell->at_boundary(face_no)) {
-
-        fe_face_values.reinit(cell, face_no);
-        for (const unsigned int q_index :
-             fe_face_values.quadrature_point_indices()) {
-          beta_value = beta->value(fe_face_values.quadrature_point(q_index));
-
-          for (const unsigned int i : fe_face_values.dof_indices()) {
-            for (const unsigned int j : fe_face_values.dof_indices()) {
-
-              cell_dg_matrix_11(i, j) +=
-                  0.5 *
-                  (std::abs(beta_value *
-                            fe_face_values.normal_vector(q_index)) +
-                   beta_value * fe_face_values.normal_vector(q_index)) *
-                  (fe_face_values.shape_value(i, q_index) *
-                   fe_face_values.shape_value(j, q_index) *
-                   fe_face_values.JxW(q_index));
+      for (const unsigned int q_index : fe_values.quadrature_point_indices())
+        {
+          beta_value = beta->value(fe_values.quadrature_point(q_index));
+          for (const unsigned int i : fe_values.dof_indices())
+            {
+              for (const unsigned int j : fe_values.dof_indices())
+                {
+                  cell_mass_matrix(i, j) += (fe_values.shape_value(i, q_index) *
+                                             fe_values.shape_value(j, q_index) *
+                                             fe_values.JxW(q_index));
+                  cell_dg_matrix(i, j) -=
+                    beta_value * (fe_values.shape_grad(i, q_index) *
+                                  fe_values.shape_value(j, q_index) *
+                                  fe_values.JxW(q_index));
+                }
             }
-          }
         }
 
-        cell->get_dof_indices(local_dof_indices);
-        constraints.distribute_local_to_global(
-            cell_dg_matrix_11, local_dof_indices, local_dof_indices, dg_matrix);
-      } else {
+      cell->get_dof_indices(local_dof_indices);
+      constraints.distribute_local_to_global(cell_mass_matrix,
+                                             local_dof_indices,
+                                             mass_matrix);
+      constraints.distribute_local_to_global(cell_dg_matrix,
+                                             local_dof_indices,
+                                             dg_matrix);
+      constraints.distribute_local_to_global(cell_rhs,
+                                             local_dof_indices,
+                                             system_rhs);
 
-        fe_face_values.reinit(cell, face_no);
-        auto neighbor = cell->neighbor(face_no);
-        auto neigbor_face_no = cell->neighbor_of_neighbor(face_no);
-        fe_face_values_neighbor.reinit(neighbor, neigbor_face_no);
-        if (neighbor < cell) {
-          continue;
-        }
+      // Face integration
+      for (const auto &face_no : cell->face_indices())
+        {
+          cell_dg_matrix_11 = 0;
+          cell_dg_matrix_12 = 0;
+          cell_dg_matrix_21 = 0;
+          cell_dg_matrix_22 = 0;
 
-        for (const unsigned int q_index :
-             fe_face_values.quadrature_point_indices()) {
-          beta_value = beta->value(fe_face_values.quadrature_point(q_index));
+          if (cell->at_boundary(face_no))
+            {
+              fe_face_values.reinit(cell, face_no);
+              for (const unsigned int q_index :
+                   fe_face_values.quadrature_point_indices())
+                {
+                  beta_value =
+                    beta->value(fe_face_values.quadrature_point(q_index));
 
-          for (const unsigned int i : fe_face_values.dof_indices()) {
-            for (const unsigned int j : fe_face_values.dof_indices()) {
+                  for (const unsigned int i : fe_face_values.dof_indices())
+                    {
+                      for (const unsigned int j : fe_face_values.dof_indices())
+                        {
+                          cell_dg_matrix_11(i, j) +=
+                            0.5 *
+                            (std::abs(beta_value *
+                                      fe_face_values.normal_vector(q_index)) +
+                             beta_value *
+                               fe_face_values.normal_vector(q_index)) *
+                            (fe_face_values.shape_value(i, q_index) *
+                             fe_face_values.shape_value(j, q_index) *
+                             fe_face_values.JxW(q_index));
+                        }
+                    }
+                }
 
-              cell_dg_matrix_11(i, j) +=
-                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
-                  (fe_face_values.shape_value(i, q_index) *
-                   fe_face_values.shape_value(j, q_index) *
-                   fe_face_values.JxW(q_index));
-
-              cell_dg_matrix_21(i, j) -=
-                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
-                  (fe_face_values_neighbor.shape_value(i, q_index) *
-                   fe_face_values.shape_value(j, q_index) *
-                   fe_face_values.JxW(q_index));
-
-              cell_dg_matrix_12(i, j) +=
-                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
-                  (fe_face_values.shape_value(i, q_index) *
-                   fe_face_values_neighbor.shape_value(j, q_index) *
-                   fe_face_values.JxW(q_index));
-
-              cell_dg_matrix_22(i, j) -=
-                  0.5 * beta_value * fe_face_values.normal_vector(q_index) *
-                  (fe_face_values_neighbor.shape_value(i, q_index) *
-                   fe_face_values_neighbor.shape_value(j, q_index) *
-                   fe_face_values.JxW(q_index));
+              cell->get_dof_indices(local_dof_indices);
+              constraints.distribute_local_to_global(cell_dg_matrix_11,
+                                                     local_dof_indices,
+                                                     local_dof_indices,
+                                                     dg_matrix);
             }
-          }
-        }
+          else
+            {
+              fe_face_values.reinit(cell, face_no);
+              auto neighbor        = cell->neighbor(face_no);
+              auto neigbor_face_no = cell->neighbor_of_neighbor(face_no);
+              fe_face_values_neighbor.reinit(neighbor, neigbor_face_no);
+              if (neighbor < cell)
+                {
+                  continue;
+                }
 
-        cell->get_dof_indices(local_dof_indices);
-        neighbor->get_dof_indices(local_dof_indices_neighbor);
-        constraints.distribute_local_to_global(
-            cell_dg_matrix_11, local_dof_indices, local_dof_indices, dg_matrix);
-        constraints.distribute_local_to_global(cell_dg_matrix_21,
-                                               local_dof_indices_neighbor,
-                                               local_dof_indices, dg_matrix);
-        constraints.distribute_local_to_global(
-            cell_dg_matrix_12, local_dof_indices, local_dof_indices_neighbor,
-            dg_matrix);
-        constraints.distribute_local_to_global(
-            cell_dg_matrix_22, local_dof_indices_neighbor,
-            local_dof_indices_neighbor, dg_matrix);
-      }
+              for (const unsigned int q_index :
+                   fe_face_values.quadrature_point_indices())
+                {
+                  beta_value =
+                    beta->value(fe_face_values.quadrature_point(q_index));
+
+                  for (const unsigned int i : fe_face_values.dof_indices())
+                    {
+                      for (const unsigned int j : fe_face_values.dof_indices())
+                        {
+                          cell_dg_matrix_11(i, j) +=
+                            0.5 * beta_value *
+                            fe_face_values.normal_vector(q_index) *
+                            (fe_face_values.shape_value(i, q_index) *
+                             fe_face_values.shape_value(j, q_index) *
+                             fe_face_values.JxW(q_index));
+
+                          cell_dg_matrix_21(i, j) -=
+                            0.5 * beta_value *
+                            fe_face_values.normal_vector(q_index) *
+                            (fe_face_values_neighbor.shape_value(i, q_index) *
+                             fe_face_values.shape_value(j, q_index) *
+                             fe_face_values.JxW(q_index));
+
+                          cell_dg_matrix_12(i, j) +=
+                            0.5 * beta_value *
+                            fe_face_values.normal_vector(q_index) *
+                            (fe_face_values.shape_value(i, q_index) *
+                             fe_face_values_neighbor.shape_value(j, q_index) *
+                             fe_face_values.JxW(q_index));
+
+                          cell_dg_matrix_22(i, j) -=
+                            0.5 * beta_value *
+                            fe_face_values.normal_vector(q_index) *
+                            (fe_face_values_neighbor.shape_value(i, q_index) *
+                             fe_face_values_neighbor.shape_value(j, q_index) *
+                             fe_face_values.JxW(q_index));
+                        }
+                    }
+                }
+
+              cell->get_dof_indices(local_dof_indices);
+              neighbor->get_dof_indices(local_dof_indices_neighbor);
+              constraints.distribute_local_to_global(cell_dg_matrix_11,
+                                                     local_dof_indices,
+                                                     local_dof_indices,
+                                                     dg_matrix);
+              constraints.distribute_local_to_global(cell_dg_matrix_21,
+                                                     local_dof_indices_neighbor,
+                                                     local_dof_indices,
+                                                     dg_matrix);
+              constraints.distribute_local_to_global(cell_dg_matrix_12,
+                                                     local_dof_indices,
+                                                     local_dof_indices_neighbor,
+                                                     dg_matrix);
+              constraints.distribute_local_to_global(cell_dg_matrix_22,
+                                                     local_dof_indices_neighbor,
+                                                     local_dof_indices_neighbor,
+                                                     dg_matrix);
+            }
+        }
     }
-  }
 }
 
 template <int dim>
-void Sapphire::Hydro::ConservationEq<dim>::assemble_time_step() {
+void
+Sapphire::Hydro::ConservationEq<dim>::assemble_time_step()
+{
   TimerOutput::Scope t(computing_timer, "Time step");
   pcout << "Time step" << std::endl;
 
@@ -624,7 +720,10 @@ void Sapphire::Hydro::ConservationEq<dim>::assemble_time_step() {
   // system_rhs = tmp;
 }
 
-template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
+template <int dim>
+void
+Sapphire::Hydro::ConservationEq<dim>::solve()
+{
   TimerOutput::Scope t(computing_timer, "Solve");
   pcout << "Solve" << std::endl;
 
@@ -647,7 +746,9 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::solve() {
 }
 
 template <int dim>
-void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
+void
+Sapphire::Hydro::ConservationEq<dim>::output_results() const
+{
   pcout << "Output results" << std::endl;
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
@@ -669,14 +770,16 @@ void Sapphire::Hydro::ConservationEq<dim>::output_results() const {
                                ".vtu";
   DataOutBase::VtkFlags vtk_flags;
   vtk_flags.compression_level =
-      DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
+    DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
   data_out.set_flags(vtk_flags);
   std::ofstream output(filename);
   data_out.write_vtu(output);
 }
 
 template <int dim>
-void Sapphire::Hydro::ConservationEq<dim>::process_results() {
+void
+Sapphire::Hydro::ConservationEq<dim>::process_results()
+{
   TimerOutput::Scope t(computing_timer, "Process results");
   pcout << "Process results" << std::endl;
 
@@ -685,21 +788,32 @@ void Sapphire::Hydro::ConservationEq<dim>::process_results() {
   exact_solution->set_time(time);
 
   // Use different quadrature for error computation
-  const QTrapezoid<1> q_trapez;
+  const QTrapezoid<1>  q_trapez;
   const QIterated<dim> q_iterated(q_trapez, fe.degree * 2 + 1);
 
-  VectorTools::integrate_difference(mapping, dof_handler, solution,
-                                    *exact_solution, difference_per_cell,
-                                    q_iterated, VectorTools::L2_norm);
-  float L2_error = VectorTools::compute_global_error(
-      triangulation, difference_per_cell, VectorTools::L2_norm);
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    solution,
+                                    *exact_solution,
+                                    difference_per_cell,
+                                    q_iterated,
+                                    VectorTools::L2_norm);
+  float L2_error = VectorTools::compute_global_error(triangulation,
+                                                     difference_per_cell,
+                                                     VectorTools::L2_norm);
   pcout << "   L2 error:\t\t" << L2_error << std::endl;
 
-  VectorTools::integrate_difference(mapping, dof_handler, solution,
-                                    *exact_solution, difference_per_cell,
-                                    q_iterated, VectorTools::Linfty_norm);
-  float Linf_error = VectorTools::compute_global_error(
-      triangulation, difference_per_cell, VectorTools::Linfty_norm);
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    solution,
+                                    *exact_solution,
+                                    difference_per_cell,
+                                    q_iterated,
+                                    VectorTools::Linfty_norm);
+  float Linf_error =
+    VectorTools::compute_global_error(triangulation,
+                                      difference_per_cell,
+                                      VectorTools::Linfty_norm);
   pcout << "   L-infinity error:\t" << Linf_error << std::endl;
 
   // pcout << "   OLD QUADATURE" << std::endl;
@@ -722,7 +836,10 @@ void Sapphire::Hydro::ConservationEq<dim>::process_results() {
   error_with_time[error_with_time.size() - 1] = L2_error;
 }
 
-template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
+template <int dim>
+void
+Sapphire::Hydro::ConservationEq<dim>::run()
+{
   pcout << "Run conservation equation" << std::endl;
   make_grid();
   setup_system();
@@ -731,28 +848,30 @@ template <int dim> void Sapphire::Hydro::ConservationEq<dim>::run() {
     output_results();
   }
 
-  for (; time < 1;) {
-    time += time_step, ++timestep_number;
-    pcout << "  Time: " << time << std::endl;
-    old_solution = solution;
-    assemble_system();
-    // assemble_system_old();
-    assemble_time_step();
-    solve();
+  for (; time < 1;)
     {
-      TimerOutput::Scope t(computing_timer, "Output results");
-      output_results();
+      time += time_step, ++timestep_number;
+      pcout << "  Time: " << time << std::endl;
+      old_solution = solution;
+      assemble_system();
+      // assemble_system_old();
+      assemble_time_step();
+      solve();
+      {
+        TimerOutput::Scope t(computing_timer, "Output results");
+        output_results();
+      }
+      process_results();
     }
-    process_results();
-  }
 
   computing_timer.print_summary();
   computing_timer.reset();
 
-  if (pcout.is_active()) {
-    pcout << "   L2 error with time:" << std::endl;
-    error_with_time.print(pcout.get_stream());
-  }
+  if (pcout.is_active())
+    {
+      pcout << "   L2 error with time:" << std::endl;
+      error_with_time.print(pcout.get_stream());
+    }
 }
 
 // explicit instantiation

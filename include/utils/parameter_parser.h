@@ -13,58 +13,94 @@
 
 #include <string>
 
-namespace Sapphire {
+namespace Sapphire
+{
 
-namespace Utils {
-enum class OutputFormat { vtu, pvtu, hdf5 };
-} // namespace Utils
+  namespace Utils
+  {
+    enum class OutputFormat
+    {
+      vtu,
+      pvtu,
+      hdf5
+    };
+  } // namespace Utils
 
-namespace Hydro { // TODO: Should this be in Hydro namespace?
-enum class TimeSteppingScheme { ForwardEuler, ExplicitRK };
-enum class FluxType { Central, Upwind, LaxFriedrichs };
-enum class SlopeLimiter { NoLimiter, LinearReconstruction, MinMod, MUSCL };
-enum class SlopeLimiterCriterion { Never, Always, GerneralizedSlopeLimiter };
-} // namespace Hydro
+  namespace Hydro
+  { // TODO: Should this be in Hydro namespace?
+    enum class TimeSteppingScheme
+    {
+      ForwardEuler,
+      ExplicitRK
+    };
+    enum class FluxType
+    {
+      Central,
+      Upwind,
+      LaxFriedrichs
+    };
+    enum class SlopeLimiter
+    {
+      NoLimiter,
+      LinearReconstruction,
+      MinMod,
+      MUSCL
+    };
+    enum class SlopeLimiterCriterion
+    {
+      Never,
+      Always,
+      GerneralizedSlopeLimiter
+    };
+  } // namespace Hydro
 
-namespace Utils {
-using namespace dealii;
+  namespace Utils
+  {
+    using namespace dealii;
 
-class ParameterParser {
-public:
-  ParameterParser(const std::string &prm_file_name);
+    class ParameterParser
+    {
+    public:
+      ParameterParser(const std::string &prm_file_name);
 
-  const ParameterHandler &get_parameter_handler() const { return prm; }
+      const ParameterHandler &
+      get_parameter_handler() const
+      {
+        return prm;
+      }
 
-  /**Output parameter*/
-  std::string out_results_path;
-  std::string out_simulation_id;
-  std::string out_output_path;
-  std::string out_base_file_name;
-  unsigned int out_n_digits_for_counter;
-  Sapphire::Utils::OutputFormat out_format;
-  unsigned int out_output_frequency;
+      /**Output parameter*/
+      std::string                   out_results_path;
+      std::string                   out_simulation_id;
+      std::string                   out_output_path;
+      std::string                   out_base_file_name;
+      unsigned int                  out_n_digits_for_counter;
+      Sapphire::Utils::OutputFormat out_format;
+      unsigned int                  out_output_frequency;
 
-  /**HDSolverControl parameter*/
-  Sapphire::Hydro::TimeSteppingScheme hdsolver_scheme;
-  Sapphire::Hydro::FluxType hdsolver_flux_type;
-  Sapphire::Hydro::SlopeLimiter hdsolver_limiter;
-  Sapphire::Hydro::SlopeLimiterCriterion hdsolver_limiter_criterion;
+      /**HDSolverControl parameter*/
+      Sapphire::Hydro::TimeSteppingScheme    hdsolver_scheme;
+      Sapphire::Hydro::FluxType              hdsolver_flux_type;
+      Sapphire::Hydro::SlopeLimiter          hdsolver_limiter;
+      Sapphire::Hydro::SlopeLimiterCriterion hdsolver_limiter_criterion;
 
-  unsigned int hdsolver_fe_degree;
-  double hdsolver_time_step;
-  double hdsolver_end_time;
-  unsigned int hdsolver_refinement_level;
+      unsigned int hdsolver_fe_degree;
+      double       hdsolver_time_step;
+      double       hdsolver_end_time;
+      unsigned int hdsolver_refinement_level;
 
-  unsigned int hdsolver_max_iterations;
-  double hdsolver_tolerance;
+      unsigned int hdsolver_max_iterations;
+      double       hdsolver_tolerance;
 
-private:
-  void declare_parameters();
-  void parse_parameters();
+    private:
+      void
+      declare_parameters();
+      void
+      parse_parameters();
 
-  ParameterHandler prm;
-};
+      ParameterHandler prm;
+    };
 
-} // namespace Utils
+  } // namespace Utils
 } // namespace Sapphire
 #endif
