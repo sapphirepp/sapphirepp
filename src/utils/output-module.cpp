@@ -1,4 +1,4 @@
-#include "output_module.h"
+#include "output-module.h"
 
 #include <fstream>
 #include <iostream>

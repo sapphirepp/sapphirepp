@@ -31,7 +31,7 @@
       ostream << message << std::endl;       \
     }
 
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 
 namespace Sapphire
 {
