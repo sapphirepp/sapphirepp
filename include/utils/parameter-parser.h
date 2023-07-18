@@ -13,47 +13,10 @@
 
 #include <string>
 
+#include "parameter-flags.h"
+
 namespace Sapphire
 {
-
-  namespace Utils
-  {
-    enum class OutputFormat
-    {
-      vtu,
-      pvtu,
-      hdf5
-    };
-  } // namespace Utils
-
-  namespace Hydro
-  { // TODO: Should this be in Hydro namespace?
-    enum class TimeSteppingScheme
-    {
-      ForwardEuler,
-      ExplicitRK
-    };
-    enum class FluxType
-    {
-      Central,
-      Upwind,
-      LaxFriedrichs
-    };
-    enum class SlopeLimiter
-    {
-      NoLimiter,
-      LinearReconstruction,
-      MinMod,
-      MUSCL
-    };
-    enum class SlopeLimiterCriterion
-    {
-      Never,
-      Always,
-      GerneralizedSlopeLimiter
-    };
-  } // namespace Hydro
-
   namespace Utils
   {
     using namespace dealii;
@@ -91,6 +54,22 @@ namespace Sapphire
 
       unsigned int hdsolver_max_iterations;
       double       hdsolver_tolerance;
+
+      // VFP Control Parameter
+      // Spherical harmonic expansion
+      int expansion_order;
+      // Mesh
+      std::string p1;
+      std::string p2;
+      std::string n_cells;
+      std::string periodicity;
+      // Finite element
+      unsigned int polynomial_degree;
+      // Time stepping
+      std::string time_stepping_method;
+      double      theta;
+      double      time_step;
+      double      final_time;
 
     private:
       void
