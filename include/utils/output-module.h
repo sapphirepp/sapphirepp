@@ -18,7 +18,7 @@
 
 #include <filesystem>
 
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 
 namespace Sapphire
 {
