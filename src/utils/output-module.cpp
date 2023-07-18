@@ -3,11 +3,9 @@
 #include <fstream>
 #include <iostream>
 
-<<<<<<< HEAD:src/utils/output_module.cpp
+
 #include "parameter-flags.h"
-=======
 #include "sapphire-logstream.h"
->>>>>>> origin/main:src/utils/output-module.cpp
 
 template <int dim>
 Sapphire::Utils::OutputModule<dim>::OutputModule(

@@ -9,7 +9,7 @@
 
 #include "compile-time-flags.h"
 #include "parameter-flags.h"
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 
 namespace Sapphire
 {

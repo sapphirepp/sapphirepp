@@ -69,9 +69,9 @@
 
 // own header files
 #include "compile-time-flags.h"
-#include "output_module.h"
+#include "output-module.h"
 #include "parameter-flags.h"
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "physical-setup.h"

@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "parameter-flags.h"
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 
 Sapphire::VFPSolverControl::VFPSolverControl(
   const Sapphire::Utils::ParameterParser &prm)

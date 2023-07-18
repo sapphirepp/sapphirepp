@@ -18,12 +18,8 @@
 
 #include <filesystem>
 
-<<<<<<< HEAD:include/utils/output_module.h
 #include "parameter-flags.h"
-#include "parameter_parser.h"
-=======
 #include "parameter-parser.h"
->>>>>>> origin/main:include/utils/output-module.h
 
 namespace Sapphire
 {
