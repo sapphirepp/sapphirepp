@@ -13,19 +13,10 @@
 
 #include <string>
 
+#include "parameter-flags.h"
+
 namespace Sapphire
 {
-
-  namespace Utils
-  {
-    enum class OutputFormat
-    {
-      vtu,
-      pvtu,
-      hdf5
-    };
-  } // namespace Utils
-
   namespace Utils
   {
     using namespace dealii;

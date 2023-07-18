@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "parameter-flags.h"
+
 Sapphire::Utils::ParameterParser::ParameterParser(
   const std::string &prm_file_name)
 {

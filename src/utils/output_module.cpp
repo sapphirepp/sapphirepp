@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "parameter-flags.h"
+
 template <int dim>
 Sapphire::Utils::OutputModule<dim>::OutputModule(
   const Sapphire::Utils::ParameterParser &prm)

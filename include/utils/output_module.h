@@ -18,6 +18,7 @@
 
 #include <filesystem>
 
+#include "parameter-flags.h"
 #include "parameter_parser.h"
 
 namespace Sapphire
