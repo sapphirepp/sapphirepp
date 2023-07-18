@@ -8,12 +8,19 @@
 #include <vector>
 
 #include "compile-time-flags.h"
+#include "parameter-flags.h"
+#include "parameter_parser.h"
 
 namespace Sapphire
 {
   class VFPSolverControl
   {
   public:
+    VFPSolverControl(const Sapphire::Utils::ParameterParser &prm);
+
+    void
+    print_settings(std::ostream &os) const;
+
     // NOTE: A member variable needs be constexpr to be used as template
     // arguments. But it can only be constexpr if it is static ,i.e. if it is
     // the same for all class instances. If it was not static, it would be
@@ -73,29 +80,20 @@ namespace Sapphire
     // Finite element
     unsigned int polynomial_degree;
     // Time stepping
-    std::string time_stepping_method;
-    double      theta;
-    double      time_step;
-    double      final_time;
-    // Output
-    std::string  results_path;
-    std::string  simulation_id;
-    std::string  format;
-    unsigned int output_frequency;
-
-    VFPSolverControl(const std::string &file_path);
-    void
-    print_settings(std::ostream &os) const;
+    Utils::TimeSteppingMethod time_stepping_method;
+    double                    theta;
+    double                    time_step;
+    double                    final_time;
 
   private:
-    void
-    declare_parameters();
-    void
-    parse_parameters();
-    void
-                             get_parameters();
-    const std::string        parameter_file;
-    dealii::ParameterHandler parameter_handler;
+    // void
+    // declare_parameters();
+    // void
+    // parse_parameters();
+    // void
+    //                          get_parameters();
+    // const std::string        parameter_file;
+    // dealii::ParameterHandler parameter_handler;
   };
 
 } // namespace Sapphire
