@@ -1,9 +1,13 @@
-#include "output_module.h"
+#include "output-module.h"
 
 #include <fstream>
 #include <iostream>
 
+<<<<<<< HEAD:src/utils/output_module.cpp
 #include "parameter-flags.h"
+=======
+#include "sapphire-logstream.h"
+>>>>>>> origin/main:src/utils/output-module.cpp
 
 template <int dim>
 Sapphire::Utils::OutputModule<dim>::OutputModule(
@@ -24,13 +28,16 @@ template <int dim>
 void
 Sapphire::Utils::OutputModule<dim>::init(const ParameterHandler &prm) const
 {
+  LogStream::Prefix p("OutputModule", saplog);
   // create output directory
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
+      saplog << "Create results folder " << output_path << std::endl;
       std::filesystem::create_directory(output_path);
+      saplog << "Log parameter file" << std::endl;
+      prm.print_parameters(output_path / "log.prm", ParameterHandler::Short);
     }
 
-  prm.print_parameters(output_path / "log.prm", ParameterHandler::Short);
 
   if (format == OutputFormat::vtu)
     {
@@ -48,6 +55,8 @@ Sapphire::Utils::OutputModule<dim>::write_results(
   DataOut<dim>      &data_out,
   const unsigned int time_step_number)
 {
+  LogStream::Prefix p("OutputModule", saplog);
+  saplog << "Writing results at time_step " << time_step_number << std::endl;
   Assert(time_step_number % output_frequency == 0, ExcInternalError());
   const unsigned int counter = time_step_number / output_frequency;
 

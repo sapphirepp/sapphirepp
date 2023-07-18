@@ -1,21 +1,28 @@
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 
 #include <iostream>
 
+<<<<<<< HEAD:src/utils/parameter_parser.cpp
 #include "parameter-flags.h"
+=======
+#include "sapphire-logstream.h"
+>>>>>>> origin/main:src/utils/parameter-parser.cpp
 
 Sapphire::Utils::ParameterParser::ParameterParser(
   const std::string &prm_file_name)
 {
+  LogStream::Prefix p("ParameterParser", saplog);
   declare_parameters();
+  saplog << "Parsing input file \"" << prm_file_name << "\"" << std::endl;
   prm.parse_input(prm_file_name);
-  prm.print_parameters(std::cout, ParameterHandler::PRM);
   parse_parameters();
+  prm.log_parameters(saplog);
 }
 
 void
 Sapphire::Utils::ParameterParser::declare_parameters()
 {
+<<<<<<< HEAD:src/utils/parameter_parser.cpp
   // VFP
   prm.enter_subsection("VFP");
   {
@@ -84,6 +91,9 @@ Sapphire::Utils::ParameterParser::declare_parameters()
   }
   prm.leave_subsection();
 
+=======
+  saplog << "Declaring parameters" << std::endl;
+>>>>>>> origin/main:src/utils/parameter-parser.cpp
   prm.enter_subsection("Output");
   {
     prm.declare_entry(
@@ -124,6 +134,7 @@ Sapphire::Utils::ParameterParser::declare_parameters()
 void
 Sapphire::Utils::ParameterParser::parse_parameters()
 {
+<<<<<<< HEAD:src/utils/parameter_parser.cpp
   // VFP
   prm.enter_subsection("VFP");
   {
@@ -160,6 +171,10 @@ Sapphire::Utils::ParameterParser::parse_parameters()
     prm.leave_subsection();
   }
   prm.leave_subsection();
+=======
+  saplog << "Parsing parameters" << std::endl;
+  std::string s;
+>>>>>>> origin/main:src/utils/parameter-parser.cpp
 
   prm.enter_subsection("Output");
   {
