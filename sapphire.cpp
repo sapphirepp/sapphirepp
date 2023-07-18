@@ -198,8 +198,7 @@ namespace Sapphire
     run();
 
   private:
-    // VFPSolverControl
-    const VFPSolverControl &vfp_solver_control;
+    const VFPSolverControl vfp_solver_control;
 
     static constexpr int dim_ps = VFPSolverControl::dim;
     static constexpr int dim_cs = VFPSolverControl::dim_configuration_space;
@@ -373,13 +372,18 @@ namespace Sapphire
       {
         pcout << "Time step " << time_step_number << " at t = " << time << "\n";
         // Time stepping method
-        if (vfp_solver_control.time_stepping_method == "Forward Euler" ||
-            vfp_solver_control.time_stepping_method == "Backward Euler" ||
-            vfp_solver_control.time_stepping_method == "Crank-Nicolson")
+        if (vfp_solver_control.time_stepping_method ==
+              Utils::TimeSteppingMethod::forward_euler ||
+            vfp_solver_control.time_stepping_method ==
+              Utils::TimeSteppingMethod::backward_euler ||
+            vfp_solver_control.time_stepping_method ==
+              Utils::TimeSteppingMethod::crank_nicolson)
           theta_method(time, time_step);
-        else if (vfp_solver_control.time_stepping_method == "ERK4")
+        else if (vfp_solver_control.time_stepping_method ==
+                 Utils::TimeSteppingMethod::erk4)
           explicit_runge_kutta(time, time_step);
-        else if (vfp_solver_control.time_stepping_method == "LSERK")
+        else if (vfp_solver_control.time_stepping_method ==
+                 Utils::TimeSteppingMethod::lserk)
           low_storage_explicit_runge_kutta(time, time_step);
         {
           // NOTE: I cannot create TimerOutput::Scope inside output_results(),
