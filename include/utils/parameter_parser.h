@@ -41,6 +41,22 @@ namespace Sapphire
       Sapphire::Utils::OutputFormat out_format;
       unsigned int                  out_output_frequency;
 
+      // VFP Control Parameter
+      // Spherical harmonic expansion
+      int expansion_order;
+      // Mesh
+      std::string p1;
+      std::string p2;
+      std::string n_cells;
+      std::string periodicity;
+      // Finite element
+      unsigned int polynomial_degree;
+      // Time stepping
+      std::string time_stepping_method;
+      double      theta;
+      double      time_step;
+      double      final_time;
+
     private:
       void
       declare_parameters();
