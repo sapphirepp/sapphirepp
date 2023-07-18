@@ -9,8 +9,8 @@
 #include "burgers-eq.h"
 #include "conservation-eq.h"
 #include "numerics.h"
-#include "output_module.h"
-#include "parameter_parser.h"
+#include "output-module.h"
+#include "parameter-parser.h"
 
 namespace PhysicalSetup
 {

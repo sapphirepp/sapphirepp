@@ -37,7 +37,7 @@
 #include <mpi.h>
 
 #include "numerics.h"
-#include "output_module.h"
+#include "output-module.h"
 
 namespace Sapphire
 {

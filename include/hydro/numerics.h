@@ -13,7 +13,7 @@
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/vector.h>
 
-#include "parameter_parser.h"
+#include "parameter-parser.h"
 
 namespace Sapphire
 {
