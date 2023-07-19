@@ -6,8 +6,8 @@
  * @date 2023-07-17
  */
 
-#ifndef SAPPHIREUTISL_PARAMETERPARSER_H
-#define SAPPHIREUTISL_PARAMETERPARSER_H
+#ifndef UTILS_PARAMETERPARSER_H
+#define UTILS_PARAMETERPARSER_H
 
 #include <deal.II/base/parameter_handler.h>
 
