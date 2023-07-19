@@ -15,15 +15,15 @@ find_package(deal.II 9.4.0 REQUIRED
   )
 deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
 
-project(Sapphire VERSION 0.9.0)
+project(Sapphire VERSION 1.0.2)
 add_subdirectory(src/utils)
-option(vfp-equation-solver "Compile the VFP Equation Solver" ON )
-if(vfp-equation-solver)
+option(Sapphire "Compile Sapphire++" ON )
+if(Sapphire)
   add_subdirectory(src/vfp)
   add_executable(sapphire sapphire.cpp)
   deal_ii_setup_target(sapphire)
   target_link_libraries(sapphire VFPSolverLib UtilsLib)
-endif(vfp-equation-solver)
+endif(Sapphire)
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
