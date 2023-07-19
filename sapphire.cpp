@@ -1728,7 +1728,8 @@ namespace Sapphire
   void
   VFPEquationSolver::output_results(const unsigned int time_step_number)
   {
-    DataOut<dim_ps> data_out;
+    TimerOutput::Scope timer_section(timer, "Output");
+    DataOut<dim_ps>    data_out;
     data_out.attach_dof_handler(dof_handler);
     // Create a vector of strings with names for the components of the solution
     std::vector<std::string> component_names(num_exp_coefficients);
