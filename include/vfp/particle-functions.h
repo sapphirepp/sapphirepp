@@ -7,8 +7,6 @@
 
 #include <vector>
 
-#include "reference-values.h"
-
 // Functions to compute the velocity and the gamma of a particle at the point
 // x,(y,z) of p in phase space
 namespace Sapphire
@@ -28,8 +26,7 @@ namespace Sapphire
                  unsigned int component = 0) const override;
 
     private:
-      bool            logarithmic_p;
-      ReferenceValues reference_values;
+      bool logarithmic_p;
     };
 
     template <int dim>
@@ -45,8 +42,7 @@ namespace Sapphire
                  unsigned int component = 0) const override;
 
     private:
-      ReferenceValues reference_values;
-      bool            logarithmic_p;
+      bool logarithmic_p;
     };
   } // namespace VFP
 } // namespace Sapphire
