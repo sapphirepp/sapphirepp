@@ -385,17 +385,8 @@ namespace Sapphire
         else if (vfp_solver_control.time_stepping_method ==
                  Utils::TimeSteppingMethod::lserk)
           low_storage_explicit_runge_kutta(time, time_step);
-        {
-          // NOTE: I cannot create TimerOutput::Scope inside output_results(),
-          // because it is declared const.
-          if (static_cast<unsigned int>(time_step_number) %
-                output_module.output_frequency ==
-              0)
-            {
-              TimerOutput::Scope timer_section(timer, "Output");
-              output_results(time_step_number / output_module.output_frequency);
-            }
-        }
+
+        output_results(time_step_number);
       }
     pcout << "The simulation ended. \n";
   }
