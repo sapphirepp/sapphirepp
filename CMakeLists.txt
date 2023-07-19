@@ -22,7 +22,7 @@ if(vfp-equation-solver)
   add_subdirectory(src/vfp)
   add_executable(sapphire sapphire.cpp)
   deal_ii_setup_target(sapphire)
-  target_link_libraries(sapphire VFPSolverLib SapphireUtilsLib)
+  target_link_libraries(sapphire VFPSolverLib UtilsLib)
 endif(vfp-equation-solver)
 
 find_package(Doxygen)

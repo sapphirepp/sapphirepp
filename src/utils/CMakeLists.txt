@@ -1,6 +1,6 @@
-add_library(SapphireUtilsLib
+add_library(UtilsLib
   output-module.cpp
   parameter-parser.cpp
   sapphire-logstream.cpp)
-deal_ii_setup_target(SapphireUtilsLib)
-target_include_directories(SapphireUtilsLib PUBLIC ${PROJECT_SOURCE_DIR}/include/utils)
+deal_ii_setup_target(UtilsLib)
+target_include_directories(UtilsLib PUBLIC ${PROJECT_SOURCE_DIR}/include/utils)
