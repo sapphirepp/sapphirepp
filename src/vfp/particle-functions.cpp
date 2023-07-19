@@ -6,7 +6,7 @@
 
 template <int dim>
 void
-Sapphire::ParticleVelocity<dim>::value_list(
+Sapphire::VFP::ParticleVelocity<dim>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &velocities,
   unsigned int                           component) const
@@ -30,13 +30,13 @@ Sapphire::ParticleVelocity<dim>::value_list(
 }
 
 // explicit instantiation
-template class Sapphire::ParticleVelocity<1>;
-template class Sapphire::ParticleVelocity<2>;
-template class Sapphire::ParticleVelocity<3>;
+template class Sapphire::VFP::ParticleVelocity<1>;
+template class Sapphire::VFP::ParticleVelocity<2>;
+template class Sapphire::VFP::ParticleVelocity<3>;
 
 template <int dim>
 void
-Sapphire::ParticleGamma<dim>::value_list(
+Sapphire::VFP::ParticleGamma<dim>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &gammas,
   unsigned int                           component) const
@@ -56,6 +56,6 @@ Sapphire::ParticleGamma<dim>::value_list(
 }
 
 // explicit instantiation
-template class Sapphire::ParticleGamma<1>;
-template class Sapphire::ParticleGamma<2>;
-template class Sapphire::ParticleGamma<3>;
+template class Sapphire::VFP::ParticleGamma<1>;
+template class Sapphire::VFP::ParticleGamma<2>;
+template class Sapphire::VFP::ParticleGamma<3>;

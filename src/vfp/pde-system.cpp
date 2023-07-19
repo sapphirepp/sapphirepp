@@ -4,7 +4,7 @@
 
 #include <deal.II/lac/lapack_full_matrix.h>
 
-Sapphire::PDESystem::PDESystem(int l)
+Sapphire::VFP::PDESystem::PDESystem(int l)
   : expansion_order{l}
   , system_sz{static_cast<unsigned int>((l + 1) * (l + 1))}
   , advection_matrices(3)
@@ -39,50 +39,50 @@ Sapphire::PDESystem::PDESystem(int l)
 }
 
 const std::vector<dealii::LAPACKFullMatrix<double>> &
-Sapphire::PDESystem::get_advection_matrices() const
+Sapphire::VFP::PDESystem::get_advection_matrices() const
 {
   return advection_matrices;
 }
 const std::vector<dealii::LAPACKFullMatrix<double>> &
-Sapphire::PDESystem::get_generator_matrices() const
+Sapphire::VFP::PDESystem::get_generator_matrices() const
 {
   return generator_rotation_matrices;
 }
 const dealii::Vector<double> &
-Sapphire::PDESystem::get_collision_matrix() const
+Sapphire::VFP::PDESystem::get_collision_matrix() const
 {
   return collision_matrix;
 }
 const std::vector<dealii::LAPACKFullMatrix<double>> &
-Sapphire::PDESystem::get_adv_mat_products() const
+Sapphire::VFP::PDESystem::get_adv_mat_products() const
 {
   return adv_mat_products;
 }
 const std::vector<dealii::LAPACKFullMatrix<double>> &
-Sapphire::PDESystem::get_adv_cross_gen() const
+Sapphire::VFP::PDESystem::get_adv_cross_gen() const
 {
   return adv_x_gen_matrices;
 }
 const std::vector<dealii::LAPACKFullMatrix<double>> &
-Sapphire::PDESystem::get_t_matrices() const
+Sapphire::VFP::PDESystem::get_t_matrices() const
 {
   return t_matrices;
 }
 
 const std::vector<std::array<unsigned int, 3>> &
-Sapphire::PDESystem::get_lms_indices() const
+Sapphire::VFP::PDESystem::get_lms_indices() const
 {
   return lms_indices;
 }
 
 unsigned int
-Sapphire::PDESystem::system_size() const
+Sapphire::VFP::PDESystem::system_size() const
 {
   return system_sz;
 }
 
 void
-Sapphire::PDESystem::print_advection_matrices(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_advection_matrices(std::ostream &os) const
 {
   char subscript = 'x';
   for (const auto &advection_matrix : advection_matrices)
@@ -94,7 +94,7 @@ Sapphire::PDESystem::print_advection_matrices(std::ostream &os) const
 }
 
 void
-Sapphire::PDESystem::print_generator_matrices(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_generator_matrices(std::ostream &os) const
 {
   char subscript = 'x';
   for (const auto &generator_matrix : generator_rotation_matrices)
@@ -106,14 +106,14 @@ Sapphire::PDESystem::print_generator_matrices(std::ostream &os) const
 }
 
 void
-Sapphire::PDESystem::print_collision_matrix(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_collision_matrix(std::ostream &os) const
 {
   os << "Collision matrix: \n";
   collision_matrix.print(os);
 }
 
 void
-Sapphire::PDESystem::print_adv_mat_products(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_adv_mat_products(std::ostream &os) const
 {
   char subscript_1 = 'x';
   char subscript_2 = 'x';
@@ -131,7 +131,7 @@ Sapphire::PDESystem::print_adv_mat_products(std::ostream &os) const
 }
 
 void
-Sapphire::PDESystem::print_adv_cross_gen(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_adv_cross_gen(std::ostream &os) const
 {
   char subscript = 'x';
   for (const auto &adv_x_gen_mat : adv_x_gen_matrices)
@@ -143,7 +143,7 @@ Sapphire::PDESystem::print_adv_cross_gen(std::ostream &os) const
 }
 
 void
-Sapphire::PDESystem::print_t_matrices(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_t_matrices(std::ostream &os) const
 {
   char subscript_1 = 'x';
   char subscript_2 = 'x';
@@ -162,7 +162,7 @@ Sapphire::PDESystem::print_t_matrices(std::ostream &os) const
 
 template <typename StreamType>
 void
-Sapphire::PDESystem::print_index_map(StreamType &os) const
+Sapphire::VFP::PDESystem::print_index_map(StreamType &os) const
 {
   os << "Ordering of the lms indices: " << std::endl;
   unsigned int i = 0;
@@ -176,12 +176,12 @@ Sapphire::PDESystem::print_index_map(StreamType &os) const
 
 // explicit instantiation
 template void
-Sapphire::PDESystem::print_index_map(std::ostream &os) const;
+Sapphire::VFP::PDESystem::print_index_map(std::ostream &os) const;
 template void
-Sapphire::PDESystem::print_index_map(dealii::ConditionalOStream &os) const;
+Sapphire::VFP::PDESystem::print_index_map(dealii::ConditionalOStream &os) const;
 
 void
-Sapphire::PDESystem::print_pde_system(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_pde_system(std::ostream &os) const
 {
   print_advection_matrices(os);
   print_generator_matrices(os);
@@ -192,7 +192,7 @@ Sapphire::PDESystem::print_pde_system(std::ostream &os) const
 }
 
 void
-Sapphire::PDESystem::create_advection_matrices()
+Sapphire::VFP::PDESystem::create_advection_matrices()
 {
   // The matrix products (e.g. A_x * A_y) only yield the correct system if we
   // compute the matrices for expansion_order + 1 and later shrink them to
@@ -416,7 +416,7 @@ Sapphire::PDESystem::create_advection_matrices()
 }
 
 void
-Sapphire::PDESystem::create_generator_rotation_matrices()
+Sapphire::VFP::PDESystem::create_generator_rotation_matrices()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
   for (auto &generator_matrix : generator_rotation_matrices)
@@ -518,7 +518,7 @@ Sapphire::PDESystem::create_generator_rotation_matrices()
 }
 
 void
-Sapphire::PDESystem::create_collision_matrix()
+Sapphire::VFP::PDESystem::create_collision_matrix()
 {
   unsigned int matrix_size = (expansion_order + 1) * (expansion_order + 1);
   collision_matrix.reinit(matrix_size);
@@ -549,7 +549,7 @@ Sapphire::PDESystem::create_collision_matrix()
 }
 
 void
-Sapphire::PDESystem::compute_adv_mat_products()
+Sapphire::VFP::PDESystem::compute_adv_mat_products()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
   for (auto &adv_mat_product : adv_mat_products)
@@ -562,7 +562,7 @@ Sapphire::PDESystem::compute_adv_mat_products()
 }
 
 void
-Sapphire::PDESystem::compute_adv_cross_generators()
+Sapphire::VFP::PDESystem::compute_adv_cross_generators()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
 
@@ -592,7 +592,7 @@ Sapphire::PDESystem::compute_adv_cross_generators()
   adv_x_gen_matrices[2].add(-1., temp_matrix);
 }
 
-void ::Sapphire::PDESystem::compute_t_matrices()
+void ::Sapphire::VFP::PDESystem::compute_t_matrices()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
   for (auto &t_mat : t_matrices)
@@ -603,7 +603,7 @@ void ::Sapphire::PDESystem::compute_t_matrices()
       advection_matrices[j].mmult(t_matrices[3 * i + j], adv_x_gen_matrices[i]);
 }
 
-void ::Sapphire::PDESystem::shrink_matrices()
+void ::Sapphire::VFP::PDESystem::shrink_matrices()
 {
   // Shrink the matrices such that they agree with order of the expansion
   unsigned int num_exp_coefficients =

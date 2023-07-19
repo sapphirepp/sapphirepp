@@ -15,7 +15,7 @@
 #include "vfp-solver-control.h"
 
 template <int dim>
-Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
+Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
                                       const VFPSolverControl &solver_control)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
@@ -75,14 +75,14 @@ Sapphire::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::set_time(double time)
+Sapphire::VFP::UpwindFlux<dim>::set_time(double time)
 {
   background_velocity_field.set_time(time);
 }
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::compute_upwind_fluxes(
+Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
   const std::vector<dealii::Point<dim>>     &q_points,
   const std::vector<dealii::Tensor<1, dim>> &normals,
   std::vector<dealii::FullMatrix<double>>   &positive_flux_matrices,
@@ -177,7 +177,7 @@ Sapphire::UpwindFlux<dim>::compute_upwind_fluxes(
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::prepare_work_arrays_for_lapack()
+Sapphire::VFP::UpwindFlux<dim>::prepare_work_arrays_for_lapack()
 {
   // Preparations for the eigenvalue and eigenvector computations
   //
@@ -263,7 +263,7 @@ Sapphire::UpwindFlux<dim>::prepare_work_arrays_for_lapack()
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::prepare_upwind_fluxes()
+Sapphire::VFP::UpwindFlux<dim>::prepare_upwind_fluxes()
 {
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
   // eigenvalues of A_x are the roots of the associated legendre polynomials.
@@ -376,7 +376,7 @@ Sapphire::UpwindFlux<dim>::prepare_upwind_fluxes()
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::test()
+Sapphire::VFP::UpwindFlux<dim>::test()
 {
   std::cout << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
@@ -483,7 +483,7 @@ Sapphire::UpwindFlux<dim>::test()
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::compute_flux_in_space_directions(
+Sapphire::VFP::UpwindFlux<dim>::compute_flux_in_space_directions(
   const unsigned int          component,
   const double                n_component,
   const double                background_velocity,
@@ -548,7 +548,7 @@ Sapphire::UpwindFlux<dim>::compute_flux_in_space_directions(
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::compute_matrix_sum(
+Sapphire::VFP::UpwindFlux<dim>::compute_matrix_sum(
   const double                               n_p,
   const double                               momentum,
   const double                               gamma,
@@ -589,7 +589,7 @@ Sapphire::UpwindFlux<dim>::compute_matrix_sum(
 
 template <int dim>
 void
-Sapphire::UpwindFlux<dim>::compute_flux_in_p_direction(
+Sapphire::VFP::UpwindFlux<dim>::compute_flux_in_p_direction(
   const double                               n_p,
   const double                               momentum,
   const double                               gamma,
@@ -670,6 +670,6 @@ Sapphire::UpwindFlux<dim>::compute_flux_in_p_direction(
 }
 
 // explicit instantiation
-template class Sapphire::UpwindFlux<1>;
-template class Sapphire::UpwindFlux<2>;
-template class Sapphire::UpwindFlux<3>;
+template class Sapphire::VFP::UpwindFlux<1>;
+template class Sapphire::VFP::UpwindFlux<2>;
+template class Sapphire::VFP::UpwindFlux<3>;

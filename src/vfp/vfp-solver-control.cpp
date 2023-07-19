@@ -8,7 +8,7 @@
 #include "parameter-flags.h"
 #include "parameter-parser.h"
 
-Sapphire::VFPSolverControl::VFPSolverControl(
+Sapphire::VFP::VFPSolverControl::VFPSolverControl(
   const Sapphire::Utils::ParameterParser &prm)
   : expansion_order{prm.vfp_expansion_order}
   , polynomial_degree{prm.vfp_polynomial_degree}
@@ -83,7 +83,7 @@ Sapphire::VFPSolverControl::VFPSolverControl(
 }
 
 // void
-// Sapphire::VFPSolverControl::print_settings(std::ostream &os) const
+// Sapphire::VFP::VFPSolverControl::print_settings(std::ostream &os) const
 // {
 //   os << "Compile time parameters: " << std::endl;
 //   os << "	Dimension Configuration Space: "
@@ -95,7 +95,7 @@ Sapphire::VFPSolverControl::VFPSolverControl(
 // }
 
 // void
-// Sapphire::VFPSolverControl::declare_parameters()
+// Sapphire::VFP::VFPSolverControl::declare_parameters()
 // {
 //   parameter_handler.enter_subsection("Mesh");
 //   { // NOTE: This is a very strange syntax
@@ -191,13 +191,13 @@ Sapphire::VFPSolverControl::VFPSolverControl(
 // }
 
 // void
-// Sapphire::VFPSolverControl::parse_parameters()
+// Sapphire::VFP::VFPSolverControl::parse_parameters()
 // {
 //   parameter_handler.parse_input(parameter_file);
 // }
 
 // void
-// Sapphire::VFPSolverControl::get_parameters()
+// Sapphire::VFP::VFPSolverControl::get_parameters()
 // {
 //   parameter_handler.enter_subsection("Mesh");
 //   {

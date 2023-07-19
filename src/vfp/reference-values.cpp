@@ -6,8 +6,9 @@
 
 template <typename StreamType>
 StreamType &
-Sapphire::operator<<(StreamType                      &os,
-                     const Sapphire::ReferenceValues &reference_values)
+Sapphire::VFP::operator<<(
+  StreamType                           &os,
+  const Sapphire::VFP::ReferenceValues &reference_values)
 {
   os << "Reference Values: \n"
      << "	Mass: " << reference_values.mass << " kg \n"
@@ -20,7 +21,8 @@ Sapphire::operator<<(StreamType                      &os,
 
 // explicit instantiation
 template std::ostream &
-Sapphire::operator<<(std::ostream &, const Sapphire::ReferenceValues &);
+Sapphire::VFP::operator<<(std::ostream &,
+                          const Sapphire::VFP::ReferenceValues &);
 template dealii::ConditionalOStream &
-Sapphire::operator<<(dealii::ConditionalOStream &,
-                     const Sapphire::ReferenceValues &);
+Sapphire::VFP::operator<<(dealii::ConditionalOStream &,
+                          const Sapphire::VFP::ReferenceValues &);
