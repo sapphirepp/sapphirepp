@@ -10,16 +10,16 @@
 
 Sapphire::VFPSolverControl::VFPSolverControl(
   const Sapphire::Utils::ParameterParser &prm)
-  : expansion_order{prm.expansion_order}
-  , polynomial_degree{prm.polynomial_degree}
-  , theta{prm.theta}
-  , time_step{prm.time_step}
-  , final_time{prm.final_time}
+  : expansion_order{prm.vfp_expansion_order}
+  , polynomial_degree{prm.vfp_polynomial_degree}
+  , theta{prm.vfp_theta}
+  , time_step{prm.vfp_time_step}
+  , final_time{prm.vfp_final_time}
 {
   // Mesh
   // Two diagonally opposite corner points of the grid
-  std::stringstream p1_string(prm.p1);
-  std::stringstream p2_string(prm.p2);
+  std::stringstream p1_string(prm.vfp_p1);
+  std::stringstream p2_string(prm.vfp_p2);
   for (auto [coordinate, i] =
          std::tuple<std::string, unsigned int>{std::string(), 0};
        std::getline(p1_string, coordinate, ',');
@@ -38,13 +38,13 @@ Sapphire::VFPSolverControl::VFPSolverControl(
     }
 
   // Number of cells
-  std::stringstream n_cells_string(prm.n_cells);
+  std::stringstream n_cells_string(prm.vfp_n_cells);
   for (std::string n; std::getline(n_cells_string, n, ',');)
     n_cells.push_back(std::stoi(n));
   n_cells.resize(dim); // shrink to dim of the phase-space
 
   // Periodicity
-  std::string periodicity_string = prm.periodicity;
+  std::string periodicity_string = prm.vfp_periodicity;
   // Remove whitespace
   periodicity_string.erase(std::remove_if(periodicity_string.begin(),
                                           periodicity_string.end(),
@@ -59,26 +59,26 @@ Sapphire::VFPSolverControl::VFPSolverControl(
   periodicity.resize(dim);
 
   // Time stepping method
-  if (prm.time_stepping_method == "Forward Euler")
+  if (prm.vfp_time_stepping_method == "Forward Euler")
     {
       theta                = 0.;
       time_stepping_method = Sapphire::Utils::TimeSteppingMethod::forward_euler;
     }
-  else if (prm.time_stepping_method == "Backward Euler")
+  else if (prm.vfp_time_stepping_method == "Backward Euler")
     {
       theta = 1.;
       time_stepping_method =
         Sapphire::Utils::TimeSteppingMethod::backward_euler;
     }
-  else if (prm.time_stepping_method == "Crank-Nicolson")
+  else if (prm.vfp_time_stepping_method == "Crank-Nicolson")
     {
       theta = 1. / 2.;
       time_stepping_method =
         Sapphire::Utils::TimeSteppingMethod::crank_nicolson;
     }
-  else if (prm.time_stepping_method == "ERK4")
+  else if (prm.vfp_time_stepping_method == "ERK4")
     time_stepping_method = Sapphire::Utils::TimeSteppingMethod::erk4;
-  else if (prm.time_stepping_method == "LSERK")
+  else if (prm.vfp_time_stepping_method == "LSERK")
     time_stepping_method = Sapphire::Utils::TimeSteppingMethod::lserk;
 }
 

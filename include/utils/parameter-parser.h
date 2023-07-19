@@ -42,19 +42,19 @@ namespace Sapphire
 
       // VFP Control Parameter
       // Spherical harmonic expansion
-      int expansion_order;
+      int vfp_expansion_order;
       // Mesh
-      std::string p1;
-      std::string p2;
-      std::string n_cells;
-      std::string periodicity;
+      std::string vfp_p1;
+      std::string vfp_p2;
+      std::string vfp_n_cells;
+      std::string vfp_periodicity;
       // Finite element
-      unsigned int polynomial_degree;
+      unsigned int vfp_polynomial_degree;
       // Time stepping
-      std::string time_stepping_method;
-      double      theta;
-      double      time_step;
-      double      final_time;
+      std::string vfp_time_stepping_method;
+      double      vfp_theta;
+      double      vfp_time_step;
+      double      vfp_final_time;
 
     private:
       void
@@ -62,7 +62,7 @@ namespace Sapphire
       void
       parse_parameters();
 
-      ParameterHandler prm;
+      ParameterHandler  prm;
       const std::string prm_file_name;
     };
 
