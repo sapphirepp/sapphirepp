@@ -75,6 +75,7 @@
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "physical-setup.h"
+#include "sapphire-logstream.h"
 #include "upwind-flux.h"
 #include "vfp-solver-control.h"
 
@@ -1764,8 +1765,11 @@ main(int argc, char *argv[])
     {
       using namespace Sapphire;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      Utils::ParameterParser           parameter_parser("vfp-equation.prm");
-      VFPEquationSolver vfp_equation_solver(parameter_parser);
+
+      Sapphire::saplog.depth_console(10);
+
+      Utils::ParameterParser parameter_parser("vfp-equation.prm");
+      VFPEquationSolver      vfp_equation_solver(parameter_parser);
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)
