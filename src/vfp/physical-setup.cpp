@@ -3,7 +3,7 @@
 // Initial values
 template <int dim>
 void
-Sapphire::InitialValueFunction<dim>::vector_value(
+Sapphire::VFP::InitialValueFunction<dim>::vector_value(
   const dealii::Point<dim> &p,
   dealii::Vector<double>   &f) const
 {
@@ -59,13 +59,13 @@ Sapphire::InitialValueFunction<dim>::vector_value(
   //                                std::pow(p[2], 2))));
 }
 // explicit instantiation
-template class Sapphire::InitialValueFunction<1>;
-template class Sapphire::InitialValueFunction<2>;
-template class Sapphire::InitialValueFunction<3>;
+template class Sapphire::VFP::InitialValueFunction<1>;
+template class Sapphire::VFP::InitialValueFunction<2>;
+template class Sapphire::VFP::InitialValueFunction<3>;
 
 template <int dim>
 void
-Sapphire::ScatteringFrequency<dim>::value_list(
+Sapphire::VFP::ScatteringFrequency<dim>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &scattering_frequencies,
   const unsigned int                     component) const
@@ -79,15 +79,15 @@ Sapphire::ScatteringFrequency<dim>::value_list(
   std::fill(scattering_frequencies.begin(), scattering_frequencies.end(), 0.5);
 }
 // explicit instantiation
-template class Sapphire::ScatteringFrequency<1>;
-template class Sapphire::ScatteringFrequency<2>;
-template class Sapphire::ScatteringFrequency<3>;
+template class Sapphire::VFP::ScatteringFrequency<1>;
+template class Sapphire::VFP::ScatteringFrequency<2>;
+template class Sapphire::VFP::ScatteringFrequency<3>;
 
 // Source term implementation
 template <int dim>
 void
-Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
-                                    dealii::Vector<double>   &values) const
+Sapphire::VFP::Source<dim>::vector_value(const dealii::Point<dim> &p,
+                                         dealii::Vector<double>   &values) const
 {
   Assert(values.size() == Source<dim>::n_components,
          dealii::ExcDimensionMismatch(values.size(),
@@ -106,14 +106,14 @@ Sapphire::Source<dim>::vector_value(const dealii::Point<dim> &p,
               std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
 }
 // explicit instantiation
-template class Sapphire::Source<1>;
-template class Sapphire::Source<2>;
-template class Sapphire::Source<3>;
+template class Sapphire::VFP::Source<1>;
+template class Sapphire::VFP::Source<2>;
+template class Sapphire::VFP::Source<3>;
 
 // Magnetic field implementation
 template <int dim>
 void
-Sapphire::MagneticField<dim>::vector_value(
+Sapphire::VFP::MagneticField<dim>::vector_value(
   const dealii::Point<dim> &point,
   dealii::Vector<double>   &magnetic_field) const
 {
@@ -130,14 +130,14 @@ Sapphire::MagneticField<dim>::vector_value(
 }
 
 // explicit instantiation
-template class Sapphire::MagneticField<1>;
-template class Sapphire::MagneticField<2>;
-template class Sapphire::MagneticField<3>;
+template class Sapphire::VFP::MagneticField<1>;
+template class Sapphire::VFP::MagneticField<2>;
+template class Sapphire::VFP::MagneticField<3>;
 
 // Velocity field implementation
 template <int dim>
 void
-Sapphire::BackgroundVelocityField<dim>::vector_value(
+Sapphire::VFP::BackgroundVelocityField<dim>::vector_value(
   const dealii::Point<dim> &point,
   dealii::Vector<double>   &velocity) const
 {
@@ -192,7 +192,7 @@ Sapphire::BackgroundVelocityField<dim>::vector_value(
 // Divergence
 template <int dim>
 void
-Sapphire::BackgroundVelocityField<dim>::divergence_list(
+Sapphire::VFP::BackgroundVelocityField<dim>::divergence_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &divergence)
 {
@@ -232,7 +232,7 @@ Sapphire::BackgroundVelocityField<dim>::divergence_list(
 // Material derivative
 template <int dim>
 void
-Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
+Sapphire::VFP::BackgroundVelocityField<dim>::material_derivative_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<dealii::Vector<double>>   &material_derivatives)
 {
@@ -300,7 +300,7 @@ Sapphire::BackgroundVelocityField<dim>::material_derivative_list(
 // Jacobian matrix
 template <int dim>
 void
-Sapphire::BackgroundVelocityField<dim>::jacobian_list(
+Sapphire::VFP::BackgroundVelocityField<dim>::jacobian_list(
   const std::vector<dealii::Point<dim>>            &points,
   std::vector<std::vector<dealii::Vector<double>>> &jacobians) const
 {
@@ -396,6 +396,6 @@ Sapphire::BackgroundVelocityField<dim>::jacobian_list(
 }
 
 // explicit instantiation
-template class Sapphire::BackgroundVelocityField<1>;
-template class Sapphire::BackgroundVelocityField<2>;
-template class Sapphire::BackgroundVelocityField<3>;
+template class Sapphire::VFP::BackgroundVelocityField<1>;
+template class Sapphire::VFP::BackgroundVelocityField<2>;
+template class Sapphire::VFP::BackgroundVelocityField<3>;

@@ -238,32 +238,32 @@ Sapphire::Utils::ParameterParser::parse_parameters()
     prm.enter_subsection("Mesh");
     {
       // Two diagonally opposite corner points of the grid
-      p1 = prm.get("Point 1");
-      p2 = prm.get("Point 2");
+      vfp_p1 = prm.get("Point 1");
+      vfp_p2 = prm.get("Point 2");
       // Number of cells
-      n_cells = prm.get("Number of cells");
+      vfp_n_cells = prm.get("Number of cells");
       // Periodicity
-      periodicity = prm.get("Periodicity");
+      vfp_periodicity = prm.get("Periodicity");
     }
     prm.leave_subsection();
 
     prm.enter_subsection("Time stepping");
     {
-      time_stepping_method = prm.get("Method");
-      time_step            = prm.get_double("Time step size");
-      final_time           = prm.get_double("Final time");
+      vfp_time_stepping_method = prm.get("Method");
+      vfp_time_step            = prm.get_double("Time step size");
+      vfp_final_time           = prm.get_double("Final time");
     }
     prm.leave_subsection();
 
     prm.enter_subsection("Expansion");
     {
-      expansion_order = prm.get_integer("Expansion order");
+      vfp_expansion_order = prm.get_integer("Expansion order");
     }
     prm.leave_subsection();
 
     prm.enter_subsection("Finite element");
     {
-      polynomial_degree = prm.get_integer("Polynomial degree");
+      vfp_polynomial_degree = prm.get_integer("Polynomial degree");
     }
     prm.leave_subsection();
   }
