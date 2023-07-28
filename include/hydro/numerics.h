@@ -27,7 +27,6 @@ namespace Sapphire
       HDSolverControl(const Sapphire::Utils::ParameterParser &prm);
 
       const TimeSteppingScheme    scheme;
-      const FluxType              flux_type;
       const SlopeLimiter          limiter;
       const SlopeLimiterCriterion limiter_criterion;
 
@@ -38,9 +37,6 @@ namespace Sapphire
 
       const unsigned int max_iterations;
       const double       tolerance;
-
-      double Upwind_eta = 1.0; //< Parameter controling upwind or central flux
-      double LaxFriedrichs_C;
     };
 
     double
@@ -51,28 +47,6 @@ namespace Sapphire
     minmod(const std::vector<Tensor<1, dim>> &values,
            const unsigned int                 n,
            Tensor<1, dim>                    &return_value);
-
-    /**
-     * @brief Compute the numerical flux
-     *
-     * @param flux_1 Flux on the first side of the interface \f$ \mathbf{f}_+ \f$
-     * @param flux_2 Flux on the second/neighbor side of the interface \f$
-     * \mathbf{f}_- \f$
-     * @param n Nommal vector of the interface \f$ \hat{n} \f$
-     * @param value_1 Value of the function on the first side of the interface \f$
-     * u_+ \f$
-     * @param value_2 Value of the function on the second/neighbor side of the
-     * interface \f$ u_- \f$
-     * @return double Flux across the interface \f$ \hat{n} \cdot \mathbf{f} \f$
-     */
-    template <int dim>
-    double
-    compute_numerical_flux(const Tensor<1, dim>  &flux_1,
-                           const Tensor<1, dim>  &flux_2,
-                           const Tensor<1, dim>  &n,
-                           const double          &value_1,
-                           const double          &value_2,
-                           const HDSolverControl &hd_solver_control);
 
     template <int dim>
     void

@@ -215,6 +215,7 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
   , boundary_values(boundary_values)
   , exact_solution(exact_solution)
   , hd_solver_control(prm)
+  , flux(prm, beta)
   , output_module(output_module)
   , beta(beta)
   , mpi_communicator(MPI_COMM_WORLD)
@@ -324,8 +325,7 @@ Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector()
 
     for (const unsigned int q_index : fe_values.quadrature_point_indices())
       {
-        flux_value[0] = beta * current_solution_values[q_index] *
-                        current_solution_values[q_index];
+        flux.flux(current_solution_values[q_index], flux_value);
 
         for (const unsigned int i : fe_values.dof_indices())
           {
@@ -415,23 +415,13 @@ Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector()
     fe_face_values_neighbor.get_function_values(current_solution,
                                                 current_solution_values_2);
 
-    Tensor<1, dim> flux_1, flux_2;
     double         flux_dot_n;
 
     for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
       {
-        flux_1[0] = beta * current_solution_values_1[q_index] *
-                    current_solution_values_1[q_index];
-        flux_2[0] = beta * current_solution_values_2[q_index] *
-                    current_solution_values_2[q_index];
-
-        flux_dot_n =
-          compute_numerical_flux(flux_1,
-                                 flux_2,
-                                 fe_face_values.normal_vector(q_index),
-                                 current_solution_values_1[q_index],
-                                 current_solution_values_2[q_index],
-                                 hd_solver_control);
+        flux_dot_n = flux.numerical_flux(current_solution_values_1[q_index],
+                                         current_solution_values_2[q_index],
+                                         fe_face_values.normal_vector(q_index));
 
         for (const unsigned int i : fe_face_values.dof_indices())
           {
@@ -956,7 +946,6 @@ Sapphire::Hydro::BurgersEq<dim>::init()
   setup_system();
   assemble_mass_matrix();
   // assemble_system();
-  hd_solver_control.LaxFriedrichs_C = 3.0; // TODO_BE: Calculate C
   {
     TimerOutput::Scope t(computing_timer, "Output results");
     output_results();

@@ -36,6 +36,7 @@
 
 #include <mpi.h>
 
+#include "flux.h"
 #include "numerics.h"
 #include "output-module.h"
 
@@ -121,6 +122,7 @@ namespace Sapphire
       const SmartPointer<Function<dim>> exact_solution;
 
       HDSolverControl   hd_solver_control;
+      Flux<dim>         flux;
       OutputModule<dim> output_module;
 
       const double beta; //< factor in front of the flux

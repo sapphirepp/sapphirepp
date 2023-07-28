@@ -5,7 +5,6 @@
 Sapphire::Hydro::HDSolverControl::HDSolverControl(
   const Sapphire::Utils::ParameterParser &prm)
   : scheme(prm.hdsolver_scheme)
-  , flux_type(prm.hdsolver_flux_type)
   , limiter(prm.hdsolver_limiter)
   , limiter_criterion(prm.hdsolver_limiter_criterion)
   , fe_degree(prm.hdsolver_fe_degree)
@@ -56,75 +55,6 @@ template void
 Sapphire::Hydro::minmod<3>(const std::vector<Tensor<1, 3>> &values,
                            const unsigned int               n,
                            Tensor<1, 3>                    &return_value);
-
-template <int dim>
-double
-Sapphire::Hydro::compute_numerical_flux(
-  const Tensor<1, dim>  &flux_1,
-  const Tensor<1, dim>  &flux_2,
-  const Tensor<1, dim>  &n,
-  const double          &value_1,
-  const double          &value_2,
-  const HDSolverControl &hd_solver_control)
-{
-  double numerical_flux = 0;
-  switch (hd_solver_control.flux_type)
-    {
-      case FluxType::Central:
-        {
-          numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-          break;
-        }
-
-      case FluxType::Upwind:
-        {
-          numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-          numerical_flux += 0.5 * hd_solver_control.Upwind_eta *
-                            (std::abs(flux_1 * n) - std::abs(flux_2 * n));
-          break;
-        }
-
-      case FluxType::LaxFriedrichs:
-        {
-          numerical_flux += 0.5 * (flux_1 + flux_2) * n;
-          numerical_flux +=
-            0.5 * hd_solver_control.LaxFriedrichs_C * (value_1 - value_2);
-          break;
-        }
-
-      default:
-        Assert(false, ExcNotImplemented());
-        break;
-    }
-
-  return numerical_flux;
-}
-
-// explicit instantiation
-template double
-Sapphire::Hydro::compute_numerical_flux<1>(
-  const Tensor<1, 1>    &flux_1,
-  const Tensor<1, 1>    &flux_2,
-  const Tensor<1, 1>    &n,
-  const double          &value_1,
-  const double          &value_2,
-  const HDSolverControl &hd_solver_control);
-template double
-Sapphire::Hydro::compute_numerical_flux<2>(
-  const Tensor<1, 2>    &flux_1,
-  const Tensor<1, 2>    &flux_2,
-  const Tensor<1, 2>    &n,
-  const double          &value_1,
-  const double          &value_2,
-  const HDSolverControl &hd_solver_control);
-template double
-Sapphire::Hydro::compute_numerical_flux<3>(
-  const Tensor<1, 3>    &flux_1,
-  const Tensor<1, 3>    &flux_2,
-  const Tensor<1, 3>    &n,
-  const double          &value_1,
-  const double          &value_2,
-  const HDSolverControl &hd_solver_control);
 
 template <int dim>
 void
