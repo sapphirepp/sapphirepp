@@ -216,6 +216,7 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
   , exact_solution(exact_solution)
   , hd_solver_control(prm)
   , flux(prm, beta)
+  , limiter(prm)
   , output_module(output_module)
   , beta(beta)
   , mpi_communicator(MPI_COMM_WORLD)
@@ -537,7 +538,7 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
 
     // Calculate the average of current cell
     double         cell_average = 0;
-    Tensor<1, dim> cell_average_grad;
+    Tensor<1, dim> cell_average_grad; // TODO_BE: Calculate using kernel
     for (const unsigned int q_index : fe_values.quadrature_point_indices())
       {
         for (const unsigned int i : fe_values.dof_indices())
@@ -630,7 +631,7 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
                       (neighbor_distance[i2] * direction) /
                       neighbor_distance[i2].norm();
                   }
-                face_flux = cell_average + minmod(tmp_minmod);
+                face_flux = cell_average + limiter.minmod(tmp_minmod);
 
                 if (std::abs(face_value - face_flux) > 1e-10)
                   {
@@ -650,13 +651,12 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
       {
         // Calculate the limited slope
         Tensor<1, dim> limited_slope;
-        compute_limited_slope(cell_average,
-                              cell_average_grad,
-                              neighbor_cell_averages,
-                              neighbor_distance,
-                              n_neighbors,
-                              limited_slope,
-                              hd_solver_control);
+        limiter.compute_limited_slope(cell_average,
+                                      cell_average_grad,
+                                      neighbor_cell_averages,
+                                      neighbor_distance,
+                                      n_neighbors,
+                                      limited_slope);
 
         // To calculate the updated dof-values, we use a similar functionality
         // as VectroTools::interpolate

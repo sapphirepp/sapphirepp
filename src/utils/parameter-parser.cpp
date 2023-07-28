@@ -341,13 +341,14 @@ Sapphire::Utils::ParameterParser::parse_parameters()
     {
       s = prm.get("Slope limiter");
       if (s == "No limiter")
-        hdsolver_limiter = Sapphire::Hydro::SlopeLimiter::NoLimiter;
+        hdsolver_limiter = Sapphire::Hydro::SlopeLimiterType::NoLimiter;
       else if (s == "Linear reconstruction")
-        hdsolver_limiter = Sapphire::Hydro::SlopeLimiter::LinearReconstruction;
+        hdsolver_limiter =
+          Sapphire::Hydro::SlopeLimiterType::LinearReconstruction;
       else if (s == "MinMod")
-        hdsolver_limiter = Sapphire::Hydro::SlopeLimiter::MinMod;
+        hdsolver_limiter = Sapphire::Hydro::SlopeLimiterType::MinMod;
       else if (s == "MUSCL")
-        hdsolver_limiter = Sapphire::Hydro::SlopeLimiter::MUSCL;
+        hdsolver_limiter = Sapphire::Hydro::SlopeLimiterType::MUSCL;
       else
         AssertThrow(false, ExcNotImplemented());
 
@@ -365,7 +366,7 @@ Sapphire::Utils::ParameterParser::parse_parameters()
         AssertThrow(false, ExcNotImplemented());
 
       // TODO: Do this here, or in init of HDSolverControl?
-      if (hdsolver_limiter == Sapphire::Hydro::SlopeLimiter::NoLimiter)
+      if (hdsolver_limiter == Sapphire::Hydro::SlopeLimiterType::NoLimiter)
         {
           Assert(hdsolver_limiter_criterion ==
                    Sapphire::Hydro::SlopeLimiterCriterion::Never,

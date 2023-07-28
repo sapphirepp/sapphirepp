@@ -39,6 +39,7 @@
 #include "flux.h"
 #include "numerics.h"
 #include "output-module.h"
+#include "slope-limiter.h"
 
 namespace Sapphire
 {
@@ -123,6 +124,7 @@ namespace Sapphire
 
       HDSolverControl   hd_solver_control;
       Flux<dim>         flux;
+      SlopeLimiter<dim> limiter;
       OutputModule<dim> output_module;
 
       const double beta; //< factor in front of the flux

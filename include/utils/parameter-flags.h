@@ -35,7 +35,7 @@ namespace Sapphire
       Upwind,
       LaxFriedrichs
     };
-    enum class SlopeLimiter
+    enum class SlopeLimiterType
     {
       NoLimiter,
       LinearReconstruction,

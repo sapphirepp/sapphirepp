@@ -43,7 +43,7 @@ namespace Sapphire
       /**HDSolverControl parameter*/
       Sapphire::Hydro::TimeSteppingScheme    hdsolver_scheme;
       Sapphire::Hydro::FluxType              hdsolver_flux_type;
-      Sapphire::Hydro::SlopeLimiter          hdsolver_limiter;
+      Sapphire::Hydro::SlopeLimiterType      hdsolver_limiter;
       Sapphire::Hydro::SlopeLimiterCriterion hdsolver_limiter_criterion;
 
       unsigned int hdsolver_fe_degree;
