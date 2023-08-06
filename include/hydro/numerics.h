@@ -26,8 +26,7 @@ namespace Sapphire
     public:
       HDSolverControl(const Sapphire::Utils::ParameterParser &prm);
 
-      const TimeSteppingScheme    scheme;
-      const SlopeLimiterCriterion limiter_criterion;
+      const TimeSteppingScheme scheme;
 
       const unsigned int fe_degree;
       const double       time_step;

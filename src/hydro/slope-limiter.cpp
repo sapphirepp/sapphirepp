@@ -6,6 +6,7 @@ template <int dim>
 Sapphire::Hydro::SlopeLimiter<dim>::SlopeLimiter(
   const Sapphire::Utils::ParameterParser &prm)
   : limiter_type(prm.hdsolver_limiter)
+  , limiter_criterion(prm.hdsolver_limiter_criterion)
 {}
 
 template <int dim>
@@ -41,7 +42,7 @@ template <int dim>
 void
 Sapphire::Hydro::SlopeLimiter<dim>::compute_limited_slope(
   const double                      &cell_average,
-  const Tensor<1, dim>               cell_average_grad,
+  const Tensor<1, dim>              &cell_average_grad,
   const std::vector<double>         &neighbor_cell_averages,
   const std::vector<Tensor<1, dim>> &neighbor_distance,
   const unsigned int                 n_neighbors,

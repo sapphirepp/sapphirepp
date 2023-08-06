@@ -139,8 +139,9 @@ namespace Sapphire
         const Quadrature<dim>     &quadrature,
         const Quadrature<dim>     &support_quadrature,
         const Quadrature<dim - 1> &face_quadrature,
-        const UpdateFlags update_flags = update_values | update_gradients |
-                                         update_JxW_values,
+        const UpdateFlags          update_flags = update_values |
+                                         update_quadrature_points |
+                                         update_gradients | update_JxW_values,
         const UpdateFlags neighbor_update_flags = update_values |
                                                   update_JxW_values,
         const UpdateFlags interpolate_update_flags = update_quadrature_points,
@@ -279,7 +280,7 @@ Sapphire::Hydro::BurgersEq<dim>::setup_system()
   constraints.close();
 
   mark_cell_for_limiter.reinit(triangulation.n_active_cells());
-  if (hd_solver_control.limiter_criterion == SlopeLimiterCriterion::Always)
+  if (limiter.limiter_criterion == SlopeLimiterCriterion::Always)
     {
       mark_cell_for_limiter = 1.0;
     }
@@ -490,7 +491,7 @@ template <int dim>
 void
 Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
 {
-  if (hd_solver_control.limiter_criterion == SlopeLimiterCriterion::Never)
+  if (limiter.limiter_criterion == SlopeLimiterCriterion::Never)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
   DEBUG_PRINT(pcout, 2, "Slope limiter");
@@ -522,7 +523,7 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
     const Point<dim> cell_center = cell->center();
 
     bool limit_cell = true;
-    if (hd_solver_control.limiter_criterion == SlopeLimiterCriterion::Never)
+    if (limiter.limiter_criterion == SlopeLimiterCriterion::Never)
       {
         limit_cell = false;
       }
@@ -538,7 +539,10 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
 
     // Calculate the average of current cell
     double         cell_average = 0;
-    Tensor<1, dim> cell_average_grad; // TODO_BE: Calculate using kernel
+    Tensor<1, dim>                 cell_grad;
+    Tensor<1, dim>                 cell_average_grad;
+    const std::vector<Point<dim>> &cell_points =
+      fe_values.get_quadrature_points();
     for (const unsigned int q_index : fe_values.quadrature_point_indices())
       {
         for (const unsigned int i : fe_values.dof_indices())
@@ -546,13 +550,21 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
             cell_average += solution[local_dof_indices[i]] *
                             fe_values.shape_value(i, q_index) *
                             fe_values.JxW(q_index);
+            cell_grad += solution[local_dof_indices[i]] *
+                         fe_values.shape_value(i, q_index) *
+                         fe_values.JxW(q_index) *
+                         (cell_points[q_index] - cell_center);
             cell_average_grad += solution[local_dof_indices[i]] *
                                  fe_values.shape_grad(i, q_index) *
                                  fe_values.JxW(q_index);
           }
       }
     cell_average /= cell->measure();
+    cell_grad *= 12 / (cell->measure() * cell->measure() * cell->measure());
     cell_average_grad /= cell->measure();
+    cell_grad = cell_average_grad;
+    Assert((cell_grad - cell_average_grad).norm() < 1e-10, ExcInternalError());
+
 
     // Calculate the averages of the neighbour cells
     std::vector<double>         neighbor_cell_averages(cell->n_faces());
@@ -587,7 +599,7 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
       }
 
     // Check if the cell is meets the criteria for limiting
-    if (hd_solver_control.limiter_criterion ==
+    if (limiter.limiter_criterion ==
         SlopeLimiterCriterion::GerneralizedSlopeLimiter)
       {
         limit_cell = false;
@@ -652,7 +664,7 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
         // Calculate the limited slope
         Tensor<1, dim> limited_slope;
         limiter.compute_limited_slope(cell_average,
-                                      cell_average_grad,
+                                      cell_grad,
                                       neighbor_cell_averages,
                                       neighbor_distance,
                                       n_neighbors,

@@ -211,6 +211,9 @@ namespace PhysicalSetup
 
       // return -std::sin(numbers::PI * p[0]);
 
+      // x[0] = p[0];
+      // return 0.25 + 0.5 * std::sin(numbers::PI * (2 * x[0] - 1));
+
       // x[0] = p[0] - this->get_time() / 2.0;
       // if (x[0] > 0.0)
       //   return 1.0;

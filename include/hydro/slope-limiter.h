@@ -37,14 +37,14 @@ namespace Sapphire
       void
       compute_limited_slope(
         const double                      &cell_average,
-        const Tensor<1, dim>               cell_average_grad,
+        const Tensor<1, dim>              &cell_grad,
         const std::vector<double>         &neighbor_cell_averages,
         const std::vector<Tensor<1, dim>> &neighbor_distance,
         const unsigned int                 n_neighbors,
         Tensor<1, dim>                    &limited_slope);
 
-    private:
       const SlopeLimiterType limiter_type;
+      const SlopeLimiterCriterion limiter_criterion;
     };
 
   } // namespace Hydro
