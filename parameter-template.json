@@ -1,0 +1,119 @@
+{
+    "Output": {
+        "Base file name": {
+            "value": "solution",
+            "default_value": "solution",
+            "documentation": "The base file name for the output files.",
+            "pattern": "26",
+            "pattern_description": "[Anything]"
+        },
+        "Format": {
+            "value": "vtu",
+            "default_value": "vtu",
+            "documentation": "The format in which the simulation output will be stored.",
+            "pattern": "28",
+            "pattern_description": "[Selection vtu|pvtu|hdf5 ]"
+        },
+        "Number of digits for counter": {
+            "value": "4",
+            "default_value": "4",
+            "documentation": "The number of digits used for the counter in the output file names.",
+            "pattern": "27",
+            "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+        },
+        "Output frequency": {
+            "value": "1",
+            "default_value": "1",
+            "documentation": "The frequence at which output files will be written. (In units of time steps)",
+            "pattern": "29",
+            "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+        },
+        "Results folder": {
+            "value": ".\/results",
+            "default_value": ".\/results",
+            "documentation": "Path to the folder in which the simulation results will be stored. Without a trailing slash.",
+            "pattern": "24",
+            "pattern_description": "[Anything]"
+        },
+        "Simulation identifier": {
+            "value": "",
+            "default_value": "",
+            "documentation": "Name of the simulation run. It will be used to create a subdirectory in the results folder.",
+            "pattern": "25",
+            "pattern_description": "[Anything]"
+        }
+    },
+    "VFP": {
+        "Expansion": {
+            "Expansion order": {
+                "value": "0",
+                "default_value": "0",
+                "documentation": "The order of the expansion of the particle distribution function.",
+                "pattern": "22",
+                "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+            }
+        },
+        "Finite element": {
+            "Polynomial degree": {
+                "value": "1",
+                "default_value": "1",
+                "documentation": "The degree of the shape functions (i.e. the polynomials) of the finite element.",
+                "pattern": "23",
+                "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+            }
+        },
+        "Mesh": {
+            "Number of cells": {
+                "value": "4, 4, 4",
+                "default_value": "4, 4, 4",
+                "documentation": "Number of cells in each coordinate direction",
+                "pattern": "17",
+                "pattern_description": "[Anything]"
+            },
+            "Periodicity": {
+                "value": "false, false, false",
+                "default_value": "false, false, false",
+                "documentation": "Periodic boundaries in the three coordinate directions.",
+                "pattern": "18",
+                "pattern_description": "[Anything]"
+            },
+            "Point 1": {
+                "value": "0., 0., 0.",
+                "default_value": "0., 0., 0.",
+                "documentation": "Two diagonally opposite corner points, Point 1 and  Point 2",
+                "pattern": "15",
+                "pattern_description": "[Anything]"
+            },
+            "Point 2": {
+                "value": "1., 1., 1.",
+                "default_value": "1., 1., 1.",
+                "documentation": "Two diagonally opposite corner points Point 1 and  Point 2",
+                "pattern": "16",
+                "pattern_description": "[Anything]"
+            }
+        },
+        "Time stepping": {
+            "Final time": {
+                "value": "0.4",
+                "default_value": "0.4",
+                "documentation": "Duration of the simulation.",
+                "pattern": "21",
+                "pattern_description": "[Double -MAX_DOUBLE...MAX_DOUBLE (inclusive)]"
+            },
+            "Method": {
+                "value": "Crank-Nicolson",
+                "default_value": "Crank-Nicolson",
+                "documentation": "The time stepping method.",
+                "pattern": "19",
+                "pattern_description": "[Selection Forward Euler|Backward Euler|Crank-Nicolson|ERK4|LSERK ]"
+            },
+            "Time step size": {
+                "value": "7.8125e-3",
+                "default_value": "7.8125e-3",
+                "documentation": "Duration of the simulation.",
+                "pattern": "20",
+                "pattern_description": "[Double -MAX_DOUBLE...MAX_DOUBLE (inclusive)]"
+            }
+        }
+    }
+}

@@ -1,4 +1,5 @@
 results/
 build/
 .cache/
-vfp-equation.prm
+*.json
+!parameter-template.json
