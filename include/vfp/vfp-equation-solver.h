@@ -70,7 +70,7 @@
 #include <string>
 #include <vector>
 
-#include "compile-time-flags.h"
+#include "config.h"
 #include "output-module.h"
 #include "parameter-flags.h"
 #include "parameter-parser.h"

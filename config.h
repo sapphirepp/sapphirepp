@@ -1,5 +1,5 @@
-#ifndef VFP_COMPILETIMEFLAGS_H
-#define VFP_COMPILETIMEFLAGS_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #include <deal.II/base/conditional_ostream.h>
 
