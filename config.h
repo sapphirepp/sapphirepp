@@ -5,6 +5,7 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
+#include <deal.II/base/tensor_function.h>
 
 #include <deal.II/lac/vector.h>
 
@@ -502,12 +503,353 @@ namespace Sapphire
             // jacobians[i][2][1] = 0.;
             // jacobians[i][2][2] = 0.;
           }
-}
+      }
 
-private:
-// Numerical constants
-double pi = 2 * std::acos(0.);
+    private:
+      // Numerical constants
+      double pi = 2 * std::acos(0.);
     };
   } // namespace VFP
+
+  namespace Hydro
+  {
+    using namespace dealii;
+
+    /**
+     * @brief Velocity field for a rigid rotator.
+     *
+     * \f$ \mathbf{\beta}(\v{x}, t) = \omega (y \mathbf{e}_x - x \mathbf{e}_y)
+     * \f$
+     *
+     * \tparam dim: space dimension
+     */
+    template <int dim>
+    class VelocityFieldRigidRotator : public TensorFunction<1, dim, double>
+    {
+    public:
+      VelocityFieldRigidRotator(const double &omega, const double time = 0.0)
+        : TensorFunction<1, dim, double>(time)
+        , omega(omega)
+      {}
+
+      Tensor<1, dim>
+      value(const Point<dim> &p) const override
+      {
+        AssertDimension(dim, 2);
+
+        Tensor<1, dim> values;
+        values[0] = omega * p[1];
+        values[1] = -omega * p[0];
+        return values;
+      }
+
+      Tensor<2, dim>
+      gradient(const Point<dim> &p) const override
+      {
+        (void)p; // suppress unused parameter warning
+        AssertDimension(dim, 2);
+
+        Tensor<2, dim> values;
+        values[0][0] = 0.0;
+        values[0][1] = omega;
+        values[1][0] = -omega;
+        values[1][1] = 0.0;
+        return values;
+      }
+
+    private:
+      const double omega;
+    };
+
+    /**
+     * @brief Exact analytical solution of rigid rotator.
+     *
+     * \tparam dim: space dimension
+     */
+    template <int dim>
+    class ExactSolutionRigidRotator : public Function<dim>
+    {
+    public:
+      ExactSolutionRigidRotator(const double &omega, const double time = 0.0)
+        : Function<dim>(1, time)
+        , omega(omega)
+      {}
+
+      double
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override
+      {
+        AssertIndexRange(component, 1);
+        AssertDimension(dim, 2);
+
+        Point<dim> x;
+        x[0] = p[0] * std::cos(omega * this->get_time()) -
+               p[1] * std::sin(omega * this->get_time());
+        x[1] = p[0] * std::sin(omega * this->get_time()) +
+               p[1] * std::cos(omega * this->get_time());
+
+        const double width  = 0.2;
+        const double length = 0.7;
+
+        if ((std::abs(x[0]) < width) && (std::abs(x[1]) < length))
+          return 1.0;
+        if ((std::abs(x[1]) < width) && (std::abs(x[0]) < length))
+          return 1.0;
+
+        return 0.0;
+      }
+
+    private:
+      const double omega;
+    };
+
+    /**
+     * @brief Constant velocity field.
+     *
+     * \tparam dim: space dimension
+     */
+    template <int dim>
+    class ConstantVelocityField : public TensorFunction<1, dim, double>
+    {
+    public:
+      ConstantVelocityField(const Tensor<1, dim> &beta)
+        : TensorFunction<1, dim, double>()
+        , beta(beta)
+      {}
+
+      Tensor<1, dim>
+      value(const Point<dim> &p) const override
+      {
+        (void)p; // suppress unused parameter warning
+
+        return beta;
+      }
+
+      Tensor<2, dim>
+      gradient(const Point<dim> &p) const override
+      {
+        (void)p; // suppress unused parameter warning
+
+        Tensor<2, dim> values;
+        values[0][0] = 0.0;
+        values[0][1] = 0.0;
+        values[1][0] = 0.0;
+        values[1][1] = 0.0;
+        return values;
+      }
+
+    private:
+      const Tensor<1, dim> beta;
+    };
+
+    /**
+     * @brief Exact analytical solution of constant linear advection equation.
+     *
+     * \f$ u(x, t) = u_0(x - \beta t) \f$
+     * with
+     * <!-- \f$ u_0(\mathbf{x}) =  1 \f$ -->
+     * <!-- \f$ u_0(\mathbf{x}) =  \sin(\pi * \hat{n} \cdot \mathbf{x}) \f$
+     * --> \f$ u_0(\mathbf{x}) =  \exp(-\mathbf{x} \cdot \mathbf{x} / (2
+     * \sigma^2)) \f$
+     *
+     * \tparam dim: space dimension
+     */
+    template <int dim>
+    class ExactSolutionConstantAdvection : public Function<dim>
+    {
+    public:
+      ExactSolutionConstantAdvection(const Tensor<1, dim> &beta,
+                                     const double          time = 0.0)
+        : Function<dim>(1, time)
+        , beta(beta)
+      {}
+
+      double
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override
+      {
+        AssertIndexRange(component, 1);
+
+        const Point<dim> x = p - beta * this->get_time();
+
+        // return 1.0;
+        // Tensor<1, dim> normal;
+        // normal[0] = 1.0;
+        // normal[1] = 1.0;
+        // normal /= normal.norm();
+        // return std::sin(numbers::PI * normal * x);
+        const double sigma = 0.1;
+        return std::exp(-(x * x) / (2.0 * sigma * sigma));
+      }
+
+    private:
+      const Tensor<1, dim> beta;
+    };
+
+    /**
+     * @brief Exact solution of Burgers' equation.
+     *
+     * \f$ u(x, t) = \Theta(x - t/2) \f$
+     * with \f$ \Theta(x) \f$ being the Heaviside step function.
+     *
+     * \tparam dim: space dimension (must be 1)
+     */
+    template <int dim>
+    class ExactSolutionBurgersEq : public Function<dim>
+    {
+    public:
+      ExactSolutionBurgersEq(const double time = 0.0)
+        : Function<dim>(1, time)
+      {
+        AssertDimension(dim, 1);
+      }
+
+      double
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override
+      {
+        (void)component; // suppress unused parameter warning
+        Point<dim> x;
+
+        // return -std::sin(numbers::PI * p[0]);
+
+        // x[0] = p[0];
+        // return 0.25 + 0.5 * std::sin(numbers::PI * (2 * x[0] - 1));
+
+        // x[0] = p[0] - this->get_time() / 2.0;
+        // if (x[0] > 0.0)
+        //   return 1.0;
+        // else
+        //   return 0.0;
+
+        x[0] = p[0] - this->get_time() * 3.0;
+        if (x[0] > -0.5)
+          return 1.0;
+        else
+          return 2.0;
+      }
+    };
+
+    /**
+     * @brief Initial condition extracted from an exact solution.
+     *
+     * \f$ u_0(\mathbf{x}) = u(\mathbf{x}, t = 0) \f$
+     *
+     * \tparam dim: space dimension
+     */
+    template <int dim>
+    class InitialConditionBurgersEq : public Function<dim>
+    {
+    public:
+      InitialConditionBurgersEq()
+        : Function<dim>(1)
+        , exact_solution()
+      {
+        exact_solution.set_time(0.0);
+      }
+
+      double
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override
+      {
+        return exact_solution.value(p, component);
+      }
+
+    private:
+      ExactSolutionBurgersEq<dim> exact_solution;
+    };
+
+    /**
+     * @brief Boundary values extracted from an exact solution.
+     *
+     * \f$ u_b(\mathbf{x}, t) = u(\mathbf{x}, t) \f$
+     *
+     * @tparam dim: space dimension
+     */
+    template <int dim>
+    class BoundaryValuesBurgersEq : public Function<dim>
+    {
+    public:
+      BoundaryValuesBurgersEq(const double time = 0.0)
+        : Function<dim>(1, time)
+        , exact_solution()
+      {}
+
+      double
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override
+      {
+        return exact_solution.value(p, component);
+      }
+
+      void
+      set_time(const double new_time) override
+      {
+        exact_solution.set_time(new_time);
+      }
+
+
+
+    private:
+      ExactSolutionBurgersEq<dim> exact_solution;
+    };
+
+    // /**
+    //  * @brief Initial condition extracted from an exact solution.
+    //  *
+    //  * \f$ u_0(\mathbf{x}) = u(\mathbf{x}, t = 0) \f$
+    //  *
+    //  * \tparam dim: space dimension
+    //  */
+    // template <int dim>
+    // class InitialCondition : public Function<dim>
+    // {
+    // public:
+    //   InitialCondition(Function<dim> *exact_solution)
+    //     : Function<dim>(1)
+    //     , exact_solution(exact_solution)
+    //   {}
+
+    //   double
+    //   value(const Point<dim>  &p,
+    //         const unsigned int component = 0) const override
+    //   {
+    //     exact_solution->set_time(0.0);
+    //     return exact_solution->value(p, component);
+    //   }
+
+    // private:
+    //   const SmartPointer<Function<dim>> exact_solution;
+    // };
+
+    // /**
+    //  * @brief Boundary values extracted from an exact solution.
+    //  *
+    //  * \f$ u_b(\mathbf{x}, t) = u(\mathbf{x}, t) \f$
+    //  *
+    //  * @tparam dim: space dimension
+    //  */
+    // template <int dim>
+    // class BoundaryValues : public Function<dim>
+    // {
+    // public:
+    //   BoundaryValues(Function<dim> *exact_solution, const double time =
+    //   0.0)
+    //     : Function<dim>(1, time)
+    //     , exact_solution(exact_solution)
+    //   {}
+
+    //   double
+    //   value(const Point<dim>  &p,
+    //         const unsigned int component = 0) const override
+    //   {
+    //     exact_solution->set_time(this->get_time());
+    //     return exact_solution->value(p, component);
+    //   }
+
+    // private:
+    //   const SmartPointer<Function<dim>> exact_solution;
+    // };
+  } // namespace Hydro
 } // namespace Sapphire
 #endif

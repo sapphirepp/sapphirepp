@@ -1,0 +1,6 @@
+file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples)
+add_executable(example example.cpp ${HYDRO_SOURCES})
+deal_ii_setup_target(example)
+target_include_directories(example PUBLIC ${PROJECT_SOURCE_DIR}/include/hydro)
+target_include_directories(example PUBLIC ${CONFIG_HEADER_DIR})
+target_link_libraries(example UtilsLib)

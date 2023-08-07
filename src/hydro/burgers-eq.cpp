@@ -206,15 +206,12 @@ namespace Sapphire
 
 template <int dim>
 Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
-  Function<dim>           *initial_condition,
-  Function<dim>           *boundary_values,
-  Function<dim>           *exact_solution,
   const ParameterParser   &prm,
   const OutputModule<dim> &output_module,
   const double             beta)
-  : initial_condition(initial_condition)
-  , boundary_values(boundary_values)
-  , exact_solution(exact_solution)
+  : initial_condition()
+  , boundary_values()
+  , exact_solution()
   , hd_solver_control(prm)
   , flux(prm, beta)
   , limiter(prm)
@@ -274,7 +271,7 @@ Sapphire::Hydro::BurgersEq<dim>::setup_system()
   dg_vector.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
 
-  VectorTools::interpolate(mapping, dof_handler, *initial_condition, solution);
+  VectorTools::interpolate(mapping, dof_handler, initial_condition, solution);
 
   constraints.clear();
   constraints.close();
@@ -307,7 +304,7 @@ Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector()
   DEBUG_PRINT(pcout, 2, "Assemble DG vector");
 
   dg_vector = 0;
-  boundary_values->set_time(current_time);
+  boundary_values.set_time(current_time);
 
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
 
@@ -371,7 +368,7 @@ Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector()
           { // inflow boundary
             for (const unsigned int i : fe_face_values.dof_indices())
               {
-                boundary_value = boundary_values->value(
+                boundary_value = boundary_values.value(
                   fe_face_values.quadrature_point(q_index));
                 const double boundary_f_dot_n =
                   beta * boundary_value * boundary_value *
@@ -882,10 +879,10 @@ Sapphire::Hydro::BurgersEq<dim>::output_results()
   DEBUG_PRINT(pcout, 2, "Output results");
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
-  exact_solution->set_time(time);
+  exact_solution.set_time(time);
   VectorTools::interpolate(mapping,
                            dof_handler,
-                           *exact_solution,
+                           exact_solution,
                            exact_solution_values);
 
   DataOut<dim> data_out;
@@ -908,7 +905,7 @@ Sapphire::Hydro::BurgersEq<dim>::process_results()
   DEBUG_PRINT(pcout, 2, "Process results");
 
   Vector<float> difference_per_cell(triangulation.n_active_cells());
-  exact_solution->set_time(time);
+  exact_solution.set_time(time);
 
   // Use different quadrature for error computation
   const QTrapezoid<1>  q_trapez;
@@ -917,7 +914,7 @@ Sapphire::Hydro::BurgersEq<dim>::process_results()
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
                                     solution,
-                                    *exact_solution,
+                                    exact_solution,
                                     difference_per_cell,
                                     q_iterated,
                                     VectorTools::L2_norm);
@@ -929,7 +926,7 @@ Sapphire::Hydro::BurgersEq<dim>::process_results()
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
                                     solution,
-                                    *exact_solution,
+                                    exact_solution,
                                     difference_per_cell,
                                     q_iterated,
                                     VectorTools::Linfty_norm);

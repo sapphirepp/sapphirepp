@@ -17,7 +17,6 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/smartpointer.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 
@@ -36,6 +35,7 @@
 
 #include <mpi.h>
 
+#include "config.h"
 #include "flux.h"
 #include "numerics.h"
 #include "output-module.h"
@@ -75,10 +75,7 @@ namespace Sapphire
        * @param exact_solution exact solution for comparison \f$ u(\mathbf{x}, t)
        * \f$
        */
-      BurgersEq(Function<dim>           *initial_condition,
-                Function<dim>           *boundary_values,
-                Function<dim>           *exact_solution,
-                const ParameterParser   &prm,
+      BurgersEq(const ParameterParser   &prm,
                 const OutputModule<dim> &output_module,
                 const double             beta = 1.0);
 
@@ -118,9 +115,10 @@ namespace Sapphire
       void
       process_results();
 
-      const SmartPointer<Function<dim>> initial_condition;
-      const SmartPointer<Function<dim>> boundary_values;
-      const SmartPointer<Function<dim>> exact_solution;
+      InitialConditionBurgersEq<dim> initial_condition;
+      BoundaryValuesBurgersEq<dim>   boundary_values;
+      ExactSolutionBurgersEq<dim>    exact_solution;
+
 
       HDSolverControl   hd_solver_control;
       Flux<dim>         flux;

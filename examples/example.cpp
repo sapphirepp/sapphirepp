@@ -39,17 +39,15 @@ main(int argc, char *argv[])
                   3,
                   "n_threads = " << dealii::MultithreadInfo::n_threads());
 
-      const unsigned int                        dim  = 1;
-      const double                              beta = 1.0;
+      const unsigned int dim  = 1;
+      const double       beta = 1.0;
 
-      std::string parameter_filename = "../parameter.prm";
+      std::string parameter_filename = "../../examples/parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
       DEBUG_PRINT(std::cout, 0, parameter_filename);
 
-      ParameterParser prm(parameter_filename);
-      prm.write_template_parameters("../parameter-template.prm");
-
+      ParameterParser   prm(parameter_filename);
       OutputModule<dim> output_module(prm);
 
       BurgersEq<dim> burgers_eq(prm, output_module, beta);
