@@ -32,6 +32,7 @@
 #include <iostream>
 
 #include "numerics.h"
+#include "sapphire-logstream.h"
 
 namespace Sapphire
 {
@@ -223,16 +224,14 @@ Sapphire::Hydro::BurgersEq<dim>::BurgersEq(
   , dof_handler(triangulation)
   , quadrature_formula(fe.tensor_degree() + 1)
   , face_quadrature_formula(fe.tensor_degree() + 1)
-  , pcout(std::cout,
-          (Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
-            (DEBUG_LEVEL >= 0))
   , computing_timer(mpi_communicator,
-                    pcout,
+                    std::cout,
                     TimerOutput::never,
                     TimerOutput::wall_times)
 {
+  LogStream::Prefix p("BurgersEq", saplog);
   AssertDimension(dim, 1);
-  DEBUG_PRINT(pcout, 0, "Create BurgersEq");
+  saplog << "Create BurgersEq" << std::endl;
 }
 
 template <int dim>
@@ -240,13 +239,13 @@ void
 Sapphire::Hydro::BurgersEq<dim>::make_grid()
 {
   TimerOutput::Scope t(computing_timer, "Make grid");
-  DEBUG_PRINT(pcout, 1, "Make grid");
+  LogStream::Prefix  p("BurgersEq", saplog);
+  saplog << "Make grid" << std::endl;
 
   GridGenerator::hyper_cube(triangulation, -1, 1);
   triangulation.refine_global(hd_solver_control.refinement_level);
-  DEBUG_PRINT(pcout,
-              3,
-              "Number of active cells:\t" << triangulation.n_active_cells());
+  saplog << "Number of active cells:\t" << triangulation.n_active_cells()
+         << std::endl;
 }
 
 template <int dim>
@@ -254,7 +253,7 @@ void
 Sapphire::Hydro::BurgersEq<dim>::setup_system()
 {
   TimerOutput::Scope t(computing_timer, "Setup system");
-  DEBUG_PRINT(pcout, 1, "Setup system");
+  saplog << "Setup system" << std::endl;
 
   dof_handler.distribute_dofs(fe);
 
@@ -288,7 +287,7 @@ void
 Sapphire::Hydro::BurgersEq<dim>::assemble_mass_matrix()
 {
   TimerOutput::Scope t(computing_timer, "Assemble mass matrix");
-  DEBUG_PRINT(pcout, 1, "Assemble mass matrix");
+  saplog << "Assemble mass matrix" << std::endl;
 
   MatrixCreator::create_mass_matrix(mapping,
                                     dof_handler,
@@ -301,7 +300,7 @@ void
 Sapphire::Hydro::BurgersEq<dim>::assemble_dg_vector()
 {
   TimerOutput::Scope t(computing_timer, "Assemble DG vector");
-  DEBUG_PRINT(pcout, 2, "Assemble DG vector");
+  saplog << "Assemble DG vector" << std::endl;
 
   dg_vector = 0;
   boundary_values.set_time(current_time);
@@ -476,7 +475,7 @@ void
 Sapphire::Hydro::BurgersEq<dim>::assemble_system()
 {
   TimerOutput::Scope t(computing_timer, "Assemble system");
-  DEBUG_PRINT(pcout, 2, "Assemble system");
+  saplog << "Assemble system" << std::endl;
 
   system_matrix = 0;
   system_rhs    = 0;
@@ -491,7 +490,7 @@ Sapphire::Hydro::BurgersEq<dim>::slope_limiter()
   if (limiter.limiter_criterion == SlopeLimiterCriterion::Never)
     return;
   TimerOutput::Scope t(computing_timer, "Slope limiter");
-  DEBUG_PRINT(pcout, 2, "Slope limiter");
+  saplog << "Slope limiter" << std::endl;
 
   Vector<double> limited_solution(dof_handler.n_dofs());
 
@@ -734,7 +733,8 @@ void
 Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
 {
   TimerOutput::Scope t(computing_timer, "Time step");
-  DEBUG_PRINT(pcout, 2, "Time step");
+  saplog << "Time step" << std::endl;
+  LogStream::Prefix p("TimeStep", saplog);
 
   old_solution     = solution;
   current_solution = old_solution;
@@ -849,7 +849,8 @@ void
 Sapphire::Hydro::BurgersEq<dim>::solve_linear_system()
 {
   TimerOutput::Scope t(computing_timer, "Solve linear system");
-  DEBUG_PRINT(pcout, 2, "Solve linear system");
+  saplog << "Solve linear system" << std::endl;
+  LogStream::Prefix p("Solve", saplog);
 
   SolverControl solver_control(hd_solver_control.max_iterations,
                                hd_solver_control.tolerance);
@@ -866,17 +867,16 @@ Sapphire::Hydro::BurgersEq<dim>::solve_linear_system()
 
   // constraints.distribute(solution);
 
-  DEBUG_PRINT(pcout,
-              3,
-              "Solver converged in " << solver_control.last_step()
-                                     << " iterations.");
+  saplog << "Solver converged in " << solver_control.last_step()
+         << " iterations." << std::endl;
 }
 
 template <int dim>
 void
 Sapphire::Hydro::BurgersEq<dim>::output_results()
 {
-  DEBUG_PRINT(pcout, 2, "Output results");
+  saplog << "Output results" << std::endl;
+  // LogStream::Prefix p("OutputResults", saplog);
 
   Vector<double> exact_solution_values(dof_handler.n_dofs());
   exact_solution.set_time(time);
@@ -902,7 +902,8 @@ void
 Sapphire::Hydro::BurgersEq<dim>::process_results()
 {
   TimerOutput::Scope t(computing_timer, "Process results");
-  DEBUG_PRINT(pcout, 2, "Process results");
+  saplog << "Process results" << std::endl;
+  LogStream::Prefix p("ProcessResults", saplog);
 
   Vector<float> difference_per_cell(triangulation.n_active_cells());
   exact_solution.set_time(time);
@@ -921,7 +922,7 @@ Sapphire::Hydro::BurgersEq<dim>::process_results()
   float L2_error = VectorTools::compute_global_error(triangulation,
                                                      difference_per_cell,
                                                      VectorTools::L2_norm);
-  DEBUG_PRINT(pcout, 3, "L2 error:\t\t" << L2_error);
+  saplog << "L2 error:\t\t" << L2_error << std::endl;
 
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
@@ -934,7 +935,7 @@ Sapphire::Hydro::BurgersEq<dim>::process_results()
     VectorTools::compute_global_error(triangulation,
                                       difference_per_cell,
                                       VectorTools::Linfty_norm);
-  DEBUG_PRINT(pcout, 3, "L-infinity error:\t" << Linf_error);
+  saplog << "L-infinity error:\t" << Linf_error << std::endl;
 
   error_with_time.push_back(L2_error);
 }
@@ -943,7 +944,9 @@ template <int dim>
 void
 Sapphire::Hydro::BurgersEq<dim>::init()
 {
-  DEBUG_PRINT(pcout, 0, "Init BurgersEq");
+  LogStream::Prefix p("BurgersEq", saplog);
+  saplog << "Init BurgersEq" << std::endl;
+  LogStream::Prefix p2("Init", saplog);
   time            = 0.0;
   timestep_number = 0;
   error_with_time.clear();
@@ -965,11 +968,12 @@ template <int dim>
 void
 Sapphire::Hydro::BurgersEq<dim>::do_timestep()
 {
-  DEBUG_PRINT(pcout,
-              1,
-              "Timestep " << timestep_number + 1
-                          << " (time = " << time + hd_solver_control.time_step
-                          << "/" << hd_solver_control.end_time << ")");
+  LogStream::Prefix p("BurgersEq", saplog);
+  saplog << "Timestep " << timestep_number + 1
+         << " (time = " << time + hd_solver_control.time_step << "/"
+         << hd_solver_control.end_time << ")" << std::endl;
+  LogStream::Prefix p2("TimeStep", saplog);
+
   perform_time_step();
   timestep_number++;
   if (timestep_number % output_module.output_frequency == 0)
@@ -986,7 +990,10 @@ template <int dim>
 void
 Sapphire::Hydro::BurgersEq<dim>::run()
 {
-  DEBUG_PRINT(pcout, 0, "Run BurgersEq");
+  {
+    LogStream::Prefix p("BurgersEq", saplog);
+    saplog << "Run BurgersEq" << std::endl;
+  }
   init();
   while (time < hd_solver_control.end_time)
     {
@@ -996,17 +1003,19 @@ Sapphire::Hydro::BurgersEq<dim>::run()
   computing_timer.print_summary();
   computing_timer.reset();
 
-  if (pcout.is_active() && DEBUG_LEVEL >= 2)
-    {
-      pcout << "   L2 error with time:" << std::endl;
-      pcout << "   ";
-      for (const auto &e : error_with_time)
-        {
-          // pcout << e << " ";
-          printf("%.2e ", e);
-        }
-      pcout << std::endl;
-    }
+  {
+    LogStream::Prefix p("BurgersEq", saplog);
+    LogStream::Prefix p2("Run", saplog);
+
+    saplog << "L2 error with time:" << std::endl;
+    char buffer[100];
+    for (const auto &e : error_with_time)
+      {
+        snprintf(buffer, 100, "%.2e ", e);
+        saplog << buffer;
+      }
+    saplog << std::endl;
+  }
 }
 
 // explicit instantiation

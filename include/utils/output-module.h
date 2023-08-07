@@ -19,18 +19,6 @@
 #include <filesystem>
 #include <string>
 
-#define DEBUG_LEVEL 0
-
-#define DEBUG_PRINT(ostream, level, message) \
-  if (level <= DEBUG_LEVEL)                  \
-    {                                        \
-      for (int i = 0; i < level; ++i)        \
-        {                                    \
-          ostream << "  ";                   \
-        }                                    \
-      ostream << message << std::endl;       \
-    }
-
 #include "parameter-flags.h"
 #include "parameter-parser.h"
 

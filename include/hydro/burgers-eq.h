@@ -165,7 +165,6 @@ namespace Sapphire
       double       current_time;
       unsigned int timestep_number;
 
-      ConditionalOStream pcout;
       TimerOutput        computing_timer;
     };
 

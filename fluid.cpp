@@ -21,31 +21,26 @@ main(int argc, char *argv[])
       using namespace Sapphire::Hydro;
       using namespace Sapphire::Utils;
 
-      Sapphire::saplog.depth_console(10);
-
-      DEBUG_PRINT(std::cout, 3, argc);
-      for (int i = 3; i < argc; ++i)
-        DEBUG_PRINT(std::cout, 3, argv[i]);
+      Sapphire::saplog.depth_console(2);
 
       // dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
       // 1); //Only use MPI on one core
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
         argc, argv); // Use TBB multithreading
 
-      DEBUG_PRINT(std::cout,
-                  3,
-                  "n_cores = " << dealii::MultithreadInfo::n_cores());
-      DEBUG_PRINT(std::cout,
-                  3,
-                  "n_threads = " << dealii::MultithreadInfo::n_threads());
+      Sapphire::saplog << "n_cores = " << dealii::MultithreadInfo::n_cores()
+                       << std::endl;
+      Sapphire::saplog << "n_threads = " << dealii::MultithreadInfo::n_threads()
+                       << std::endl;
 
       const unsigned int                        dim  = 1;
       const double                              beta = 1.0;
 
-      std::string parameter_filename = "../parameter.prm";
+      std::string parameter_filename = "../parameter.json";
       if (argc > 1)
         parameter_filename = argv[1];
-      DEBUG_PRINT(std::cout, 0, parameter_filename);
+      Sapphire::saplog << "parameter_filename = " << parameter_filename
+                       << std::endl;
 
       ParameterParser prm(parameter_filename);
       prm.write_template_parameters("../parameter-template.json");
