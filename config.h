@@ -1,4 +1,184 @@
-#include "physical-setup.h"
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/exceptions.h>
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+
+#include <deal.II/lac/vector.h>
+
+#include <cmath>
+#include <ostream>
+#include <vector>
+
+namespace Sapphire
+{
+  namespace VFP
+  {
+    enum class TermFlags
+    {
+      none              = 0,
+      spatial_advection = 1 << 0,
+      collision         = 1 << 1,
+      magnetic          = 1 << 2,
+      momentum          = 1 << 3,
+      source            = 1 << 4
+    };
+
+    constexpr TermFlags
+    operator|(TermFlags f1, TermFlags f2)
+    {
+      return static_cast<TermFlags>(static_cast<int>(f1) |
+                                    static_cast<int>(f2));
+    }
+
+    constexpr TermFlags
+    operator&(TermFlags f1, TermFlags f2)
+    {
+      return static_cast<TermFlags>(static_cast<int>(f1) &
+                                    static_cast<int>(f2));
+    }
+
+    template <typename StreamType>
+    inline StreamType &
+    operator<<(StreamType &os, TermFlags f)
+    {
+      os << "Term flags: \n";
+      if ((f & TermFlags::spatial_advection) != TermFlags::none)
+        os << "	 - Spatial Advection\n";
+      if ((f & TermFlags::collision) != TermFlags::none)
+        os << "	 - Collision\n";
+      if ((f & TermFlags::magnetic) != TermFlags::none)
+        os << "	 - Magnetic\n";
+      if ((f & TermFlags::momentum) != TermFlags::none)
+        os << "	 - Momentum\n";
+      if ((f & TermFlags::source) != TermFlags::none)
+        os << "	 - Source\n";
+      return os;
+    }
+
+    // explicit instantiation
+    template std::ostream &
+    operator<<(std::ostream &os, TermFlags f);
+    template dealii::ConditionalOStream &
+    operator<<(dealii::ConditionalOStream &os, TermFlags f);
+
+
+    // Physical setup
+
+    // NOTE: All physical quantities are dimensionless. The reference values are
+    // defined in the reference-values.h header.
+    struct ParticleProperties
+    {
+      const double mass   = 1.;
+      const double charge = 1.;
+    };
+
+    struct TransportOnly
+    {
+      // In the transport-only case (i.e. no dependence on p) the energy of the
+      // particles has to be given.
+      const double gamma = 3.;
+      // Compute the partilces Lorentz factor gamma and its velocity
+      const double velocity = std::sqrt(1 - 1 / std::pow((gamma * gamma), 2));
+    };
+
+    // Initial values
+    template <int dim>
+    class InitialValueFunction : public dealii::Function<dim>
+    {
+    public:
+      InitialValueFunction(unsigned int exp_order)
+        : // set the number of components with the constructor of the base class
+        dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+      {}
+      void
+      vector_value(const dealii::Point<dim> &p,
+                   dealii::Vector<double>   &values) const override;
+    };
+
+    // Scattering frequency
+    template <int dim>
+    class ScatteringFrequency : public dealii::Function<dim>
+    {
+    public:
+      // Set the variable  n_components of the base class
+      ScatteringFrequency()
+        : dealii::Function<dim>(1)
+      {}
+      void
+      value_list(const std::vector<dealii::Point<dim>> &p,
+                 std::vector<double>                   &scattering_frequencies,
+                 const unsigned int component = 0) const override;
+    };
+
+    // Source term
+    template <int dim>
+    class Source : public dealii::Function<dim>
+    {
+    public:
+      Source(unsigned int exp_order)
+        : // set n_components
+        dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+      {}
+      void
+      vector_value(const dealii::Point<dim> &p,
+                   dealii::Vector<double>   &values) const override;
+    };
+
+    // Magnetic field
+    template <int dim>
+    class MagneticField : public dealii::Function<dim>
+    {
+    public:
+      // set n_components
+      MagneticField()
+        : dealii::Function<dim>(3)
+      {}
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &magnetic_field) const override;
+    };
+
+    // Background velocity field
+    template <int dim>
+    class BackgroundVelocityField : public dealii::Function<dim>
+    {
+    public:
+      // set n_components
+      BackgroundVelocityField()
+        : dealii::Function<dim>(3)
+      {}
+      // Velocity field
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &velocity) const override;
+      // Divergence
+      void
+      divergence_list(const std::vector<dealii::Point<dim>> &points,
+                      std::vector<double>                   &divergence);
+
+      // Material derivative
+      void
+      material_derivative_list(
+        const std::vector<dealii::Point<dim>> &points,
+        std::vector<dealii::Vector<double>>   &material_derivatives);
+
+      // Jacobian matrix
+      void
+      jacobian_list(
+        const std::vector<dealii::Point<dim>>            &points,
+        std::vector<std::vector<dealii::Vector<double>>> &jacobians) const;
+
+    private:
+      // Numerical constants
+      double pi = 2 * std::acos(0.);
+    };
+  } // namespace VFP
+} // namespace Sapphire
+
+// Implementation of physical setup
 
 // Initial values
 template <int dim>
@@ -399,3 +579,5 @@ Sapphire::VFP::BackgroundVelocityField<dim>::jacobian_list(
 template class Sapphire::VFP::BackgroundVelocityField<1>;
 template class Sapphire::VFP::BackgroundVelocityField<2>;
 template class Sapphire::VFP::BackgroundVelocityField<3>;
+
+#endif

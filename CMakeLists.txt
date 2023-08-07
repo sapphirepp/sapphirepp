@@ -19,11 +19,14 @@ project(Sapphire VERSION 1.0.2)
 add_subdirectory(src/utils)
 option(Sapphire "Compile Sapphire++" ON )
 option(hydro-solver "Compile the Hydro Solver" ON )
+file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
 if(Sapphire)
-  add_subdirectory(src/vfp)
-  add_executable(sapphire sapphire.cpp)
+  file(GLOB VFP_SOURCES src/vfp/*.cpp)
+  add_executable(sapphire sapphire.cpp ${VFP_SOURCES})
   deal_ii_setup_target(sapphire)
-  target_link_libraries(sapphire VFPSolverLib UtilsLib)
+  target_include_directories(sapphire PUBLIC ${PROJECT_SOURCE_DIR}/include/vfp)
+  target_include_directories(sapphire PUBLIC ${CONFIG_HEADER_DIR})
+  target_link_libraries(sapphire UtilsLib)
 endif(Sapphire)
 if(hydro-solver)
   add_subdirectory(src/hydro)
@@ -35,8 +38,8 @@ endif(hydro-solver)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     # Configuration file for Doxygen
-    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in)
-    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile)
+    set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/doc/Doxyfile.in)
+    set(DOXYGEN_OUT ${PROJECT_BINARY_DIR}/doc/Doxyfile)
 
     # Generate the Doxyfile from the template
     configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
@@ -44,7 +47,7 @@ if(DOXYGEN_FOUND)
     # Add custom target for Doxygen documentation
     add_custom_target(docs
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Generating Doxygen documentation"
         VERBATIM
     )

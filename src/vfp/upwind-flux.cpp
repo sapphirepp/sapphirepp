@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <random>
 
-#include "vfp-solver-control.h"
+#include "config.h"
 
 template <int dim>
 Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
