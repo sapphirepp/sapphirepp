@@ -1,0 +1,203 @@
+{
+    "Hydrodynamics": {
+        "Finite element": {
+            "Polynomial degree": {
+                "value": "1",
+                "default_value": "1",
+                "documentation": "Polynomial degree of finite element",
+                "pattern": "43",
+                "pattern_description": "[Integer range 1...2147483647 (inclusive)]"
+            }
+        },
+        "Linear solver": {
+            "Max iterations": {
+                "value": "1000",
+                "default_value": "1000",
+                "documentation": "Maximum number of iterations",
+                "pattern": "48",
+                "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+            },
+            "Tolerance": {
+                "value": "1e-12",
+                "default_value": "1e-12",
+                "documentation": "Tolerance of solver",
+                "pattern": "49",
+                "pattern_description": "[Double 0...MAX_DOUBLE (inclusive)]"
+            }
+        },
+        "Mesh": {
+            "Refinement level": {
+                "value": "1",
+                "default_value": "1",
+                "documentation": "Refinement level of mesh",
+                "pattern": "44",
+                "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+            }
+        },
+        "Numerical flux": {
+            "Numerical flux": {
+                "value": "Lax-Friedrichs",
+                "default_value": "Lax-Friedrichs",
+                "documentation": "Numerical flux",
+                "pattern": "45",
+                "pattern_description": "[Selection Central|Upwind|Lax-Friedrichs ]"
+            }
+        },
+        "Slope limiter": {
+            "Slope limiter": {
+                "value": "No limiter",
+                "default_value": "No limiter",
+                "documentation": "Slope limiter",
+                "pattern": "46",
+                "pattern_description": "[Selection No limiter|Linear reconstruction|MinMod|MUSCL ]"
+            },
+            "Slope limiter criterion": {
+                "value": "Never",
+                "default_value": "Never",
+                "documentation": "Criterion on which cells the slope limiter should apply",
+                "pattern": "47",
+                "pattern_description": "[Selection Never|Always|Generalized slope limiter ]"
+            }
+        },
+        "Time stepping": {
+            "End time": {
+                "value": "1.0",
+                "default_value": "1.0",
+                "documentation": "End time of simulation",
+                "pattern": "42",
+                "pattern_description": "[Double 0...MAX_DOUBLE (inclusive)]"
+            },
+            "Scheme": {
+                "value": "Forward Euler",
+                "default_value": "Forward Euler",
+                "documentation": "Time stepping scheme",
+                "pattern": "40",
+                "pattern_description": "[Selection Forward Euler|Explicit RK ]"
+            },
+            "Time step": {
+                "value": "0.1",
+                "default_value": "0.1",
+                "documentation": "Time step size",
+                "pattern": "41",
+                "pattern_description": "[Double 0...MAX_DOUBLE (inclusive)]"
+            }
+        }
+    },
+    "Output": {
+        "Base file name": {
+            "value": "solution",
+            "default_value": "solution",
+            "documentation": "The base file name for the output files.",
+            "pattern": "36",
+            "pattern_description": "[Anything]"
+        },
+        "Format": {
+            "value": "vtu",
+            "default_value": "vtu",
+            "documentation": "The format in which the simulation output will be stored.",
+            "pattern": "38",
+            "pattern_description": "[Selection vtu|pvtu|hdf5 ]"
+        },
+        "Number of digits for counter": {
+            "value": "4",
+            "default_value": "4",
+            "documentation": "The number of digits used for the counter in the output file names.",
+            "pattern": "37",
+            "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+        },
+        "Output frequency": {
+            "value": "1",
+            "default_value": "1",
+            "documentation": "The frequence at which output files will be written. (In units of time steps)",
+            "pattern": "39",
+            "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+        },
+        "Results folder": {
+            "value": ".\/results",
+            "default_value": ".\/results",
+            "documentation": "Path to the folder in which the simulation results will be stored. Without a trailing slash.",
+            "pattern": "34",
+            "pattern_description": "[Anything]"
+        },
+        "Simulation identifier": {
+            "value": "",
+            "default_value": "",
+            "documentation": "Name of the simulation run. It will be used to create a subdirectory in the results folder.",
+            "pattern": "35",
+            "pattern_description": "[Anything]"
+        }
+    },
+    "VFP": {
+        "Expansion": {
+            "Expansion order": {
+                "value": "0",
+                "default_value": "0",
+                "documentation": "The order of the expansion of the particle distribution function.",
+                "pattern": "32",
+                "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+            }
+        },
+        "Finite element": {
+            "Polynomial degree": {
+                "value": "1",
+                "default_value": "1",
+                "documentation": "The degree of the shape functions (i.e. the polynomials) of the finite element.",
+                "pattern": "33",
+                "pattern_description": "[Integer range 0...2147483647 (inclusive)]"
+            }
+        },
+        "Mesh": {
+            "Number of cells": {
+                "value": "4, 4, 4",
+                "default_value": "4, 4, 4",
+                "documentation": "Number of cells in each coordinate direction",
+                "pattern": "27",
+                "pattern_description": "[Anything]"
+            },
+            "Periodicity": {
+                "value": "false, false, false",
+                "default_value": "false, false, false",
+                "documentation": "Periodic boundaries in the three coordinate directions.",
+                "pattern": "28",
+                "pattern_description": "[Anything]"
+            },
+            "Point 1": {
+                "value": "0., 0., 0.",
+                "default_value": "0., 0., 0.",
+                "documentation": "Two diagonally opposite corner points, Point 1 and  Point 2",
+                "pattern": "25",
+                "pattern_description": "[Anything]"
+            },
+            "Point 2": {
+                "value": "1., 1., 1.",
+                "default_value": "1., 1., 1.",
+                "documentation": "Two diagonally opposite corner points Point 1 and  Point 2",
+                "pattern": "26",
+                "pattern_description": "[Anything]"
+            }
+        },
+        "Time stepping": {
+            "Final time": {
+                "value": "0.4",
+                "default_value": "0.4",
+                "documentation": "Duration of the simulation.",
+                "pattern": "31",
+                "pattern_description": "[Double -MAX_DOUBLE...MAX_DOUBLE (inclusive)]"
+            },
+            "Method": {
+                "value": "Crank-Nicolson",
+                "default_value": "Crank-Nicolson",
+                "documentation": "The time stepping method.",
+                "pattern": "29",
+                "pattern_description": "[Selection Forward Euler|Backward Euler|Crank-Nicolson|ERK4|LSERK ]"
+            },
+            "Time step size": {
+                "value": "7.8125e-3",
+                "default_value": "7.8125e-3",
+                "documentation": "Duration of the simulation.",
+                "pattern": "30",
+                "pattern_description": "[Double -MAX_DOUBLE...MAX_DOUBLE (inclusive)]"
+            }
+        }
+    }
+}

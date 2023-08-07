@@ -23,7 +23,7 @@ Sapphire::Utils::ParameterParser::write_parameters(
 {
   LogStream::Prefix p("ParameterParser", saplog);
   saplog << "Writing parameter file \"" << filename << "\"" << std::endl;
-  prm.print_parameters(filename, ParameterHandler::PRM);
+  prm.print_parameters(filename, ParameterHandler::ShortJSON);
 }
 
 void
@@ -37,7 +37,7 @@ Sapphire::Utils::ParameterParser::write_template_parameters(
   // parse_aprameters() is not called.
   prm.clear();
   declare_parameters();
-  prm.print_parameters(filename, ParameterHandler::PRM);
+  prm.print_parameters(filename, ParameterHandler::JSON);
 
   // restore original state
   prm.parse_input(prm_file_name);

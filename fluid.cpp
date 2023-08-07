@@ -48,7 +48,7 @@ main(int argc, char *argv[])
       DEBUG_PRINT(std::cout, 0, parameter_filename);
 
       ParameterParser prm(parameter_filename);
-      prm.write_template_parameters("../parameter-template.prm");
+      prm.write_template_parameters("../parameter-template.json");
 
       OutputModule<dim> output_module(prm);
 

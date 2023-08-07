@@ -42,7 +42,7 @@ main(int argc, char *argv[])
       const unsigned int dim  = 1;
       const double       beta = 1.0;
 
-      std::string parameter_filename = "../../examples/parameter.prm";
+      std::string parameter_filename = "../../examples/parameter.json";
       if (argc > 1)
         parameter_filename = argv[1];
       DEBUG_PRINT(std::cout, 0, parameter_filename);
