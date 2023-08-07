@@ -11,9 +11,9 @@
 
 #include <vector>
 
+#include "config.h"
 #include "particle-functions.h"
 #include "pde-system.h"
-#include "physical-setup.h"
 #include "vfp-solver-control.h"
 
 namespace Sapphire

@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "physical-setup.h"
+#include "config.h"
 
 template <int dim>
 void

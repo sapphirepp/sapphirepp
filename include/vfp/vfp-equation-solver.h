@@ -76,7 +76,6 @@
 #include "parameter-parser.h"
 #include "particle-functions.h"
 #include "pde-system.h"
-#include "physical-setup.h"
 #include "sapphire-logstream.h"
 #include "upwind-flux.h"
 #include "vfp-solver-control.h"
