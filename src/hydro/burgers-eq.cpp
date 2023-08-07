@@ -740,6 +740,12 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
   current_solution = old_solution;
   Vector<double> tmp(dof_handler.n_dofs());
 
+  SolverControl solver_control(hd_solver_control.max_iterations,
+                               hd_solver_control.tolerance);
+  SolverRichardson<Vector<double>> solver(solver_control);
+
+  PreconditionSSOR<SparseMatrix<double>> preconditioner;
+
   double time_step = hd_solver_control.time_step;
 
   switch (hd_solver_control.scheme)
@@ -756,8 +762,16 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
           system_rhs.add(1.0, tmp);
 
           system_matrix.copy_from(mass_matrix);
+          preconditioner.initialize(system_matrix);
 
-          solve_linear_system();
+          {
+            TimerOutput::Scope t(computing_timer, "Solve linear system");
+            saplog << "Solve linear system" << std::endl;
+            LogStream::Prefix p("Solve", saplog);
+            solver.solve(system_matrix, solution, system_rhs, preconditioner);
+            saplog << "Solver converged in " << solver_control.last_step()
+                   << " iterations." << std::endl;
+          }
 
           slope_limiter();
 
@@ -781,7 +795,15 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
           assemble_dg_vector();
           system_matrix.copy_from(mass_matrix);
           system_rhs.add(-1.0, dg_vector);
-          solve_linear_system();
+          {
+            TimerOutput::Scope t(computing_timer, "Solve linear system");
+            saplog << "Solve linear system" << std::endl;
+            LogStream::Prefix p("Solve", saplog);
+            preconditioner.initialize(system_matrix);
+            solver.solve(system_matrix, solution, system_rhs, preconditioner);
+            saplog << "Solver converged in " << solver_control.last_step()
+                   << " iterations." << std::endl;
+          }
           slope_limiter();
           k1 = solution;
 
@@ -795,7 +817,14 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
           assemble_dg_vector();
           system_matrix.copy_from(mass_matrix);
           system_rhs.add(-1.0, dg_vector);
-          solve_linear_system();
+          {
+            TimerOutput::Scope t(computing_timer, "Solve linear system");
+            saplog << "Solve linear system" << std::endl;
+            LogStream::Prefix p("Solve", saplog);
+            solver.solve(system_matrix, solution, system_rhs, preconditioner);
+            saplog << "Solver converged in " << solver_control.last_step()
+                   << " iterations." << std::endl;
+          }
           slope_limiter();
           k2 = solution;
 
@@ -809,7 +838,14 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
           assemble_dg_vector();
           system_matrix.copy_from(mass_matrix);
           system_rhs.add(-1.0, dg_vector);
-          solve_linear_system();
+          {
+            TimerOutput::Scope t(computing_timer, "Solve linear system");
+            saplog << "Solve linear system" << std::endl;
+            LogStream::Prefix p("Solve", saplog);
+            solver.solve(system_matrix, solution, system_rhs, preconditioner);
+            saplog << "Solver converged in " << solver_control.last_step()
+                   << " iterations." << std::endl;
+          }
           slope_limiter();
           k3 = solution;
 
@@ -823,7 +859,14 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
           assemble_dg_vector();
           system_matrix.copy_from(mass_matrix);
           system_rhs.add(-1.0, dg_vector);
-          solve_linear_system();
+          {
+            TimerOutput::Scope t(computing_timer, "Solve linear system");
+            saplog << "Solve linear system" << std::endl;
+            LogStream::Prefix p("Solve", saplog);
+            solver.solve(system_matrix, solution, system_rhs, preconditioner);
+            saplog << "Solver converged in " << solver_control.last_step()
+                   << " iterations." << std::endl;
+          }
           slope_limiter();
           k4 = solution;
 
@@ -842,33 +885,6 @@ Sapphire::Hydro::BurgersEq<dim>::perform_time_step()
     }
 
   time += time_step;
-}
-
-template <int dim>
-void
-Sapphire::Hydro::BurgersEq<dim>::solve_linear_system()
-{
-  TimerOutput::Scope t(computing_timer, "Solve linear system");
-  saplog << "Solve linear system" << std::endl;
-  LogStream::Prefix p("Solve", saplog);
-
-  SolverControl solver_control(hd_solver_control.max_iterations,
-                               hd_solver_control.tolerance);
-  // SolverCG<Vector<double>> solver(solver_control);
-  SolverRichardson<Vector<double>> solver(solver_control);
-
-  // PreconditionBlockJacobi preconditioner;
-  // preconditioner.initialize(system_matrix);
-
-  PreconditionSSOR<SparseMatrix<double>> preconditioner;
-  preconditioner.initialize(system_matrix);
-
-  solver.solve(system_matrix, solution, system_rhs, preconditioner);
-
-  // constraints.distribute(solution);
-
-  saplog << "Solver converged in " << solver_control.last_step()
-         << " iterations." << std::endl;
 }
 
 template <int dim>

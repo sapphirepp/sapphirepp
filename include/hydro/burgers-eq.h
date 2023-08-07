@@ -101,15 +101,6 @@ namespace Sapphire
       slope_limiter();
       void
       perform_time_step();
-      /**
-       * @brief Solve the linear system
-       *
-       * This function solves the linear system \f$ M \mathbf{u} = \mathbf{b}
-       * \f$ where \f$ M \f$ is the mass matrix, \f$ \mathbf{u} \f$ is the
-       * solution vector and \f$ \mathbf{b} \f$ is the right hand side vector.
-       */
-      void
-      solve_linear_system();
       void
       output_results();
       void
