@@ -40,6 +40,20 @@ namespace Sapphire
       Sapphire::Utils::OutputFormat out_format;
       unsigned int                  out_output_frequency;
 
+      /**HDSolverControl parameter*/
+      Sapphire::Hydro::TimeSteppingScheme    hdsolver_scheme;
+      Sapphire::Hydro::FluxType              hdsolver_flux_type;
+      Sapphire::Hydro::SlopeLimiterType      hdsolver_limiter;
+      Sapphire::Hydro::SlopeLimiterCriterion hdsolver_limiter_criterion;
+
+      unsigned int hdsolver_fe_degree;
+      double       hdsolver_time_step;
+      double       hdsolver_end_time;
+      unsigned int hdsolver_refinement_level;
+
+      unsigned int hdsolver_max_iterations;
+      double       hdsolver_tolerance;
+
       // VFP Control Parameter
       // Spherical harmonic expansion
       int vfp_expansion_order;

@@ -20,5 +20,34 @@ namespace Sapphire
       lserk
     };
   } // namespace Utils
+
+
+  namespace Hydro
+  {
+    enum class TimeSteppingScheme
+    {
+      ForwardEuler,
+      ExplicitRK
+    };
+    enum class FluxType
+    {
+      Central,
+      Upwind,
+      LaxFriedrichs
+    };
+    enum class SlopeLimiterType
+    {
+      NoLimiter,
+      LinearReconstruction,
+      MinMod,
+      MUSCL
+    };
+    enum class SlopeLimiterCriterion
+    {
+      Never,
+      Always,
+      GerneralizedSlopeLimiter
+    };
+  } // namespace Hydro
 } // namespace Sapphire
 #endif
