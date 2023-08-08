@@ -34,7 +34,7 @@ main(int argc, char *argv[])
       const unsigned int dim  = 1;
       const double       beta = 1.0;
 
-      std::string parameter_filename = "../parameter.json";
+      std::string parameter_filename = "../parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
       Sapphire::saplog << "parameter_filename = " << parameter_filename

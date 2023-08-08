@@ -23,7 +23,8 @@ Sapphire::Utils::ParameterParser::write_parameters(
 {
   LogStream::Prefix p("ParameterParser", saplog);
   saplog << "Writing parameter file \"" << filename << "\"" << std::endl;
-  prm.print_parameters(filename, ParameterHandler::ShortJSON);
+  prm.print_parameters(filename + ".json", ParameterHandler::ShortJSON);
+  prm.print_parameters(filename + ".prm", ParameterHandler::ShortPRM);
 }
 
 void

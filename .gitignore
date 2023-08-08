@@ -3,3 +3,4 @@ build/
 .cache/
 *.json
 !parameter-template.json
+*.prm
