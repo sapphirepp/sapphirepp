@@ -1,17 +1,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor_function.h>
 
 #include <deal.II/lac/vector.h>
 
-#include <cmath>
-#include <ostream>
-#include <vector>
+#include <parameter-parser.h>
 
 namespace Sapphire
 {
@@ -59,11 +55,11 @@ namespace Sapphire
       return os;
     }
 
-    // explicit instantiation
-    template std::ostream &
-    operator<<(std::ostream &os, TermFlags f);
-    template dealii::ConditionalOStream &
-    operator<<(dealii::ConditionalOStream &os, TermFlags f);
+    // // explicit instantiation
+    // template std::ostream &
+    // operator<<(std::ostream &os, TermFlags f);
+    // template dealii::ConditionalOStream &
+    // operator<<(dealii::ConditionalOStream &os, TermFlags f);
 
 
     // Physical setup
@@ -518,9 +514,11 @@ namespace Sapphire
     class HDExactSolution : public Function<dim>
     {
     public:
-      HDExactSolution(const double time = 0.0)
+      HDExactSolution(const Utils::ParameterParser &prm,
+                      const double                  time = 0.0)
         : Function<dim>(1, time)
       {
+        (void)prm;
         AssertDimension(dim, 1);
       }
 
@@ -554,9 +552,9 @@ namespace Sapphire
     class HDInitialCondition : public Function<dim>
     {
     public:
-      HDInitialCondition()
+      HDInitialCondition(const Utils::ParameterParser &prm)
         : Function<dim>(1)
-        , exact_solution()
+        , exact_solution(prm)
       {
         exact_solution.set_time(0.0);
       }
@@ -576,9 +574,10 @@ namespace Sapphire
     class HDBoundaryValues : public Function<dim>
     {
     public:
-      HDBoundaryValues(const double time = 0.0)
+      HDBoundaryValues(const Utils::ParameterParser &prm,
+                       const double                  time = 0.0)
         : Function<dim>(1, time)
-        , exact_solution()
+        , exact_solution(prm)
       {}
 
       double

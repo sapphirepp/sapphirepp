@@ -135,9 +135,9 @@ template <int dim>
 Sapphire::Hydro::HDSolver<dim>::HDSolver(const ParameterParser   &prm,
                                          const OutputModule<dim> &output_module,
                                          const double             beta)
-  : initial_condition()
-  , boundary_values()
-  , exact_solution()
+  : initial_condition(prm)
+  , boundary_values(prm)
+  , exact_solution(prm)
   , hd_solver_control(prm)
   , flux(prm, beta)
   , output_module(output_module)
