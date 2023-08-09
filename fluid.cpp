@@ -19,12 +19,13 @@ main(int argc, char *argv[])
       using namespace Sapphire::Hydro;
       using namespace Sapphire::Utils;
 
-      Sapphire::saplog.depth_console(2);
+      // Sapphire::saplog.depth_console(2);
+      Sapphire::saplog.depth_console(100);
 
-      // dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-      // 1); //Only use MPI on one core
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
-        argc, argv); // Use TBB multithreading
+        argc,
+        argv,
+        1); // Only use MPI on one core
 
       Sapphire::saplog << "n_cores = " << dealii::MultithreadInfo::n_cores()
                        << std::endl;

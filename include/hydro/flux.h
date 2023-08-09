@@ -24,15 +24,27 @@ namespace Sapphire
     class Flux
     {
     public:
+      static constexpr unsigned int n_components             = dim + 2;
+      static constexpr unsigned int first_momentum_component = 0;
+      static constexpr unsigned int density_component        = dim;
+      static constexpr unsigned int energy_component         = dim + 1;
+
       Flux(const Sapphire::Utils::ParameterParser &prm, const double &beta);
 
       void
-      flux(const double &u, Tensor<1, dim> &flux_value) const;
+      flux(const double      &u,
+           Tensor<1, dim>    &flux_value,
+           const unsigned int component) const;
+      void
+      flux(const Vector<double>        &u,
+           std::vector<Tensor<1, dim>> &flux_value) const;
 
       double
       numerical_flux(const double         &u_1,
                      const double         &u_2,
-                     const Tensor<1, dim> &n);
+                     const Tensor<1, dim> &n,
+                     const unsigned int    component); // TODO_HD: const
+
 
     private:
       const FluxType flux_type;

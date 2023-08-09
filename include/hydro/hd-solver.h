@@ -18,7 +18,9 @@
 #include <deal.II/dofs/dof_handler.h>
 
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/fe_values_extractors.h>
 #include <deal.II/fe/mapping_q1.h>
 
 #include <deal.II/grid/tria.h>
@@ -46,6 +48,16 @@ namespace Sapphire
     class HDSolver
     {
     public:
+      static constexpr unsigned int n_components             = dim + 2;
+      static constexpr unsigned int first_momentum_component = 0;
+      static constexpr unsigned int density_component        = dim;
+      static constexpr unsigned int energy_component         = dim + 1;
+
+      // const FEValuesExtractors::Vector
+      //   momentum_extractor(first_momentum_component);
+      // const FEValuesExtractors::Scalar density_extractor(density_component);
+      // const FEValuesExtractors::Scalar energy_extractor(energy_component);
+
       HDSolver(const ParameterParser   &prm,
                const OutputModule<dim> &output_module,
                const double             beta = 1.0);
@@ -84,14 +96,15 @@ namespace Sapphire
       Flux<dim>         flux;
       OutputModule<dim> output_module;
 
-      const double beta; //< factor in front of the flux
+      const double beta;              //< factor in front of the flux
+      const double gamma = 5.0 / 3.0; /**< adiabatic index */
 
       MPI_Comm mpi_communicator;
 
       Triangulation<dim>   triangulation;
       const MappingQ1<dim> mapping;
 
-      FE_DGQ<dim>           fe;
+      FESystem<dim>         fe;
       DoFHandler<dim>       dof_handler;
       const QGauss<dim>     quadrature_formula;
       const QGauss<dim - 1> face_quadrature_formula;

@@ -144,7 +144,7 @@ Sapphire::Hydro::HDSolver<dim>::HDSolver(const ParameterParser   &prm,
   , beta(beta)
   , mpi_communicator(MPI_COMM_WORLD)
   , mapping()
-  , fe(hd_solver_control.fe_degree)
+  , fe(FE_DGQ<dim>(hd_solver_control.fe_degree), n_components)
   , dof_handler(triangulation)
   , quadrature_formula(fe.tensor_degree() + 1)
   , face_quadrature_formula(fe.tensor_degree() + 1)
@@ -233,9 +233,18 @@ Sapphire::Hydro::HDSolver<dim>::assemble_dg_vector()
     fe_values.reinit(cell);
     const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
 
-    Tensor<1, dim>      flux_value;
-    std::vector<double> current_solution_values(n_dofs);
+    std::vector<Tensor<1, dim>> flux_value(n_components);
+
+    std::vector<Vector<double>> current_solution_values(
+      n_dofs, Vector<double>(n_components));
+    // TODO_HD: Use dofs directly, if possible
     fe_values.get_function_values(current_solution, current_solution_values);
+
+
+    const FEValuesExtractors::Vector momentum_extractor(
+      first_momentum_component);
+    const FEValuesExtractors::Scalar density_extractor(density_component);
+    const FEValuesExtractors::Scalar energy_extractor(energy_component);
 
     copy_data.reinit(cell, n_dofs);
 
@@ -245,9 +254,14 @@ Sapphire::Hydro::HDSolver<dim>::assemble_dg_vector()
 
         for (const unsigned int i : fe_values.dof_indices())
           {
-            copy_data.cell_vector(i) -= flux_value *
-                                        fe_values.shape_grad(i, q_index) *
-                                        fe_values.JxW(q_index);
+            copy_data.cell_vector(i) -=
+              (flux_value[first_momentum_component] *
+                 fe_values[momentum_extractor].gradient(i, q_index)[0] +
+               flux_value[density_component] *
+                 fe_values[density_extractor].gradient(i, q_index) +
+               flux_value[energy_component] *
+                 fe_values[energy_extractor].gradient(i, q_index)) *
+              fe_values.JxW(q_index);
           }
       }
   };
@@ -261,39 +275,55 @@ Sapphire::Hydro::HDSolver<dim>::assemble_dg_vector()
 
     const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
 
-    double              boundary_value;
-    std::vector<double> current_solution_values(n_dofs);
+    double                      boundary_value;
+    std::vector<Tensor<1, dim>> flux_value(n_components);
+
+    std::vector<Vector<double>> current_solution_values(
+      n_dofs, Vector<double>(n_components));
     fe_face_values.get_function_values(current_solution,
                                        current_solution_values);
 
     for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
       {
-        const double f_dot_n = beta * current_solution_values[q_index] *
-                               current_solution_values[q_index] *
-                               fe_face_values.normal_vector(q_index)[0];
+        flux.flux(current_solution_values[q_index], flux_value);
 
-        if (f_dot_n > 0.0)
-          { // outflow boundary
-            for (const unsigned int i : fe_face_values.dof_indices())
-              {
-                copy_data.cell_vector(i) +=
-                  f_dot_n * fe_face_values.shape_value(i, q_index) *
-                  fe_face_values.JxW(q_index);
+        for (unsigned int component = 0; component < n_components; ++component)
+          {
+            const double f_dot_n =
+              flux_value[component] * fe_face_values.normal_vector(q_index);
+
+            // TODO_HD: If one components should have same boundary condition
+
+            if (f_dot_n > 0.0)
+              { // outflow boundary
+                for (const unsigned int i : fe_face_values.dof_indices())
+                  {
+                    copy_data.cell_vector(i) +=
+                      f_dot_n *
+                      fe_face_values.shape_value_component(i,
+                                                           q_index,
+                                                           component) *
+                      fe_face_values.JxW(q_index);
+                  }
               }
-          }
-        else
-          { // inflow boundary
-            for (const unsigned int i : fe_face_values.dof_indices())
-              {
-                boundary_value = boundary_values.value(
-                  fe_face_values.quadrature_point(q_index));
-                const double boundary_f_dot_n =
-                  beta * boundary_value * boundary_value *
-                  fe_face_values.normal_vector(q_index)[0];
+            else
+              { // inflow boundary
+                for (const unsigned int i : fe_face_values.dof_indices())
+                  {
+                    boundary_value = boundary_values.value(
+                      fe_face_values.quadrature_point(q_index), component);
+                    flux.flux(boundary_value, flux_value[component], component);
+                    const double boundary_f_dot_n =
+                      flux_value[component] *
+                      fe_face_values.normal_vector(q_index);
 
-                copy_data.cell_vector(i) +=
-                  boundary_f_dot_n * fe_face_values.shape_value(i, q_index) *
-                  fe_face_values.JxW(q_index);
+                    copy_data.cell_vector(i) +=
+                      boundary_f_dot_n *
+                      fe_face_values.shape_value_component(i,
+                                                           q_index,
+                                                           component) *
+                      fe_face_values.JxW(q_index);
+                  }
               }
           }
       }
@@ -324,10 +354,12 @@ Sapphire::Hydro::HDSolver<dim>::assemble_dg_vector()
     const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
     copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
-    std::vector<double> current_solution_values_1(n_dofs);
+    std::vector<Vector<double>> current_solution_values_1(
+      n_dofs, Vector<double>(n_components));
     fe_face_values.get_function_values(current_solution,
                                        current_solution_values_1);
-    std::vector<double> current_solution_values_2(n_dofs);
+    std::vector<Vector<double>> current_solution_values_2(
+      n_dofs, Vector<double>(n_components));
     fe_face_values_neighbor.get_function_values(current_solution,
                                                 current_solution_values_2);
 
@@ -335,19 +367,24 @@ Sapphire::Hydro::HDSolver<dim>::assemble_dg_vector()
 
     for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
       {
-        flux_dot_n = flux.numerical_flux(current_solution_values_1[q_index],
-                                         current_solution_values_2[q_index],
-                                         fe_face_values.normal_vector(q_index));
-
-        for (const unsigned int i : fe_face_values.dof_indices())
+        for (unsigned int component = 0; component < n_components; ++component)
           {
-            copy_data_face.cell_vector_1(i) +=
-              flux_dot_n * fe_face_values.shape_value(i, q_index) *
-              fe_face_values.JxW(q_index);
+            flux_dot_n =
+              flux.numerical_flux(current_solution_values_1[q_index][component],
+                                  current_solution_values_2[q_index][component],
+                                  fe_face_values.normal_vector(q_index),
+                                  component);
 
-            copy_data_face.cell_vector_2(i) -=
-              flux_dot_n * fe_face_values_neighbor.shape_value(i, q_index) *
-              fe_face_values.JxW(q_index);
+            for (const unsigned int i : fe_face_values.dof_indices())
+              {
+                copy_data_face.cell_vector_1(i) +=
+                  flux_dot_n * fe_face_values.shape_value(i, q_index) *
+                  fe_face_values.JxW(q_index);
+
+                copy_data_face.cell_vector_2(i) -=
+                  flux_dot_n * fe_face_values_neighbor.shape_value(i, q_index) *
+                  fe_face_values.JxW(q_index);
+              }
           }
       }
   };
@@ -560,6 +597,23 @@ Sapphire::Hydro::HDSolver<dim>::output_results()
   saplog << "Output results" << std::endl;
   // LogStream::Prefix p("OutputResults", saplog);
 
+  std::vector<std::string> solution_names(dim, "momentum");
+  solution_names.emplace_back("density");
+  solution_names.emplace_back("energy_density");
+
+
+  std::vector<std::string> exact_solution_names(dim, "exact_momentum");
+  exact_solution_names.emplace_back("exact_density");
+  exact_solution_names.emplace_back("exact_energy_density");
+
+  std::vector<DataComponentInterpretation::DataComponentInterpretation>
+    data_component_interpretation(
+      dim, DataComponentInterpretation::component_is_part_of_vector);
+  data_component_interpretation.push_back(
+    DataComponentInterpretation::component_is_scalar);
+  data_component_interpretation.push_back(
+    DataComponentInterpretation::component_is_scalar);
+
   Vector<double> exact_solution_values(dof_handler.n_dofs());
   exact_solution.set_time(time);
   VectorTools::interpolate(mapping,
@@ -570,8 +624,14 @@ Sapphire::Hydro::HDSolver<dim>::output_results()
   DataOut<dim> data_out;
 
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution, "Solution");
-  data_out.add_data_vector(exact_solution_values, "ExactSolution");
+  data_out.add_data_vector(solution,
+                           solution_names,
+                           DataOut<dim>::type_dof_data,
+                           data_component_interpretation);
+  data_out.add_data_vector(exact_solution_values,
+                           exact_solution_names,
+                           DataOut<dim>::type_dof_data,
+                           data_component_interpretation);
 
   data_out.build_patches(fe.tensor_degree());
 

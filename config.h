@@ -514,9 +514,14 @@ namespace Sapphire
     class HDExactSolution : public Function<dim>
     {
     public:
+      static constexpr unsigned int n_components             = dim + 2;
+      static constexpr unsigned int first_momentum_component = 0;
+      static constexpr unsigned int density_component        = dim;
+      static constexpr unsigned int energy_component         = dim + 1;
+
       HDExactSolution(const Utils::ParameterParser &prm,
                       const double                  time = 0.0)
-        : Function<dim>(1, time)
+        : Function<dim>(n_components, time) // TODO_HD
       {
         (void)prm;
         AssertDimension(dim, 1);
@@ -526,7 +531,7 @@ namespace Sapphire
       value(const Point<dim>  &p,
             const unsigned int component = 0) const override
       {
-        (void)component; // suppress unused parameter warning
+        AssertIndexRange(component, n_components);
         Point<dim> x;
 
         // return -std::sin(numbers::PI * p[0]);
@@ -534,17 +539,23 @@ namespace Sapphire
         // x[0] = p[0];
         // return 0.25 + 0.5 * std::sin(numbers::PI * (2 * x[0] - 1));
 
-        // x[0] = p[0] - this->get_time() / 2.0;
-        // if (x[0] > 0.0)
-        //   return 1.0;
-        // else
-        //   return 0.0;
-
-        x[0] = p[0] - this->get_time() * 3.0;
-        if (x[0] > -0.5)
-          return 1.0;
+        // if (component == first_momentum_component)
+        if (true)
+          {
+            x[0] = p[0] - this->get_time() * 3.0;
+            if (x[0] > -0.5)
+              return 1.0;
+            else
+              return 2.0;
+          }
         else
-          return 2.0;
+          {
+            x[0] = p[0] - this->get_time() / 2.0;
+            if (x[0] > -0.5)
+              return 1.0;
+            else
+              return 0.0;
+          }
       }
     };
 
@@ -553,11 +564,9 @@ namespace Sapphire
     {
     public:
       HDInitialCondition(const Utils::ParameterParser &prm)
-        : Function<dim>(1)
-        , exact_solution(prm)
-      {
-        exact_solution.set_time(0.0);
-      }
+        : Function<dim>(HDExactSolution<dim>::n_components)
+        , exact_solution(prm, 0.0)
+      {}
 
       double
       value(const Point<dim>  &p,
@@ -576,8 +585,8 @@ namespace Sapphire
     public:
       HDBoundaryValues(const Utils::ParameterParser &prm,
                        const double                  time = 0.0)
-        : Function<dim>(1, time)
-        , exact_solution(prm)
+        : Function<dim>(HDExactSolution<dim>::n_components, time)
+        , exact_solution(prm, time)
       {}
 
       double
@@ -590,6 +599,7 @@ namespace Sapphire
       void
       set_time(const double new_time) override
       {
+        // this->time = new_time;
         exact_solution.set_time(new_time);
       }
 
