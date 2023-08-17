@@ -35,6 +35,13 @@ if(hydro-solver)
   target_include_directories(fluid PUBLIC ${PROJECT_SOURCE_DIR}/include/hydro)
   target_include_directories(fluid PUBLIC ${CONFIG_HEADER_DIR})
   target_link_libraries(fluid UtilsLib)
+
+
+  add_executable(step-67 step-67.cpp ${HYDRO_SOURCES})
+  deal_ii_setup_target(step-67)
+  target_include_directories(step-67 PUBLIC ${PROJECT_SOURCE_DIR}/include/hydro)
+  target_include_directories(step-67 PUBLIC ${CONFIG_HEADER_DIR})
+  target_link_libraries(step-67 UtilsLib)
 endif(hydro-solver)
 
 
