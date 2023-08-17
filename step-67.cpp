@@ -54,17 +54,19 @@ namespace Euler_DG
 {
   using namespace dealii;
 
-  constexpr unsigned int testcase             = 0;
-  constexpr unsigned int dimension            = 2;
-  constexpr unsigned int n_global_refinements = 3;
+  constexpr unsigned int testcase             = 2;
+  constexpr unsigned int dimension            = 1;
+  constexpr unsigned int n_global_refinements = 4;
   constexpr unsigned int fe_degree            = 5;
   constexpr unsigned int n_q_points_1d        = fe_degree + 2;
 
   using Number = double;
 
-  constexpr double gamma       = 1.4;
-  constexpr double final_time  = testcase == 0 ? 10 : 2.0;
-  constexpr double output_tick = testcase == 0 ? 1 : 0.05;
+  constexpr double gamma = 1.4;
+  constexpr double final_time =
+    testcase == 0 ? 10 : (testcase == 1 ? 2.0 : 1.0);
+  constexpr double output_tick =
+    testcase == 0 ? 1 : (testcase == 1 ? 0.05 : 0.1);
 
   const double courant_number = 0.15 / std::pow(fe_degree, 1.5);
   enum LowStorageRungeKuttaScheme
@@ -154,6 +156,30 @@ namespace Euler_DG
               return 3.097857142857143;
             else
               return 0.;
+          }
+
+        case 2:
+          {
+            Assert(dim == 1, ExcNotImplemented());
+            const double beta  = 0.1;
+            const double rho_0 = 1.0;
+            const double p_0   = 1.0;
+            const double A     = 0.01;
+
+            Point<dim> x0;
+            x0[0] = x[0] - beta * t;
+
+            const double density =
+              rho_0 + A * std::sin(2. * numbers::PI * x0[0]);
+
+            if (component == 0)
+              return density;
+            else if (component == 1)
+              return density * beta;
+            else
+              {
+                return p_0 / (gamma - 1.) + 0.5 * (density * beta * beta);
+              }
           }
 
         default:
@@ -1080,7 +1106,11 @@ namespace Euler_DG
     ConditionalOStream pcout;
 
 #ifdef DEAL_II_WITH_P4EST
+#  if dim > 1
     parallel::distributed::Triangulation<dim> triangulation;
+#  else
+    Triangulation<dim> triangulation;
+#  endif
 #else
     Triangulation<dim> triangulation;
 #endif
@@ -1226,7 +1256,9 @@ namespace Euler_DG
   EulerProblem<dim>::EulerProblem()
     : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
 #ifdef DEAL_II_WITH_P4EST
+#  if dim > 1
     , triangulation(MPI_COMM_WORLD)
+#  endif
 #endif
     , fe(FE_DGQ<dim>(fe_degree), dim + 2)
     , mapping(fe_degree)
@@ -1288,6 +1320,19 @@ namespace Euler_DG
             break;
           }
 
+        case 2:
+          {
+            GridGenerator::hyper_cube(triangulation, -1, 1);
+            triangulation.refine_global(n_global_refinements);
+
+            euler_operator.set_inflow_boundary(
+              0, std::make_unique<ExactSolution<dim>>(0));
+            euler_operator.set_inflow_boundary(
+              1, std::make_unique<ExactSolution<dim>>(0));
+
+            break;
+          }
+
         default:
           Assert(false, ExcNotImplemented());
       }
@@ -1317,7 +1362,8 @@ namespace Euler_DG
   {
     const std::array<double, 3> errors =
       euler_operator.compute_errors(ExactSolution<dim>(time), solution);
-    const std::string quantity_name = testcase == 0 ? "error" : "norm";
+    const std::string quantity_name =
+      (testcase == 0 or testcase == 2) ? "error" : "norm";
 
     pcout << "Time:" << std::setw(8) << std::setprecision(3) << time
           << ", dt: " << std::setw(8) << std::setprecision(2) << time_step
@@ -1333,7 +1379,8 @@ namespace Euler_DG
       DataOut<dim>  data_out;
 
       DataOutBase::VtkFlags flags;
-      flags.write_higher_order_cells = true;
+      if (dim > 1)
+        flags.write_higher_order_cells = true;
       data_out.set_flags(flags);
 
       data_out.attach_dof_handler(dof_handler);
@@ -1359,7 +1406,7 @@ namespace Euler_DG
       data_out.add_data_vector(solution, postprocessor);
 
       LinearAlgebra::distributed::Vector<Number> reference;
-      if (testcase == 0 && dim == 2)
+      if ((testcase == 0 && dim == 2) or (testcase == 2))
         {
           reference.reinit(solution);
           euler_operator.project(ExactSolution<dim>(time), reference);
