@@ -48,6 +48,13 @@ namespace Sapphire
       Always,
       GerneralizedSlopeLimiter
     };
+    enum LowStorageRungeKuttaScheme
+    {
+      stage_3_order_3, /* Kennedy, Carpenter, Lewis, 2000 */
+      stage_5_order_4, /* Kennedy, Carpenter, Lewis, 2000 */
+      stage_7_order_4, /* Tselios, Simos, 2007 */
+      stage_9_order_5, /* Kennedy, Carpenter, Lewis, 2000 */
+    };
   } // namespace Hydro
 } // namespace Sapphire
 #endif

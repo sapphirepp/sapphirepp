@@ -11,6 +11,7 @@
 
 namespace Sapphire
 {
+  using Number = double;
   namespace VFP
   {
     enum class TermFlags
@@ -510,51 +511,135 @@ namespace Sapphire
   namespace Hydro
   {
     using namespace dealii;
+
+    constexpr unsigned int testcase             = 2;
+    constexpr unsigned int dimension            = 1;
+    constexpr unsigned int n_global_refinements = 4;
+    constexpr unsigned int fe_degree            = 5;
+    constexpr unsigned int n_q_points_1d        = fe_degree + 2;
+
+
+    static constexpr unsigned int n_components             = dimension + 2;
+    static constexpr unsigned int density_component        = 0;
+    static constexpr unsigned int first_momentum_component = 1;
+    static constexpr unsigned int energy_component         = dimension + 1;
+
+
+    constexpr double gamma = 1.4;
+    constexpr double final_time =
+      testcase == 0 ? 10 : (testcase == 1 ? 2.0 : 1.0);
+    constexpr double output_tick =
+      testcase == 0 ? 1 : (testcase == 1 ? 0.05 : 0.1);
+
+    const double courant_number = 0.15 / std::pow(fe_degree, 1.5);
+    constexpr LowStorageRungeKuttaScheme lsrk_scheme = stage_5_order_4;
+
+    enum EulerNumericalFlux
+    {
+      lax_friedrichs_modified,
+      harten_lax_vanleer,
+    };
+    constexpr EulerNumericalFlux numerical_flux_type = lax_friedrichs_modified;
+
     template <int dim>
     class HDExactSolution : public Function<dim>
     {
     public:
-      static constexpr unsigned int n_components             = dim + 2;
-      static constexpr unsigned int first_momentum_component = 0;
-      static constexpr unsigned int density_component        = dim;
-      static constexpr unsigned int energy_component         = dim + 1;
-
       HDExactSolution(const Utils::ParameterParser &prm,
                       const double                  time = 0.0)
-        : Function<dim>(n_components, time) // TODO_HD
+        : Function<dim>(dim + 2, time)
       {
         (void)prm;
-        AssertDimension(dim, 1);
       }
 
+      HDExactSolution(const double time = 0.0)
+        : Function<dim>(dim + 2, time)
+      {}
+
       double
-      value(const Point<dim>  &p,
+      value(const Point<dim>  &x,
             const unsigned int component = 0) const override
       {
-        AssertIndexRange(component, n_components);
-        Point<dim> x;
+        const double t = this->get_time();
 
-        // return -std::sin(numbers::PI * p[0]);
-
-        // x[0] = p[0];
-        // return 0.25 + 0.5 * std::sin(numbers::PI * (2 * x[0] - 1));
-
-        // if (component == first_momentum_component)
-        if (true)
+        switch (testcase)
           {
-            x[0] = p[0] - this->get_time() * 3.0;
-            if (x[0] > -0.5)
-              return 1.0;
-            else
-              return 2.0;
-          }
-        else
-          {
-            x[0] = p[0] - this->get_time() / 2.0;
-            if (x[0] > -0.5)
-              return 1.0;
-            else
-              return 0.0;
+            case 0:
+              {
+                Assert(dim == 2, ExcNotImplemented());
+                const double beta = 5;
+
+                Point<dim> x0;
+                x0[0] = 5.;
+                const double radius_sqr =
+                  (x - x0).norm_square() - 2. * (x[0] - x0[0]) * t + t * t;
+                const double factor =
+                  beta / (numbers::PI * 2) * std::exp(1. - radius_sqr);
+                const double density_log = std::log2(
+                  std::abs(1. - (gamma - 1.) / gamma * 0.25 * factor * factor));
+                /**Since std::pow() has pretty slow implementations on some
+                 * systems, we replace it by logarithm followed by
+                 * exponentiation (of base 2), which is mathematically
+                 * equivalent but usually much better optimized */
+                const double density =
+                  std::exp2(density_log * (1. / (gamma - 1.)));
+                const double u = 1. - factor * (x[1] - x0[1]);
+                const double v = factor * (x[0] - t - x0[0]);
+
+                if (component == 0)
+                  return density;
+                else if (component == 1)
+                  return density * u;
+                else if (component == 2)
+                  return density * v;
+                else
+                  {
+                    const double pressure =
+                      std::exp2(density_log * (gamma / (gamma - 1.)));
+                    return pressure / (gamma - 1.) +
+                           0.5 * (density * u * u + density * v * v);
+                  }
+              }
+
+            case 1:
+              {
+                if (component == 0)
+                  return 1.;
+                else if (component == 1)
+                  return 0.4;
+                else if (component == dim + 1)
+                  return 3.097857142857143;
+                else
+                  return 0.;
+              }
+
+            case 2:
+              {
+                Assert(dim == 1, ExcNotImplemented());
+                const double beta  = 0.1;
+                const double rho_0 = 1.0;
+                const double p_0   = 1.0;
+                const double A     = 0.01;
+
+                Point<dim> x0;
+                x0[0] = x[0] - beta * t;
+
+                const double density =
+                  rho_0 + A * std::sin(2. * numbers::PI * x0[0]);
+
+                if (component == 0)
+                  return density;
+                else if (component == 1)
+                  return density * beta;
+                else
+                  {
+                    return p_0 / (gamma - 1.) + 0.5 * (density * beta * beta);
+                  }
+              }
+
+            default:
+              Assert(false, ExcNotImplemented());
+              return 0.;
           }
       }
     };
@@ -564,7 +649,7 @@ namespace Sapphire
     {
     public:
       HDInitialCondition(const Utils::ParameterParser &prm)
-        : Function<dim>(HDExactSolution<dim>::n_components)
+        : Function<dim>(dim + 2)
         , exact_solution(prm, 0.0)
       {}
 
@@ -585,7 +670,7 @@ namespace Sapphire
     public:
       HDBoundaryValues(const Utils::ParameterParser &prm,
                        const double                  time = 0.0)
-        : Function<dim>(HDExactSolution<dim>::n_components, time)
+        : Function<dim>(dim + 2, time)
         , exact_solution(prm, time)
       {}
 

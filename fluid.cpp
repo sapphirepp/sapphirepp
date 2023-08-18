@@ -12,28 +12,18 @@
 #include "sapphire-logstream.h"
 
 int
-main(int argc, char *argv[])
+main(int argc, char **argv)
 {
+  using namespace Sapphire;
+  using namespace Hydro;
+  using namespace dealii;
+
+  Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+
   try
     {
-      using namespace Sapphire::Hydro;
-      using namespace Sapphire::Utils;
-
-      // Sapphire::saplog.depth_console(2);
+      deallog.depth_console(0);
       Sapphire::saplog.depth_console(100);
-
-      dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(
-        argc,
-        argv,
-        1); // Only use MPI on one core
-
-      Sapphire::saplog << "n_cores = " << dealii::MultithreadInfo::n_cores()
-                       << std::endl;
-      Sapphire::saplog << "n_threads = " << dealii::MultithreadInfo::n_threads()
-                       << std::endl;
-
-      const unsigned int dim  = 1;
-      const double       beta = 1.0;
 
       std::string parameter_filename = "../parameter.prm";
       if (argc > 1)
@@ -44,9 +34,9 @@ main(int argc, char *argv[])
       ParameterParser prm(parameter_filename);
       prm.write_template_parameters("../parameter-template.json");
 
-      OutputModule<dim> output_module(prm);
+      OutputModule<dimension> output_module(prm);
 
-      HDSolver<dim> hd_solver(prm, output_module, beta);
+      HDSolver<dimension> hd_solver(prm, output_module);
       hd_solver.run();
     }
   catch (std::exception &exc)

@@ -34,730 +34,287 @@
 #include "hd-solver-control.h"
 #include "sapphire-logstream.h"
 
-namespace Sapphire
-{
-  namespace Hydro
-  {
-    using namespace dealii;
-    template <int dim>
-    class ScratchDataDG
-    {
-    public:
-      // Constructor
-      ScratchDataDG(
-        const Mapping<dim>        &mapping,
-        const FiniteElement<dim>  &fe,
-        const Quadrature<dim>     &quadrature,
-        const Quadrature<dim - 1> &face_quadrature,
-        const UpdateFlags update_flags = update_values | update_gradients |
-                                         update_quadrature_points |
-                                         update_JxW_values,
-        const UpdateFlags face_update_flags = update_values |
-                                              update_quadrature_points |
-                                              update_JxW_values |
-                                              update_normal_vectors,
-        const UpdateFlags neighbor_face_update_flags = update_values)
-        : fe_values(mapping, fe, quadrature, update_flags)
-        , fe_face_values(mapping, fe, face_quadrature, face_update_flags)
-        , fe_face_values_neighbor(mapping,
-                                  fe,
-                                  face_quadrature,
-                                  neighbor_face_update_flags)
-      {}
-
-      // Copy constructor
-      ScratchDataDG(const ScratchDataDG &scratch_data)
-        : fe_values(scratch_data.fe_values.get_mapping(),
-                    scratch_data.fe_values.get_fe(),
-                    scratch_data.fe_values.get_quadrature(),
-                    scratch_data.fe_values.get_update_flags())
-        , fe_face_values(scratch_data.fe_face_values.get_mapping(),
-                         scratch_data.fe_face_values.get_fe(),
-                         scratch_data.fe_face_values.get_quadrature(),
-                         scratch_data.fe_face_values.get_update_flags())
-        , fe_face_values_neighbor(
-            scratch_data.fe_face_values_neighbor.get_mapping(),
-            scratch_data.fe_face_values_neighbor.get_fe(),
-            scratch_data.fe_face_values_neighbor.get_quadrature(),
-            scratch_data.fe_face_values_neighbor.get_update_flags())
-      {}
-
-      FEValues<dim>     fe_values;
-      FEFaceValues<dim> fe_face_values;
-      FEFaceValues<dim> fe_face_values_neighbor;
-    };
-
-    struct CopyDataFaceDG
-    {
-      Vector<double> cell_vector_1;
-      Vector<double> cell_vector_2;
-
-      std::vector<types::global_dof_index> local_dof_indices;
-      std::vector<types::global_dof_index> local_dof_indices_neighbor;
-
-      template <typename Iterator>
-      void
-      reinit(const Iterator &cell,
-             const Iterator &neighbor_cell,
-             unsigned int    dofs_per_cell)
-      {
-        cell_vector_1.reinit(dofs_per_cell);
-        cell_vector_2.reinit(dofs_per_cell);
-
-        local_dof_indices.resize(dofs_per_cell);
-        cell->get_dof_indices(local_dof_indices);
-
-        local_dof_indices_neighbor.resize(dofs_per_cell);
-        neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
-      }
-    };
-
-    struct CopyDataDG
-    {
-      Vector<double>                       cell_vector;
-      std::vector<types::global_dof_index> local_dof_indices;
-      std::vector<CopyDataFaceDG>          face_data;
-
-      template <typename Iterator>
-      void
-      reinit(const Iterator &cell, unsigned int dofs_per_cell)
-      {
-        cell_vector.reinit(dofs_per_cell);
-
-        local_dof_indices.resize(dofs_per_cell);
-        cell->get_dof_indices(local_dof_indices);
-      }
-    };
-  } // namespace Hydro
-} // namespace Sapphire
-
 template <int dim>
 Sapphire::Hydro::HDSolver<dim>::HDSolver(const ParameterParser   &prm,
-                                         const OutputModule<dim> &output_module,
-                                         const double             beta)
+                                         const OutputModule<dim> &output_module)
   : initial_condition(prm)
-  , boundary_values(prm)
   , exact_solution(prm)
   , hd_solver_control(prm)
-  , flux(prm, beta)
   , output_module(output_module)
-  , beta(beta)
-  , mpi_communicator(MPI_COMM_WORLD)
-  , mapping()
-  , fe(FE_DGQ<dim>(hd_solver_control.fe_degree), n_components)
+  , pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+#if dim > 1
+  , triangulation(MPI_COMM_WORLD)
+#endif
+  , fe(FE_DGQ<dim>(fe_degree), dim + 2)
+  , mapping(fe_degree)
   , dof_handler(triangulation)
-  , quadrature_formula(fe.tensor_degree() + 1)
-  , face_quadrature_formula(fe.tensor_degree() + 1)
-  , computing_timer(mpi_communicator,
-                    std::cout,
-                    TimerOutput::never,
-                    TimerOutput::wall_times)
+  , timer(pcout, TimerOutput::never, TimerOutput::wall_times)
+  , euler_operator(timer)
+  , time(0)
+  , time_step(0)
 {
   LogStream::Prefix p("HDSolver", saplog);
-  AssertDimension(dim, 1);
   saplog << "Create HDSolver" << std::endl;
 }
 
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::make_grid()
-{
-  TimerOutput::Scope t(computing_timer, "Make grid");
-  LogStream::Prefix  p("HDSolver", saplog);
-  saplog << "Make grid" << std::endl;
-
-  GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(hd_solver_control.refinement_level);
-  saplog << "Number of active cells:\t" << triangulation.n_active_cells()
-         << std::endl;
-}
 
 template <int dim>
 void
-Sapphire::Hydro::HDSolver<dim>::setup_system()
+Sapphire::Hydro::HDSolver<dim>::make_grid_and_dofs()
 {
-  TimerOutput::Scope t(computing_timer, "Setup system");
-  saplog << "Setup system" << std::endl;
-
-  dof_handler.distribute_dofs(fe);
-
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-  sparcity_pattern.copy_from(dsp);
-
-  mass_matrix.reinit(sparcity_pattern);
-  system_matrix.reinit(sparcity_pattern);
-
-  solution.reinit(dof_handler.n_dofs());
-  current_solution.reinit(dof_handler.n_dofs());
-  old_solution.reinit(dof_handler.n_dofs());
-  dg_vector.reinit(dof_handler.n_dofs());
-  system_rhs.reinit(dof_handler.n_dofs());
-
-  VectorTools::interpolate(mapping, dof_handler, initial_condition, solution);
-
-  constraints.clear();
-  constraints.close();
-}
-
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::assemble_mass_matrix()
-{
-  TimerOutput::Scope t(computing_timer, "Assemble mass matrix");
-  saplog << "Assemble mass matrix" << std::endl;
-
-  MatrixCreator::create_mass_matrix(mapping,
-                                    dof_handler,
-                                    quadrature_formula,
-                                    mass_matrix);
-}
-
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::assemble_dg_vector()
-{
-  TimerOutput::Scope t(computing_timer, "Assemble DG vector");
-  saplog << "Assemble DG vector" << std::endl;
-
-  dg_vector = 0;
-  boundary_values.set_time(current_time);
-
-  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
-
-  const auto cell_worker = [&](const Iterator     &cell,
-                               ScratchDataDG<dim> &scratch_data,
-                               CopyDataDG         &copy_data) {
-    FEValues<dim> &fe_values = scratch_data.fe_values;
-
-    fe_values.reinit(cell);
-    const unsigned int n_dofs = fe_values.get_fe().n_dofs_per_cell();
-
-    std::vector<Tensor<1, dim>> flux_value(n_components);
-
-    std::vector<Vector<double>> current_solution_values(
-      n_dofs, Vector<double>(n_components));
-    // TODO_HD: Use dofs directly, if possible
-    fe_values.get_function_values(current_solution, current_solution_values);
-
-
-    const FEValuesExtractors::Vector momentum_extractor(
-      first_momentum_component);
-    const FEValuesExtractors::Scalar density_extractor(density_component);
-    const FEValuesExtractors::Scalar energy_extractor(energy_component);
-
-    copy_data.reinit(cell, n_dofs);
-
-    for (const unsigned int q_index : fe_values.quadrature_point_indices())
-      {
-        flux.flux(current_solution_values[q_index], flux_value);
-
-        for (const unsigned int i : fe_values.dof_indices())
-          {
-            copy_data.cell_vector(i) -=
-              (flux_value[first_momentum_component] *
-                 fe_values[momentum_extractor].gradient(i, q_index)[0] +
-               flux_value[density_component] *
-                 fe_values[density_extractor].gradient(i, q_index) +
-               flux_value[energy_component] *
-                 fe_values[energy_extractor].gradient(i, q_index)) *
-              fe_values.JxW(q_index);
-          }
-      }
-  };
-
-  const auto boundary_worker = [&](const Iterator     &cell,
-                                   const unsigned int &face_no,
-                                   ScratchDataDG<dim> &scratch_data,
-                                   CopyDataDG         &copy_data) {
-    scratch_data.fe_face_values.reinit(cell, face_no);
-    const FEFaceValuesBase<dim> &fe_face_values = scratch_data.fe_face_values;
-
-    const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
-
-    double                      boundary_value;
-    std::vector<Tensor<1, dim>> flux_value(n_components);
-
-    std::vector<Vector<double>> current_solution_values(
-      n_dofs, Vector<double>(n_components));
-    fe_face_values.get_function_values(current_solution,
-                                       current_solution_values);
-
-    for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
-      {
-        flux.flux(current_solution_values[q_index], flux_value);
-
-        for (unsigned int component = 0; component < n_components; ++component)
-          {
-            const double f_dot_n =
-              flux_value[component] * fe_face_values.normal_vector(q_index);
-
-            // TODO_HD: If one components should have same boundary condition
-
-            if (f_dot_n > 0.0)
-              { // outflow boundary
-                for (const unsigned int i : fe_face_values.dof_indices())
-                  {
-                    copy_data.cell_vector(i) +=
-                      f_dot_n *
-                      fe_face_values.shape_value_component(i,
-                                                           q_index,
-                                                           component) *
-                      fe_face_values.JxW(q_index);
-                  }
-              }
-            else
-              { // inflow boundary
-                for (const unsigned int i : fe_face_values.dof_indices())
-                  {
-                    boundary_value = boundary_values.value(
-                      fe_face_values.quadrature_point(q_index), component);
-                    flux.flux(boundary_value, flux_value[component], component);
-                    const double boundary_f_dot_n =
-                      flux_value[component] *
-                      fe_face_values.normal_vector(q_index);
-
-                    copy_data.cell_vector(i) +=
-                      boundary_f_dot_n *
-                      fe_face_values.shape_value_component(i,
-                                                           q_index,
-                                                           component) *
-                      fe_face_values.JxW(q_index);
-                  }
-              }
-          }
-      }
-  };
-
-  const auto face_worker = [&](const Iterator     &cell,
-                               const unsigned int &face_no,
-                               const unsigned int &subface_no,
-                               const Iterator     &neighbor_cell,
-                               const unsigned int &neighbor_face_no,
-                               const unsigned int &neighbor_subface_no,
-                               ScratchDataDG<dim> &scratch_data,
-                               CopyDataDG         &copy_data) {
-    // supress unused variable warning
-    (void)subface_no;
-    (void)neighbor_subface_no;
-
-    FEFaceValues<dim> &fe_face_values = scratch_data.fe_face_values;
-    fe_face_values.reinit(cell, face_no);
-
-    FEFaceValues<dim> &fe_face_values_neighbor =
-      scratch_data.fe_face_values_neighbor;
-    fe_face_values_neighbor.reinit(neighbor_cell, neighbor_face_no);
-
-    copy_data.face_data.emplace_back();
-    CopyDataFaceDG &copy_data_face = copy_data.face_data.back();
-
-    const unsigned int n_dofs = fe_face_values.get_fe().n_dofs_per_cell();
-    copy_data_face.reinit(cell, neighbor_cell, n_dofs);
-
-    std::vector<Vector<double>> current_solution_values_1(
-      n_dofs, Vector<double>(n_components));
-    fe_face_values.get_function_values(current_solution,
-                                       current_solution_values_1);
-    std::vector<Vector<double>> current_solution_values_2(
-      n_dofs, Vector<double>(n_components));
-    fe_face_values_neighbor.get_function_values(current_solution,
-                                                current_solution_values_2);
-
-    double flux_dot_n;
-
-    for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
-      {
-        for (unsigned int component = 0; component < n_components; ++component)
-          {
-            flux_dot_n =
-              flux.numerical_flux(current_solution_values_1[q_index][component],
-                                  current_solution_values_2[q_index][component],
-                                  fe_face_values.normal_vector(q_index),
-                                  component);
-
-            for (const unsigned int i : fe_face_values.dof_indices())
-              {
-                copy_data_face.cell_vector_1(i) +=
-                  flux_dot_n * fe_face_values.shape_value(i, q_index) *
-                  fe_face_values.JxW(q_index);
-
-                copy_data_face.cell_vector_2(i) -=
-                  flux_dot_n * fe_face_values_neighbor.shape_value(i, q_index) *
-                  fe_face_values.JxW(q_index);
-              }
-          }
-      }
-  };
-
-  const auto copier = [&](const CopyDataDG &c) {
-    constraints.distribute_local_to_global(c.cell_vector,
-                                           c.local_dof_indices,
-                                           dg_vector);
-
-    for (auto &cdf : c.face_data)
-      {
-        constraints.distribute_local_to_global(cdf.cell_vector_1,
-                                               cdf.local_dof_indices,
-                                               dg_vector);
-        constraints.distribute_local_to_global(cdf.cell_vector_2,
-                                               cdf.local_dof_indices_neighbor,
-                                               dg_vector);
-      }
-  };
-
-  ScratchDataDG<dim> scratch_data(mapping,
-                                  fe,
-                                  quadrature_formula,
-                                  face_quadrature_formula);
-  CopyDataDG         copy_data;
-
-  const auto filtered_iterator_range =
-    dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
-  MeshWorker::mesh_loop(filtered_iterator_range,
-                        cell_worker,
-                        copier,
-                        scratch_data,
-                        copy_data,
-                        MeshWorker::assemble_own_cells |
-                          MeshWorker::assemble_boundary_faces |
-                          MeshWorker::assemble_own_interior_faces_once,
-                        boundary_worker,
-                        face_worker);
-}
-
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::assemble_system()
-{
-  TimerOutput::Scope t(computing_timer, "Assemble system");
-  saplog << "Assemble system" << std::endl;
-
-  system_matrix = 0;
-  system_rhs    = 0;
-
-  /** Nothing to do here, RHS of equation is zero */
-}
-
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::perform_time_step()
-{
-  TimerOutput::Scope t(computing_timer, "Time step");
-  saplog << "Time step" << std::endl;
-  LogStream::Prefix p("TimeStep", saplog);
-
-  old_solution     = solution;
-  current_solution = old_solution;
-  Vector<double> tmp(dof_handler.n_dofs());
-
-  SolverControl solver_control(hd_solver_control.max_iterations,
-                               hd_solver_control.tolerance);
-  SolverRichardson<Vector<double>> solver(solver_control);
-
-  PreconditionSSOR<SparseMatrix<double>> preconditioner;
-
-  double time_step = hd_solver_control.time_step;
-
-  switch (hd_solver_control.scheme)
+  // TODO_HD: read grif from file
+  switch (testcase)
     {
-      case TimeSteppingScheme::ForwardEuler:
+      case 0:
         {
-          assemble_system();
-          assemble_dg_vector();
+          Point<dim> lower_left;
+          for (unsigned int d = 1; d < dim; ++d)
+            lower_left[d] = -5;
 
-          system_rhs.add(-1.0, dg_vector);
-          system_rhs *= time_step;
+          Point<dim> upper_right;
+          upper_right[0] = 10;
+          for (unsigned int d = 1; d < dim; ++d)
+            upper_right[d] = 5;
 
-          mass_matrix.vmult(tmp, current_solution);
-          system_rhs.add(1.0, tmp);
+          GridGenerator::hyper_rectangle(triangulation,
+                                         lower_left,
+                                         upper_right);
+          triangulation.refine_global(2);
 
-          system_matrix.copy_from(mass_matrix);
-          preconditioner.initialize(system_matrix);
-
-          {
-            TimerOutput::Scope t(computing_timer, "Solve linear system");
-            saplog << "Solve linear system" << std::endl;
-            LogStream::Prefix p("Solve", saplog);
-            solver.solve(system_matrix, solution, system_rhs, preconditioner);
-            saplog << "Solver converged in " << solver_control.last_step()
-                   << " iterations." << std::endl;
-          }
+          euler_operator.set_inflow_boundary(
+            0, std::make_unique<HDExactSolution<dim>>(0));
 
           break;
         }
 
-      case TimeSteppingScheme::ExplicitRK:
+      case 1:
         {
-          //  Butcher's array
-          Vector<double> a({0.5, 0.5, 1.});
-          Vector<double> b({1. / 6, 1. / 3, 1. / 3, 1. / 6});
-          Vector<double> c({0., 0.5, 0.5, 1.});
-          int            i = 0;
+          GridGenerator::channel_with_cylinder(triangulation, 0.03, 1, 0, true);
 
-          Vector<double> k1(dof_handler.n_dofs());
-          i                = 0;
-          tmp              = 0;
-          current_time     = time + c[i] * time_step;
-          current_solution = old_solution;
-          assemble_system();
-          assemble_dg_vector();
-          system_matrix.copy_from(mass_matrix);
-          system_rhs.add(-1.0, dg_vector);
-          {
-            TimerOutput::Scope t(computing_timer, "Solve linear system");
-            saplog << "Solve linear system" << std::endl;
-            LogStream::Prefix p("Solve", saplog);
-            preconditioner.initialize(system_matrix);
-            solver.solve(system_matrix, solution, system_rhs, preconditioner);
-            saplog << "Solver converged in " << solver_control.last_step()
-                   << " iterations." << std::endl;
-          }
-          k1 = solution;
+          euler_operator.set_inflow_boundary(
+            0, std::make_unique<HDExactSolution<dim>>(0));
+          euler_operator.set_subsonic_outflow_boundary(
+            1, std::make_unique<HDExactSolution<dim>>(0));
 
-          Vector<double> k2(dof_handler.n_dofs());
-          i                = 1;
-          tmp              = 0;
-          current_time     = time + c[i] * time_step;
-          current_solution = old_solution;
-          current_solution.add(a[i - 1] * time_step, k1);
-          assemble_system();
-          assemble_dg_vector();
-          system_matrix.copy_from(mass_matrix);
-          system_rhs.add(-1.0, dg_vector);
-          {
-            TimerOutput::Scope t(computing_timer, "Solve linear system");
-            saplog << "Solve linear system" << std::endl;
-            LogStream::Prefix p("Solve", saplog);
-            solver.solve(system_matrix, solution, system_rhs, preconditioner);
-            saplog << "Solver converged in " << solver_control.last_step()
-                   << " iterations." << std::endl;
-          }
-          k2 = solution;
+          euler_operator.set_wall_boundary(2);
+          euler_operator.set_wall_boundary(3);
 
-          Vector<double> k3(dof_handler.n_dofs());
-          i                = 2;
-          tmp              = 0;
-          current_time     = time + c[i] * time_step;
-          current_solution = old_solution;
-          current_solution.add(a[i - 1] * time_step, k2);
-          assemble_system();
-          assemble_dg_vector();
-          system_matrix.copy_from(mass_matrix);
-          system_rhs.add(-1.0, dg_vector);
-          {
-            TimerOutput::Scope t(computing_timer, "Solve linear system");
-            saplog << "Solve linear system" << std::endl;
-            LogStream::Prefix p("Solve", saplog);
-            solver.solve(system_matrix, solution, system_rhs, preconditioner);
-            saplog << "Solver converged in " << solver_control.last_step()
-                   << " iterations." << std::endl;
-          }
-          k3 = solution;
+          if (dim == 3)
+            euler_operator.set_body_force(
+              std::make_unique<Functions::ConstantFunction<dim>>(
+                std::vector<double>({0., 0., -0.2})));
 
-          Vector<double> k4(dof_handler.n_dofs());
-          i                = 3;
-          tmp              = 0;
-          current_time     = time + c[i] * time_step;
-          current_solution = old_solution;
-          current_solution.add(a[i - 1] * time_step, k3);
-          assemble_system();
-          assemble_dg_vector();
-          system_matrix.copy_from(mass_matrix);
-          system_rhs.add(-1.0, dg_vector);
-          {
-            TimerOutput::Scope t(computing_timer, "Solve linear system");
-            saplog << "Solve linear system" << std::endl;
-            LogStream::Prefix p("Solve", saplog);
-            solver.solve(system_matrix, solution, system_rhs, preconditioner);
-            saplog << "Solver converged in " << solver_control.last_step()
-                   << " iterations." << std::endl;
-          }
-          k4 = solution;
+          break;
+        }
 
-          solution = old_solution;
-          solution.add(b[0] * time_step, k1);
-          solution.add(b[1] * time_step, k2);
-          solution.add(b[2] * time_step, k3);
-          solution.add(b[3] * time_step, k4);
+      case 2:
+        {
+          GridGenerator::hyper_cube(triangulation, -1, 1);
+          triangulation.refine_global(n_global_refinements);
+
+          euler_operator.set_inflow_boundary(
+            0, std::make_unique<HDExactSolution<dim>>(0));
+          euler_operator.set_inflow_boundary(
+            1, std::make_unique<HDExactSolution<dim>>(0));
+
           break;
         }
 
       default:
         Assert(false, ExcNotImplemented());
-        break;
     }
 
-  time += time_step;
+  triangulation.refine_global(n_global_refinements);
+
+  dof_handler.distribute_dofs(fe);
+
+  euler_operator.reinit(mapping, dof_handler);
+  euler_operator.initialize_vector(solution);
+
+  std::locale s = pcout.get_stream().getloc();
+  pcout.get_stream().imbue(std::locale(""));
+  pcout << "Number of degrees of freedom: " << dof_handler.n_dofs()
+        << " ( = " << (dim + 2) << " [vars] x "
+        << triangulation.n_global_active_cells() << " [cells] x "
+        << Utilities::pow(fe_degree + 1, dim) << " [dofs/cell/var] )"
+        << std::endl;
+  pcout.get_stream().imbue(s);
 }
 
 template <int dim>
 void
-Sapphire::Hydro::HDSolver<dim>::output_results()
+Sapphire::Hydro::HDSolver<dim>::output_results(const unsigned int result_number)
 {
-  saplog << "Output results" << std::endl;
-  // LogStream::Prefix p("OutputResults", saplog);
+  // TODO_HD: Use OutputModule
+  const std::array<double, 3> errors =
+    euler_operator.compute_errors(HDExactSolution<dim>(time), solution);
+  const std::string quantity_name =
+    (testcase == 0 or testcase == 2) ? "error" : "norm";
 
-  std::vector<std::string> solution_names(dim, "momentum");
-  solution_names.emplace_back("density");
-  solution_names.emplace_back("energy_density");
+  pcout << "Time:" << std::setw(8) << std::setprecision(3) << time
+        << ", dt: " << std::setw(8) << std::setprecision(2) << time_step << ", "
+        << quantity_name << " rho: " << std::setprecision(4) << std::setw(10)
+        << errors[0] << ", rho * u: " << std::setprecision(4) << std::setw(10)
+        << errors[1] << ", energy:" << std::setprecision(4) << std::setw(10)
+        << errors[2] << std::endl;
 
-
-  std::vector<std::string> exact_solution_names(dim, "exact_momentum");
-  exact_solution_names.emplace_back("exact_density");
-  exact_solution_names.emplace_back("exact_energy_density");
-
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    data_component_interpretation(
-      dim, DataComponentInterpretation::component_is_part_of_vector);
-  data_component_interpretation.push_back(
-    DataComponentInterpretation::component_is_scalar);
-  data_component_interpretation.push_back(
-    DataComponentInterpretation::component_is_scalar);
-
-  Vector<double> exact_solution_values(dof_handler.n_dofs());
-  exact_solution.set_time(time);
-  VectorTools::interpolate(mapping,
-                           dof_handler,
-                           exact_solution,
-                           exact_solution_values);
-
-  DataOut<dim> data_out;
-
-  data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution,
-                           solution_names,
-                           DataOut<dim>::type_dof_data,
-                           data_component_interpretation);
-  data_out.add_data_vector(exact_solution_values,
-                           exact_solution_names,
-                           DataOut<dim>::type_dof_data,
-                           data_component_interpretation);
-
-  data_out.build_patches(fe.tensor_degree());
-
-  output_module.write_results(data_out, timestep_number);
-}
-
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::process_results()
-{
-  TimerOutput::Scope t(computing_timer, "Process results");
-  saplog << "Process results" << std::endl;
-  LogStream::Prefix p("ProcessResults", saplog);
-
-  Vector<float> difference_per_cell(triangulation.n_active_cells());
-  exact_solution.set_time(time);
-
-  // Use different quadrature for error computation
-  const QTrapezoid<1>  q_trapez;
-  const QIterated<dim> q_iterated(q_trapez, fe.degree * 2 + 1);
-
-  VectorTools::integrate_difference(mapping,
-                                    dof_handler,
-                                    solution,
-                                    exact_solution,
-                                    difference_per_cell,
-                                    q_iterated,
-                                    VectorTools::L2_norm);
-  float L2_error = VectorTools::compute_global_error(triangulation,
-                                                     difference_per_cell,
-                                                     VectorTools::L2_norm);
-  saplog << "L2 error:\t\t" << L2_error << std::endl;
-
-  VectorTools::integrate_difference(mapping,
-                                    dof_handler,
-                                    solution,
-                                    exact_solution,
-                                    difference_per_cell,
-                                    q_iterated,
-                                    VectorTools::Linfty_norm);
-  float Linf_error =
-    VectorTools::compute_global_error(triangulation,
-                                      difference_per_cell,
-                                      VectorTools::Linfty_norm);
-  saplog << "L-infinity error:\t" << Linf_error << std::endl;
-
-  error_with_time.push_back(L2_error);
-}
-
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::init()
-{
-  LogStream::Prefix p("HDSolver", saplog);
-  saplog << "Init HDSolver" << std::endl;
-  LogStream::Prefix p2("Init", saplog);
-  time            = 0.0;
-  timestep_number = 0;
-  error_with_time.clear();
-  error_with_time.reserve(
-    (unsigned int)(hd_solver_control.end_time / hd_solver_control.time_step) /
-    output_module.output_frequency);
-
-  make_grid();
-  setup_system();
-  assemble_mass_matrix();
-  // assemble_system();
   {
-    TimerOutput::Scope t(computing_timer, "Output results");
-    output_results();
-  }
-}
+    TimerOutput::Scope t(timer, "output");
 
-template <int dim>
-void
-Sapphire::Hydro::HDSolver<dim>::do_timestep()
-{
-  LogStream::Prefix p("HDSolver", saplog);
-  saplog << "Timestep " << timestep_number + 1
-         << " (time = " << time + hd_solver_control.time_step << "/"
-         << hd_solver_control.end_time << ")" << std::endl;
-  LogStream::Prefix p2("TimeStep", saplog);
+    Postprocessor<dim> postprocessor;
+    DataOut<dim>       data_out;
 
-  perform_time_step();
-  timestep_number++;
-  if (timestep_number % output_module.output_frequency == 0)
+    DataOutBase::VtkFlags flags;
+    if (dim > 1)
+      flags.write_higher_order_cells = true;
+    data_out.set_flags(flags);
+
+    data_out.attach_dof_handler(dof_handler);
     {
-      {
-        TimerOutput::Scope t(computing_timer, "Output results");
-        output_results();
-      }
-      process_results();
+      std::vector<std::string> names;
+      names.emplace_back("density");
+      for (unsigned int d = 0; d < dim; ++d)
+        names.emplace_back("momentum");
+      names.emplace_back("energy");
+
+      std::vector<DataComponentInterpretation::DataComponentInterpretation>
+        interpretation;
+      interpretation.push_back(
+        DataComponentInterpretation::component_is_scalar);
+      for (unsigned int d = 0; d < dim; ++d)
+        interpretation.push_back(
+          DataComponentInterpretation::component_is_part_of_vector);
+      interpretation.push_back(
+        DataComponentInterpretation::component_is_scalar);
+
+      data_out.add_data_vector(dof_handler, solution, names, interpretation);
     }
+    data_out.add_data_vector(solution, postprocessor);
+
+    LinearAlgebra::distributed::Vector<Number> reference;
+    if ((testcase == 0 && dim == 2) or (testcase == 2))
+      {
+        reference.reinit(solution);
+        euler_operator.project(HDExactSolution<dim>(time), reference);
+        reference.sadd(-1., 1, solution);
+        std::vector<std::string> names;
+        names.emplace_back("error_density");
+        for (unsigned int d = 0; d < dim; ++d)
+          names.emplace_back("error_momentum");
+        names.emplace_back("error_energy");
+
+        std::vector<DataComponentInterpretation::DataComponentInterpretation>
+          interpretation;
+        interpretation.push_back(
+          DataComponentInterpretation::component_is_scalar);
+        for (unsigned int d = 0; d < dim; ++d)
+          interpretation.push_back(
+            DataComponentInterpretation::component_is_part_of_vector);
+        interpretation.push_back(
+          DataComponentInterpretation::component_is_scalar);
+
+        data_out.add_data_vector(dof_handler, reference, names, interpretation);
+      }
+
+    Vector<double> mpi_owner(triangulation.n_active_cells());
+    mpi_owner = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+    data_out.add_data_vector(mpi_owner, "owner");
+
+    data_out.build_patches(mapping,
+                           fe.degree,
+                           DataOut<dim>::curved_inner_cells);
+
+    const std::string filename = "../results/solution_" +
+                                 Utilities::int_to_string(result_number, 3) +
+                                 ".vtu";
+    data_out.write_vtu_in_parallel(filename, MPI_COMM_WORLD);
+  }
 }
 
 template <int dim>
 void
 Sapphire::Hydro::HDSolver<dim>::run()
 {
+  // TODO_HD: split into individual time steps
   {
-    LogStream::Prefix p("HDSolver", saplog);
-    saplog << "Run HDSolver" << std::endl;
+    const unsigned int n_vect_number = VectorizedArray<Number>::size();
+    const unsigned int n_vect_bits   = 8 * sizeof(Number) * n_vect_number;
+
+    pcout << "Running with " << Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
+          << " MPI processes" << std::endl;
+    pcout << "Vectorization over " << n_vect_number << ' '
+          << (std::is_same<Number, double>::value ? "doubles" : "floats")
+          << " = " << n_vect_bits << " bits ("
+          << Utilities::System::get_current_vectorization_level() << ')'
+          << std::endl;
   }
-  init();
-  while (time < hd_solver_control.end_time)
+
+  make_grid_and_dofs();
+
+  const LowStorageRungeKuttaIntegrator integrator(lsrk_scheme);
+
+  LinearAlgebra::distributed::Vector<Number> rk_register_1;
+  LinearAlgebra::distributed::Vector<Number> rk_register_2;
+  rk_register_1.reinit(solution);
+  rk_register_2.reinit(solution);
+
+  euler_operator.project(HDExactSolution<dim>(time), solution);
+
+  double min_vertex_distance = std::numeric_limits<double>::max();
+  for (const auto &cell : triangulation.active_cell_iterators())
+    if (cell->is_locally_owned())
+      min_vertex_distance =
+        std::min(min_vertex_distance, cell->minimum_vertex_distance());
+  min_vertex_distance =
+    Utilities::MPI::min(min_vertex_distance, MPI_COMM_WORLD);
+
+  time_step = courant_number * integrator.n_stages() /
+              euler_operator.compute_cell_transport_speed(solution);
+  pcout << "Time step size: " << time_step
+        << ", minimal h: " << min_vertex_distance
+        << ", initial transport scaling: "
+        << 1. / euler_operator.compute_cell_transport_speed(solution)
+        << std::endl
+        << std::endl;
+
+  output_results(0);
+
+  unsigned int timestep_number = 0;
+
+  while (time < final_time - 1e-12)
     {
-      do_timestep();
+      ++timestep_number;
+      if (timestep_number % 5 == 0)
+        time_step = courant_number * integrator.n_stages() /
+                    Utilities::truncate_to_n_digits(
+                      euler_operator.compute_cell_transport_speed(solution), 3);
+
+      {
+        TimerOutput::Scope t(timer, "rk time stepping total");
+        integrator.perform_time_step(euler_operator,
+                                     time,
+                                     time_step,
+                                     solution,
+                                     rk_register_1,
+                                     rk_register_2);
+      }
+
+      time += time_step;
+
+      if (static_cast<int>(time / output_tick) !=
+            static_cast<int>((time - time_step) / output_tick) ||
+          time >= final_time - 1e-12)
+        output_results(
+          static_cast<unsigned int>(std::round(time / output_tick)));
     }
 
-  computing_timer.print_summary();
-  computing_timer.reset();
-
-  {
-    LogStream::Prefix p("HDSolver", saplog);
-    LogStream::Prefix p2("Run", saplog);
-
-    saplog << "L2 error with time:" << std::endl;
-    char buffer[100];
-    for (const auto &e : error_with_time)
-      {
-        snprintf(buffer, 100, "%.2e ", e);
-        saplog << buffer;
-      }
-    saplog << std::endl;
-  }
+  timer.print_wall_time_statistics(MPI_COMM_WORLD);
+  pcout << std::endl;
 }
 
 // explicit instantiation
-template class Sapphire::Hydro::HDSolver<1>;
+template class Sapphire::Hydro::HDSolver<Sapphire::Hydro::dimension>;
+// TODO_HD: add all instantiations
+//  template class Sapphire::Hydro::HDSolver<1>;
+//  template class Sapphire::Hydro::HDSolver<2>;
+//  template class Sapphire::Hydro::HDSolver<3>;

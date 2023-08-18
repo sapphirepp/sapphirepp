@@ -9,33 +9,46 @@
 #ifndef HYDROSOLVER_HDSOLVER_H
 #define HYDROSOLVER_HDSOLVER_H
 
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/function.h>
-#include <deal.II/base/mpi.h>
-#include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/tensor_function.h>
+#include <deal.II/base/logstream.h>
+#include <deal.II/base/time_stepping.h>
 #include <deal.II/base/timer.h>
+#include <deal.II/base/utilities.h>
+#include <deal.II/base/vectorization.h>
+
+#include <deal.II/distributed/tria.h>
 
 #include <deal.II/dofs/dof_handler.h>
 
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/fe_values_extractors.h>
-#include <deal.II/fe/mapping_q1.h>
 
+#include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
 
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/vector.h>
+#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/matrix_free.h>
+#include <deal.II/matrix_free/operators.h>
 
 #include <deal.II/numerics/data_out.h>
 
-#include <mpi.h>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 
 #include "config.h"
+#include "euler-operator.h"
 #include "flux.h"
 #include "hd-solver-control.h"
 #include "output-module.h"
+#include "parameter-parser.h"
+#include "postprocessor.h"
+#include "sapphire-logstream.h"
+#include "time-stepping.h"
 
 namespace Sapphire
 {
@@ -48,95 +61,46 @@ namespace Sapphire
     class HDSolver
     {
     public:
-      static constexpr unsigned int n_components             = dim + 2;
-      static constexpr unsigned int first_momentum_component = 0;
-      static constexpr unsigned int density_component        = dim;
-      static constexpr unsigned int energy_component         = dim + 1;
-
-      // const FEValuesExtractors::Vector
-      //   momentum_extractor(first_momentum_component);
-      // const FEValuesExtractors::Scalar density_extractor(density_component);
-      // const FEValuesExtractors::Scalar energy_extractor(energy_component);
-
       HDSolver(const ParameterParser   &prm,
-               const OutputModule<dim> &output_module,
-               const double             beta = 1.0);
+               const OutputModule<dim> &output_module);
 
-      void
-      init();
-      void
-      do_timestep();
+      // void
+      // do_timestep(); //TODO_HD: implement this function
       void
       run();
 
     private:
       void
-      make_grid();
-      void
-      setup_system();
-      void
-      assemble_mass_matrix();
-      void
-      assemble_dg_vector();
-      void
-      assemble_system();
-      void
-      perform_time_step();
-      void
-      output_results();
-      void
-      process_results();
+      make_grid_and_dofs();
 
-      HDInitialCondition<dim> initial_condition;
-      HDBoundaryValues<dim>   boundary_values;
-      HDExactSolution<dim>    exact_solution;
+      void
+      output_results(const unsigned int result_number);
 
+      HDInitialCondition<dim> initial_condition; // unused
+      HDExactSolution<dim>    exact_solution;    // unused
 
-      HDSolverControl   hd_solver_control;
-      Flux<dim>         flux;
+      HDSolverControl   hd_solver_control; // unused
       OutputModule<dim> output_module;
 
-      const double beta;              //< factor in front of the flux
-      const double gamma = 5.0 / 3.0; /**< adiabatic index */
+      LinearAlgebra::distributed::Vector<Number> solution;
 
-      MPI_Comm mpi_communicator;
+      ConditionalOStream pcout; // TODO_HD: replace with saplog
 
-      Triangulation<dim>   triangulation;
-      const MappingQ1<dim> mapping;
+#if dim > 1
+      parallel::distributed::Triangulation<dim> triangulation;
+#else
+      Triangulation<dim> triangulation;
+#endif
 
-      FESystem<dim>         fe;
-      DoFHandler<dim>       dof_handler;
-      const QGauss<dim>     quadrature_formula;
-      const QGauss<dim - 1> face_quadrature_formula;
+      FESystem<dim>   fe;
+      MappingQ<dim>   mapping;
+      DoFHandler<dim> dof_handler;
 
-      AffineConstraints<double> constraints;
+      TimerOutput timer;
 
-      SparsityPattern      sparcity_pattern;
-      SparseMatrix<double> mass_matrix;
-      SparseMatrix<double> system_matrix;
+      EulerOperator<dim, fe_degree, n_q_points_1d> euler_operator;
 
-      Vector<double> solution;
-
-      // solution at the current intermediate time step, used to calculate the
-      // flux
-      Vector<double> current_solution;
-
-      // solution of the last time step
-      Vector<double> old_solution;
-
-      // vector of the fluxes at the current intermediate time step
-      Vector<double> dg_vector;
-
-      // right hand side of the linear system \f$ \mathbf{b} \f$
-      Vector<double> system_rhs;
-
-      std::vector<float> error_with_time;
-
-      double       time;
-      double       current_time;
-      unsigned int timestep_number;
-
-      TimerOutput computing_timer;
+      double time, time_step;
     };
 
   } // namespace Hydro
