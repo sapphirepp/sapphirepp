@@ -134,8 +134,6 @@ namespace Sapphire
       // The upwind flux computations require to know if the momentum direction
       // exits or not.
       const bool momentum;
-      // if logarithmic p is used
-      const bool logarithmic_p;
     };
   } // namespace VFP
 } // namespace Sapphire

@@ -15,8 +15,9 @@
 #include "config.h"
 
 template <int dim>
-Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
-                                      const VFPSolverControl &solver_control)
+Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
+  const PDESystem        &system,
+  const VFPSolverControl &solver_control)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))
@@ -30,8 +31,6 @@ Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
   , eigenvectors_advection_matrices(3,
                                     std::vector<double>(matrix_size *
                                                         matrix_size))
-  , particle_velocity_func(solver_control.logarithmic_p)
-  , particle_gamma_func(solver_control.logarithmic_p)
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}
@@ -40,8 +39,7 @@ Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(const PDESystem        &system,
   , // see Documentation of xsyever
   int_dummy{&dealii::LAPACKSupport::one}
   , double_dummy{1.}
-  , momentum{solver_control.momentum}
-  , logarithmic_p(solver_control.logarithmic_p)
+  , momentum{momentum}
 {
   // NOTE: Since we very often call compute_matrix_sum and the matrixes classes
   // of dealii do not allow unchecked access to there raw data, we create copies

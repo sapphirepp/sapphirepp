@@ -421,8 +421,8 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
   ScatteringFrequency<dim_ps> scattering_frequency;
   scattering_frequency.set_time(time);
 
-  ParticleVelocity<dim_ps> particle_velocity(logarithmic_p);
-  ParticleGamma<dim_ps>    particle_gamma(logarithmic_p);
+  ParticleVelocity<dim_ps> particle_velocity;
+  ParticleGamma<dim_ps>    particle_gamma;
 
   // For the transport only case, the energy, the Lorentz factor and the
   // velocity are defined in TransportOnly struct

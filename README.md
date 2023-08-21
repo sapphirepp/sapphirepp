@@ -118,7 +118,7 @@ equation. "Version" means that the user can decide, which terms of the equation
 will be included in his/her simulation. This decision is made before sapphire is
 compiled. The corresponding options are found in `include/vfp-solver-control.h`. 
 The options are:
-- `terms`: This option determines which terms are included in the simulation.
+- `vfp_terms`: This option determines which terms are included in the simulation.
 Possible options are:
     - `spatial_advection` and the related term is \((\mathbf{u} +\mathbf{v})\cdot\nabla_{x}f\). Not including the spatial advection term
       is tantamount to setting the dimension of the configuration space to zero,

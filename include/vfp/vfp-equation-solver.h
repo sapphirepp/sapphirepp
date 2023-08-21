@@ -98,14 +98,9 @@ namespace Sapphire
     private:
       const VFPSolverControl vfp_solver_control;
 
-      static constexpr int dim_ps = VFPSolverControl::dim;
-      static constexpr int dim_cs = VFPSolverControl::dim_configuration_space;
-      static constexpr TermFlags flags    = VFPSolverControl::terms;
-      static constexpr bool logarithmic_p = VFPSolverControl::logarithmic_p;
-      static constexpr bool time_dependent_fields =
-        VFPSolverControl::time_dependent_fields;
-      static constexpr bool time_dependent_source =
-        VFPSolverControl::time_dependent_source;
+      static constexpr int       dim_ps = VFPSolverControl::dim;
+      static constexpr int       dim_cs = dim_configuration_space;
+      static constexpr TermFlags flags  = vfp_terms;
 
       // Triangulation
       void

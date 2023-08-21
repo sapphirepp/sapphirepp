@@ -12,60 +12,42 @@
 #include <ostream>
 #include <vector>
 
+#include "parameter-flags.h"
+
 namespace Sapphire
 {
   namespace VFP
   {
-    enum class TermFlags
-    {
-      none              = 0,
-      spatial_advection = 1 << 0,
-      collision         = 1 << 1,
-      magnetic          = 1 << 2,
-      momentum          = 1 << 3,
-      source            = 1 << 4
-    };
-
-    constexpr TermFlags
-    operator|(TermFlags f1, TermFlags f2)
-    {
-      return static_cast<TermFlags>(static_cast<int>(f1) |
-                                    static_cast<int>(f2));
-    }
-
-    constexpr TermFlags
-    operator&(TermFlags f1, TermFlags f2)
-    {
-      return static_cast<TermFlags>(static_cast<int>(f1) &
-                                    static_cast<int>(f2));
-    }
-
-    template <typename StreamType>
-    inline StreamType &
-    operator<<(StreamType &os, TermFlags f)
-    {
-      os << "Term flags: \n";
-      if ((f & TermFlags::spatial_advection) != TermFlags::none)
-        os << "	 - Spatial Advection\n";
-      if ((f & TermFlags::collision) != TermFlags::none)
-        os << "	 - Collision\n";
-      if ((f & TermFlags::magnetic) != TermFlags::none)
-        os << "	 - Magnetic\n";
-      if ((f & TermFlags::momentum) != TermFlags::none)
-        os << "	 - Momentum\n";
-      if ((f & TermFlags::source) != TermFlags::none)
-        os << "	 - Source\n";
-      return os;
-    }
-
-    // explicit instantiation
-    template std::ostream &
-    operator<<(std::ostream &os, TermFlags f);
-    template dealii::ConditionalOStream &
-    operator<<(dealii::ConditionalOStream &os, TermFlags f);
-
-
     // Physical setup
+
+    // NOTE: A member variable needs be constexpr to be used as template
+    // arguments. But it can only be constexpr if it is static ,i.e. if it is
+    // the same for all class instances. If it was not static, it would be
+    // determined when constructing an instance, which happens at runtime.
+
+    // compile time settings
+    static constexpr TermFlags vfp_terms =
+      TermFlags::spatial_advection | TermFlags::source;
+
+    // This variabale controls if p is linear or logarithmic
+    static constexpr bool logarithmic_p = true;
+
+    // Deactivating the spatial advection term is equivalent to assuming a
+    // homogeneous distribution function (i.e. a distribution function which
+    // does not depend on x,y z). In this program this is equivalent to set
+    // dimension of the configuration to zero.
+    static constexpr int dim_configuration_space = 2;
+
+    // If the background velocity field and the the magnetic field do not
+    // depend on time, the time stepping methods can be accelerated a lot: In
+    // this case it is not necessary to reassamble the spatial discretisation
+    // matrix in every stage of the Runge-Kutta method. Actually it only has
+    // to be assembled once at time zero.
+    static constexpr bool time_dependent_fields = false;
+
+    // If the source term depends on time, it needs to be projected onto the
+    // FEM space in the time stepping methods.
+    static constexpr bool time_dependent_source = true;
 
     // NOTE: All physical quantities are dimensionless. The reference values are
     // defined in the reference-values.h header.
@@ -502,11 +484,11 @@ namespace Sapphire
             // jacobians[i][2][1] = 0.;
             // jacobians[i][2][2] = 0.;
           }
-}
+      }
 
-private:
-// Numerical constants
-double pi = 2 * std::acos(0.);
+    private:
+      // Numerical constants
+      double pi = 2 * std::acos(0.);
     };
   } // namespace VFP
 } // namespace Sapphire
