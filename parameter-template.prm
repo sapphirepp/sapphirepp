@@ -1,0 +1,66 @@
+# Listing of Parameters
+# ---------------------
+subsection Output
+  # The base file name for the output files.
+  set Base file name               = solution
+
+  # The format in which the simulation output will be stored.
+  set Format                       = vtu
+
+  # The number of digits used for the counter in the output file names.
+  set Number of digits for counter = 4
+
+  # The frequence at which output files will be written. (In units of time
+  # steps)
+  set Output frequency             = 1
+
+  # Path to the folder in which the simulation results will be stored. Without
+  # a trailing slash.
+  set Results folder               = ./results
+
+  # Name of the simulation run. It will be used to create a subdirectory in
+  # the results folder.
+  set Simulation identifier        = 
+end
+
+
+subsection VFP
+  subsection Expansion
+    # The order of the expansion of the particle distribution function.
+    set Expansion order = 0
+  end
+
+  subsection Finite element
+    # The degree of the shape functions (i.e. the polynomials) of the finite
+    # element.
+    set Polynomial degree = 1
+  end
+
+  subsection Mesh
+    # Number of cells in each coordinate direction
+    set Number of cells = 4, 4, 4
+
+    # Periodic boundaries in the three coordinate directions.
+    set Periodicity     = false, false, false
+
+    # Two diagonally opposite corner points, Point 1 and  Point 2
+    set Point 1         = 0., 0., 0.
+
+    # Two diagonally opposite corner points Point 1 and  Point 2
+    set Point 2         = 1., 1., 1.
+  end
+
+  subsection Time stepping
+    # Duration of the simulation.
+    set Final time     = 0.4
+
+    # The time stepping method.
+    set Method         = Crank-Nicolson
+
+    # Duration of the simulation.
+    set Time step size = 7.8125e-3
+  end
+
+end
+
+

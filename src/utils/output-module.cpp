@@ -33,7 +33,7 @@ Sapphire::Utils::OutputModule<dim>::init(
       saplog << "Create results folder " << output_path << std::endl;
       std::filesystem::create_directory(output_path);
 
-      prm.write_parameters(output_path / "log.json");
+      prm.write_parameters(output_path / "log");
     }
 
 

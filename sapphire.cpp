@@ -15,16 +15,17 @@ main(int argc, char *argv[])
 
       Sapphire::saplog.depth_console(10);
 
-      std::string parameter_filename = "../vfp-equation.json";
+      // std::string parameter_filename = "../vfp-equation.json";
+      std::string parameter_filename = "../vfp-equation.prm";
       // std::string parameter_filename = "../parameter-template.json";
       if (argc > 1)
         parameter_filename = argv[1];
 
       Utils::ParameterParser parameter_parser(parameter_filename);
 
-      parameter_parser.write_template_parameters("../parameter-template.json");
+      parameter_parser.write_template_parameters("../parameter-template");
 
-      VFPEquationSolver      vfp_equation_solver(parameter_parser);
+      VFPEquationSolver vfp_equation_solver(parameter_parser);
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)
