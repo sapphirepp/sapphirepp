@@ -1,1 +1,2 @@
 add_subdirectory(gyro_radius)
+add_subdirectory(oblique_shock)
