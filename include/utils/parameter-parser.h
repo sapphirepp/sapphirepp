@@ -44,9 +44,11 @@ namespace Sapphire
       // Spherical harmonic expansion
       int vfp_expansion_order;
       // Mesh
+      GridType    vfp_grid_type;
       std::string vfp_p1;
       std::string vfp_p2;
       std::string vfp_n_cells;
+      std::string vfp_grid_file;
       std::string vfp_periodicity;
       // Finite element
       unsigned int vfp_polynomial_degree;

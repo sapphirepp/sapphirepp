@@ -39,6 +39,10 @@ namespace Sapphire
       write_results(DataOut<dim>      &data_out,
                     const unsigned int time_step_number);
 
+      void
+      write_grid(const Triangulation<dim> &triangulation,
+                 const std::string        &filename = "grid.vtu") const;
+
       const unsigned int output_frequency;
 
     private:

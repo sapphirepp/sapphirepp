@@ -19,6 +19,11 @@ namespace Sapphire
       erk4,
       lserk
     };
+    enum class GridType
+    {
+      hypercube,
+      file
+    };
   } // namespace Utils
 
   namespace VFP

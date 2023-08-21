@@ -1,5 +1,7 @@
 #include "output-module.h"
 
+#include <deal.II/grid/grid_out.h>
+
 #include <fstream>
 #include <iostream>
 
@@ -151,6 +153,24 @@ Sapphire::Utils::OutputModule<dim>::write_results(
             }
         }
     }
+}
+
+template <int dim>
+void
+Sapphire::Utils::OutputModule<dim>::write_grid(
+  const Triangulation<dim> &triangulation,
+  const std::string        &filename) const
+{
+  LogStream::Prefix p("OutputModule", saplog);
+  saplog << "Write grid " << filename << std::endl;
+
+  GridOutFlags::Vtu vtk_flags;
+  vtk_flags.serialize_triangulation = true;
+
+  GridOut grid_out;
+  grid_out.set_flags(vtk_flags);
+  std::ofstream output(output_path / filename);
+  grid_out.write_vtu(triangulation, output);
 }
 
 // explicit instantiation

@@ -1,5 +1,7 @@
 #include "vfp-equation-solver.h"
 
+#include <deal.II/grid/grid_in.h>
+
 namespace Sapphire
 {
   namespace VFP
@@ -211,11 +213,33 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
   bool colorise = vfp_solver_control.periodicity[0] ||
                   vfp_solver_control.periodicity[1] ||
                   vfp_solver_control.periodicity[2];
-  GridGenerator::subdivided_hyper_rectangle(triangulation,
-                                            vfp_solver_control.n_cells,
-                                            vfp_solver_control.p1,
-                                            vfp_solver_control.p2,
-                                            colorise);
+
+  switch (vfp_solver_control.grid_type)
+    {
+      case Utils::GridType::hypercube:
+        {
+          GridGenerator::subdivided_hyper_rectangle(triangulation,
+                                                    vfp_solver_control.n_cells,
+                                                    vfp_solver_control.p1,
+                                                    vfp_solver_control.p2,
+                                                    colorise);
+          break;
+        }
+      case Utils::GridType::file:
+        {
+          GridIn<dim_ps> grid_in(triangulation);
+          grid_in.read(vfp_solver_control.grid_file);
+
+          grid_in.read("../results/TEST/grid.vtu");
+          Assert(triangulation.all_reference_cells_are_hyper_cube(),
+                 ExcNotImplemented("The grid must consist of hypercubes."));
+          Assert(triangulation.has_hanging_nodes() == false,
+                 ExcNotImplemented("The grid must not have hanging nodes."));
+          break;
+        }
+      default:
+        AssertThrow(false, ExcNotImplemented());
+    }
 
   // GridGenerator::hyper_cube(triangulation, -5., 5., colorise);
   // triangulation.refine_global(6);

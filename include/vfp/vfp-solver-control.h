@@ -46,6 +46,8 @@ namespace Sapphire
       // These settings are read from a parameter file
       int expansion_order;
       // Mesh
+      Utils::GridType           grid_type;
+      std::string               grid_file;
       std::vector<bool>         periodicity;
       dealii::Point<dim>        p1;
       dealii::Point<dim>        p2;

@@ -55,19 +55,36 @@ Sapphire::Utils::ParameterParser::declare_parameters()
     prm.enter_subsection("Mesh");
     { // NOTE: This is a very strange syntax
       prm.declare_entry(
-        "Point 1",
-        "0., 0., 0.",
-        dealii::Patterns::Anything(),
-        "Two diagonally opposite corner points, Point 1 and  Point 2");
-      prm.declare_entry(
-        "Point 2",
-        "1., 1., 1.",
-        dealii::Patterns::Anything(),
-        "Two diagonally opposite corner points Point 1 and  Point 2");
-      prm.declare_entry("Number of cells",
-                        "4, 4, 4",
-                        dealii::Patterns::Anything(),
-                        "Number of cells in each coordinate direction");
+        "Grid type",
+        "Hypercube",
+        dealii::Patterns::Selection("Hypercube|File"),
+        "The type of the grid. Either a hypercube or a grid read from a file.");
+      prm.enter_subsection("Hypercube");
+      {
+        prm.declare_entry(
+          "Point 1",
+          "0., 0., 0.",
+          dealii::Patterns::Anything(),
+          "Two diagonally opposite corner points, Point 1 and  Point 2");
+        prm.declare_entry(
+          "Point 2",
+          "1., 1., 1.",
+          dealii::Patterns::Anything(),
+          "Two diagonally opposite corner points Point 1 and  Point 2");
+        prm.declare_entry("Number of cells",
+                          "4, 4, 4",
+                          dealii::Patterns::Anything(),
+                          "Number of cells in each coordinate direction");
+      }
+      prm.leave_subsection();
+      prm.enter_subsection("File");
+      {
+        prm.declare_entry("File name",
+                          "",
+                          dealii::Patterns::Anything(),
+                          "The name of the file containing the grid.");
+      }
+      prm.leave_subsection();
       prm.declare_entry(
         "Periodicity",
         "false, false, false",
@@ -159,16 +176,34 @@ Sapphire::Utils::ParameterParser::declare_parameters()
 void
 Sapphire::Utils::ParameterParser::parse_parameters()
 {
+  std::string s;
+
   // VFP
   prm.enter_subsection("VFP");
   {
     prm.enter_subsection("Mesh");
     {
-      // Two diagonally opposite corner points of the grid
-      vfp_p1 = prm.get("Point 1");
-      vfp_p2 = prm.get("Point 2");
-      // Number of cells
-      vfp_n_cells = prm.get("Number of cells");
+      s = prm.get("Grid type");
+      if (s == "Hypercube")
+        {
+          vfp_grid_type = GridType::hypercube;
+          prm.enter_subsection("Hypercube");
+          // Two diagonally opposite corner points of the grid
+          vfp_p1 = prm.get("Point 1");
+          vfp_p2 = prm.get("Point 2");
+          // Number of cells
+          vfp_n_cells = prm.get("Number of cells");
+          prm.leave_subsection();
+        }
+      else if (s == "File")
+        {
+          vfp_grid_type = GridType::file;
+          prm.enter_subsection("File");
+          vfp_grid_file = prm.get("File name");
+          prm.leave_subsection();
+        }
+      else
+        AssertThrow(false, ExcNotImplemented());
       // Periodicity
       vfp_periodicity = prm.get("Periodicity");
     }
@@ -198,7 +233,6 @@ Sapphire::Utils::ParameterParser::parse_parameters()
 
   saplog << "Parsing parameters" << std::endl;
 
-  std::string s;
   prm.enter_subsection("Output");
   {
     out_results_path         = prm.get("Results folder");

@@ -37,17 +37,29 @@ subsection VFP
   end
 
   subsection Mesh
-    # Number of cells in each coordinate direction
-    set Number of cells = 4, 4, 4
+    # The type of the grid. Either a hypercube or a grid read from a file.
+    set Grid type   = Hypercube
 
     # Periodic boundaries in the three coordinate directions.
-    set Periodicity     = false, false, false
+    set Periodicity = false, false, false
 
-    # Two diagonally opposite corner points, Point 1 and  Point 2
-    set Point 1         = 0., 0., 0.
 
-    # Two diagonally opposite corner points Point 1 and  Point 2
-    set Point 2         = 1., 1., 1.
+    subsection File
+      # The name of the file containing the grid.
+      set File name = 
+    end
+
+    subsection Hypercube
+      # Number of cells in each coordinate direction
+      set Number of cells = 4, 4, 4
+
+      # Two diagonally opposite corner points, Point 1 and  Point 2
+      set Point 1         = 0., 0., 0.
+
+      # Two diagonally opposite corner points Point 1 and  Point 2
+      set Point 2         = 1., 1., 1.
+    end
+
   end
 
   subsection Time stepping
