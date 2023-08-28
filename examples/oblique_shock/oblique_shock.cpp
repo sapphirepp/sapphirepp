@@ -1,9 +1,135 @@
 #include <deal.II/base/mpi.h>
 
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/grid_tools.h>
+
 #include <mpi.h>
 
 #include "output-module.h"
 #include "vfp-equation-solver.h"
+
+
+/**
+ * @brief Creates a 2d mesh around a shock
+ * @param filename File where the mesh is saved
+ * @param n_cells_downstream Number of cells in x-direction downstream of shock
+ * @param n_cells_upstream Number of cells in x-direction upstream of shock
+ * @param n_cells_shock Number of cells in shock region on each side
+ * @param shock_width Width of the shock region with constant step size
+ * @param scaling_delta_x Increasing stepsize outside shock region
+ * @param p_min Minimum momentum
+ * @param p_max Maximum momentum
+ * @param n_cells_p Number of cells in momentum direction
+ *
+ * Create a 2d mesh with a shock at x = 0. In the shock region the mesh is
+ * equidistant with a constant step size. Outside the shock region the step size
+ * increases with a scaling of the step size:
+ * \f[ \Delta x_i = (scaling delta_x)^i \cdot \Delta x_{\rm shock} \f]
+ * The grid in momentum direction is equidistant.
+ */
+void
+make_grid_shock(const std::string &filename           = "shock-grid.vtu",
+                const unsigned int n_cells_downstream = 36,
+                const unsigned int n_cells_upstream   = 38,
+                const unsigned int n_cells_shock      = 8,
+                const double       shock_width        = 1. / 25.,
+                // const double       delta_x    = 0.1,
+                const double       scaling_delta_x = 1.5,
+                const double       log_p_min       = std::log(0.1),
+                const double       log_p_max       = std::log(100),
+                const unsigned int n_cells_p       = 64)
+{
+  using namespace dealii;
+  using namespace Sapphire;
+  LogStream::Prefix p("ShockGirdGenerator", Sapphire::saplog);
+  saplog << "Generate grid \t[" << Utilities::System::get_time() << "]"
+         << std::endl;
+  parallel::shared::Triangulation<2> triangulation(MPI_COMM_WORLD);
+
+  std::vector<std::vector<double>> step_sizes{
+    std::vector<double>(n_cells_downstream + n_cells_upstream +
+                        2 * n_cells_shock),
+    std::vector<double>(n_cells_p)};
+
+  // equidistant momentum mesh
+  const double delta_h_p = (log_p_max - log_p_min) / n_cells_p;
+  std::fill(step_sizes[1].begin(), step_sizes[1].end(), delta_h_p);
+
+  // configuration space x
+  // TODO: Decide if we want to use sinh or scaling_delta_x
+  const double step_size_shock = shock_width / (2 * n_cells_shock);
+  //   2 * shock_width / n_cells_shock; // Old wrong calculation
+  // const double start_sinh = std::asinh(step_size_shock);
+
+  double length_upstream = 0.;
+  for (unsigned int i = 0; i < n_cells_upstream; ++i)
+    {
+      step_sizes[0][n_cells_upstream - 1 - i] =
+        std::pow(scaling_delta_x, i) * step_size_shock;
+      // step_sizes[0][n_cells_upstream - 1 - i] =
+      //   std::sinh(i * scaling_delta_x + start_sinh);
+      length_upstream += step_sizes[0][n_cells_upstream - 1 - i];
+    }
+
+  for (unsigned int i = 0; i < 2 * n_cells_shock; ++i)
+    step_sizes[0][n_cells_upstream + i] = step_size_shock;
+
+  double length_downstream = 0.;
+  for (unsigned int i = 0; i < n_cells_downstream; ++i)
+    {
+      step_sizes[0][n_cells_upstream + 2 * n_cells_shock + i] =
+        std::pow(scaling_delta_x, i) * step_size_shock;
+      // step_sizes[0][n_cells_upstream + 2 * n_cells_shock + i] =
+      //   std::sinh(i * scaling_delta_x + start_sinh);
+      length_downstream +=
+        step_sizes[0][n_cells_upstream + 2 * n_cells_shock + i];
+    }
+
+  length_upstream += step_size_shock * n_cells_shock;
+  length_downstream += step_size_shock * n_cells_shock;
+
+  Point<2> p1{-length_upstream, log_p_min};
+  Point<2> p2{+length_downstream, log_p_max};
+
+  GridGenerator::subdivided_hyper_rectangle(
+    triangulation, step_sizes, p1, p2, true);
+
+  LogStream::Prefix prefix2("GridInfo", saplog);
+  saplog << "length_upstream=" << length_upstream
+         << ", length_downstream=" << length_downstream
+         << ", step_size_shock=" << step_size_shock << ", #cells in x="
+         << n_cells_downstream + n_cells_upstream + 2 * n_cells_shock
+         << ", #active cells=" << triangulation.n_global_active_cells()
+         << std::endl;
+
+  // x_max is given by the scale width kappa, use x_max = 5* kappa
+  // we want to achieve upstream > 5 * 1/kappa
+  // downstream can be shorter
+  const double alpha = 0.1;
+  const double B_0   = 1.;
+  const double u_sh  = 1. / 10.;
+  const double kappa = 3. * alpha * B_0 / std::exp(log_p_max) * u_sh;
+  saplog << "1/kappa=" << 1. / kappa
+         << ", downstream*kappa=" << length_downstream * kappa
+         << ", upstream*kappa=" << length_upstream * kappa << std::endl;
+  // Assert(length_upstream * kappa > 5.0,
+  //        ExcMessage("length upstream too short"));
+  // Assert(length_downstream * kappa > 2.0,
+  //        ExcMessage("length downstream too short"));
+
+  saplog << "Write grid to \"" << filename << "\"" << std::endl;
+
+  GridOutFlags::Ucd ucd_flags;
+  ucd_flags.write_faces = true;
+  ucd_flags.write_lines = true;
+
+  GridOut grid_out;
+  grid_out.set_flags(ucd_flags);
+  std::ofstream output(filename);
+  grid_out.write_ucd(triangulation, output);
+}
+
 
 int
 main(int argc, char *argv[])
@@ -53,11 +179,17 @@ main(int argc, char *argv[])
 
       output_module.init(prm);
 
+      saplog.depth_console(4);
+      make_grid_shock(vfp_solver_control.grid_file);
+      saplog.depth_console(2);
+
       saplog.pop();
       VFPEquationSolver vfp_equation_solver(vfp_solver_control,
                                             physical_properties,
                                             output_module);
       vfp_equation_solver.run();
+
+      // TODO: Calculate error
     }
   catch (std::exception &exc)
     {
