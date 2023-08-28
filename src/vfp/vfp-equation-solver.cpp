@@ -229,8 +229,6 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
         {
           GridIn<dim_ps> grid_in(triangulation);
           grid_in.read(vfp_solver_control.grid_file);
-
-          grid_in.read("../results/TEST/grid.vtu");
           Assert(triangulation.all_reference_cells_are_hyper_cube(),
                  ExcNotImplemented("The grid must consist of hypercubes."));
           Assert(triangulation.has_hanging_nodes() == false,
