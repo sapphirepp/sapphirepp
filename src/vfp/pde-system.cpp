@@ -29,7 +29,7 @@ Sapphire::VFP::PDESystem::PDESystem(int l)
         {
           for (int m = l; m >= s; --m)
             {
-              idx                 = l * (l + 1) - (s ? -1. : 1.) * m;
+              idx                 = l * (l + 1) - (s ? -1 : 1) * m;
               lms_indices[idx][0] = l;
               lms_indices[idx][1] = m;
               lms_indices[idx][2] = s;
@@ -207,7 +207,7 @@ Sapphire::VFP::PDESystem::create_advection_matrices()
         {
           for (int m = l; m >= s; --m)
             {
-              i = l * (l + 1) - (s ? -1. : 1.) * m; // (-1)^s
+              i = l * (l + 1) - (s ? -1 : 1) * m; // (-1)^s
               for (int s_prime = 0; s_prime <= 1; ++s_prime)
                 {
                   for (int l_prime = 0, j = 0; l_prime <= expansion_order + 1;
@@ -216,7 +216,7 @@ Sapphire::VFP::PDESystem::create_advection_matrices()
                       for (int m_prime = l_prime; m_prime >= s_prime; --m_prime)
                         {
                           j = l_prime * (l_prime + 1) -
-                              (s_prime ? -1. : 1.) * m_prime;
+                              (s_prime ? -1 : 1) * m_prime;
                           // Ax
                           if (l + 1 == l_prime && m == m_prime && s == s_prime)
                             advection_matrices[0].set(
@@ -428,7 +428,7 @@ Sapphire::VFP::PDESystem::create_generator_rotation_matrices()
         {
           for (int m = l; m >= s; --m)
             {
-              i = l * (l + 1) - (s ? -1. : 1.) * m; // (-1)^s
+              i = l * (l + 1) - (s ? -1 : 1) * m; // (-1)^s
               for (int s_prime = 0; s_prime <= 1; ++s_prime)
                 {
                   for (int l_prime = 0, j = 0; l_prime <= expansion_order + 1;
@@ -437,7 +437,7 @@ Sapphire::VFP::PDESystem::create_generator_rotation_matrices()
                       for (int m_prime = l_prime; m_prime >= s_prime; --m_prime)
                         {
                           j = l_prime * (l_prime + 1) -
-                              (s_prime ? -1. : 1.) * m_prime;
+                              (s_prime ? -1 : 1) * m_prime;
                           // Omega_x
                           if (l == l_prime && m == m_prime && s == 0 &&
                               s_prime == 1)
@@ -528,7 +528,7 @@ Sapphire::VFP::PDESystem::create_collision_matrix()
         {
           for (int m = l; m >= s; --m)
             {
-              i = l * (l + 1) - (s ? -1. : 1.) * m; // (-1)^s
+              i = l * (l + 1) - (s ? -1 : 1) * m; // (-1)^s
               for (int s_prime = 0; s_prime <= 1; ++s_prime)
                 {
                   for (int l_prime = 0; l_prime <= expansion_order; ++l_prime)

@@ -39,7 +39,7 @@ Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
   , // see Documentation of xsyever
   int_dummy{&dealii::LAPACKSupport::one}
   , double_dummy{1.}
-  , momentum{momentum}
+  , momentum{solver_control.momentum}
 {
   // NOTE: Since we very often call compute_matrix_sum and the matrixes classes
   // of dealii do not allow unchecked access to there raw data, we create copies

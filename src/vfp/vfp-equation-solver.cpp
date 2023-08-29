@@ -181,7 +181,8 @@ Sapphire::VFP::VFPEquationSolver::run()
   double time_step  = vfp_solver_control.time_step;
   double final_time = vfp_solver_control.final_time;
   saplog << "The time stepping loop is entered:" << std::endl;
-  for (double time = 0., time_step_number = 1; time < final_time;
+  unsigned int time_step_number = 1;
+  for (double time = 0.; time < final_time;
        time += time_step, ++time_step_number)
     {
       saplog << "Time step " << time_step_number << " at t = " << time

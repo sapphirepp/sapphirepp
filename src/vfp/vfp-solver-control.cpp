@@ -11,11 +11,11 @@
 Sapphire::VFP::VFPSolverControl::VFPSolverControl(
   const Sapphire::Utils::ParameterParser &prm)
   : expansion_order{prm.vfp_expansion_order}
+  , grid_type(prm.vfp_grid_type)
+  , grid_file(prm.vfp_grid_file)
   , polynomial_degree{prm.vfp_polynomial_degree}
   , theta{prm.vfp_theta}
   , time_step{prm.vfp_time_step}
-  , grid_type(prm.vfp_grid_type)
-  , grid_file(prm.vfp_grid_file)
   , final_time{prm.vfp_final_time}
 {
   // Mesh
