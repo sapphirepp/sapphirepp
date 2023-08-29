@@ -151,6 +151,7 @@ Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
 void
 Sapphire::VFP::VFPEquationSolver::run()
 {
+  LogStream::Prefix p("VFP", saplog);
   make_grid();
   setup_system();
   assemble_mass_matrix();
@@ -179,11 +180,12 @@ Sapphire::VFP::VFPEquationSolver::run()
 
   double time_step  = vfp_solver_control.time_step;
   double final_time = vfp_solver_control.final_time;
-  pcout << "The time stepping loop is entered: \n";
+  saplog << "The time stepping loop is entered:" << std::endl;
   for (double time = 0., time_step_number = 1; time < final_time;
        time += time_step, ++time_step_number)
     {
-      pcout << "Time step " << time_step_number << " at t = " << time << "\n";
+      saplog << "Time step " << time_step_number << " at t = " << time
+             << std::endl;
       // Time stepping method
       if (vfp_solver_control.time_stepping_method ==
             Utils::TimeSteppingMethod::forward_euler ||
@@ -201,14 +203,14 @@ Sapphire::VFP::VFPEquationSolver::run()
 
       output_results(time_step_number);
     }
-  pcout << "The simulation ended. \n";
+  saplog << "The simulation ended." << std::endl;
 }
 
 void
 Sapphire::VFP::VFPEquationSolver::make_grid()
 {
   TimerOutput::Scope timer_section(timer, "Grid setup");
-  pcout << "Create the grid" << std::endl;
+  saplog << "Create the grid" << std::endl;
   // Colorise = true means to set boundary ids (default for 1D)
   bool colorise = vfp_solver_control.periodicity[0] ||
                   vfp_solver_control.periodicity[1] ||
@@ -218,6 +220,7 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
     {
       case Utils::GridType::hypercube:
         {
+          saplog << "Create the grid from hyper rectangle" << std::endl;
           GridGenerator::subdivided_hyper_rectangle(triangulation,
                                                     vfp_solver_control.n_cells,
                                                     vfp_solver_control.p1,
@@ -227,6 +230,8 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
         }
       case Utils::GridType::file:
         {
+          saplog << "Read grid from file \"" << vfp_solver_control.grid_file
+                 << "\"" << std::endl;
           GridIn<dim_ps> grid_in(triangulation);
           grid_in.read(vfp_solver_control.grid_file);
           Assert(triangulation.all_reference_cells_are_hyper_cube(),
@@ -241,13 +246,14 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
 
   // GridGenerator::hyper_cube(triangulation, -5., 5., colorise);
   // triangulation.refine_global(6);
-  pcout << "The grid was created: \n"
-        << "	Number of active cells: " << triangulation.n_global_active_cells()
-        << "\n";
+  saplog << "The grid was created: "
+         << "	#cells=" << triangulation.n_cells()
+         << ",	#active cells=" << triangulation.n_global_active_cells()
+         << std::endl;
 
   if (colorise)
     {
-      pcout << "Set up periodic boundary conditions" << std::endl;
+      saplog << "Set up periodic boundary conditions" << std::endl;
       // Periodic boundary conditions with MeshWorker. Mailinglist
       // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
       //
@@ -294,12 +300,13 @@ void
 Sapphire::VFP::VFPEquationSolver::setup_system()
 {
   TimerOutput::Scope timer_section(timer, "FE system");
+  saplog << "Setup the finite element system" << std::endl;
 
   dof_handler.distribute_dofs(fe);
 
   const unsigned int n_dofs = dof_handler.n_dofs();
-  pcout << "The degrees of freedom were distributed: \n"
-        << "	Number of degrees of freedom: " << n_dofs << "\n";
+  saplog << "The degrees of freedom were distributed:"
+         << "	n_dofs=" << n_dofs << std::endl;
 
   locally_owned_dofs    = dof_handler.locally_owned_dofs();
   locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
@@ -396,7 +403,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_mass_matrix()
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
 
-  pcout << "Begin the assembly of the mass matrix. \n";
+  saplog << "Begin the assembly of the mass matrix." << std::endl;
   MeshWorker::mesh_loop(filtered_iterator_range,
                         cell_worker,
                         copier,
@@ -404,7 +411,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_mass_matrix()
                         copy_data,
                         MeshWorker::assemble_own_cells);
   mass_matrix.compress(VectorOperation::add);
-  pcout << "The mass matrix was assembled. \n";
+  saplog << "The mass matrix was assembled." << std::endl;
 }
 
 void
@@ -1102,7 +1109,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
 
   ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData            copy_data;
-  pcout << "	Begin the assembly of the DG matrix. \n";
+  saplog << "Begin the assembly of the DG matrix." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
   MeshWorker::mesh_loop(filtered_iterator_range,
@@ -1117,7 +1124,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                         boundary_worker,
                         face_worker);
   dg_matrix.compress(VectorOperation::add);
-  pcout << "	The DG matrix was assembled. \n";
+  saplog << "The DG matrix was assembled." << std::endl;
 }
 
 template <int dim>
@@ -1127,7 +1134,8 @@ Sapphire::VFP::VFPEquationSolver::project(
   PETScWrappers::MPI::Vector &projected_function)
 {
   TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
-  pcout << "Project a function onto the finite element space \n";
+  saplog << "Project a function onto the finite element space" << std::endl;
+  LogStream::Prefix p("project", saplog);
   // Create right hand side
   FEValues<dim_ps> fe_v(mapping,
                         fe,
@@ -1183,8 +1191,8 @@ Sapphire::VFP::VFPEquationSolver::project(
   SolverControl           solver_control(1000, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
   cg.solve(mass_matrix, projected_function, rhs, preconditioner);
-  pcout << "	Solved in " << solver_control.last_step() << " iterations."
-        << std::endl;
+  saplog << "Solved in " << solver_control.last_step() << " iterations."
+         << std::endl;
   // At the moment I am assuming, that I do not have constraints. Hence, I
   // do not need the following line.
   // constraints.distribute(projected_function);
@@ -1248,6 +1256,7 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
                                                const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "Theta method");
+  LogStream::Prefix  p("theta_method", saplog);
   // Equation: (mass_matrix + time_step * theta * dg_matrix(time +
   // time_step)) f(time + time_step) = (mass_matrix - time_step * (1 -
   // theta) * dg_matrix(time) ) f(time) + time_step * theta * s(time +
@@ -1312,9 +1321,8 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
   // Update the solution
   locally_relevant_current_solution = locally_owned_previous_solution;
 
-  pcout << "	Solver converged in " << solver_control.last_step()
-        << " iterations."
-        << "\n";
+  saplog << "Solver converged in " << solver_control.last_step()
+         << " iterations." << std::endl;
 }
 
 void
@@ -1322,6 +1330,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
                                                        const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "ERK4");
+  LogStream::Prefix  p("ERK4", saplog);
   // ERK 4
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // Butcher's array
@@ -1357,9 +1366,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
       system_rhs.add(-1., locally_owned_current_source);
     }
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
-  pcout << "	Stage s: " << 0 << "	Solver converged in "
-        << solver_control.last_step() << " iterations."
-        << "\n";
+  saplog << "Stage s: " << 0 << "	Solver converged in "
+         << solver_control.last_step() << " iterations." << std::endl;
   k_0 *= -1.;
   locally_owned_current_solution.add(b[0] * time_step, k_0);
 
@@ -1389,9 +1397,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
         }
     }
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
-  pcout << "	Stage s: " << 1 << "	Solver converged in "
-        << solver_control.last_step() << " iterations."
-        << "\n";
+  saplog << "	Stage s: " << 1 << "	Solver converged in "
+         << solver_control.last_step() << " iterations." << std::endl;
   k_1 *= -1.;
   locally_owned_current_solution.add(b[1] * time_step, k_1);
   temp = 0;
@@ -1417,9 +1424,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
         }
     }
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
-  pcout << "	Stage s: " << 2 << "	Solver converged in "
-        << solver_control.last_step() << " iterations."
-        << "\n";
+  saplog << "	Stage s: " << 2 << "	Solver converged in "
+         << solver_control.last_step() << " iterations." << std::endl;
   k_2 *= -1.;
   locally_owned_current_solution.add(b[2] * time_step, k_2);
   temp = 0;
@@ -1450,9 +1456,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
         }
     }
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
-  pcout << "	Stage s: " << 3 << "	Solver converged in "
-        << solver_control.last_step() << " iterations."
-        << "\n";
+  saplog << "	Stage s: " << 3 << "	Solver converged in "
+         << solver_control.last_step() << " iterations." << std::endl;
   k_3 *= -1.;
   locally_owned_current_solution.add(b[3] * time_step, k_3);
   temp = 0;
@@ -1466,6 +1471,7 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
   const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "LSERK");
+  LogStream::Prefix  p("LSERK", saplog);
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
   Vector<double> a({0.,
@@ -1531,9 +1537,8 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
         }
 
       cg.solve(mass_matrix, temp, system_rhs, preconditioner);
-      pcout << "	Stage s: " << s << "	Solver converged in "
-            << solver_control.last_step() << " iterations."
-            << "\n";
+      saplog << "	Stage s: " << s << "	Solver converged in "
+             << solver_control.last_step() << " iterations." << std::endl;
 
       k.sadd(a[s], -time_step, temp);
 

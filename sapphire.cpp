@@ -13,7 +13,17 @@ main(int argc, char *argv[])
       using namespace VFP;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-      Sapphire::saplog.depth_console(10);
+      Sapphire::saplog.depth_console(-1);
+      const unsigned int mpi_rank =
+        Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+      Sapphire::saplog << "Start mpi process rank " << mpi_rank << std::endl;
+      if (mpi_rank > 0)
+        {
+          Sapphire::saplog.depth_console(0);
+          char buffer[4];
+          std::snprintf(buffer, 4, "%03d", mpi_rank);
+          Sapphire::saplog.push("mpi" + std::string(buffer));
+        }
 
       // std::string parameter_filename = "../vfp-equation.json";
       std::string parameter_filename = "../vfp-equation.prm";
