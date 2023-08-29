@@ -205,6 +205,9 @@ Sapphire::VFP::VFPEquationSolver::run()
       output_results(time_step_number);
     }
   saplog << "The simulation ended." << std::endl;
+
+  timer.print_summary();
+  timer.reset();
 }
 
 void
@@ -234,7 +237,8 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
           saplog << "Read grid from file \"" << vfp_solver_control.grid_file
                  << "\"" << std::endl;
           GridIn<dim_ps> grid_in(triangulation);
-          grid_in.read(vfp_solver_control.grid_file);
+          std::ifstream  input(vfp_solver_control.grid_file);
+          grid_in.read_ucd(input);
           Assert(triangulation.all_reference_cells_are_hyper_cube(),
                  ExcNotImplemented("The grid must consist of hypercubes."));
           Assert(triangulation.has_hanging_nodes() == false,
@@ -303,6 +307,7 @@ Sapphire::VFP::VFPEquationSolver::setup_system()
   TimerOutput::Scope timer_section(timer, "FE system");
   saplog << "Setup the finite element system" << std::endl;
 
+  dof_handler.clear();
   dof_handler.distribute_dofs(fe);
 
   const unsigned int n_dofs = dof_handler.n_dofs();

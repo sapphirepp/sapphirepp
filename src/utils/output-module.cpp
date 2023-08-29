@@ -164,13 +164,14 @@ Sapphire::Utils::OutputModule<dim>::write_grid(
   LogStream::Prefix p("OutputModule", saplog);
   saplog << "Write grid " << filename << std::endl;
 
-  GridOutFlags::Vtu vtk_flags;
-  vtk_flags.serialize_triangulation = true;
+  GridOutFlags::Ucd ucd_flags;
+  ucd_flags.write_faces = true;
+  ucd_flags.write_lines = true;
 
   GridOut grid_out;
-  grid_out.set_flags(vtk_flags);
+  grid_out.set_flags(ucd_flags);
   std::ofstream output(output_path / filename);
-  grid_out.write_vtu(triangulation, output);
+  grid_out.write_ucd(triangulation, output);
 }
 
 // explicit instantiation
