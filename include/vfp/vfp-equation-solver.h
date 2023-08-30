@@ -73,7 +73,6 @@
 #include "config.h"
 #include "output-module.h"
 #include "parameter-flags.h"
-#include "parameter-parser.h"
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "sapphire-logstream.h"
@@ -90,17 +89,19 @@ namespace Sapphire
 
     class VFPEquationSolver
     {
+    private:
+      static constexpr int       dim_ps = VFPSolverControl::dim;
+      static constexpr int       dim_cs = dim_configuration_space;
+      static constexpr TermFlags flags  = vfp_terms;
+
     public:
-      VFPEquationSolver(const Utils::ParameterParser &prm);
+      VFPEquationSolver(const VFPSolverControl            &vfp_solver_control,
+                        const Utils::OutputModule<dim_ps> &output_module);
       void
       run();
 
     private:
       const VFPSolverControl vfp_solver_control;
-
-      static constexpr int       dim_ps = VFPSolverControl::dim;
-      static constexpr int       dim_cs = dim_configuration_space;
-      static constexpr TermFlags flags  = vfp_terms;
 
       // Triangulation
       void

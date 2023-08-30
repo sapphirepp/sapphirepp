@@ -118,13 +118,14 @@ namespace Sapphire
 } // namespace Sapphire
 
 Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
-  const Utils::ParameterParser &prm)
-  : vfp_solver_control(prm)
+  const VFPSolverControl            &vfp_solver_control,
+  const Utils::OutputModule<dim_ps> &output_module)
+  : vfp_solver_control(vfp_solver_control)
   , mpi_communicator(MPI_COMM_WORLD)
   , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , rank(Utilities::MPI::this_mpi_process(mpi_communicator))
   , pcout(std::cout, (rank == 0))
-  , output_module(prm)
+  , output_module(output_module)
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()

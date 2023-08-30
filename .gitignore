@@ -1,7 +1,5 @@
 results/
 build/
 .cache/
-*.json
 *.prm
-!parameter-template.json
 !parameter-template.prm

@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 
+#include "output-module.h"
 #include "vfp-equation-solver.h"
 
 int
@@ -25,17 +26,29 @@ main(int argc, char *argv[])
           Sapphire::saplog.push("mpi" + std::string(buffer));
         }
 
-      // std::string parameter_filename = "../vfp-equation.json";
-      std::string parameter_filename = "../vfp-equation.prm";
-      // std::string parameter_filename = "../parameter-template.json";
+      std::string parameter_filename = "parameter-template.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
-      Utils::ParameterParser parameter_parser(parameter_filename);
+      ParameterHandler       prm;
+      VFPSolverControl       vfp_solver_control;
+      Utils::OutputModule<2> output_module;
 
-      parameter_parser.write_template_parameters("../parameter-template");
+      vfp_solver_control.declare_parameters(prm);
+      output_module.declare_parameters(prm);
 
-      VFPEquationSolver vfp_equation_solver(parameter_parser);
+      saplog << "Writing template parameter file" << std::endl;
+      prm.print_parameters("parameter-template.prm", ParameterHandler::PRM);
+
+      prm.parse_input(parameter_filename);
+
+      vfp_solver_control.parse_parameters(prm);
+      output_module.parse_parameters(prm);
+
+      output_module.init(prm);
+
+      VFPEquationSolver vfp_equation_solver(vfp_solver_control, output_module);
+
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)

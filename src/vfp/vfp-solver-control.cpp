@@ -6,80 +6,221 @@
 #include <sstream>
 
 #include "parameter-flags.h"
-#include "parameter-parser.h"
+#include "sapphire-logstream.h"
 
-Sapphire::VFP::VFPSolverControl::VFPSolverControl(
-  const Sapphire::Utils::ParameterParser &prm)
-  : expansion_order{prm.vfp_expansion_order}
-  , grid_type(prm.vfp_grid_type)
-  , grid_file(prm.vfp_grid_file)
-  , polynomial_degree{prm.vfp_polynomial_degree}
-  , theta{prm.vfp_theta}
-  , time_step{prm.vfp_time_step}
-  , final_time{prm.vfp_final_time}
+Sapphire::VFP::VFPSolverControl::VFPSolverControl()
+{}
+
+void
+Sapphire::VFP::VFPSolverControl::declare_parameters(ParameterHandler &prm)
 {
-  // Mesh
-  // Two diagonally opposite corner points of the grid
-  std::stringstream p1_string(prm.vfp_p1);
-  std::stringstream p2_string(prm.vfp_p2);
-  for (auto [coordinate, i] =
-         std::tuple<std::string, unsigned int>{std::string(), 0};
-       std::getline(p1_string, coordinate, ',');
-       ++i)
-    {
-      if (i < dim)
-        p1[i] = std::stod(coordinate);
-    }
-  for (auto [coordinate, i] =
-         std::tuple<std::string, unsigned int>{std::string(), 0};
-       std::getline(p2_string, coordinate, ',');
-       ++i)
-    {
-      if (i < dim)
-        p2[i] = std::stod(coordinate);
-    }
+  LogStream::Prefix p("VFPSolverControl", saplog);
+  saplog << "Declaring parameters" << std::endl;
+  prm.enter_subsection("VFP");
 
-  // Number of cells
-  std::stringstream n_cells_string(prm.vfp_n_cells);
-  for (std::string n; std::getline(n_cells_string, n, ',');)
-    n_cells.push_back(std::stoi(n));
-  n_cells.resize(dim); // shrink to dim of the phase-space
-
-  // Periodicity
-  std::string periodicity_string = prm.vfp_periodicity;
-  // Remove whitespace
-  periodicity_string.erase(std::remove_if(periodicity_string.begin(),
-                                          periodicity_string.end(),
-                                          [](unsigned char x) {
-                                            return std::isspace(x);
-                                          }),
-                           periodicity_string.end());
-
-  std::stringstream string_stream(periodicity_string);
-  for (std::string value; std::getline(string_stream, value, ',');)
-    periodicity.push_back((value == "true" ? true : false));
-  periodicity.resize(dim);
-
-  // Time stepping method
-  if (prm.vfp_time_stepping_method == "Forward Euler")
+  prm.enter_subsection("Mesh");
+  {
+    prm.declare_entry(
+      "Grid type",
+      "Hypercube",
+      Patterns::Selection("Hypercube|File"),
+      "The type of the grid. Either a hypercube or a grid read from a file.");
+    prm.enter_subsection("Hypercube");
     {
-      theta                = 0.;
-      time_stepping_method = Sapphire::Utils::TimeSteppingMethod::forward_euler;
-    }
-  else if (prm.vfp_time_stepping_method == "Backward Euler")
+      prm.declare_entry(
+        "Point 1",
+        "0., 0., 0.",
+        Patterns::Anything(),
+        "Two diagonally opposite corner points, Point 1 and  Point 2");
+      prm.declare_entry(
+        "Point 2",
+        "1., 1., 1.",
+        Patterns::Anything(),
+        "Two diagonally opposite corner points Point 1 and  Point 2");
+      prm.declare_entry("Number of cells",
+                        "4, 4, 4",
+                        Patterns::Anything(),
+                        "Number of cells in each coordinate direction");
+    } // Hypercube
+    prm.leave_subsection();
+    prm.enter_subsection("File");
     {
-      theta = 1.;
-      time_stepping_method =
-        Sapphire::Utils::TimeSteppingMethod::backward_euler;
-    }
-  else if (prm.vfp_time_stepping_method == "Crank-Nicolson")
-    {
-      theta = 1. / 2.;
-      time_stepping_method =
-        Sapphire::Utils::TimeSteppingMethod::crank_nicolson;
-    }
-  else if (prm.vfp_time_stepping_method == "ERK4")
-    time_stepping_method = Sapphire::Utils::TimeSteppingMethod::erk4;
-  else if (prm.vfp_time_stepping_method == "LSERK")
-    time_stepping_method = Sapphire::Utils::TimeSteppingMethod::lserk;
+      prm.declare_entry("File name",
+                        "",
+                        Patterns::Anything(),
+                        "The name of the file containing the grid.");
+    } // File
+    prm.leave_subsection();
+    prm.declare_entry(
+      "Periodicity",
+      "false, false, false",
+      Patterns::Anything(),
+      "Periodic boundaries in the three coordinate directions.");
+  } // Mesh
+  prm.leave_subsection();
+
+  prm.enter_subsection("Time stepping");
+  {
+    prm.declare_entry(
+      "Method",
+      "Crank-Nicolson",
+      Patterns::Selection(
+        "Forward Euler|Backward Euler|Crank-Nicolson|ERK4|LSERK"),
+      "The time stepping method.");
+    prm.declare_entry("Time step size",
+                      "7.8125e-3",
+                      Patterns::Double(),
+                      "Duration of the simulation.");
+    prm.declare_entry("Final time",
+                      "0.4",
+                      Patterns::Double(),
+                      "Duration of the simulation.");
+  } // Time stepping
+  prm.leave_subsection();
+
+  prm.enter_subsection("Expansion");
+  {
+    prm.declare_entry(
+      "Expansion order",
+      "0",
+      Patterns::Integer(0),
+      "The order of the expansion of the particle distribution function.");
+  } // Expansion
+  prm.leave_subsection();
+
+  prm.enter_subsection("Finite element");
+  {
+    prm.declare_entry("Polynomial degree",
+                      "1",
+                      Patterns::Integer(0),
+                      "The degree of the shape functions (i.e. "
+                      "the polynomials) of the finite element.");
+  } // Finite element
+  prm.leave_subsection();
+
+  prm.leave_subsection();
+}
+
+
+void
+Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
+{
+  LogStream::Prefix p("VFPSolverControl", saplog);
+  saplog << "Parsing parameters" << std::endl;
+  std::string s;
+  prm.enter_subsection("VFP");
+
+  prm.enter_subsection("Mesh");
+  {
+    s = prm.get("Grid type");
+    if (s == "Hypercube")
+      {
+        grid_type = Utils::GridType::hypercube;
+        prm.enter_subsection("Hypercube");
+        // Two diagonally opposite corner points of the grid
+        s = prm.get("Point 1");
+        std::stringstream p1_string(s);
+        for (auto [coordinate, i] =
+               std::tuple<std::string, unsigned int>{std::string(), 0};
+             std::getline(p1_string, coordinate, ',');
+             ++i)
+          {
+            if (i < dim)
+              p1[i] = std::stod(coordinate);
+          }
+
+        s = prm.get("Point 2");
+        std::stringstream p2_string(s);
+        for (auto [coordinate, i] =
+               std::tuple<std::string, unsigned int>{std::string(), 0};
+             std::getline(p2_string, coordinate, ',');
+             ++i)
+          {
+            if (i < dim)
+              p2[i] = std::stod(coordinate);
+          }
+
+        // Number of cells
+        s = prm.get("Number of cells");
+        std::stringstream n_cells_string(s);
+        for (std::string n; std::getline(n_cells_string, n, ',');)
+          n_cells.push_back(std::stoi(n));
+        n_cells.resize(dim);
+
+        prm.leave_subsection();
+      }
+    else if (s == "File")
+      {
+        grid_type = Utils::GridType::file;
+        prm.enter_subsection("File");
+        grid_file = prm.get("File name");
+        prm.leave_subsection();
+      }
+    else
+      AssertThrow(false, ExcNotImplemented());
+
+    // Periodicity
+    s                              = prm.get("Periodicity");
+    std::string periodicity_string = s;
+    // Remove whitespace
+    periodicity_string.erase(std::remove_if(periodicity_string.begin(),
+                                            periodicity_string.end(),
+                                            [](unsigned char x) {
+                                              return std::isspace(x);
+                                            }),
+                             periodicity_string.end());
+
+    std::stringstream string_stream(periodicity_string);
+    for (std::string value; std::getline(string_stream, value, ',');)
+      periodicity.push_back((value == "true" ? true : false));
+    periodicity.resize(dim);
+  } // Mesh
+  prm.leave_subsection();
+
+  prm.enter_subsection("Time stepping");
+  {
+    s = prm.get("Method");
+    if (s == "Forward Euler")
+      {
+        theta = 0.;
+        time_stepping_method =
+          Sapphire::Utils::TimeSteppingMethod::forward_euler;
+      }
+    else if (s == "Backward Euler")
+      {
+        theta = 1.;
+        time_stepping_method =
+          Sapphire::Utils::TimeSteppingMethod::backward_euler;
+      }
+    else if (s == "Crank-Nicolson")
+      {
+        theta = 1. / 2.;
+        time_stepping_method =
+          Sapphire::Utils::TimeSteppingMethod::crank_nicolson;
+      }
+    else if (s == "ERK4")
+      time_stepping_method = Sapphire::Utils::TimeSteppingMethod::erk4;
+    else if (s == "LSERK")
+      time_stepping_method = Sapphire::Utils::TimeSteppingMethod::lserk;
+    else
+      AssertThrow(false, ExcNotImplemented());
+
+    time_step  = prm.get_double("Time step size");
+    final_time = prm.get_double("Final time");
+  } // Time stepping
+  prm.leave_subsection();
+
+  prm.enter_subsection("Expansion");
+  {
+    expansion_order = prm.get_integer("Expansion order");
+  } // Expansion
+  prm.leave_subsection();
+
+  prm.enter_subsection("Finite element");
+  {
+    polynomial_degree = prm.get_integer("Polynomial degree");
+  } // Finite element
+  prm.leave_subsection();
+
+  prm.leave_subsection();
 }

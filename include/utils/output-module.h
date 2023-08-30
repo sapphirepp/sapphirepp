@@ -19,7 +19,6 @@
 #include <filesystem>
 
 #include "parameter-flags.h"
-#include "parameter-parser.h"
 
 namespace Sapphire
 {
@@ -31,10 +30,17 @@ namespace Sapphire
     class OutputModule
     {
     public:
-      OutputModule(const Sapphire::Utils::ParameterParser &prm);
+      OutputModule();
 
       void
-      init(const Sapphire::Utils::ParameterParser &prm) const;
+      declare_parameters(ParameterHandler &prm);
+
+      void
+      parse_parameters(ParameterHandler &prm);
+
+      void
+      init(ParameterHandler &prm) const;
+
       void
       write_results(DataOut<dim>      &data_out,
                     const unsigned int time_step_number);
@@ -43,16 +49,15 @@ namespace Sapphire
       write_grid(const Triangulation<dim> &triangulation,
                  const std::string        &filename = "grid.vtu") const;
 
-      const unsigned int output_frequency;
+      unsigned int          output_frequency;
+      std::filesystem::path results_path;
+      std::string           simulation_id;
+      std::filesystem::path output_path;
+      std::string           base_file_name;
+      unsigned int          n_digits_for_counter;
+      OutputFormat          format;
 
     private:
-      const std::filesystem::path results_path;
-      const std::string           simulation_id;
-      const std::filesystem::path output_path;
-      const std::string           base_file_name;
-      const unsigned int          n_digits_for_counter;
-      const OutputFormat          format;
-
       const MPI_Comm         mpi_communicator;
       std::vector<XDMFEntry> xdmf_entries;
     };

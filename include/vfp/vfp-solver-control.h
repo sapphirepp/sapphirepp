@@ -9,19 +9,21 @@
 
 #include "config.h"
 #include "parameter-flags.h"
-#include "parameter-parser.h"
 
 namespace Sapphire
 {
   namespace VFP
   {
+    using namespace dealii;
     class VFPSolverControl
     {
     public:
-      VFPSolverControl(const Sapphire::Utils::ParameterParser &prm);
+      VFPSolverControl();
 
       void
-      print_settings(std::ostream &os) const;
+      declare_parameters(ParameterHandler &prm);
+      void
+      parse_parameters(ParameterHandler &prm);
 
       // The following static_assert uses an exlusive or (xor),
       // represented in C/C++ as "!=" for expressions of boolean type: Either

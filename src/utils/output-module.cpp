@@ -9,24 +9,86 @@
 #include "sapphire-logstream.h"
 
 template <int dim>
-Sapphire::Utils::OutputModule<dim>::OutputModule(
-  const Sapphire::Utils::ParameterParser &prm)
-  : output_frequency(prm.out_output_frequency)
-  , results_path(prm.out_results_path)
-  , simulation_id(prm.out_simulation_id)
-  , output_path(this->results_path / this->simulation_id)
-  , base_file_name(prm.out_base_file_name)
-  , n_digits_for_counter(prm.out_n_digits_for_counter)
-  , format(prm.out_format)
-  , mpi_communicator(MPI_COMM_WORLD)
-{
-  init(prm);
-};
+Sapphire::Utils::OutputModule<dim>::OutputModule()
+  : mpi_communicator(MPI_COMM_WORLD){};
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::init(
-  const Sapphire::Utils::ParameterParser &prm) const
+Sapphire::Utils::OutputModule<dim>::declare_parameters(ParameterHandler &prm)
+{
+  LogStream::Prefix p("OutputModule", saplog);
+  saplog << "Declaring parameters" << std::endl;
+
+  prm.enter_subsection("Output");
+
+  prm.declare_entry(
+    "Results folder",
+    "./results",
+    Patterns::Anything(),
+    "Path to the folder in which the simulation results will be stored. "
+    "Without a trailing slash.");
+  prm.declare_entry("Simulation identifier",
+                    "",
+                    Patterns::Anything(),
+                    "Name of the simulation run. It will be "
+                    "used to create a subdirectory "
+                    "in the results folder.");
+  prm.declare_entry("Base file name",
+                    "solution",
+                    Patterns::Anything(),
+                    "The base file name for the output files.");
+  prm.declare_entry("Number of digits for counter",
+                    "4",
+                    Patterns::Integer(0),
+                    "The number of digits used for the counter in the "
+                    "output file names.");
+  prm.declare_entry(
+    "Format",
+    "vtu",
+    Patterns::Selection("vtu|pvtu|hdf5"),
+    "The format in which the simulation output will be stored.");
+  prm.declare_entry("Output frequency",
+                    "1",
+                    Patterns::Integer(0),
+                    "The frequence at which output files will "
+                    "be written. (In units of time steps)");
+
+  prm.leave_subsection();
+}
+
+template <int dim>
+void
+Sapphire::Utils::OutputModule<dim>::parse_parameters(ParameterHandler &prm)
+{
+  LogStream::Prefix p("OutputModule", saplog);
+  saplog << "Parsing parameters" << std::endl;
+  std::string s;
+  prm.enter_subsection("Output");
+
+  results_path         = prm.get("Results folder");
+  simulation_id        = prm.get("Simulation identifier");
+  output_path          = this->results_path / this->simulation_id;
+  base_file_name       = prm.get("Base file name");
+  n_digits_for_counter = prm.get_integer("Number of digits for counter");
+
+  s = prm.get("Format");
+  if (s == "vtu")
+    format = Sapphire::Utils::OutputFormat::vtu;
+  else if (s == "pvtu")
+    format = Sapphire::Utils::OutputFormat::pvtu;
+  else if (s == "hdf5")
+    format = Sapphire::Utils::OutputFormat::hdf5;
+  else
+    AssertThrow(false, ExcNotImplemented());
+
+  output_frequency = prm.get_integer("Output frequency");
+
+  prm.leave_subsection();
+}
+
+template <int dim>
+void
+Sapphire::Utils::OutputModule<dim>::init(ParameterHandler &prm) const
 {
   LogStream::Prefix p("OutputModule", saplog);
   // create output directory
@@ -35,7 +97,9 @@ Sapphire::Utils::OutputModule<dim>::init(
       saplog << "Create results folder " << output_path << std::endl;
       std::filesystem::create_directory(output_path);
 
-      prm.write_parameters(output_path / "log");
+      saplog << "Log parameters" << std::endl;
+      prm.log_parameters(saplog);
+      prm.print_parameters(output_path / "log.prm", ParameterHandler::ShortPRM);
     }
 
 
