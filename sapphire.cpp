@@ -32,9 +32,11 @@ main(int argc, char *argv[])
 
       ParameterHandler       prm;
       VFPSolverControl       vfp_solver_control;
+      PhysicalProperties     physical_properties;
       Utils::OutputModule<2> output_module;
 
       vfp_solver_control.declare_parameters(prm);
+      physical_properties.declare_parameters(prm);
       output_module.declare_parameters(prm);
 
       saplog << "Writing template parameter file" << std::endl;
@@ -43,12 +45,14 @@ main(int argc, char *argv[])
       prm.parse_input(parameter_filename);
 
       vfp_solver_control.parse_parameters(prm);
+      physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
 
       output_module.init(prm);
 
-      VFPEquationSolver vfp_equation_solver(vfp_solver_control, output_module);
-
+      VFPEquationSolver vfp_equation_solver(vfp_solver_control,
+                                            physical_properties,
+                                            output_module);
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)

@@ -16,8 +16,9 @@
 
 template <int dim>
 Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
-  const PDESystem        &system,
-  const VFPSolverControl &solver_control)
+  const PDESystem          &system,
+  const VFPSolverControl   &solver_control,
+  const PhysicalProperties &physical_properties)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))
@@ -31,6 +32,7 @@ Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
   , eigenvectors_advection_matrices(3,
                                     std::vector<double>(matrix_size *
                                                         matrix_size))
+  , background_velocity_field(physical_properties)
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}

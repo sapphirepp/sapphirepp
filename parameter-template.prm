@@ -24,6 +24,10 @@ subsection Output
 end
 
 
+subsection Physical properties
+end
+
+
 subsection VFP
   subsection Expansion
     # The order of the expansion of the particle distribution function.

@@ -24,8 +24,9 @@ namespace Sapphire
     class UpwindFlux
     {
     public:
-      UpwindFlux(const PDESystem        &system,
-                 const VFPSolverControl &solver_control);
+      UpwindFlux(const PDESystem          &system,
+                 const VFPSolverControl   &solver_control,
+                 const PhysicalProperties &physical_properties);
       void
       set_time(double time);
       void

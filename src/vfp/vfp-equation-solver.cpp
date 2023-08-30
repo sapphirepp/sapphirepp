@@ -119,8 +119,10 @@ namespace Sapphire
 
 Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
   const VFPSolverControl            &vfp_solver_control,
+  const PhysicalProperties          &physical_properties,
   const Utils::OutputModule<dim_ps> &output_module)
   : vfp_solver_control(vfp_solver_control)
+  , physical_properties(physical_properties)
   , mpi_communicator(MPI_COMM_WORLD)
   , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , rank(Utilities::MPI::this_mpi_process(mpi_communicator))
@@ -135,7 +137,7 @@ Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pde_system(vfp_solver_control.expansion_order)
-  , upwind_flux(pde_system, vfp_solver_control)
+  , upwind_flux(pde_system, vfp_solver_control, physical_properties)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   // It should be checked if the results folder exists and if not it should
@@ -158,7 +160,8 @@ Sapphire::VFP::VFPEquationSolver::run()
   assemble_mass_matrix();
 
   // Project the initial values
-  InitialValueFunction<dim_ps> initial_value_function(expansion_order);
+  InitialValueFunction<dim_ps> initial_value_function(physical_properties,
+                                                      expansion_order);
   PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
                                                mpi_communicator);
   project(initial_value_function, initial_condition);
@@ -174,7 +177,7 @@ Sapphire::VFP::VFPEquationSolver::run()
   // Source term at t = 0;
   if constexpr ((flags & TermFlags::source) != TermFlags::none)
     {
-      Source<dim_ps> source_function(expansion_order);
+      Source<dim_ps> source_function(physical_properties, expansion_order);
       source_function.set_time(0);
       compute_source_term(source_function);
     }
@@ -450,11 +453,12 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
   // Collision term (essentially a reaction term)
   const Vector<double> &collision_matrix = pde_system.get_collision_matrix();
 
-  BackgroundVelocityField<dim_ps> background_velocity_field;
+  BackgroundVelocityField<dim_ps> background_velocity_field(
+    physical_properties);
   background_velocity_field.set_time(time);
-  MagneticField<dim_ps> magnetic_field;
+  MagneticField<dim_ps> magnetic_field(physical_properties);
   magnetic_field.set_time(time);
-  ScatteringFrequency<dim_ps> scattering_frequency;
+  ScatteringFrequency<dim_ps> scattering_frequency(physical_properties);
   scattering_frequency.set_time(time);
 
   ParticleVelocity<dim_ps> particle_velocity;
@@ -1283,7 +1287,7 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
         {
           system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
           // Update the source term
-          Source<dim_ps> source_function(expansion_order);
+          Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + time_step);
           compute_source_term(source_function);
           system_rhs.add(theta * time_step, locally_owned_current_source);
@@ -1393,7 +1397,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     {
       if constexpr (time_dependent_source)
         {
-          Source<dim_ps> source_function(expansion_order);
+          Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + c[1] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1420,7 +1424,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     {
       if constexpr (time_dependent_source)
         {
-          Source<dim_ps> source_function(expansion_order);
+          Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + c[2] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1452,7 +1456,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     {
       if constexpr (time_dependent_source)
         {
-          Source<dim_ps> source_function(expansion_order);
+          Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + c[3] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1532,7 +1536,8 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
         {
           if constexpr (time_dependent_source)
             {
-              Source<dim_ps> source_function(expansion_order);
+              Source<dim_ps> source_function(physical_properties,
+                                             expansion_order);
               source_function.set_time(time + c[s] * time_step);
               compute_source_term(source_function);
               system_rhs.add(-1., locally_owned_current_source);

@@ -4,6 +4,7 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/point.h>
 
 #include <deal.II/lac/vector.h>
@@ -13,9 +14,37 @@
 #include <vector>
 
 #include "parameter-flags.h"
+#include "sapphire-logstream.h"
 
 namespace Sapphire
 {
+  class PhysicalProperties
+  {
+  public:
+    PhysicalProperties() = default;
+
+    void
+    declare_parameters(dealii::ParameterHandler &prm)
+    {
+      dealii::LogStream::Prefix p("Physical properties", saplog);
+      saplog << "Declaring parameters" << std::endl;
+      prm.enter_subsection("Physical properties");
+
+      prm.leave_subsection();
+    };
+
+    void
+    parse_parameters(dealii::ParameterHandler &prm)
+    {
+      dealii::LogStream::Prefix p("PhysicalProperties", saplog);
+      saplog << "Parsing parameters" << std::endl;
+      prm.enter_subsection("Physical properties");
+
+      prm.leave_subsection();
+    };
+  };
+
+
   namespace VFP
   {
     // Physical setup
@@ -71,10 +100,13 @@ namespace Sapphire
     class InitialValueFunction : public dealii::Function<dim>
     {
     public:
-      InitialValueFunction(unsigned int exp_order)
+      InitialValueFunction(const PhysicalProperties &physical_properties,
+                           int                       exp_order)
         : // set the number of components with the constructor of the base class
         dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-      {}
+      {
+        (void)physical_properties;
+      }
 
       void
       vector_value(const dealii::Point<dim> &p,
@@ -140,9 +172,11 @@ namespace Sapphire
     {
     public:
       // Set the variable  n_components of the base class
-      ScatteringFrequency()
+      ScatteringFrequency(const PhysicalProperties &physical_properties)
         : dealii::Function<dim>(1)
-      {}
+      {
+        (void)physical_properties;
+      }
 
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
@@ -166,10 +200,13 @@ namespace Sapphire
     class Source : public dealii::Function<dim>
     {
     public:
-      Source(unsigned int exp_order)
+      Source(const PhysicalProperties &physical_properties,
+             unsigned int              exp_order)
         : // set n_components
         dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-      {}
+      {
+        (void)physical_properties;
+      }
 
       void
       vector_value(const dealii::Point<dim> &p,
@@ -199,9 +236,11 @@ namespace Sapphire
     {
     public:
       // set n_components
-      MagneticField()
+      MagneticField(const PhysicalProperties &physical_properties)
         : dealii::Function<dim>(3)
-      {}
+      {
+        (void)physical_properties;
+      }
 
       void
       vector_value(const dealii::Point<dim> &point,
@@ -226,9 +265,11 @@ namespace Sapphire
     {
     public:
       // set n_components
-      BackgroundVelocityField()
+      BackgroundVelocityField(const PhysicalProperties &physical_properties)
         : dealii::Function<dim>(3)
-      {}
+      {
+        (void)physical_properties;
+      }
 
       // Velocity field
       void

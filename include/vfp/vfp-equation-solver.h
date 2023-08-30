@@ -96,12 +96,14 @@ namespace Sapphire
 
     public:
       VFPEquationSolver(const VFPSolverControl            &vfp_solver_control,
+                        const PhysicalProperties          &physical_properties,
                         const Utils::OutputModule<dim_ps> &output_module);
       void
       run();
 
     private:
-      const VFPSolverControl vfp_solver_control;
+      const VFPSolverControl   vfp_solver_control;
+      const PhysicalProperties physical_properties;
 
       // Triangulation
       void
