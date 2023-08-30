@@ -30,6 +30,87 @@ namespace Sapphire
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical properties");
 
+      prm.declare_entry("u_sh",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The shock velocity.");
+      prm.declare_entry("B_0",
+                        "1.",
+                        dealii::Patterns::Double(),
+                        "The magnetic field strength upstream.");
+      prm.declare_entry(
+        "theta",
+        "0.",
+        dealii::Patterns::Double(),
+        "The angle between the magnetic field and the shock normal.");
+      prm.declare_entry("compression ratio",
+                        "4.",
+                        dealii::Patterns::Double(),
+                        "The compression ratio of the shock.");
+      prm.declare_entry("shock width",
+                        "0.04",
+                        dealii::Patterns::Double(),
+                        "The width of the shock.");
+      prm.declare_entry(
+        "alpha",
+        "0.1",
+        dealii::Patterns::Double(),
+        "The ratio of the gyrofrequency to the scattering frequency.");
+
+      prm.enter_subsection("Mesh");
+      prm.declare_entry("p_min",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The minimum momentum.");
+      prm.declare_entry("p_max",
+                        "100",
+                        dealii::Patterns::Double(),
+                        "The maximum momentum.");
+      prm.declare_entry("n_cells_p",
+                        "64",
+                        dealii::Patterns::Integer(1),
+                        "The number of cells in momentum direction.");
+      prm.declare_entry("n_cells_downstream",
+                        "64",
+                        dealii::Patterns::Integer(1),
+                        "The number of cells downstream of the shock.");
+      prm.declare_entry("n_cells_upstream",
+                        "64",
+                        dealii::Patterns::Integer(1),
+                        "The number of cells upstream of the shock.");
+      prm.declare_entry("n_cells_shock",
+                        "8",
+                        dealii::Patterns::Integer(1),
+                        "The number of cells in the shock.");
+      prm.declare_entry("scaling delta_x",
+                        "1.5",
+                        dealii::Patterns::Double(0),
+                        "The scaling factor for the cell sizes in the shock.");
+      prm.leave_subsection();
+
+      prm.enter_subsection("Source");
+      prm.declare_entry("p_inj",
+                        "1.",
+                        dealii::Patterns::Double(),
+                        "The injection momentum.");
+      prm.declare_entry("x_inj",
+                        "0.0",
+                        dealii::Patterns::Double(),
+                        "The injection position.");
+      prm.declare_entry("sig_x",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The width of the source in configuration space.");
+      prm.declare_entry("sig_p",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The width of the source in momentum space.");
+      prm.declare_entry("normalization",
+                        "1.",
+                        dealii::Patterns::Double(),
+                        "The normalization of the source.");
+      prm.leave_subsection();
+
       prm.leave_subsection();
     };
 
@@ -40,8 +121,56 @@ namespace Sapphire
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical properties");
 
+      u_sh              = prm.get_double("u_sh");
+      B_0               = prm.get_double("B_0");
+      theta             = prm.get_double("theta");
+      compression_ratio = prm.get_double("compression ratio");
+      shock_width       = prm.get_double("shock width");
+      alpha             = prm.get_double("alpha");
+
+      prm.enter_subsection("Mesh");
+      p_min              = prm.get_double("p_min");
+      p_max              = prm.get_double("p_max");
+      n_cells_p          = prm.get_integer("n_cells_p");
+      n_cells_downstream = prm.get_integer("n_cells_downstream");
+      n_cells_upstream   = prm.get_integer("n_cells_upstream");
+      n_cells_shock      = prm.get_integer("n_cells_shock");
+      scaling_delta_x    = prm.get_double("scaling delta_x");
+      prm.leave_subsection();
+
+      prm.enter_subsection("Source");
+      p_inj         = prm.get_double("p_inj");
+      x_inj         = prm.get_double("x_inj");
+      sig_x         = prm.get_double("sig_x");
+      sig_p         = prm.get_double("sig_p");
+      normalization = prm.get_double("normalization");
+      prm.leave_subsection();
+
       prm.leave_subsection();
     };
+
+    double u_sh;
+    double B_0;
+    double theta;
+    double compression_ratio;
+    double shock_width;
+    double alpha;
+
+    // Grid
+    double       p_min;
+    double       p_max;
+    unsigned int n_cells_p;
+    unsigned int n_cells_downstream;
+    unsigned int n_cells_upstream;
+    unsigned int n_cells_shock;
+    double       scaling_delta_x;
+
+    // Source
+    double p_inj;
+    double x_inj;
+    double sig_x;
+    double sig_p;
+    double normalization;
   };
 
 
@@ -65,7 +194,7 @@ namespace Sapphire
       const double charge = 1.;
     };
 
-    struct TransportOnly
+    struct TransportOnly // unused
     {
       const double gamma    = 3.;
       const double velocity = std::sqrt(1 - 1 / std::pow((gamma * gamma), 2));
@@ -102,9 +231,12 @@ namespace Sapphire
     public:
       ScatteringFrequency(const PhysicalProperties &physical_properties)
         : dealii::Function<dim>(1)
-      {
-        (void)physical_properties;
-      }
+        , B_0(physical_properties.B_0)
+        , theta(physical_properties.theta)
+        , compression_ratio(physical_properties.compression_ratio)
+        , shock_width(physical_properties.shock_width)
+        , alpha(physical_properties.alpha)
+      {}
 
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
@@ -149,8 +281,11 @@ namespace Sapphire
       }
 
     private:
-      const double alpha = 0.1;
-      const double B_0   = 1.;
+      const double B_0;
+      const double theta;
+      const double compression_ratio;
+      const double shock_width;
+      const double alpha;
     };
 
     template <int dim>
@@ -160,16 +295,18 @@ namespace Sapphire
       Source(const PhysicalProperties &physical_properties,
              unsigned int              exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-      {
-        (void)physical_properties;
-      }
+        , p_inj(physical_properties.p_inj)
+        , x_inj(physical_properties.x_inj)
+        , sig_x(physical_properties.sig_x)
+        , sig_p(physical_properties.sig_p)
+        , normalization(physical_properties.normalization)
+      {}
 
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &values) const override
       {
-        // Gausian in x and p
-        // TODO: Maybe shift x injection a bit into upstream: x -> x-0.3
+        // shifted Gausian in x and p
         const double x = point[0] - x_inj;
         const double p = std::exp(point[1]) - p_inj;
 
@@ -178,11 +315,15 @@ namespace Sapphire
       }
 
     private:
-      const double p_inj         = 1.;
-      const double x_inj         = 0.5;
-      const double sig_x         = (1. / 4.) * (1. / 4.);
-      const double sig_p         = (1. / 4.) * (1. / 4.);
-      const double normalization = 0.1 / (2 * M_PI * std::sqrt(sig_p * sig_x));
+      const double p_inj;
+      const double x_inj;
+      const double sig_x;
+      const double sig_p;
+      const double normalization;
+      // const double normalization = 0.1 / (2 * M_PI * std::sqrt(sig_p *
+      // sig_x)); const double normalization = 1.; const double p_inj = 1.;
+      // const double sig_x         = 1.;
+      // const double sig_p         = 1.;
     };
 
     template <int dim>
@@ -191,9 +332,11 @@ namespace Sapphire
     public:
       MagneticField(const PhysicalProperties &physical_properties)
         : dealii::Function<dim>(3)
-      {
-        (void)physical_properties;
-      }
+        , B_0(physical_properties.B_0)
+        , theta(physical_properties.theta)
+        , compression_ratio(physical_properties.compression_ratio)
+        , shock_width(physical_properties.shock_width)
+      {}
 
       void
       vector_value(const dealii::Point<dim> &point,
@@ -213,10 +356,10 @@ namespace Sapphire
       }
 
     private:
-      const double B_0               = 1.;
-      const double theta             = 0.;
-      const double compression_ratio = 4.;
-      const double shock_width       = 0.04;
+      const double B_0;
+      const double theta;
+      const double compression_ratio;
+      const double shock_width;
     };
 
     template <int dim>
@@ -225,9 +368,10 @@ namespace Sapphire
     public:
       BackgroundVelocityField(const PhysicalProperties &physical_properties)
         : dealii::Function<dim>(3)
-      {
-        (void)physical_properties;
-      }
+        , u_sh(physical_properties.u_sh)
+        , compression_ratio(physical_properties.compression_ratio)
+        , shock_width(physical_properties.shock_width)
+      {}
 
       // Velocity field
       void
@@ -324,9 +468,9 @@ namespace Sapphire
       }
 
     private:
-      const double u_sh              = 0.1;
-      const double compression_ratio = 4.;
-      const double shock_width       = 0.04;
+      const double u_sh;
+      const double compression_ratio;
+      const double shock_width;
     };
   } // namespace VFP
 } // namespace Sapphire

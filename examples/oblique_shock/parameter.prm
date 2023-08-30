@@ -1,99 +1,59 @@
-# Listing of Parameters
-# ---------------------
 subsection Output
-  # The base file name for the output files.
   set Base file name               = solution
-
-  # The format in which the simulation output will be stored.
-  set Format                       = pvtu
-
-  # The number of digits used for the counter in the output file names.
+  set Format                       = hdf5
   set Number of digits for counter = 4
-
-  # The frequence at which output files will be written. (In units of time
-  # steps)
   set Output frequency             = 1
-
-  # Path to the folder in which the simulation results will be stored. Without
-  # a trailing slash.
   set Results folder               = ./results
-
-  # Name of the simulation run. It will be used to create a subdirectory in
-  # the results folder.
-  set Simulation identifier        = 
+  set Simulation identifier        = oblique_shock
 end
-
-
-subsection Physical properties
-end
-
-
 subsection VFP
   subsection Expansion
-    # The order of the expansion of the particle distribution function.
-    set Expansion order = 0
+    set Expansion order = 1
   end
-
   subsection Finite element
-    # The degree of the shape functions (i.e. the polynomials) of the finite
-    # element.
     set Polynomial degree = 1
   end
-
   subsection Mesh
-    # The type of the grid. Either a hypercube or a grid read from a file.
-    set Grid type = Hypercube
-
-
-    subsection Boundary conditions
-      # Boundary condition at the lower p boundary.
-      set lower p = continous gradients
-
-      # Boundary condition at the lower x boundary.
-      set lower x = continous gradients
-
-      # Boundary condition at the lower y boundary.
-      set lower y = continous gradients
-
-      # Boundary condition at the upper p boundary.
-      set upper p = continous gradients
-
-      # Boundary condition at the upper x boundary.
-      set upper x = continous gradients
-
-      # Boundary condition at the upper y boundary.
-      set upper y = continous gradients
-    end
-
+    set Grid type   = File
     subsection File
-      # The name of the file containing the grid.
-      set File name = 
+      set File name = ./results/oblique_shock/shock-grid.ucd
     end
-
-    subsection Hypercube
-      # Number of cells in each coordinate direction
-      set Number of cells = 4, 4, 4
-
-      # Two diagonally opposite corner points, Point 1 and  Point 2
-      set Point 1         = 0., 0., 0.
-
-      # Two diagonally opposite corner points Point 1 and  Point 2
-      set Point 2         = 1., 1., 1.
+    subsection Boundary conditions
+      set lower x = zero inflow
+      set upper x = continous gradients
+      set lower p = continous gradients
+      set upper p = continous gradients
     end
-
   end
-
   subsection Time stepping
-    # Duration of the simulation.
-    set Final time     = 0.4
-
-    # The time stepping method.
+    set Final time     = 100
     set Method         = Crank-Nicolson
-
-    # Duration of the simulation.
-    set Time step size = 7.8125e-3
+    set Time step size = 1
   end
-
 end
 
-
+# TODO: find good parameter for testing
+subsection Physical properties
+  set B_0               = 1.
+  set alpha             = 10.
+  set compression ratio = 4.
+  set shock width       = 0.04 # 1/25
+  set theta             = 0.
+  set u_sh              = 0.3
+  subsection Mesh
+    set n_cells_downstream = 20
+    set n_cells_upstream   = 20
+    set n_cells_p          = 32
+    set n_cells_shock      = 8
+    set p_min              = 0.1
+    set p_max              = 100
+    set scaling delta_x    = 1.5
+  end
+  subsection Source
+    set normalization = 1.
+    set p_inj         = 1.
+    set sig_p         = 0.1
+    set sig_x         = 0.1
+    set x_inj         = 0.0
+  end
+end

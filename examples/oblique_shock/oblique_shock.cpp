@@ -13,14 +13,7 @@
 /**
  * @brief Creates a 2d mesh around a shock
  * @param filename File where the mesh is saved
- * @param n_cells_downstream Number of cells in x-direction downstream of shock
- * @param n_cells_upstream Number of cells in x-direction upstream of shock
- * @param n_cells_shock Number of cells in shock region on each side
- * @param shock_width Width of the shock region with constant step size
- * @param scaling_delta_x Increasing stepsize outside shock region
- * @param p_min Minimum momentum
- * @param p_max Maximum momentum
- * @param n_cells_p Number of cells in momentum direction
+ * @param physical_properties Physical properties with defined grid parameters
  *
  * Create a 2d mesh with a shock at x = 0. In the shock region the mesh is
  * equidistant with a constant step size. Outside the shock region the step size
@@ -29,17 +22,19 @@
  * The grid in momentum direction is equidistant.
  */
 void
-make_grid_shock(const std::string &filename           = "shock-grid.vtu",
-                const unsigned int n_cells_downstream = 36,
-                const unsigned int n_cells_upstream   = 38,
-                const unsigned int n_cells_shock      = 8,
-                const double       shock_width        = 1. / 25.,
-                // const double       delta_x    = 0.1,
-                const double       scaling_delta_x = 1.5,
-                const double       log_p_min       = std::log(0.1),
-                const double       log_p_max       = std::log(100),
-                const unsigned int n_cells_p       = 64)
+make_grid_shock(const std::string                  &filename,
+                const Sapphire::PhysicalProperties &physical_properties)
 {
+  const unsigned int n_cells_downstream =
+    physical_properties.n_cells_downstream;
+  const unsigned int n_cells_upstream = physical_properties.n_cells_upstream;
+  const unsigned int n_cells_shock    = physical_properties.n_cells_shock;
+  const double       shock_width      = physical_properties.shock_width;
+  const double       scaling_delta_x  = physical_properties.scaling_delta_x;
+  const double       log_p_min        = std::log(physical_properties.p_min);
+  const double       log_p_max        = std::log(physical_properties.p_max);
+  const unsigned int n_cells_p        = physical_properties.n_cells_p;
+
   using namespace dealii;
   using namespace Sapphire;
   LogStream::Prefix p("ShockGirdGenerator", Sapphire::saplog);
@@ -106,9 +101,9 @@ make_grid_shock(const std::string &filename           = "shock-grid.vtu",
   // x_max is given by the scale width kappa, use x_max = 5* kappa
   // we want to achieve upstream > 5 * 1/kappa
   // downstream can be shorter
-  const double alpha = 0.1;
-  const double B_0   = 1.;
-  const double u_sh  = 1. / 10.;
+  const double alpha = physical_properties.alpha;
+  const double B_0   = physical_properties.B_0;
+  const double u_sh  = physical_properties.u_sh;
   const double kappa = 3. * alpha * B_0 / std::exp(log_p_max) * u_sh;
   saplog << "1/kappa=" << 1. / kappa
          << ", downstream*kappa=" << length_downstream * kappa
@@ -180,7 +175,7 @@ main(int argc, char *argv[])
       output_module.init(prm);
 
       saplog.depth_console(4);
-      make_grid_shock(vfp_solver_control.grid_file);
+      make_grid_shock(vfp_solver_control.grid_file, physical_properties);
       saplog.depth_console(2);
 
       saplog.pop();
