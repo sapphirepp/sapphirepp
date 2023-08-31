@@ -44,7 +44,7 @@ Sapphire::Utils::OutputModule<dim>::declare_parameters(ParameterHandler &prm)
                     "output file names.");
   prm.declare_entry(
     "Format",
-    "vtu",
+    "pvtu",
     Patterns::Selection("vtu|pvtu|hdf5"),
     "The format in which the simulation output will be stored.");
   prm.declare_entry("Output frequency",

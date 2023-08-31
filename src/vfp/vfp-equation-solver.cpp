@@ -155,42 +155,48 @@ void
 Sapphire::VFP::VFPEquationSolver::run()
 {
   LogStream::Prefix p("VFP", saplog);
-  make_grid();
-  setup_system();
-  assemble_mass_matrix();
+  saplog << "Run VFP equation solver. \t\t[" << Utilities::System::get_time()
+         << "]" << std::endl;
+  {
+    TimerOutput::Scope timer_section(timer, "Setup");
+    LogStream::Prefix  p2("Setup", saplog);
+    make_grid();
+    setup_system();
+    assemble_mass_matrix();
 
-  // Project the initial values
-  InitialValueFunction<dim_ps> initial_value_function(physical_properties,
-                                                      expansion_order);
-  PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
-                                               mpi_communicator);
-  project(initial_value_function, initial_condition);
-  // Here a non ghosted vector, is copied into a ghosted vector. I think
-  // that is the moment where the ghost cells are filled.
-  locally_relevant_current_solution = initial_condition;
-  // Output t = 0
-  std::vector<XDMFEntry> xdmf_entries;
-  output_results(0);
+    // Project the initial values
+    InitialValueFunction<dim_ps> initial_value_function(physical_properties,
+                                                        expansion_order);
+    PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
+                                                 mpi_communicator);
+    project(initial_value_function, initial_condition);
+    // Here a non ghosted vector, is copied into a ghosted vector. I think
+    // that is the moment where the ghost cells are filled.
+    locally_relevant_current_solution = initial_condition;
+    // Output t = 0
+    std::vector<XDMFEntry> xdmf_entries;
+    output_results(0);
 
-  // Assemble the dg matrix for t = 0
-  assemble_dg_matrix(0);
-  // Source term at t = 0;
-  if constexpr ((flags & TermFlags::source) != TermFlags::none)
-    {
-      Source<dim_ps> source_function(physical_properties, expansion_order);
-      source_function.set_time(0);
-      compute_source_term(source_function);
-    }
+    // Assemble the dg matrix for t = 0
+    assemble_dg_matrix(0);
+    // Source term at t = 0;
+    if constexpr ((flags & TermFlags::source) != TermFlags::none)
+      {
+        Source<dim_ps> source_function(physical_properties, expansion_order);
+        source_function.set_time(0);
+        compute_source_term(source_function);
+      }
+  }
 
-  double time_step  = vfp_solver_control.time_step;
-  double final_time = vfp_solver_control.final_time;
-  saplog << "The time stepping loop is entered:" << std::endl;
+  double       time_step        = vfp_solver_control.time_step;
+  double       final_time       = vfp_solver_control.final_time;
   unsigned int time_step_number = 1;
   for (double time = 0.; time < final_time;
        time += time_step, ++time_step_number)
     {
-      saplog << "Time step " << time_step_number << " at t = " << time
-             << std::endl;
+      saplog << "Time step " << std::setw(4) << std::right << time_step_number
+             << " at t = " << time << " \t[" << Utilities::System::get_time()
+             << "]" << std::endl;
       // Time stepping method
       if (vfp_solver_control.time_stepping_method ==
             Utils::TimeSteppingMethod::forward_euler ||
@@ -208,9 +214,10 @@ Sapphire::VFP::VFPEquationSolver::run()
 
       output_results(time_step_number);
     }
-  saplog << "The simulation ended." << std::endl;
+  saplog << "The simulation ended. \t\t[" << Utilities::System::get_time()
+         << "]" << std::endl;
 
-  timer.print_summary();
+  timer.print_wall_time_statistics(mpi_communicator);
   timer.reset();
 }
 
