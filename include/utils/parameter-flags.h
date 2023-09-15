@@ -69,6 +69,13 @@ namespace Sapphire
         os << "	 - Source\n";
       return os;
     }
+
+    enum class BoundaryConditions
+    {
+      continous_gradients,
+      zero_inflow,
+      periodic
+    };
   } // namespace VFP
 } // namespace Sapphire
 #endif

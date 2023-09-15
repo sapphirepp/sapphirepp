@@ -5,7 +5,7 @@ subsection Output
   set Base file name               = solution
 
   # The format in which the simulation output will be stored.
-  set Format                       = vtu
+  set Format                       = pvtu
 
   # The number of digits used for the counter in the output file names.
   set Number of digits for counter = 4
@@ -42,11 +42,28 @@ subsection VFP
 
   subsection Mesh
     # The type of the grid. Either a hypercube or a grid read from a file.
-    set Grid type   = Hypercube
+    set Grid type = Hypercube
 
-    # Periodic boundaries in the three coordinate directions.
-    set Periodicity = false, false, false
 
+    subsection Boundary conditions
+      # Boundary condition at the lower p boundary.
+      set lower p = continous gradients
+
+      # Boundary condition at the lower x boundary.
+      set lower x = continous gradients
+
+      # Boundary condition at the lower y boundary.
+      set lower y = continous gradients
+
+      # Boundary condition at the upper p boundary.
+      set upper p = continous gradients
+
+      # Boundary condition at the upper x boundary.
+      set upper x = continous gradients
+
+      # Boundary condition at the upper y boundary.
+      set upper y = continous gradients
+    end
 
     subsection File
       # The name of the file containing the grid.

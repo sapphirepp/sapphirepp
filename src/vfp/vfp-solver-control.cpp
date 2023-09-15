@@ -51,11 +51,37 @@ Sapphire::VFP::VFPSolverControl::declare_parameters(ParameterHandler &prm)
                         "The name of the file containing the grid.");
     } // File
     prm.leave_subsection();
-    prm.declare_entry(
-      "Periodicity",
-      "false, false, false",
-      Patterns::Anything(),
-      "Periodic boundaries in the three coordinate directions.");
+    prm.enter_subsection("Boundary conditions");
+    {
+      // TODO: possible z-boundary for p indepentent 3D
+      const auto boundary_pattern =
+        Patterns::Selection("continous gradients|zero inflow|periodic");
+      prm.declare_entry("lower x",
+                        "continous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the lower x boundary.");
+      prm.declare_entry("upper x",
+                        "continous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the upper x boundary.");
+      prm.declare_entry("lower y",
+                        "continous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the lower y boundary.");
+      prm.declare_entry("upper y",
+                        "continous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the upper y boundary.");
+      prm.declare_entry("lower p",
+                        "continous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the lower p boundary.");
+      prm.declare_entry("upper p",
+                        "continous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the upper p boundary.");
+    }
+    prm.leave_subsection();
   } // Mesh
   prm.leave_subsection();
 
@@ -159,21 +185,43 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
     else
       AssertThrow(false, ExcNotImplemented());
 
-    // Periodicity
-    s                              = prm.get("Periodicity");
-    std::string periodicity_string = s;
-    // Remove whitespace
-    periodicity_string.erase(std::remove_if(periodicity_string.begin(),
-                                            periodicity_string.end(),
-                                            [](unsigned char x) {
-                                              return std::isspace(x);
-                                            }),
-                             periodicity_string.end());
+    prm.enter_subsection("Boundary conditions");
+    {
+      // TODO: Check if all indices are assigend correct
+      boundary_conditions.resize(2 * dim);
 
-    std::stringstream string_stream(periodicity_string);
-    for (std::string value; std::getline(string_stream, value, ',');)
-      periodicity.push_back((value == "true" ? true : false));
-    periodicity.resize(dim);
+      for (unsigned int boundary_id = 0; boundary_id < 2 * dim; ++boundary_id)
+        {
+          std::string entry = "";
+          if (boundary_id % 2 == 0)
+            entry = "upper ";
+          else
+            entry = "lower ";
+
+          if (boundary_id / 2 == 0)
+            entry += "x";
+          else if ((dim_configuration_space == 2) and (boundary_id / 2 == 1))
+            entry += "y";
+          else if (boundary_id / 2 == dim_configuration_space)
+            entry += "p";
+          else
+            AssertThrow(false, ExcNotImplemented());
+
+          s = prm.get(entry);
+          if (s == "continous gradients")
+            boundary_conditions[boundary_id] =
+              VFP::BoundaryConditions::continous_gradients;
+          else if (s == "zero inflow")
+            boundary_conditions[boundary_id] =
+              VFP::BoundaryConditions::zero_inflow;
+          else if (s == "periodic")
+            boundary_conditions[boundary_id] =
+              VFP::BoundaryConditions::periodic;
+          else
+            AssertThrow(false, ExcNotImplemented());
+        }
+    }
+    prm.leave_subsection();
   } // Mesh
   prm.leave_subsection();
 

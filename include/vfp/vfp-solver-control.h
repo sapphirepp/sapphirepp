@@ -48,12 +48,12 @@ namespace Sapphire
       // These settings are read from a parameter file
       int expansion_order;
       // Mesh
-      Utils::GridType           grid_type;
-      std::string               grid_file;
-      std::vector<bool>         periodicity;
-      dealii::Point<dim>        p1;
-      dealii::Point<dim>        p2;
-      std::vector<unsigned int> n_cells;
+      Utils::GridType                 grid_type;
+      std::string                     grid_file;
+      dealii::Point<dim>              p1;
+      dealii::Point<dim>              p2;
+      std::vector<unsigned int>       n_cells;
+      std::vector<BoundaryConditions> boundary_conditions;
       // Finite element
       unsigned int polynomial_degree;
       // Time stepping

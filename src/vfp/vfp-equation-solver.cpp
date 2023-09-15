@@ -226,10 +226,6 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
 {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   saplog << "Create the grid" << std::endl;
-  // Colorise = true means to set boundary ids (default for 1D)
-  bool colorise = vfp_solver_control.periodicity[0] ||
-                  vfp_solver_control.periodicity[1] ||
-                  vfp_solver_control.periodicity[2];
 
   switch (vfp_solver_control.grid_type)
     {
@@ -240,7 +236,7 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
                                                     vfp_solver_control.n_cells,
                                                     vfp_solver_control.p1,
                                                     vfp_solver_control.p2,
-                                                    colorise);
+                                                    true);
           break;
         }
       case Utils::GridType::file:
@@ -267,49 +263,66 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
          << ",	#active cells=" << triangulation.n_global_active_cells()
          << std::endl;
 
-  if (colorise)
-    {
-      saplog << "Set up periodic boundary conditions" << std::endl;
-      // Periodic boundary conditions with MeshWorker. Mailinglist
-      // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
-      //
-      // "If you call add_periodicity() on a Triangulation object, the
-      // periodic faces are treated as internal faces in MeshWorker. This
-      // means that you will not access them in a "integrate_boundary_term"
-      // function but in a "integrate_face_term" function. "
-      std::vector<GridTools::PeriodicFacePair<
-        typename Triangulation<dim_ps>::cell_iterator>>
-        matched_pairs;
+  // Periodic boundary conditions with MeshWorker. Mailinglist
+  // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
+  //
+  // "If you call add_periodicity() on a Triangulation object, the
+  // periodic faces are treated as internal faces in MeshWorker. This
+  // means that you will not access them in a "integrate_boundary_term"
+  // function but in a "integrate_face_term" function. "
+  std::vector<
+    GridTools::PeriodicFacePair<typename Triangulation<dim_ps>::cell_iterator>>
+    matched_pairs;
 
-      // Fill the matched_pairs vector manually if dim_ps = 1. At the moment
-      // there is no instance of the template collect_period_faces for
-      // MeshType = parallel::shared::Triangulation<1,1>.
-      // https://github.com/dealii/dealii/issues/14879
-      if constexpr (dim_ps == 1)
+  // Fill the matched_pairs vector manually if dim_ps = 1. At the moment
+  // there is no instance of the template collect_period_faces for
+  // MeshType = parallel::shared::Triangulation<1,1>.
+  // https://github.com/dealii/dealii/issues/14879
+  if constexpr (dim_ps == 1)
+    {
+      // TODO: Check if extra case for 1d is still needed
+      if (vfp_solver_control.boundary_conditions[0] ==
+            BoundaryConditions::periodic or
+          vfp_solver_control.boundary_conditions[1] ==
+            BoundaryConditions::periodic)
         {
-          if (vfp_solver_control.periodicity[0])
-            {
-              matched_pairs.resize(1);
-              matched_pairs[0].cell[0]     = triangulation.begin();
-              matched_pairs[0].cell[1]     = triangulation.last();
-              matched_pairs[0].face_idx[0] = 0;
-              matched_pairs[0].face_idx[1] = 1;
-              std::bitset<3> temp_bitset;
-              temp_bitset[0]               = true;
-              matched_pairs[0].orientation = temp_bitset;
-            }
+          AssertThrow(vfp_solver_control.boundary_conditions[0] ==
+                          BoundaryConditions::periodic and
+                        vfp_solver_control.boundary_conditions[1] ==
+                          BoundaryConditions::periodic,
+                      ExcMessage(
+                        "Periodic boundary conditions did not match."));
+          matched_pairs.resize(1);
+          matched_pairs[0].cell[0]     = triangulation.begin();
+          matched_pairs[0].cell[1]     = triangulation.last();
+          matched_pairs[0].face_idx[0] = 0;
+          matched_pairs[0].face_idx[1] = 1;
+          std::bitset<3> temp_bitset;
+          temp_bitset[0]               = true;
+          matched_pairs[0].orientation = temp_bitset;
         }
-      else
-        {
-          for (unsigned int i = 0; i < dim_ps; ++i)
-            {
-              if (vfp_solver_control.periodicity[i])
-                GridTools::collect_periodic_faces(
-                  triangulation, 2 * i, 2 * i + 1, i, matched_pairs);
-            }
-        }
-      triangulation.add_periodicity(matched_pairs);
     }
+  else
+    {
+      for (unsigned int i = 0; i < dim_ps; ++i)
+        {
+          if (vfp_solver_control.boundary_conditions[2 * i] ==
+                BoundaryConditions::periodic or
+              vfp_solver_control.boundary_conditions[2 * i + 1] ==
+                BoundaryConditions::periodic)
+            {
+              AssertThrow(vfp_solver_control.boundary_conditions[2 * i] ==
+                              BoundaryConditions::periodic and
+                            vfp_solver_control.boundary_conditions[2 * i + 1] ==
+                              BoundaryConditions::periodic,
+                          ExcMessage(
+                            "Periodic boundary conditions did not match."));
+              GridTools::collect_periodic_faces(
+                triangulation, 2 * i, 2 * i + 1, i, matched_pairs);
+            }
+        }
+    }
+  triangulation.add_periodicity(matched_pairs);
 }
 
 void
@@ -929,6 +942,10 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
     // NOTE: copy_data is not reinitialised, the cell_workers contribution
     // to the cell_dg_matrix should not be deleted
 
+    const unsigned int       boundary_id = cell->face(face_no)->boundary_id();
+    const BoundaryConditions boundary_condition =
+      vfp_solver_control.boundary_conditions[boundary_id];
+
     const std::vector<Point<dim_ps>> &q_points =
       fe_face_v.get_quadrature_points();
     const std::vector<double>            &JxW = fe_face_v.get_JxW_values();
@@ -956,18 +973,35 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                 if constexpr ((flags & TermFlags::spatial_advection) !=
                               TermFlags::none)
                   {
-                    // Outflow boundary: Everyhing with a positive flux
-                    // along the direction of the normal leaves the boundary
-                    copy_data.cell_matrix(i, j) +=
-                      fe_face_v.shape_value(i, q_index) *
-                      positive_flux_matrices[q_index](component_i,
-                                                      component_j) *
-                      fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                    copy_data.cell_matrix(i, j) +=
-                      fe_face_v.shape_value(i, q_index) *
-                      negative_flux_matrices[q_index](component_i,
-                                                      component_j) *
-                      fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                    // TODO: Check naming of BC
+                    switch (boundary_condition)
+                      {
+                        case BoundaryConditions::continous_gradients:
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              positive_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              negative_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            break;
+                          }
+                        case BoundaryConditions::zero_inflow:
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              positive_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            break;
+                          }
+                        default:
+                          Assert(false, ExcNotImplemented());
+                      }
                   }
               }
           }
