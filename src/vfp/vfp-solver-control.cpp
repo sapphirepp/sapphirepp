@@ -194,9 +194,9 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
         {
           std::string entry = "";
           if (boundary_id % 2 == 0)
-            entry = "upper ";
-          else
             entry = "lower ";
+          else
+            entry = "upper ";
 
           if (boundary_id / 2 == 0)
             entry += "x";
