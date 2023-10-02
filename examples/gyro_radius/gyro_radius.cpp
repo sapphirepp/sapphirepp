@@ -14,7 +14,9 @@ main(int argc, char *argv[])
       using namespace VFP;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-      saplog.depth_console(2);
+      saplog.pop();
+      saplog.depth_console(1);
+      // saplog.depth_console(-1);
       const unsigned int mpi_rank =
         Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
       if (mpi_rank > 0)
@@ -30,12 +32,14 @@ main(int argc, char *argv[])
         parameter_filename = argv[1];
 
       int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-      saplog << "Start gyro_radius with parameter file \"" << parameter_filename
-             << "\" on " << mpi_size << " processor(s) ["
+      saplog << "Start gyro_radius test with parameter file \""
+             << parameter_filename << "\" on " << mpi_size << " processor(s) ["
              << Utilities::System::get_date() << " "
              << Utilities::System::get_time() << "]" << std::endl;
 
-      saplog.push("main");
+
+      saplog.push("Gyro");
+      Timer                  timer;
       ParameterHandler       prm;
       VFPSolverControl       vfp_solver_control;
       PhysicalProperties     physical_properties;
@@ -53,11 +57,32 @@ main(int argc, char *argv[])
 
       output_module.init(prm);
 
+      TransportOnly particle_properties;
+      saplog << "Gyroperiod: "
+             << 2 * M_PI * particle_properties.gamma / physical_properties.B0
+             << std::endl;
+      saplog << "Gyroradius: "
+             << particle_properties.gamma / physical_properties.B0 << std::endl;
+
       saplog.pop();
+
+      timer.start();
       VFPEquationSolver vfp_equation_solver(vfp_solver_control,
                                             physical_properties,
                                             output_module);
       vfp_equation_solver.run();
+      timer.stop();
+
+      InitialValueFunction<VFPSolverControl::dim> cylinder(
+        physical_properties, vfp_solver_control.expansion_order);
+      double error =
+        vfp_equation_solver.compute_global_error(cylinder,
+                                                 VectorTools::L2_norm,
+                                                 //  VectorTools::Linfty_norm);
+                                                 VectorTools::L2_norm);
+
+      saplog << "Error = " << error << " CPU/wall time = " << timer.cpu_time()
+             << "/" << timer.wall_time() << " s" << std::endl;
     }
   catch (std::exception &exc)
     {

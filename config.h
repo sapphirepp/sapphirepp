@@ -92,6 +92,7 @@ namespace Sapphire
       // particles has to be given.
       const double gamma = 3.;
       // Compute the partilces Lorentz factor gamma and its velocity
+      // TODO: here is a mistake: it must be gamma^2, not gama^4 ?!
       const double velocity = std::sqrt(1 - 1 / std::pow((gamma * gamma), 2));
     };
 
