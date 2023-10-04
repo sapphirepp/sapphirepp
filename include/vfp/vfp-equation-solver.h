@@ -101,6 +101,11 @@ namespace Sapphire
       void
       run();
 
+      double
+      compute_global_error(const Function<dim_ps>      &exact_solution,
+                           const VectorTools::NormType &cell_norm,
+                           const VectorTools::NormType &global_norm) const;
+
     private:
       const VFPSolverControl   vfp_solver_control;
       const PhysicalProperties physical_properties;

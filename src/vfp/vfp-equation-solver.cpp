@@ -1634,3 +1634,37 @@ Sapphire::VFP::VFPEquationSolver::output_results(
   data_out.build_patches(vfp_solver_control.polynomial_degree);
   output_module.write_results(data_out, time_step_number);
 }
+
+double
+Sapphire::VFP::VFPEquationSolver::compute_global_error(
+  const Function<dim_ps>      &exact_solution,
+  const VectorTools::NormType &cell_norm,
+  const VectorTools::NormType &global_norm) const
+{
+  LogStream::Prefix p("VFP", saplog);
+  saplog << "Compute the global error" << std::endl;
+  LogStream::Prefix p2("Error", saplog);
+
+  // exact_solution.set_time(current_time); //TODO
+
+  Vector<float> cellwise_errors(triangulation.n_locally_owned_active_cells());
+
+  ComponentSelectFunction<dim_ps> mask(0, num_exp_coefficients);
+
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    locally_relevant_current_solution,
+                                    exact_solution,
+                                    cellwise_errors,
+                                    quadrature,
+                                    cell_norm,
+                                    &mask);
+
+  double global_error = VectorTools::compute_global_error(triangulation,
+                                                          cellwise_errors,
+                                                          global_norm);
+
+  saplog << "Global error: " << global_error << std::endl;
+
+  return global_error;
+}
