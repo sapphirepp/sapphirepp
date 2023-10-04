@@ -95,7 +95,7 @@ Sapphire::Utils::OutputModule<dim>::init(ParameterHandler &prm) const
   if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
     {
       saplog << "Create results folder " << output_path << std::endl;
-      std::filesystem::create_directory(output_path);
+      std::filesystem::create_directories(output_path);
 
       saplog << "Log parameters" << std::endl;
       prm.log_parameters(saplog);
