@@ -46,4 +46,5 @@ if(DOXYGEN_FOUND)
     )
 endif()
 
+add_subdirectory(examples)
 
