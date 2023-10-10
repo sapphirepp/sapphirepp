@@ -1668,3 +1668,9 @@ Sapphire::VFP::VFPEquationSolver::compute_global_error(
 
   return global_error;
 }
+
+unsigned int
+Sapphire::VFP::VFPEquationSolver::get_n_dofs() const
+{
+  return dof_handler.n_dofs();
+}

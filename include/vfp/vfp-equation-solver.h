@@ -106,6 +106,9 @@ namespace Sapphire
                            const VectorTools::NormType &cell_norm,
                            const VectorTools::NormType &global_norm) const;
 
+      unsigned int
+      get_n_dofs() const;
+
     private:
       const VFPSolverControl   vfp_solver_control;
       const PhysicalProperties physical_properties;
