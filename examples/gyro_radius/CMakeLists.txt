@@ -4,3 +4,7 @@ file(GLOB CONFIG_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(gyro_radius PUBLIC ${PROJECT_SOURCE_DIR}/include/vfp)
 target_include_directories(gyro_radius PUBLIC ${CONFIG_HEADER_DIR})
 target_link_libraries(gyro_radius UtilsLib)
+
+file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+add_subdirectory(tests)
