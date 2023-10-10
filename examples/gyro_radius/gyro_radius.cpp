@@ -2,69 +2,132 @@
 
 #include <mpi.h>
 
+#include <fstream>
+
 #include "output-module.h"
 #include "vfp-equation-solver.h"
 
-int
-main(int argc, char *argv[])
+enum class TestParameter
 {
-  try
+  final_time, //< Test if gyroperiod is correct
+  expansion_order,
+  time_step,
+  num_cells,
+  polynomial_degree
+};
+
+int
+error_with_parameter(std::string               parameter_filename,
+                     const TestParameter       test_parameter,
+                     const std::vector<double> values,
+                     const std::vector<double> max_expected_errors)
+{
+  using namespace Sapphire;
+  using namespace VFP;
+
+  if (max_expected_errors.size() > 0)
+    AssertThrow(max_expected_errors.size() == values.size(),
+                ExcMessage(
+                  "Expected errors and values have different lengths"));
+
+  std::string parameter_name;
+
+  switch (test_parameter)
     {
-      using namespace Sapphire;
-      using namespace VFP;
-      Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-
-      saplog.pop();
-      saplog.depth_console(1);
-      // saplog.depth_console(-1);
-      const unsigned int mpi_rank =
-        Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-      if (mpi_rank > 0)
+      case TestParameter::final_time:
         {
-          saplog.depth_console(0);
-          char buffer[4];
-          std::snprintf(buffer, 4, "%03d", mpi_rank);
-          saplog.push("mpi" + std::string(buffer));
+          parameter_name = "final_time";
+          break;
         }
+      case TestParameter::expansion_order:
+        {
+          parameter_name = "expansion_order";
+          break;
+        }
+      case TestParameter::time_step:
+        {
+          parameter_name = "time_step";
+          break;
+        }
+      case TestParameter::num_cells:
+        {
+          parameter_name = "num_cells";
+          break;
+        }
+      case TestParameter::polynomial_degree:
+        {
+          parameter_name = "polynomial_degree";
+          break;
+        }
+      default:
+        Assert(false, ExcNotImplemented());
+    }
 
-      std::string parameter_filename = "parameter.prm";
-      if (argc > 1)
-        parameter_filename = argv[1];
+  saplog.push("Gyro");
+  saplog << "Test for " << parameter_name << std::endl;
 
-      int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-      saplog << "Start gyro_radius test with parameter file \""
-             << parameter_filename << "\" on " << mpi_size << " processor(s) ["
-             << Utilities::System::get_date() << " "
-             << Utilities::System::get_time() << "]" << std::endl;
+  Timer                  timer;
+  ParameterHandler       prm;
+  VFPSolverControl       vfp_solver_control;
+  PhysicalProperties     physical_properties;
+  Utils::OutputModule<2> output_module;
 
+  vfp_solver_control.declare_parameters(prm);
+  physical_properties.declare_parameters(prm);
+  output_module.declare_parameters(prm);
 
+  prm.parse_input(parameter_filename);
+
+  vfp_solver_control.parse_parameters(prm);
+  physical_properties.parse_parameters(prm);
+  output_module.parse_parameters(prm);
+
+  output_module.init(prm);
+  saplog.pop();
+
+  std::ofstream log_file(output_module.output_path /
+                           ("error_with_" + parameter_name + ".csv"),
+                         std::ios::app);
+  saplog.attach(log_file, false);
+
+  saplog << "# " << parameter_name
+         << "\t L2\t Linfty\t CPU time [s]\t Wall time [s]\t n_dof"
+         << std::endl;
+  for (unsigned int i = 0; i < values.size(); i++)
+    {
+      switch (test_parameter)
+        {
+          case TestParameter::final_time:
+            vfp_solver_control.final_time = values[i];
+            break;
+          case TestParameter::expansion_order:
+            vfp_solver_control.expansion_order = uint(values[i]);
+            break;
+          case TestParameter::time_step:
+            vfp_solver_control.time_step = values[i];
+            break;
+          case TestParameter::num_cells:
+            if (vfp_solver_control.dim == 1)
+              vfp_solver_control.n_cells = {uint(values[i])};
+            else if (vfp_solver_control.dim == 2)
+              vfp_solver_control.n_cells = {uint(values[i]), uint(values[i])};
+            else if (vfp_solver_control.dim == 3)
+              vfp_solver_control.n_cells = {uint(values[i]),
+                                            uint(values[i]),
+                                            uint(values[i])};
+            break;
+          case TestParameter::polynomial_degree:
+            vfp_solver_control.polynomial_degree = uint(values[i]);
+            break;
+          default:
+            Assert(false, ExcNotImplemented());
+        }
       saplog.push("Gyro");
-      Timer                  timer;
-      ParameterHandler       prm;
-      VFPSolverControl       vfp_solver_control;
-      PhysicalProperties     physical_properties;
-      Utils::OutputModule<2> output_module;
-
-      vfp_solver_control.declare_parameters(prm);
-      physical_properties.declare_parameters(prm);
-      output_module.declare_parameters(prm);
-
-      prm.parse_input(parameter_filename);
-
-      vfp_solver_control.parse_parameters(prm);
-      physical_properties.parse_parameters(prm);
-      output_module.parse_parameters(prm);
-
-      output_module.init(prm);
-
-      TransportOnly particle_properties;
-      saplog << "Gyroperiod: "
-             << 2 * M_PI * particle_properties.gamma / physical_properties.B0
-             << std::endl;
-      saplog << "Gyroradius: "
-             << particle_properties.gamma / physical_properties.B0 << std::endl;
-
+      saplog << parameter_name << "=" << values[i] << std::endl;
       saplog.pop();
+
+      output_module.base_file_name =
+        "solution_" + parameter_name + "_" + std::to_string(values[i]) + "_";
 
       timer.start();
       VFPEquationSolver vfp_equation_solver(vfp_solver_control,
@@ -75,14 +138,213 @@ main(int argc, char *argv[])
 
       InitialValueFunction<VFPSolverControl::dim> cylinder(
         physical_properties, vfp_solver_control.expansion_order);
-      double error =
+      const double L2_error =
         vfp_equation_solver.compute_global_error(cylinder,
                                                  VectorTools::L2_norm,
-                                                 //  VectorTools::Linfty_norm);
                                                  VectorTools::L2_norm);
+      const double Linfty_error =
+        vfp_equation_solver.compute_global_error(cylinder,
+                                                 VectorTools::L2_norm,
+                                                 VectorTools::Linfty_norm);
 
-      saplog << "Error = " << error << " CPU/wall time = " << timer.cpu_time()
-             << "/" << timer.wall_time() << " s" << std::endl;
+      saplog << values[i] << "\t" << L2_error << "\t" << Linfty_error << "\t"
+             << timer.cpu_time() << "\t" << timer.wall_time() << "\t"
+             << vfp_equation_solver.get_n_dofs() << std::endl;
+
+      if (max_expected_errors.size() > 0)
+        {
+          AssertThrow(L2_error < max_expected_errors[i],
+                      ExcMessage("L2 error does not match expected value for " +
+                                 parameter_name + "=" +
+                                 std::to_string(values[i]) + ": " +
+                                 std::to_string(L2_error) + " > " +
+                                 std::to_string(max_expected_errors[i])));
+        }
+    }
+
+  saplog.detach();
+  log_file.close();
+
+  return 0;
+}
+
+int
+calculate_gyro(std::string parameter_filename, double max_expected_error = 0)
+{
+  using namespace Sapphire;
+  using namespace VFP;
+
+  saplog.push("Gyro");
+  Timer                  timer;
+  ParameterHandler       prm;
+  VFPSolverControl       vfp_solver_control;
+  PhysicalProperties     physical_properties;
+  Utils::OutputModule<2> output_module;
+
+  vfp_solver_control.declare_parameters(prm);
+  physical_properties.declare_parameters(prm);
+  output_module.declare_parameters(prm);
+
+  prm.parse_input(parameter_filename);
+
+  vfp_solver_control.parse_parameters(prm);
+  physical_properties.parse_parameters(prm);
+  output_module.parse_parameters(prm);
+
+  output_module.init(prm);
+
+  TransportOnly particle_properties;
+  saplog << "Gyroperiod: "
+         << 2 * M_PI * particle_properties.gamma / physical_properties.B0
+         << std::endl;
+  saplog << "Gyroradius: " << particle_properties.gamma / physical_properties.B0
+         << std::endl;
+
+  saplog.pop();
+
+  timer.start();
+  VFPEquationSolver vfp_equation_solver(vfp_solver_control,
+                                        physical_properties,
+                                        output_module);
+  vfp_equation_solver.run();
+  timer.stop();
+
+  InitialValueFunction<VFPSolverControl::dim> cylinder(
+    physical_properties, vfp_solver_control.expansion_order);
+  double error =
+    vfp_equation_solver.compute_global_error(cylinder,
+                                             VectorTools::L2_norm,
+                                             //  VectorTools::Linfty_norm);
+                                             VectorTools::L2_norm);
+
+  saplog << "Error = " << error << " CPU/wall time = " << timer.cpu_time()
+         << "/" << timer.wall_time() << " s" << std::endl;
+
+  if (max_expected_error > 0)
+    AssertThrow(error < max_expected_error,
+                ExcMessage("Error does not match expected value: " +
+                           std::to_string(error) + " > " +
+                           std::to_string(max_expected_error)));
+
+  return 0;
+}
+
+
+int
+main(int argc, char *argv[])
+{
+  try
+    {
+      using namespace Sapphire;
+      using namespace dealii;
+      Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+
+      saplog.pop();
+      saplog.depth_console(1);
+      saplog.depth_file(0);
+      // saplog.depth_console(-1);
+      const unsigned int mpi_rank =
+        Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+      if (mpi_rank > 0)
+        {
+          saplog.depth_console(0);
+          saplog.depth_file(0);
+          char buffer[4];
+          std::snprintf(buffer, 4, "%03d", mpi_rank);
+          saplog.push("mpi" + std::string(buffer));
+        }
+
+      std::string parameter_filename = "parameter.prm";
+      if (argc > 1)
+        parameter_filename = argv[1];
+
+      std::string parameter_name = "gyro";
+      if (argc > 2)
+        parameter_name = argv[2];
+
+      int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+      saplog << "Start gyroradius test with parameter file \""
+             << parameter_filename << "\" on " << mpi_size << " processor(s) ["
+             << Utilities::System::get_date() << " "
+             << Utilities::System::get_time() << "]" << std::endl;
+
+      if (parameter_name == "gyro")
+        {
+          double max_expected_error = 0;
+          if (argc > 3)
+            max_expected_error = std::stod(argv[3]);
+
+          return calculate_gyro(parameter_filename, max_expected_error);
+        }
+
+      TestParameter test_parameter;
+      if (parameter_name == "expansion_order")
+        test_parameter = TestParameter::expansion_order;
+      else if (parameter_name == "final_time")
+        test_parameter = TestParameter::final_time;
+      else if (parameter_name == "time_step")
+        test_parameter = TestParameter::time_step;
+      else if (parameter_name == "num_cells")
+        test_parameter = TestParameter::num_cells;
+      else if (parameter_name == "polynomial_degree")
+        test_parameter = TestParameter::polynomial_degree;
+      else
+        AssertThrow(false,
+                    ExcMessage("Unknown parameter name: " + parameter_name));
+
+      saplog << "Test parameter is " << parameter_name << std::endl;
+
+      std::vector<double> values;
+      std::vector<double> max_expected_errors;
+      if (argc > 3)
+        {
+          const std::string expected_output_file = argv[3];
+          saplog << "Read expected output from \"" << expected_output_file
+                 << "\"" << std::endl;
+          std::ifstream expected_output(expected_output_file);
+          AssertThrow(expected_output.is_open(),
+                      ExcMessage("Could not open expected output file"));
+          std::string line;
+          double      value, max_expected_error;
+          std::getline(expected_output, line);
+          while (std::getline(expected_output, line))
+            {
+              std::istringstream iss(line);
+              iss >> value;
+              values.push_back(value);
+              iss >> max_expected_error;
+              max_expected_errors.push_back(max_expected_error);
+            }
+          expected_output.close();
+        }
+      else
+        {
+          switch (test_parameter)
+            {
+              case TestParameter::final_time:
+                values = {0.5, 1, 1.5, 2, 3, 4};
+                break;
+              case TestParameter::expansion_order:
+                values = {1, 2, 3, 4, 5};
+                break;
+              case TestParameter::time_step:
+                values = {0.01, 0.05, 0.1, 0.2, 0.5};
+                break;
+              case TestParameter::num_cells:
+                values = {8, 16, 32, 64};
+                break;
+              case TestParameter::polynomial_degree:
+                values = {1, 2};
+                break;
+              default:
+                Assert(false, ExcNotImplemented());
+            }
+        }
+
+      return error_with_parameter(parameter_filename,
+                                  test_parameter,
+                                  values,
+                                  max_expected_errors);
     }
   catch (std::exception &exc)
     {
