@@ -8,3 +8,7 @@ target_link_libraries(gyro_radius UtilsLib)
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(tests)
+
+set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/results"
+)

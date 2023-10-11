@@ -13,7 +13,8 @@ enum class TestParameter
   expansion_order,
   time_step,
   num_cells,
-  polynomial_degree
+  polynomial_degree,
+  mpi_processes
 };
 
 int
@@ -57,6 +58,11 @@ error_with_parameter(std::string               parameter_filename,
       case TestParameter::polynomial_degree:
         {
           parameter_name = "polynomial_degree";
+          break;
+        }
+      case TestParameter::mpi_processes:
+        {
+          parameter_name = "mpi_processes";
           break;
         }
       default:
@@ -119,6 +125,11 @@ error_with_parameter(std::string               parameter_filename,
           case TestParameter::polynomial_degree:
             vfp_solver_control.polynomial_degree = uint(values[i]);
             break;
+          case TestParameter::mpi_processes:
+            if (values[i] == Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
+              break;
+            else
+              continue;
           default:
             Assert(false, ExcNotImplemented());
         }
@@ -153,12 +164,24 @@ error_with_parameter(std::string               parameter_filename,
 
       if (max_expected_errors.size() > 0)
         {
-          AssertThrow(L2_error < max_expected_errors[i],
-                      ExcMessage("L2 error does not match expected value for " +
-                                 parameter_name + "=" +
-                                 std::to_string(values[i]) + ": " +
-                                 std::to_string(L2_error) + " > " +
-                                 std::to_string(max_expected_errors[i])));
+          if (test_parameter == TestParameter::mpi_processes)
+            {
+              AssertThrow(
+                timer.cpu_time() < max_expected_errors[i],
+                ExcMessage("Runtime longer than expected for " +
+                           std::to_string(int(values[i])) + " mpi processes: " +
+                           std::to_string(timer.cpu_time()) + "s > " +
+                           std::to_string(max_expected_errors[i]) + "s"));
+            }
+          else
+            {
+              AssertThrow(L2_error < max_expected_errors[i],
+                          ExcMessage(
+                            "L2 error does not match expected value for " +
+                            parameter_name + "=" + std::to_string(values[i]) +
+                            ": " + std::to_string(L2_error) + " > " +
+                            std::to_string(max_expected_errors[i])));
+            }
         }
     }
 
@@ -288,6 +311,8 @@ main(int argc, char *argv[])
         test_parameter = TestParameter::num_cells;
       else if (parameter_name == "polynomial_degree")
         test_parameter = TestParameter::polynomial_degree;
+      else if (parameter_name == "mpi_processes")
+        test_parameter = TestParameter::mpi_processes;
       else
         AssertThrow(false,
                     ExcMessage("Unknown parameter name: " + parameter_name));
@@ -335,6 +360,9 @@ main(int argc, char *argv[])
                 break;
               case TestParameter::polynomial_degree:
                 values = {1, 2};
+                break;
+              case TestParameter::mpi_processes:
+                values = {double(mpi_size)};
                 break;
               default:
                 Assert(false, ExcNotImplemented());
