@@ -1651,12 +1651,16 @@ Sapphire::VFP::VFPEquationSolver::compute_global_error(
 
   ComponentSelectFunction<dim_ps> mask(0, num_exp_coefficients);
 
+  QTrapezoid<1>     q_trapez;
+  QIterated<dim_ps> error_quadrature(q_trapez,
+                                     vfp_solver_control.polynomial_degree + 2);
+
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
                                     locally_relevant_current_solution,
                                     exact_solution,
                                     cellwise_errors,
-                                    quadrature,
+                                    error_quadrature,
                                     cell_norm,
                                     &mask);
 
