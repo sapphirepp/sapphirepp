@@ -1,5 +1,5 @@
-results/
-build/
-.cache/
+results
+build
+.cache
 *.prm
 !parameter-template.prm
