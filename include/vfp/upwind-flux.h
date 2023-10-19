@@ -138,6 +138,10 @@ namespace Sapphire
       // The upwind flux computations require to know if the momentum direction
       // exits or not.
       const bool momentum;
+
+      // The minimum flux value. If the flux is smaller than the coupling is
+      // switched off.
+      const double min_flux = 1e-12;
     };
   } // namespace VFP
 } // namespace Sapphire

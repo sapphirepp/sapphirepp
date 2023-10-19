@@ -180,11 +180,12 @@ Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
          ++component_j)
       for (unsigned int i = 0; i < positive_flux_matrices.size(); ++i)
         {
-          if (pde_system.has_coupling_face(component_i, component_j) ==
+          if (pde_system.get_face_couplings(component_i, component_j) ==
               dealii::DoFTools::Coupling::none)
             {
-              Assert(std::abs(positive_flux_matrices[i](component_i,
-                                                        component_j)) < 1e-12,
+              Assert(std::abs(
+                       positive_flux_matrices[i](component_i, component_j)) <
+                       min_flux,
                      dealii::ExcMessage(
                        "The positive_flux_matrix " + std::to_string(i) +
                        " at (" + std::to_string(component_i) + "," +
@@ -192,8 +193,9 @@ Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
                        std::to_string(
                          positive_flux_matrices[i](component_i, component_j)) +
                        " != 0)"));
-              Assert(std::abs(negative_flux_matrices[i](component_i,
-                                                        component_j)) < 1e-12,
+              Assert(std::abs(
+                       negative_flux_matrices[i](component_i, component_j)) <
+                       min_flux,
                      dealii::ExcMessage(
                        "The negative_flux_matrix " + std::to_string(i) +
                        " at (" + std::to_string(component_i) + "," +
@@ -430,8 +432,8 @@ Sapphire::VFP::UpwindFlux<dim>::compute_face_couplings(
 
       for (int i = 0; i < matrix_size; ++i)
         for (int j = 0; j < matrix_size; ++j)
-          if ((std::abs(positive_flux_matrix(i, j)) > 1e-12) or
-              ((std::abs(negative_flux_matrix(i, j)) > 1e-12)))
+          if ((std::abs(positive_flux_matrix(i, j)) > min_flux) or
+              ((std::abs(negative_flux_matrix(i, j)) > min_flux)))
             new_face_couplings(i, j) = dealii::DoFTools::Coupling::nonzero;
     }
 
@@ -503,8 +505,8 @@ Sapphire::VFP::UpwindFlux<dim>::compute_face_couplings(
 
       for (int i = 0; i < matrix_size; ++i)
         for (int j = 0; j < matrix_size; ++j)
-          if ((std::abs(positive_flux_matrix(i, j)) > 1e-12) or
-              ((std::abs(negative_flux_matrix(i, j)) > 1e-12)))
+          if ((std::abs(positive_flux_matrix(i, j)) > min_flux) or
+              ((std::abs(negative_flux_matrix(i, j)) > min_flux)))
             new_face_couplings(i, j) = dealii::DoFTools::Coupling::nonzero;
     }
 }

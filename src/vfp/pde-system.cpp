@@ -79,33 +79,35 @@ Sapphire::VFP::PDESystem::get_t_matrices() const
 {
   return t_matrices;
 }
+const dealii::Table<2, dealii::DoFTools::Coupling> &
+Sapphire::VFP::PDESystem::get_cell_couplings() const
+{
+  return cell_couplings;
+}
+dealii::DoFTools::Coupling
+Sapphire::VFP::PDESystem::get_cell_couplings(
+  const unsigned int &component_i,
+  const unsigned int &component_j) const
+{
+  return cell_couplings(component_i, component_j);
+}
+const dealii::Table<2, dealii::DoFTools::Coupling>
+Sapphire::VFP::PDESystem::get_face_couplings() const
+{
+  return face_couplings;
+}
+dealii::DoFTools::Coupling
+Sapphire::VFP::PDESystem::get_face_couplings(
+  const unsigned int &component_i,
+  const unsigned int &component_j) const
+{
+  return face_couplings(component_i, component_j);
+}
 
 const std::vector<std::array<unsigned int, 3>> &
 Sapphire::VFP::PDESystem::get_lms_indices() const
 {
   return lms_indices;
-}
-
-dealii::DoFTools::Coupling
-Sapphire::VFP::PDESystem::has_coupling_cell(
-  const unsigned int &component_i,
-  const unsigned int &component_j) const
-{
-  AssertIndexRange(component_i, system_sz);
-  AssertIndexRange(component_j, system_sz);
-
-  return cell_couplings(component_i, component_j);
-}
-
-dealii::DoFTools::Coupling
-Sapphire::VFP::PDESystem::has_coupling_face(
-  const unsigned int &component_i,
-  const unsigned int &component_j) const
-{
-  AssertIndexRange(component_i, system_sz);
-  AssertIndexRange(component_j, system_sz);
-
-  return face_couplings(component_i, component_j);
 }
 
 unsigned int
