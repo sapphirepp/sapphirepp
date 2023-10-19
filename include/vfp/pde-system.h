@@ -61,6 +61,10 @@ namespace Sapphire
       void
       print_t_matrices(std::ostream &os) const;
       void
+      print_cell_couplings(std::ostream &os) const;
+      void
+      print_face_couplings(std::ostream &os) const;
+      void
       print_pde_system(std::ostream &os) const;
       // lms indices
       template <typename StreamType>
@@ -99,6 +103,9 @@ namespace Sapphire
       std::vector<dealii::LAPACKFullMatrix<double>> t_matrices;
       // Collision matrix (essentially a reaction matrix)
       dealii::Vector<double> collision_matrix;
+      // Coubling between components
+      dealii::Table<2, dealii::DoFTools::Coupling> cell_couplings;
+      dealii::Table<2, dealii::DoFTools::Coupling> face_couplings;
       // Map between i and l,m,s (implemented in constructor)
       std::vector<std::array<unsigned int, 3>> lms_indices;
     };
