@@ -359,7 +359,28 @@ Sapphire::VFP::VFPEquationSolver::setup_system()
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  Table<2, DoFTools::Coupling> coupling_cell(num_exp_coefficients,
+                                             num_exp_coefficients);
+  Table<2, DoFTools::Coupling> coupling_face(num_exp_coefficients,
+                                             num_exp_coefficients);
+
+  for (unsigned int component_i = 0; component_i < num_exp_coefficients;
+       ++component_i)
+    {
+      for (unsigned int component_j = 0; component_j < num_exp_coefficients;
+           ++component_j)
+        {
+          coupling_cell[component_i][component_j] =
+            pde_system.has_coupling_cell(component_i, component_j);
+          coupling_face[component_i][component_j] =
+            pde_system.has_coupling_face(component_i, component_j);
+        }
+    }
+
+  DoFTools::make_flux_sparsity_pattern(dof_handler,
+                                       dsp,
+                                       coupling_cell,
+                                       coupling_face);
   SparsityTools::distribute_sparsity_pattern(dsp,
                                              locally_owned_dofs,
                                              mpi_communicator,
@@ -544,6 +565,11 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_v.get_fe().system_to_component_index(j).first;
+                // Only compute if non-zero
+                if (pde_system.has_coupling_cell(component_i, component_j) !=
+                    DoFTools::Coupling::always)
+                  continue;
+
                 if constexpr ((flags & TermFlags::collision) != TermFlags::none)
                   {
                     if (component_i == component_j)
@@ -970,6 +996,11 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_face_v.get_fe().system_to_component_index(j).first;
+                // Only compute if non-zero
+                if (pde_system.has_coupling_face(component_i, component_j) ==
+                    DoFTools::Coupling::none)
+                  continue;
+
                 if constexpr ((flags & TermFlags::spatial_advection) !=
                               TermFlags::none)
                   {
@@ -1078,6 +1109,11 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
+                // Only compute if non-zero
+                if (pde_system.has_coupling_face(component_i, component_j) ==
+                    DoFTools::Coupling::none)
+                  continue;
+
                 copy_data_face.cell_dg_matrix_11(i, j) +=
                   fe_v_face.shape_value(i, q_index) *
                   positive_flux_matrices[q_index](component_i, component_j) *
@@ -1094,6 +1130,11 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
+                // Only compute if non-zero
+                if (pde_system.has_coupling_face(component_i, component_j) ==
+                    DoFTools::Coupling::none)
+                  continue;
+
                 copy_data_face.cell_dg_matrix_12(i, j) -=
                   fe_v_face_neighbor.shape_value(i, q_index) *
                   positive_flux_matrices[q_index](component_i, component_j) *
@@ -1109,6 +1150,11 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
+                // Only compute if non-zero
+                if (pde_system.has_coupling_face(component_i, component_j) ==
+                    DoFTools::Coupling::none)
+                  continue;
+
                 copy_data_face.cell_dg_matrix_21(i, j) +=
                   fe_v_face.shape_value(i, q_index) *
                   negative_flux_matrices[q_index](component_i, component_j) *
@@ -1125,6 +1171,11 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
+                // Only compute if non-zero
+                if (pde_system.has_coupling_face(component_i, component_j) ==
+                    DoFTools::Coupling::none)
+                  continue;
+
                 copy_data_face.cell_dg_matrix_22(i, j) -=
                   fe_v_face_neighbor.shape_value(i, q_index) *
                   negative_flux_matrices[q_index](component_i, component_j) *
@@ -1135,6 +1186,27 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
   };
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
+    for (unsigned int i = 0; i < c.local_dof_indices.size(); ++i)
+      for (unsigned int j = 0; j < c.local_dof_indices.size(); ++j)
+        {
+          const unsigned int component_i =
+            fe.system_to_component_index(i).first;
+          const unsigned int component_j =
+            fe.system_to_component_index(j).first;
+          // if (pde_system.has_coupling_cell(component_i, component_j) !=
+          //     DoFTools::Coupling::always)
+          if (pde_system.has_coupling_face(component_i, component_j) !=
+              DoFTools::Coupling::always)
+            {
+              if (c.cell_matrix(i, j) != 0.)
+                Assert(c.cell_matrix(i, j) == 0.,
+                       ExcMessage(
+                         "The cell coupling (" + std::to_string(component_i) +
+                         "," + std::to_string(component_j) + ") is not zero." +
+                         std::to_string(c.cell_matrix(i, j))));
+            }
+        }
+
     constraints.distribute_local_to_global(c.cell_matrix,
                                            c.local_dof_indices,
                                            dg_matrix);
@@ -1143,6 +1215,27 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
         for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
           for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j)
             {
+              const unsigned int component_i =
+                fe.system_to_component_index(i).first;
+              const unsigned int component_j =
+                fe.system_to_component_index(j).first;
+              if (pde_system.has_coupling_face(component_i, component_j) ==
+                  DoFTools::Coupling::none)
+                {
+                  Assert(cdf.cell_dg_matrix_11(i, j) == 0. and
+                           cdf.cell_dg_matrix_12(i, j) == 0. and
+                           cdf.cell_dg_matrix_21(i, j) == 0. and
+                           cdf.cell_dg_matrix_22(i, j) == 0.,
+                         ExcMessage(
+                           "The face coupling (" + std::to_string(component_i) +
+                           "," + std::to_string(component_j) +
+                           ") is not zero." +
+                           std::to_string(cdf.cell_dg_matrix_11(i, j)) + " " +
+                           std::to_string(cdf.cell_dg_matrix_12(i, j)) + " " +
+                           std::to_string(cdf.cell_dg_matrix_21(i, j)) + " " +
+                           std::to_string(cdf.cell_dg_matrix_22(i, j))));
+                }
+
               dg_matrix.add(cdf.local_dof_indices[i],
                             cdf.local_dof_indices[j],
                             cdf.cell_dg_matrix_11(i, j));

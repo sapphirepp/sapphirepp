@@ -173,6 +173,36 @@ Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
                                     positive_flux_matrices[q_index],
                                     negative_flux_matrices[q_index]);
     }
+
+  for (unsigned int component_i = 0; component_i < pde_system.system_size();
+       ++component_i)
+    for (unsigned int component_j = 0; component_j < pde_system.system_size();
+         ++component_j)
+      for (unsigned int i = 0; i < positive_flux_matrices.size(); ++i)
+        {
+          if (pde_system.has_coupling_face(component_i, component_j) ==
+              dealii::DoFTools::Coupling::none)
+            {
+              Assert(std::abs(positive_flux_matrices[i](component_i,
+                                                        component_j)) < 1e-12,
+                     dealii::ExcMessage(
+                       "The positive_flux_matrix " + std::to_string(i) +
+                       " at (" + std::to_string(component_i) + "," +
+                       std::to_string(component_j) + ") is not zero. (" +
+                       std::to_string(
+                         positive_flux_matrices[i](component_i, component_j)) +
+                       " != 0)"));
+              Assert(std::abs(negative_flux_matrices[i](component_i,
+                                                        component_j)) < 1e-12,
+                     dealii::ExcMessage(
+                       "The negative_flux_matrix " + std::to_string(i) +
+                       " at (" + std::to_string(component_i) + "," +
+                       std::to_string(component_j) + ") is not zero. (" +
+                       std::to_string(
+                         negative_flux_matrices[i](component_i, component_j)) +
+                       " != 0)"));
+            }
+        }
 }
 
 template <int dim>

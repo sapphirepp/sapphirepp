@@ -75,6 +75,38 @@ Sapphire::VFP::PDESystem::get_lms_indices() const
   return lms_indices;
 }
 
+dealii::DoFTools::Coupling
+Sapphire::VFP::PDESystem::has_coupling_cell(
+  const unsigned int &component_i,
+  const unsigned int &component_j) const
+{
+  AssertIndexRange(component_i, system_sz);
+  AssertIndexRange(component_j, system_sz);
+
+  const int l1 = lms_indices[component_i][0];
+  const int l2 = lms_indices[component_j][0];
+
+  // TODO: Implement excact expressions
+  if ((l2 == l1) or (l2 == (l1 + 1)) or (l2 == (l1 - 1)) or (l2 == (l1 + 2)) or
+      (l2 == (l1 - 2)))
+    return dealii::DoFTools::Coupling::always;
+
+  return dealii::DoFTools::Coupling::none;
+}
+
+dealii::DoFTools::Coupling
+Sapphire::VFP::PDESystem::has_coupling_face(
+  const unsigned int &component_i,
+  const unsigned int &component_j) const
+{
+  AssertIndexRange(component_i, system_sz);
+  AssertIndexRange(component_j, system_sz);
+
+  // TODO: Implement
+
+  return dealii::DoFTools::Coupling::always;
+}
+
 unsigned int
 Sapphire::VFP::PDESystem::system_size() const
 {
@@ -413,6 +445,24 @@ Sapphire::VFP::PDESystem::create_advection_matrices()
         advection_matrices[1](l * (l + 1) - 1, l * (l - 1)) =
           std::sqrt(2) * advection_matrices[1](l * (l + 1) - 1, l * (l - 1));
     }
+
+  for (unsigned int component_i = 0; component_i < system_sz; ++component_i)
+    for (unsigned int component_j = 0; component_j < system_sz; ++component_j)
+      for (unsigned int i = 0; i < advection_matrices.size(); ++i)
+        {
+          if (has_coupling_cell(component_i, component_j) !=
+              dealii::DoFTools::Coupling::always)
+            {
+              Assert(advection_matrices[i](component_i, component_j) == 0.,
+                     dealii::ExcMessage(
+                       "The advection matix " + std::to_string(i) + " at (" +
+                       std::to_string(component_i) + "," +
+                       std::to_string(component_j) + ") is not zero. (" +
+                       std::to_string(
+                         advection_matrices[i](component_i, component_j)) +
+                       " != 0)"));
+            }
+        }
 }
 
 void
@@ -515,6 +565,25 @@ Sapphire::VFP::PDESystem::create_generator_rotation_matrices()
             generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1));
         }
     }
+
+  for (unsigned int component_i = 0; component_i < system_sz; ++component_i)
+    for (unsigned int component_j = 0; component_j < system_sz; ++component_j)
+      for (unsigned int i = 0; i < generator_rotation_matrices.size(); ++i)
+        {
+          if (has_coupling_cell(component_i, component_j) !=
+              dealii::DoFTools::Coupling::always)
+            {
+              Assert(
+                generator_rotation_matrices[i](component_i, component_j) == 0.,
+                dealii::ExcMessage(
+                  "The generator matix " + std::to_string(i) + " at (" +
+                  std::to_string(component_i) + "," +
+                  std::to_string(component_j) + ") is not zero. (" +
+                  std::to_string(
+                    generator_rotation_matrices[i](component_i, component_j)) +
+                  " != 0)"));
+            }
+        }
 }
 
 void
@@ -559,6 +628,24 @@ Sapphire::VFP::PDESystem::compute_adv_mat_products()
     for (unsigned int j = i; j < 3; ++j)
       advection_matrices[i].mmult(adv_mat_products[3 * i - i * (i + 1) / 2 + j],
                                   advection_matrices[j]);
+
+  for (unsigned int component_i = 0; component_i < system_sz; ++component_i)
+    for (unsigned int component_j = 0; component_j < system_sz; ++component_j)
+      for (unsigned int i = 0; i < adv_mat_products.size(); ++i)
+        {
+          if (has_coupling_cell(component_i, component_j) !=
+              dealii::DoFTools::Coupling::always)
+            {
+              Assert(adv_mat_products[i](component_i, component_j) == 0.,
+                     dealii::ExcMessage(
+                       "The adv_mat_product " + std::to_string(i) + " at (" +
+                       std::to_string(component_i) + "," +
+                       std::to_string(component_j) + ") is not zero. (" +
+                       std::to_string(
+                         adv_mat_products[i](component_i, component_j)) +
+                       " != 0)"));
+            }
+        }
 }
 
 void
@@ -590,6 +677,24 @@ Sapphire::VFP::PDESystem::compute_adv_cross_generators()
                               generator_rotation_matrices[1]);
   advection_matrices[1].mmult(temp_matrix, generator_rotation_matrices[0]);
   adv_x_gen_matrices[2].add(-1., temp_matrix);
+
+  for (unsigned int component_i = 0; component_i < system_sz; ++component_i)
+    for (unsigned int component_j = 0; component_j < system_sz; ++component_j)
+      for (unsigned int i = 0; i < adv_x_gen_matrices.size(); ++i)
+        {
+          if (has_coupling_cell(component_i, component_j) !=
+              dealii::DoFTools::Coupling::always)
+            {
+              Assert(adv_x_gen_matrices[i](component_i, component_j) == 0.,
+                     dealii::ExcMessage(
+                       "The adv_x_gen_matrix " + std::to_string(i) + " at (" +
+                       std::to_string(component_i) + "," +
+                       std::to_string(component_j) + ") is not zero. (" +
+                       std::to_string(
+                         adv_x_gen_matrices[i](component_i, component_j)) +
+                       " != 0)"));
+            }
+        }
 }
 
 void ::Sapphire::VFP::PDESystem::compute_t_matrices()
@@ -601,6 +706,23 @@ void ::Sapphire::VFP::PDESystem::compute_t_matrices()
   for (unsigned int i = 0; i < 3; ++i)
     for (unsigned int j = 0; j < 3; ++j)
       advection_matrices[j].mmult(t_matrices[3 * i + j], adv_x_gen_matrices[i]);
+
+  for (unsigned int component_i = 0; component_i < system_sz; ++component_i)
+    for (unsigned int component_j = 0; component_j < system_sz; ++component_j)
+      for (unsigned int i = 0; i < t_matrices.size(); ++i)
+        {
+          if (has_coupling_cell(component_i, component_j) !=
+              dealii::DoFTools::Coupling::always)
+            {
+              Assert(t_matrices[i](component_i, component_j) == 0.,
+                     dealii::ExcMessage(
+                       "The t_matrix " + std::to_string(i) + " at (" +
+                       std::to_string(component_i) + "," +
+                       std::to_string(component_j) + ") is not zero. (" +
+                       std::to_string(t_matrices[i](component_i, component_j)) +
+                       " != 0)"));
+            }
+        }
 }
 
 void ::Sapphire::VFP::PDESystem::shrink_matrices()

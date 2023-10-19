@@ -1,6 +1,8 @@
 #ifndef VFP_PDESYSTEM_H
 #define VFP_PDESYSTEM_H
 
+#include <deal.II/dofs/dof_tools.h>
+
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/vector.h>
 
@@ -32,6 +34,13 @@ namespace Sapphire
       // lms indices
       const std::vector<std::array<unsigned int, 3>> &
       get_lms_indices() const;
+
+      dealii::DoFTools::Coupling
+      has_coupling_cell(const unsigned int &component_i,
+                        const unsigned int &component_j) const;
+      dealii::DoFTools::Coupling
+      has_coupling_face(const unsigned int &component_i,
+                        const unsigned int &component_j) const;
 
       // returns the size of the system
       unsigned int
