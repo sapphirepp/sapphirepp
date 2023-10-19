@@ -140,6 +140,22 @@ Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
   , upwind_flux(pde_system, vfp_solver_control, physical_properties)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
+  LogStream::Prefix p("VFP", saplog);
+  LogStream::Prefix p2("Initialization", saplog);
+
+  {
+    LogStream::Prefix p2("Couplings", saplog);
+    // pde_system.print_index_map(std::cout);
+    // pde_system.print_pde_system(std::cout);
+    // upwind_flux.test();
+    pde_system.print_index_map(saplog);
+    pde_system.print_cell_couplings(saplog);
+    Table<2, DoFTools::Coupling> new_face_couplings;
+    upwind_flux.compute_face_couplings(new_face_couplings);
+    pde_system.set_face_couplings(new_face_couplings);
+    pde_system.print_face_couplings(saplog);
+  }
+
   // It should be checked if the results folder exists and if not it should
   // be tried to create it Only one processor needs to check and create the
   // folder if (rank == 0)

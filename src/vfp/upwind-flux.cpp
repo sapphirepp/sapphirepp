@@ -406,6 +406,111 @@ Sapphire::VFP::UpwindFlux<dim>::prepare_upwind_fluxes()
 
 template <int dim>
 void
+Sapphire::VFP::UpwindFlux<dim>::compute_face_couplings(
+  dealii::Table<2, dealii::DoFTools::Coupling> &new_face_couplings)
+{
+  LogStream::Prefix p("UpwindFlux", saplog);
+  saplog << "Calculating face couplings" << std::endl;
+  new_face_couplings.reinit(matrix_size, matrix_size);
+  new_face_couplings.fill(DoFTools::Coupling::none);
+
+  dealii::FullMatrix<double> positive_flux_matrix(matrix_size);
+  dealii::FullMatrix<double> negative_flux_matrix(matrix_size);
+
+  for (int component = 0; component < dim - momentum; ++component)
+    {
+      // space directions
+      compute_flux_in_space_directions(
+        component, 1., -0.5, 0.9, positive_flux_matrix, negative_flux_matrix);
+
+      // std::cout << "positive_flux_matrix \n";
+      // positive_flux_matrix.print_formatted(std::cout);
+      // std::cout << "negative_flux_matrix \n";
+      // negative_flux_matrix.print_formatted(std::cout);
+
+      for (int i = 0; i < matrix_size; ++i)
+        for (int j = 0; j < matrix_size; ++j)
+          if ((std::abs(positive_flux_matrix(i, j)) > 1e-12) or
+              ((std::abs(negative_flux_matrix(i, j)) > 1e-12)))
+            new_face_couplings(i, j) = dealii::DoFTools::Coupling::nonzero;
+    }
+
+  if (momentum)
+    {
+      // Test momentum direction
+      // Random number generator
+      class RandomNumber
+      {
+      public:
+        RandomNumber(double low, double high)
+          : m_uniform_dist{low, high}
+        {}
+
+        double
+        operator()()
+        {
+          return m_uniform_dist(m_re);
+        };
+        void
+        seed(unsigned int s)
+        {
+          m_re.seed(s);
+        }
+
+      private:
+        std::default_random_engine m_re;
+        std::uniform_real_distribution<double>
+          m_uniform_dist; // Default intervall
+      };
+      RandomNumber       rnd_number_generator{-1.e4, 1.e4};
+      std::random_device seed; // Seeded with /dev/urandom
+      rnd_number_generator.seed(seed());
+
+      // Fill the arguments of compute_flux_in_p_directon with randon numbers
+      double                 test_n_p   = 1.;
+      double                 test_gamma = rnd_number_generator();
+      double                 test_p     = rnd_number_generator();
+      dealii::Vector<double> test_material_derivative{rnd_number_generator(),
+                                                      rnd_number_generator(),
+                                                      rnd_number_generator()};
+      std::vector<dealii::Vector<double>> test_jacobian(3);
+      test_jacobian[0] = dealii::Vector<double>{rnd_number_generator(),
+                                                rnd_number_generator(),
+                                                rnd_number_generator()};
+      test_jacobian[1] = dealii::Vector<double>{rnd_number_generator(),
+                                                rnd_number_generator(),
+                                                rnd_number_generator()};
+      test_jacobian[2] = dealii::Vector<double>{rnd_number_generator(),
+                                                rnd_number_generator(),
+                                                rnd_number_generator()};
+
+      // reset matrices
+      positive_flux_matrix = 0;
+      negative_flux_matrix = 0;
+      // Compute flux matrices
+      compute_flux_in_p_direction(test_n_p,
+                                  test_p,
+                                  test_gamma,
+                                  test_material_derivative,
+                                  test_jacobian,
+                                  positive_flux_matrix,
+                                  negative_flux_matrix);
+
+      // std::cout << "positive_flux_matrix \n";
+      // positive_flux_matrix.print_formatted(std::cout);
+      // std::cout << "negative_flux_matrix \n";
+      // negative_flux_matrix.print_formatted(std::cout);
+
+      for (int i = 0; i < matrix_size; ++i)
+        for (int j = 0; j < matrix_size; ++j)
+          if ((std::abs(positive_flux_matrix(i, j)) > 1e-12) or
+              ((std::abs(negative_flux_matrix(i, j)) > 1e-12)))
+            new_face_couplings(i, j) = dealii::DoFTools::Coupling::nonzero;
+    }
+}
+
+template <int dim>
+void
 Sapphire::VFP::UpwindFlux<dim>::test()
 {
   std::cout << "Eigenvalues: \n";

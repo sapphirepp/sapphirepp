@@ -36,6 +36,9 @@ namespace Sapphire
         std::vector<dealii::FullMatrix<double>>   &positive_flux_matrices,
         std::vector<dealii::FullMatrix<double>>   &negative_flux_matrices);
       void
+      compute_face_couplings(
+        dealii::Table<2, dealii::DoFTools::Coupling> &new_face_couplings);
+      void
       test();
 
     private:

@@ -60,16 +60,22 @@ namespace Sapphire
       print_adv_cross_gen(std::ostream &os) const;
       void
       print_t_matrices(std::ostream &os) const;
+      template <typename StreamType>
       void
-      print_cell_couplings(std::ostream &os) const;
+      print_cell_couplings(StreamType &os) const;
+      template <typename StreamType>
       void
-      print_face_couplings(std::ostream &os) const;
+      print_face_couplings(StreamType &os) const;
       void
       print_pde_system(std::ostream &os) const;
       // lms indices
       template <typename StreamType>
       void
       print_index_map(StreamType &os) const;
+
+      void
+      set_face_couplings(
+        const dealii::Table<2, dealii::DoFTools::Coupling> &new_face_couplings);
 
     private:
       void

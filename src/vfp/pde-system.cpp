@@ -4,6 +4,8 @@
 
 #include <deal.II/lac/lapack_full_matrix.h>
 
+#include "sapphire-logstream.h"
+
 Sapphire::VFP::PDESystem::PDESystem(int l)
   : expansion_order{l}
   , system_sz{static_cast<unsigned int>((l + 1) * (l + 1))}
@@ -191,8 +193,9 @@ Sapphire::VFP::PDESystem::print_t_matrices(std::ostream &os) const
     }
 }
 
+template <typename StreamType>
 void
-Sapphire::VFP::PDESystem::print_cell_couplings(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_cell_couplings(StreamType &os) const
 {
   os << "Cell couplings: " << std::endl;
 
@@ -207,8 +210,21 @@ Sapphire::VFP::PDESystem::print_cell_couplings(std::ostream &os) const
     }
 }
 
+// explicit instantiation
+template void
+Sapphire::VFP::PDESystem::print_cell_couplings(std::ostream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_cell_couplings(
+  dealii::ConditionalOStream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_cell_couplings(dealii::LogStream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_cell_couplings(
+  Sapphire::Utils::SapphireLogStream &os) const;
+
+template <typename StreamType>
 void
-Sapphire::VFP::PDESystem::print_face_couplings(std::ostream &os) const
+Sapphire::VFP::PDESystem::print_face_couplings(StreamType &os) const
 {
   os << "Face couplings: " << std::endl;
 
@@ -223,6 +239,17 @@ Sapphire::VFP::PDESystem::print_face_couplings(std::ostream &os) const
     }
 }
 
+// explicit instantiation
+template void
+Sapphire::VFP::PDESystem::print_face_couplings(std::ostream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_face_couplings(
+  dealii::ConditionalOStream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_face_couplings(dealii::LogStream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_face_couplings(
+  Sapphire::Utils::SapphireLogStream &os) const;
 
 template <typename StreamType>
 void
@@ -232,10 +259,23 @@ Sapphire::VFP::PDESystem::print_index_map(StreamType &os) const
   unsigned int i = 0;
   for (const std::array<unsigned int, 3> &lms : lms_indices)
     {
-      os << i << ": " << lms[0] << lms[1] << lms[2] << "\n";
+      os << " " << i << "\t: " << lms[0] << "," << lms[1] << "," << lms[2]
+         << std::endl;
       ++i;
     }
   os << std::endl;
+}
+
+void
+Sapphire::VFP::PDESystem::set_face_couplings(
+  const dealii::Table<2, dealii::DoFTools::Coupling> &new_face_couplings)
+{
+  Assert(new_face_couplings.n_rows() == system_sz,
+         dealii::ExcMessage("Wrong number of rows in face couplings"));
+  Assert(new_face_couplings.n_cols() == system_sz,
+         dealii::ExcMessage("Wrong number of columns in face couplings"));
+
+  face_couplings = new_face_couplings;
 }
 
 // explicit instantiation
@@ -243,6 +283,11 @@ template void
 Sapphire::VFP::PDESystem::print_index_map(std::ostream &os) const;
 template void
 Sapphire::VFP::PDESystem::print_index_map(dealii::ConditionalOStream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_index_map(dealii::LogStream &os) const;
+template void
+Sapphire::VFP::PDESystem::print_index_map(
+  Sapphire::Utils::SapphireLogStream &os) const;
 
 void
 Sapphire::VFP::PDESystem::print_pde_system(std::ostream &os) const
