@@ -1351,8 +1351,8 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
 
-  SolverControl                   solver_control(1000, 1e-12);
-  PETScWrappers::SolverRichardson solver(solver_control, mpi_communicator);
+  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
   // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
