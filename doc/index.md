@@ -1,10 +1,22 @@
 \mainpage
 
 Welcome to the Sapphire++ documentation
-\section About
+# About
 
 What is Sapphire++ and what is it doing?
 
-\section Installation
+# Installation
 
 A rather lengthy description of the installation process.
+
+## Compilation
+
+**Dorem Lorum ipsum**
+
+$\alpha$
+
+
+\begin{equation}
+	\alpha + \beta
+\end{equation}
+
