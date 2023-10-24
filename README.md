@@ -5,20 +5,24 @@ width=563 height=300 >
 </p>
 
 # About
-Sapphire is an acronym and stands for "**S**imulating **a**strophysical
-**p**lasmas and **p**articles with **hi**gly **r**elativistic **e**nergies". It
-is made to simulate the interaction of particles with a background plasma. To
+
+Sapphire is an acronym and stands for \"<strong>S</strong>imulating
+<strong>a</strong>strophysical <strong>p</strong>lasmas and
+<strong>p</strong>articles with <strong>hi</strong>gly
+<strong>r</strong>elativistic <strong>e</strong>nergies\".
+
+It is made to simulate the interaction of particles with a background plasma. To
 this end it solves a Vlasov-Fokker-Planck equation in mixed coordinates, namely
 
-\[
+$$
   \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x}
   f - \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p}f
   - \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f
   + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S(\mathbf{x}, \mathbf{p}, t)\, .
-\]
+$$
 
-$f$ is a number density of particles in phase space. The above equation models
+$f$ is a __number__ density of particles in phase space. The above equation models
 how this distribution evolves in time assuming that the particles interact with
 the a background plasma, which is determined by means of its velocity
 $\mathbf{u}$ and its magnetic field $\mathbf{B}$. The interaction is determined
@@ -26,10 +30,10 @@ by the right-hand side of the equation: It models particles whose direction
 diffuses.
 
 To solve the above equation, we expand $f$ using real spherical harmonics, namely
-\[
+$$
  f(\mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0} \sum^{1}_{s
  = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi) \,.
-\]
+$$
 
 This turns the original equation into a system of equations determining the
 coefficients $f_{lms}$ of the expansion. And they are the output of the
@@ -108,9 +112,9 @@ time stepping method, the order of the spherical harmonic expansion, the
 polynomial degree of the shape functions of the finite elements and where to
 store the output of simulation runs. The physical input allows a user to set the
 reference values for the dimensionless units, to prescribe the initial
-distribution of particles, the background velocity field \(\mathbf{u}\), the
-magnetic field \(\mathbf{B}\), the scattering frequency \(\nu\) and the source
-term \(S\).
+distribution of particles, the background velocity field $\mathbf{u}$, the
+magnetic field $\mathbf{B}$, the scattering frequency $\nu$ and the source
+term $S$.
 
 ## Compile time options
 Sapphire is able to solve various "versions" of the above Vlasov-Fokker-Planck
@@ -120,15 +124,15 @@ compiled. The corresponding options are found in `include/vfp-solver-control.h`.
 The options are:
 - `vfp_terms`: This option determines which terms are included in the simulation.
 Possible options are:
-    - `spatial_advection` and the related term is \((\mathbf{u} +\mathbf{v})\cdot\nabla_{x}f\). Not including the spatial advection term
+    - `spatial_advection` and the related term is $(\mathbf{u} +\mathbf{v})\cdot\nabla_{x}f$. Not including the spatial advection term
       is tantamount to setting the dimension of the configuration space to zero,
-      i.e. the expansion coefficients do not depend on \(\mathbf{x}\).
-    - `momentum` and the related terms are \(-\gamma m \mathrm{D}\mathbf{u}/\mathrm{D} t \cdot \nabla_{p} - \mathbf{p} \cdot  \nabla_{x} \mathbf{u} \cdot \nabla_{p}f\). Not  including the momentum
+      i.e. the expansion coefficients do not depend on $\mathbf{x}$.
+    - `momentum` and the related terms are $-\gamma m \mathrm{D}\mathbf{u}/\mathrm{D} t \cdot \nabla_{p} - \mathbf{p} \cdot  \nabla_{x} \mathbf{u} \cdot \nabla_{p}f$. Not  including the momentum
       terms is tantamount to expansion coefficients which are independent of the
-      magnitude of momentum, i.e \(p\).
-    - `magnetic` and the related term is \(q\mathbf{v} \cdot (\mathbf{B} \times \nabla_{p} f)\).
-    - `collision` and the related term is \(\nu/2 \Delta_{\theta, \varphi} f\).
-	- `source` and the related term is \(S(\mathbf{x}, \mathbf{p}, t)\)
+      magnitude of momentum, i.e $p$.
+    - `magnetic` and the related term is $q\mathbf{v} \cdot (\mathbf{B} \times \nabla_{p} f)$.
+    - `collision` and the related term is $\nu/2 \Delta_{\theta, \varphi} f$.
+	- `source` and the related term is $S(\mathbf{x}, \mathbf{p}, t)$
 
   An example setup is
   ```cpp
@@ -136,18 +140,18 @@ Possible options are:
    TermFlags::spatial_advection | TermFlags::magnetic | TermFlags::collision
   ```
   Note the operator `|` means `and`.
- - `dim_configuration_space`: This option decides if \(\mathbf{x}\) has one, two
+ - `dim_configuration_space`: This option decides if $\mathbf{x}$ has one, two
    or three components, i.e. the expansion coefficients either dependent on
-   \(x\), \(x\) and \(y\) or \(x, y \) and \(z\). Note that the total dimension
+   $x$, $x$ and $y$ or $x, y $ and $z$. Note that the total dimension
    of the problem must not exceed three. In particular, if the momentum terms
    are included its maximum value is two.
- - `logarithmic_p`: If this option is `true`, \(\ln p\) instead of \(p\) is used.
+ - `logarithmic_p`: If this option is `true`, $\ln p$ instead of $p$ is used.
    Note this option only changes the program, if the momentum terms are included.
- - `time_dependent_fields`: If the background velocity \(\mathbf{u}\) or the
-   magnetic field \(\mathbf{B}\) are time dependent, this option must be set to
+ - `time_dependent_fields`: If the background velocity $\mathbf{u}$ or the
+   magnetic field $\mathbf{B}$ are time dependent, this option must be set to
    `true`. Note that setting it to `true` incurs very high computational costs.
    Only set it to `true`, if necessary.
- - `time_dependent_source`: If the source term \(S\) is time
+ - `time_dependent_source`: If the source term $S$ is time
    dependent it must be set to `true`.
 
 ## Run-time options
@@ -167,10 +171,10 @@ copied (or renamed) to `vfp-equation.prm`.
       less then three, only the first values are considered.
     - `Number of cells` determines in how many cells the domain will be divided in each
       of the coordinate direction. For a two dimensional problem, setting it to
-      `16,16,16`, will yield a grid consisting of \(16^2 = 256\) cells.
+      `16,16,16`, will yield a grid consisting of $16^2 = 256$ cells.
     - `Periodicity` decides if periodic boundary conditions are applied and in which
       direction. For example, `true, false, false` yields a problem which is
-      periodic in the \(x\)-direction.
+      periodic in the $x$-direction.
   
 - The `Time Stepping` section offers the following options:
     - `Method` allows a user to decide which method to use for time stepping. The
@@ -193,7 +197,7 @@ copied (or renamed) to `vfp-equation.prm`.
   
 - The `Finite element` section has only one option as well. It is
     - `Polynomial degree`. It sets the degree of the shape functions of the finite
-      elements. For example, if it is \(1\), in each cell linear functions are used to
+      elements. For example, if it is $1$, in each cell linear functions are used to
       approximate the expansion coefficients.
 
 - The `Output` section offers
@@ -230,10 +234,10 @@ We use them to define the dimensionless units, i.e.
 
 | Type     | Definition                 | Reference                              |
 |:---------|:---------------------------|:---------------------------------------|
-| Length   | \(x^{*} = x/r_{g,0}\)      | \(r_{g,0} =  m_{0} c/q_{0} B_{0}\)     |
-| Time     | \(t^{*} = t \omega_{g,0}\) | \(\omega_{g,0} = q_{0} B_{0}/  m_{0}\) |
-| Momentum | \(p^{*} = p/p_{0} \)       | \(p_{0} =  m_{0} c \)                  |
-| Velocity | \(v^{*} = v/v_{0} \)       | \(v_0 = c\)                            |
+| Length   | $x^{*} = x/r_{g,0}$      | $r_{g,0} =  m_{0} c/q_{0} B_{0}$     |
+| Time     | $t^{*} = t \omega_{g,0}$ | $\omega_{g,0} = q_{0} B_{0}/  m_{0}$ |
+| Momentum | $p^{*} = p/p_{0} $       | $p_{0} =  m_{0} c $                  |
+| Velocity | $v^{*} = v/v_{0} $       | $v_0 = c$                            |
 
 Note the reference values are **not** used when solving the VFP equation. They
 are useful in post-processing the solution to produce physical results.
@@ -247,7 +251,7 @@ examples demonstrate how to implement a physical setup in sapphire.
 
 #### Fields
 
-A constant magnetic field \(B_{z} = 1\) is implemented as follows:
+A constant magnetic field $B_{z} = 1$ is implemented as follows:
 
 ```cpp
 // Magnetic field implementation
@@ -273,7 +277,7 @@ called `magnetic_field`. The point
 contains the coordinates at which to evaluate the magnetic field. And the vector
 (is actually an output argument) and will contain the magnetic field at point. 
 
-A \(x\)-dependent background velocity field \(u_{x} = 1/5 x\) is implemented as
+A $x$-dependent background velocity field $u_{x} = 1/5 x$ is implemented as
 follows
 
 ```cpp
@@ -294,14 +298,14 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
 
 Again, this is the definition of the method `vector_value` of the object
 `BackgroundVelocityField`. This time it is not a constant velocity field, but a
-velocity field, which depends on \(x\). This is expressed with using the first
+velocity field, which depends on $x$. This is expressed with using the first
 coordinate in `point` , i.e. `point[0]`. When sapphire needs to know the
-velocity \(\mathbf{u}\), it calls `vector_value` and it hands over the
+velocity $\mathbf{u}$, it calls `vector_value` and it hands over the
 coordinates where it needs to know it, namely it gives it a `point` and en empty
 vector, which then is filled as prescribed by `vector_value`.
 
 
-A time dependent velocity field, say \(u_{x} = 1/10 t\), is implemented as
+A time dependent velocity field, say $u_{x} = 1/10 t$, is implemented as
 follows
 
 ```cpp
@@ -322,7 +326,7 @@ void Sapphire::BackgroundVelocityField<dim>::vector_value(
 
 For a time dependent magnetic field it works exactly the same. Note that
 independent of the total dimension of the problem, all the three components of
-\(\mathbf{u}\) and \(\mathbf{B}\) are set. This allows the user to work with
+$\mathbf{u}$ and $\mathbf{B}$ are set. This allows the user to work with
 "out-of-the-plane" components of the fields.
 
 If the simulation include momentum terms, it is necessary to also define
@@ -332,12 +336,12 @@ Jacobian of the background velocity field. Follow the examples in
 
 #### Initial condition
 
-The initial conditions determine the distribution of the particles at \(t = 0\).
+The initial conditions determine the distribution of the particles at $t = 0$.
 The output of the simulation are the expansion coefficients of the spherical
-harmonic expansion, namely \(f_{lms}(\mathbf{x},p,t)\). Hence, the initial
+harmonic expansion, namely $f_{lms}(\mathbf{x},p,t)$. Hence, the initial
 condition have to define what these are at the beginning of the simulation.
-\(f_{000}\) represents the isotropic part of the particle distribution whereas
-the coefficients with \(l > 0\) encode the its anisotropies. The initial value
+$f_{000}$ represents the isotropic part of the particle distribution whereas
+the coefficients with $l > 0$ encode the its anisotropies. The initial value
 function allows to set all the coefficients, but most of the time it is enough
 to set the first one. The following example demonstrates how to do this:
 
@@ -365,13 +369,13 @@ void Sapphire::InitialValueFunction<dim>::vector_value(
   f[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) + std::pow(p[2], 2))));
 }
 ```
-This shows an isotropic Gaussian distribution of particles at \(t = 0\).
+This shows an isotropic Gaussian distribution of particles at $t = 0$.
 Depending on the total dimension of the problem a different line needs to be commented
 out. A very important point to know is, that if momentum terms are included, the
-last component of the point `p` corresponds to the \(p\)-direction For example, if
+last component of the point `p` corresponds to the $p$-direction For example, if
 `terms` include the `momentum` flag and if `dim_configuration_space` is set to
-one, then `p[1]` is \(p\). If `dim_configuration_space` was two, then
-`p[2]` would be \(p\). 
+one, then `p[1]` is $p$. If `dim_configuration_space` was two, then
+`p[2]` would be $p$. 
 
 #### Source term
 
@@ -447,14 +451,14 @@ void Sapphire::ScatteringFrequency<dim>::value_list(
   }
 }
 ```
-gives the relation \(\nu = 0.3/p\).
+gives the relation $\nu = 0.3/p$.
 
 ### Transport only case
 
 If the momentum terms are **not** included in the simulation, we speak of the
 "transport only case". The energy of the particles cannot change and thus the
 particles are only transported and **not** accelerated. An implication of this
-is that the expansion coefficients do not depend on \(p\). In this case it is
+is that the expansion coefficients do not depend on $p$. In this case it is
 necessary to set the energy of the particles. This can be done in the file
 `include/vfp/physical-setup.h`. There is a
 

@@ -15,8 +15,7 @@ A rather lengthy description of the installation process.
 
 $\alpha$
 
-
-\begin{equation}
+$$
 	\alpha + \beta
-\end{equation}
+$$
 
