@@ -50,8 +50,8 @@ namespace Sapphire
 
   namespace VFP
   {
-    static constexpr TermFlags vfp_terms =
-      TermFlags::spatial_advection | TermFlags::magnetic;
+    static constexpr VFPFlags vfp_terms =
+      VFPFlags::spatial_advection | VFPFlags::magnetic;
 
     static constexpr bool logarithmic_p = true; // unused
 

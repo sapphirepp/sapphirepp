@@ -30,14 +30,14 @@ namespace Sapphire
       // the spatial advection term is included in the equation or the dimension
       // of the configuration space is set to zero.
       static_assert(
-        (((vfp_terms & TermFlags::spatial_advection) != TermFlags::none) !=
+        (((vfp_terms & VFPFlags::spatial_advection) != VFPFlags::none) !=
          (dim_configuration_space == 0)),
         "If the spatial advection term is deactivated, the "
         "distribtuion function is assumed to be homogeneous, i.e. the "
         "dimension of the configuratin space needs to be set to zero.");
       // Compute the total dimension and set momentum to true
       static constexpr bool momentum =
-        ((vfp_terms & TermFlags::momentum) != TermFlags::none ? true : false);
+        ((vfp_terms & VFPFlags::momentum) != VFPFlags::none ? true : false);
       static constexpr int dim = dim_configuration_space + momentum;
       static_assert(
         dim <= 3,

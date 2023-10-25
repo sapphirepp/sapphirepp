@@ -140,6 +140,8 @@ Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
   , upwind_flux(pde_system, vfp_solver_control, physical_properties)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
+  LogStream::Prefix p("VFP", saplog);
+  saplog << vfp_terms << std::endl;
   // It should be checked if the results folder exists and if not it should
   // be tried to create it Only one processor needs to check and create the
   // folder if (rank == 0)
@@ -180,7 +182,7 @@ Sapphire::VFP::VFPEquationSolver::run()
     // Assemble the dg matrix for t = 0
     assemble_dg_matrix(0);
     // Source term at t = 0;
-    if constexpr ((flags & TermFlags::source) != TermFlags::none)
+    if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
       {
         Source<dim_ps> source_function(physical_properties, expansion_order);
         source_function.set_time(0);
@@ -544,7 +546,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_v.get_fe().system_to_component_index(j).first;
-                if constexpr ((flags & TermFlags::collision) != TermFlags::none)
+                if constexpr ((flags & VFPFlags::collision) != VFPFlags::none)
                   {
                     if (component_i == component_j)
                       {
@@ -587,7 +589,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                         // matrices Ax, Ay and A_z are sparse. TODO:
                         // Performance check. If too bad, return to the
                         // strategy, which was used in v0.6.5
-                        if ((flags & TermFlags::momentum) != TermFlags::none)
+                        if ((flags & VFPFlags::momentum) != VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_grad(i, q_index)[coordinate] *
@@ -608,7 +610,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((flags & TermFlags::magnetic) != TermFlags::none)
+                if constexpr ((flags & VFPFlags::magnetic) != VFPFlags::none)
                   {
                     // NOTE: All three components of the B-Field are
                     // included no matter, which dimension of the
@@ -616,7 +618,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                     for (unsigned int coordinate = 0; coordinate < 3;
                          ++coordinate)
                       {
-                        if ((flags & TermFlags::momentum) != TermFlags::none)
+                        if ((flags & VFPFlags::momentum) != VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
@@ -643,7 +645,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((flags & TermFlags::momentum) != TermFlags::none)
+                if constexpr ((flags & VFPFlags::momentum) != VFPFlags::none)
                   {
                     if constexpr (logarithmic_p)
                       {
@@ -970,8 +972,8 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_face_v.get_fe().system_to_component_index(j).first;
-                if constexpr ((flags & TermFlags::spatial_advection) !=
-                              TermFlags::none)
+                if constexpr ((flags & VFPFlags::spatial_advection) !=
+                              VFPFlags::none)
                   {
                     // TODO: Check naming of BC
                     switch (boundary_condition)
@@ -1322,7 +1324,7 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
   dg_matrix.vmult(tmp, locally_owned_previous_solution);
   system_rhs.add(-time_step * (1 - theta), tmp);
   // Source term
-  if constexpr ((flags & TermFlags::source) != TermFlags::none)
+  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr (time_dependent_source)
         {
@@ -1413,7 +1415,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   PETScWrappers::MPI::Vector k_0(locally_owned_dofs, mpi_communicator);
   // dg_matrix(time)
   dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
-  if constexpr ((flags & TermFlags::source) != TermFlags::none)
+  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
@@ -1434,7 +1436,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((flags & TermFlags::source) != TermFlags::none)
+  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr (time_dependent_source)
         {
@@ -1461,7 +1463,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   // since c[1] = c[2]
   temp.add(1., locally_owned_previous_solution, a[1] * time_step, k_1);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((flags & TermFlags::source) != TermFlags::none)
+  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr (time_dependent_source)
         {
@@ -1493,7 +1495,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((flags & TermFlags::source) != TermFlags::none)
+  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr (time_dependent_source)
         {
@@ -1573,7 +1575,7 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
       if constexpr (time_dependent_fields)
         dg_matrix = 0;
 
-      if constexpr ((flags & TermFlags::source) != TermFlags::none)
+      if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
         {
           if constexpr (time_dependent_source)
             {

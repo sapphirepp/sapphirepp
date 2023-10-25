@@ -16,8 +16,8 @@ this end it solves a Vlasov-Fokker-Planck equation in mixed coordinates, namely
 
 $$
   \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x}
-  f - \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p}f
-  - \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f
+  f - \left( \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}
+  + \mathbf{p} \cdot\nabla_{x} \mathbf{u} \right) \cdot \nabla_{p} f
   + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S(\mathbf{x}, \mathbf{p}, t)\, .
 $$
@@ -136,8 +136,8 @@ Possible options are:
 
   An example setup is
   ```cpp
-  static constexpr TermFlags terms = 
-   TermFlags::spatial_advection | TermFlags::magnetic | TermFlags::collision
+  static constexpr VFPFlags terms = 
+   VFPFlags::spatial_advection | VFPFlags::magnetic | VFPFlags::collision
   ```
   Note the operator `|` means `and`.
  - `dim_configuration_space`: This option decides if $\mathbf{x}$ has one, two

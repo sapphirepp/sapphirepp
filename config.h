@@ -55,8 +55,8 @@ namespace Sapphire
     // determined when constructing an instance, which happens at runtime.
 
     // compile time settings
-    static constexpr TermFlags vfp_terms =
-      TermFlags::spatial_advection | TermFlags::source;
+    static constexpr VFPFlags vfp_terms =
+      VFPFlags::spatial_advection | VFPFlags::source;
 
     // This variabale controls if p is linear or logarithmic
     static constexpr bool logarithmic_p = true;

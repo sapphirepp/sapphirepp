@@ -90,9 +90,9 @@ namespace Sapphire
     class VFPEquationSolver
     {
     private:
-      static constexpr int       dim_ps = VFPSolverControl::dim;
-      static constexpr int       dim_cs = dim_configuration_space;
-      static constexpr TermFlags flags  = vfp_terms;
+      static constexpr int      dim_ps = VFPSolverControl::dim;
+      static constexpr int      dim_cs = dim_configuration_space;
+      static constexpr VFPFlags flags  = vfp_terms;
 
     public:
       VFPEquationSolver(const VFPSolverControl            &vfp_solver_control,
