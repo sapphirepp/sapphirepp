@@ -5,7 +5,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "parameter-flags.h"
 #include "sapphire-logstream.h"
 
 template <int dim>

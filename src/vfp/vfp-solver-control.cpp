@@ -5,7 +5,6 @@
 #include <cctype>
 #include <sstream>
 
-#include "parameter-flags.h"
 #include "sapphire-logstream.h"
 
 Sapphire::VFP::VFPSolverControl::VFPSolverControl()

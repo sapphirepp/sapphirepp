@@ -18,13 +18,18 @@
 
 #include <filesystem>
 
-#include "parameter-flags.h"
-
 namespace Sapphire
 {
   namespace Utils
   {
     using namespace dealii;
+
+    enum class OutputFormat
+    {
+      vtu,
+      pvtu,
+      hdf5
+    };
 
     template <int dim>
     class OutputModule
