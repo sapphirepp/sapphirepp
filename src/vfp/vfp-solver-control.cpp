@@ -141,7 +141,7 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
     s = prm.get("Grid type");
     if (s == "Hypercube")
       {
-        grid_type = Utils::GridType::hypercube;
+        grid_type = GridType::hypercube;
         prm.enter_subsection("Hypercube");
         // Two diagonally opposite corner points of the grid
         s = prm.get("Point 1");
@@ -177,7 +177,7 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
       }
     else if (s == "File")
       {
-        grid_type = Utils::GridType::file;
+        grid_type = GridType::file;
         prm.enter_subsection("File");
         grid_file = prm.get("File name");
         prm.leave_subsection();
@@ -230,26 +230,23 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
     s = prm.get("Method");
     if (s == "Forward Euler")
       {
-        theta = 0.;
-        time_stepping_method =
-          Sapphire::Utils::TimeSteppingMethod::forward_euler;
+        theta                = 0.;
+        time_stepping_method = TimeSteppingMethod::forward_euler;
       }
     else if (s == "Backward Euler")
       {
-        theta = 1.;
-        time_stepping_method =
-          Sapphire::Utils::TimeSteppingMethod::backward_euler;
+        theta                = 1.;
+        time_stepping_method = TimeSteppingMethod::backward_euler;
       }
     else if (s == "Crank-Nicolson")
       {
-        theta = 1. / 2.;
-        time_stepping_method =
-          Sapphire::Utils::TimeSteppingMethod::crank_nicolson;
+        theta                = 1. / 2.;
+        time_stepping_method = TimeSteppingMethod::crank_nicolson;
       }
     else if (s == "ERK4")
-      time_stepping_method = Sapphire::Utils::TimeSteppingMethod::erk4;
+      time_stepping_method = TimeSteppingMethod::erk4;
     else if (s == "LSERK")
-      time_stepping_method = Sapphire::Utils::TimeSteppingMethod::lserk;
+      time_stepping_method = TimeSteppingMethod::lserk;
     else
       AssertThrow(false, ExcNotImplemented());
 

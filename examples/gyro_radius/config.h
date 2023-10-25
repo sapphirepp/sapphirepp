@@ -13,8 +13,8 @@
 #include <ostream>
 #include <vector>
 
-#include "parameter-flags.h"
 #include "sapphire-logstream.h"
+#include "vfp-flags.h"
 
 namespace Sapphire
 {

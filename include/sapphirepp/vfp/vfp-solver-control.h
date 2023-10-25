@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "config.h"
-#include "parameter-flags.h"
+#include "vfp-flags.h"
 
 namespace Sapphire
 {
@@ -48,7 +48,7 @@ namespace Sapphire
       // These settings are read from a parameter file
       int expansion_order;
       // Mesh
-      Utils::GridType                 grid_type;
+      GridType                        grid_type;
       std::string                     grid_file;
       dealii::Point<dim>              p1;
       dealii::Point<dim>              p2;
@@ -57,10 +57,10 @@ namespace Sapphire
       // Finite element
       unsigned int polynomial_degree;
       // Time stepping
-      Utils::TimeSteppingMethod time_stepping_method;
-      double                    theta;
-      double                    time_step;
-      double                    final_time;
+      TimeSteppingMethod time_stepping_method;
+      double             theta;
+      double             time_step;
+      double             final_time;
 
     private:
       // void

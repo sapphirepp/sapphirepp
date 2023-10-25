@@ -199,17 +199,17 @@ Sapphire::VFP::VFPEquationSolver::run()
              << "]" << std::endl;
       // Time stepping method
       if (vfp_solver_control.time_stepping_method ==
-            Utils::TimeSteppingMethod::forward_euler ||
+            TimeSteppingMethod::forward_euler ||
           vfp_solver_control.time_stepping_method ==
-            Utils::TimeSteppingMethod::backward_euler ||
+            TimeSteppingMethod::backward_euler ||
           vfp_solver_control.time_stepping_method ==
-            Utils::TimeSteppingMethod::crank_nicolson)
+            TimeSteppingMethod::crank_nicolson)
         theta_method(time, time_step);
       else if (vfp_solver_control.time_stepping_method ==
-               Utils::TimeSteppingMethod::erk4)
+               TimeSteppingMethod::erk4)
         explicit_runge_kutta(time, time_step);
       else if (vfp_solver_control.time_stepping_method ==
-               Utils::TimeSteppingMethod::lserk)
+               TimeSteppingMethod::lserk)
         low_storage_explicit_runge_kutta(time, time_step);
 
       output_results(time_step_number);
@@ -229,7 +229,7 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
 
   switch (vfp_solver_control.grid_type)
     {
-      case Utils::GridType::hypercube:
+      case GridType::hypercube:
         {
           saplog << "Create the grid from hyper rectangle" << std::endl;
           GridGenerator::subdivided_hyper_rectangle(triangulation,
@@ -239,7 +239,7 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
                                                     true);
           break;
         }
-      case Utils::GridType::file:
+      case GridType::file:
         {
           saplog << "Read grid from file \"" << vfp_solver_control.grid_file
                  << "\"" << std::endl;
