@@ -266,14 +266,14 @@ Sapphire::VFP::VFPEquationSolver<dim>::make_grid()
         AssertThrow(false, ExcNotImplemented());
     }
 
-  // GridGenerator::hyper_cube(triangulation, -5., 5., colorise);
+  // GridGenerator::hyper_cube(triangulation, -5., 5., colorize);
   // triangulation.refine_global(6);
   saplog << "The grid was created: "
          << "	#cells=" << triangulation.n_cells()
          << ",	#active cells=" << triangulation.n_global_active_cells()
          << std::endl;
 
-  // Periodic boundary conditions with MeshWorker. Mailinglist
+  // Periodic boundary conditions with MeshWorker. Mailing list
   // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
   //
   // "If you call add_periodicity() on a Triangulation object, the
@@ -441,7 +441,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_mass_matrix()
   };
   ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData            copy_data;
-  // Perfom the integration loop only over the locally owned cells
+  // Perform the integration loop only over the locally owned cells
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
 
@@ -465,7 +465,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
     2. Loop over the degrees of freedom on each cell
-    - the metod system_to_componet_index() returns the index of the non-zero
+    - the method system_to_component_index() returns the index of the non-zero
     component of the vector-valued shape function which corresponds to the
     indices (l,m,s)
   */
@@ -565,8 +565,8 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                       }
                   }
                 // NOTE: If spatial advection term is deactivated, then
-                // dim_cs must euqal zero, i.e. the distributin function is
-                // assumend to be homogeneous (it does not depend on x, y
+                // dim_cs must equal zero, i.e. the distribution function is
+                // assumed to be homogeneous (it does not depend on x, y
                 // and z). And if dim_cs = 0, there for loop is not entered.
                 for (unsigned int coordinate = 0; coordinate < dim_cs;
                      ++coordinate)
@@ -592,7 +592,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     else
                       {
-                        // NOTE: Many zerso are added here, because the
+                        // NOTE: Many zeros are added here, because the
                         // matrices Ax, Ay and A_z are sparse. TODO:
                         // Performance check. If too bad, return to the
                         // strategy, which was used in v0.6.5
@@ -950,7 +950,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
     // Every shape function on the cell could contribute to the face
     // integral, hence n_facet_dofs = n_dofs_per_cell
     const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
-    // NOTE: copy_data is not reinitialised, the cell_workers contribution
+    // NOTE: copy_data is not reinitialized, the cell_workers contribution
     // to the cell_dg_matrix should not be deleted
 
     const unsigned int       boundary_id = cell->face(face_no)->boundary_id();
@@ -1055,7 +1055,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
     FEFaceValues<dim_ps> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
-    // Create an element at the end of the vector containig the face data
+    // Create an element at the end of the vector containing the face data
     copy_data.face_data.emplace_back();
     CopyDataFace      &copy_data_face = copy_data.face_data.back();
     const unsigned int n_dofs         = fe_v_face.get_fe().n_dofs_per_cell();
@@ -1276,7 +1276,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::compute_source_term(
   Vector<double>     cell_rhs(n_dofs);
 
   std::vector<types::global_dof_index> local_dof_indices(n_dofs);
-  // reinitialis the source term
+  // reinitializes the source term
   locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -1352,7 +1352,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::theta_method(const double time,
         }
     }
   // Since the the dg_matrix depends on the velocity field (and/or the
-  // magnetice field) and the velocity field may depend on time, it needs to
+  // magnetic field) and the velocity field may depend on time, it needs to
   // reassembled every time step. This is not true for the mass matrix ( but
   // it may if the grid adapts after a specified amount of time steps)
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
@@ -1441,7 +1441,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
 
   // k_1
   PETScWrappers::MPI::Vector k_1(locally_owned_dofs, mpi_communicator);
-  // Comute dg_matrix(time + c[1] * time_step) if the fields are time
+  // Compute dg_matrix(time + c[1] * time_step) if the fields are time
   // dependent
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
@@ -1475,7 +1475,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
 
   // k_2
   PETScWrappers::MPI::Vector k_2(locally_owned_dofs, mpi_communicator);
-  // NOTE: For k_2 it is not necessary to reassamble the dg_matrix,
+  // NOTE: For k_2 it is not necessary to reassemble the dg_matrix,
   // since c[1] = c[2]
   temp.add(1., locally_owned_previous_solution, a[1] * time_step, k_1);
   dg_matrix.vmult(system_rhs, temp);
@@ -1503,7 +1503,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
 
   // k_3
   PETScWrappers::MPI::Vector k_3(locally_owned_dofs, mpi_communicator);
-  // Comute dg_matrix(time + c[1] * time_step) if the fields are time
+  // Compute dg_matrix(time + c[1] * time_step) if the fields are time
   // dependent
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
@@ -1674,7 +1674,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::compute_global_error(
 
   // exact_solution.set_time(current_time); //TODO
 
-  Vector<float> cellwise_errors(triangulation.n_locally_owned_active_cells());
+  Vector<float> cell_errors(triangulation.n_locally_owned_active_cells());
 
   ComponentSelectFunction<dim_ps> mask(0, num_exp_coefficients);
 
@@ -1682,14 +1682,13 @@ Sapphire::VFP::VFPEquationSolver<dim>::compute_global_error(
                                     dof_handler,
                                     locally_relevant_current_solution,
                                     exact_solution,
-                                    cellwise_errors,
+                                    cell_errors,
                                     quadrature,
                                     cell_norm,
                                     &mask);
 
-  double global_error = VectorTools::compute_global_error(triangulation,
-                                                          cellwise_errors,
-                                                          global_norm);
+  double global_error =
+    VectorTools::compute_global_error(triangulation, cell_errors, global_norm);
 
   saplog << "Global error: " << global_error << std::endl;
 
