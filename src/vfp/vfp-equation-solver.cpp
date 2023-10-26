@@ -187,7 +187,7 @@ Sapphire::VFP::VFPEquationSolver::run()
     // Assemble the dg matrix for t = 0
     assemble_dg_matrix(0);
     // Source term at t = 0;
-    if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+    if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
       {
         Source<dim_ps> source_function(physical_properties, expansion_order);
         source_function.set_time(0);
@@ -551,7 +551,8 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_v.get_fe().system_to_component_index(j).first;
-                if constexpr ((flags & VFPFlags::collision) != VFPFlags::none)
+                if constexpr ((vfp_flags & VFPFlags::collision) !=
+                              VFPFlags::none)
                   {
                     if (component_i == component_j)
                       {
@@ -594,7 +595,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                         // matrices Ax, Ay and A_z are sparse. TODO:
                         // Performance check. If too bad, return to the
                         // strategy, which was used in v0.6.5
-                        if ((flags & VFPFlags::momentum) != VFPFlags::none)
+                        if ((vfp_flags & VFPFlags::momentum) != VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_grad(i, q_index)[coordinate] *
@@ -615,7 +616,8 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((flags & VFPFlags::magnetic) != VFPFlags::none)
+                if constexpr ((vfp_flags & VFPFlags::magnetic) !=
+                              VFPFlags::none)
                   {
                     // NOTE: All three components of the B-Field are
                     // included no matter, which dimension of the
@@ -623,7 +625,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                     for (unsigned int coordinate = 0; coordinate < 3;
                          ++coordinate)
                       {
-                        if ((flags & VFPFlags::momentum) != VFPFlags::none)
+                        if ((vfp_flags & VFPFlags::momentum) != VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
@@ -650,7 +652,8 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((flags & VFPFlags::momentum) != VFPFlags::none)
+                if constexpr ((vfp_flags & VFPFlags::momentum) !=
+                              VFPFlags::none)
                   {
                     if constexpr (logarithmic_p)
                       {
@@ -977,7 +980,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_face_v.get_fe().system_to_component_index(j).first;
-                if constexpr ((flags & VFPFlags::spatial_advection) !=
+                if constexpr ((vfp_flags & VFPFlags::spatial_advection) !=
                               VFPFlags::none)
                   {
                     // TODO: Check naming of BC
@@ -1329,7 +1332,7 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
   dg_matrix.vmult(tmp, locally_owned_previous_solution);
   system_rhs.add(-time_step * (1 - theta), tmp);
   // Source term
-  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
@@ -1422,7 +1425,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   PETScWrappers::MPI::Vector k_0(locally_owned_dofs, mpi_communicator);
   // dg_matrix(time)
   dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
-  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
@@ -1444,7 +1447,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
@@ -1472,7 +1475,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   // since c[1] = c[2]
   temp.add(1., locally_owned_previous_solution, a[1] * time_step, k_1);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
@@ -1506,7 +1509,7 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
     }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
@@ -1589,7 +1592,7 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
                     VFPFlags::none) // time dependent fields
         dg_matrix = 0;
 
-      if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
+      if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
         {
           if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                         VFPFlags::none) // time dependent source

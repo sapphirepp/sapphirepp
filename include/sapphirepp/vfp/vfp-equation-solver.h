@@ -90,8 +90,7 @@ namespace Sapphire
     class VFPEquationSolver
     {
     private:
-      static constexpr VFPFlags flags = vfp_flags;
-      static constexpr bool     logarithmic_p =
+      static constexpr bool logarithmic_p =
         (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
       static constexpr bool momentum =
         (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
