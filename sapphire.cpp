@@ -64,8 +64,6 @@ main(int argc, char *argv[])
       physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
 
-      output_module.init(prm);
-
       saplog.pop();
       VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
                                                  physical_properties,

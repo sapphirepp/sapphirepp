@@ -49,7 +49,7 @@ Sapphire::Utils::OutputModule<dim>::declare_parameters(ParameterHandler &prm)
   prm.declare_entry("Output frequency",
                     "1",
                     Patterns::Integer(0),
-                    "The frequence at which output files will "
+                    "The frequency at which output files will "
                     "be written. (In units of time steps)");
 
   prm.leave_subsection();
@@ -83,13 +83,15 @@ Sapphire::Utils::OutputModule<dim>::parse_parameters(ParameterHandler &prm)
   output_frequency = prm.get_integer("Output frequency");
 
   prm.leave_subsection();
+
+  parse_parameters_callback(prm);
 }
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::init(ParameterHandler &prm) const
+Sapphire::Utils::OutputModule<dim>::parse_parameters_callback(
+  ParameterHandler &prm) const
 {
-  LogStream::Prefix p("OutputModule", saplog);
   // create output directory
   if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
     {
@@ -106,9 +108,9 @@ Sapphire::Utils::OutputModule<dim>::init(ParameterHandler &prm) const
     {
       int comm_size;
       MPI_Comm_size(mpi_communicator, &comm_size);
-      Assert(comm_size == 1,
-             ExcMessage("'vtu' format only works with a single "
-                        "processor. Use 'pvtu' instead."));
+      AssertThrow(comm_size == 1,
+                  ExcMessage("'vtu' format only works with a single "
+                             "processor. Use 'pvtu' instead."));
     }
 }
 
@@ -198,7 +200,7 @@ Sapphire::Utils::OutputModule<dim>::write_results(
                   ".h5",
                 counter,
                 mpi_communicator);
-              // TODO: Change this, append lines to xmdf file instead
+              // TODO: Change this, append lines to xdmf file instead
               xdmf_entries.push_back(new_xdmf_entry);
               // NOTE: For now I a writing the xdmf file in every time step.
               // That is unnecessary. There is missing a function add entry to

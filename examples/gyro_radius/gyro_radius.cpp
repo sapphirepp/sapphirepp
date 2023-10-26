@@ -90,7 +90,6 @@ error_with_parameter(std::string               parameter_filename,
   physical_properties.parse_parameters(prm);
   output_module.parse_parameters(prm);
 
-  output_module.init(prm);
   saplog.pop();
 
   std::ofstream log_file(output_module.output_path /
@@ -215,8 +214,6 @@ calculate_gyro(std::string parameter_filename, double max_expected_error = 0)
   vfp_solver_control.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
   output_module.parse_parameters(prm);
-
-  output_module.init(prm);
 
   TransportOnly particle_properties;
   saplog << "Gyroperiod: "

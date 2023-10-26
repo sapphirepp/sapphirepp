@@ -44,9 +44,6 @@ namespace Sapphire
       parse_parameters(ParameterHandler &prm);
 
       void
-      init(ParameterHandler &prm) const;
-
-      void
       write_results(DataOut<dim>      &data_out,
                     const unsigned int time_step_number);
 
@@ -63,6 +60,9 @@ namespace Sapphire
       OutputFormat          format;
 
     private:
+      void
+      parse_parameters_callback(ParameterHandler &prm) const;
+
       const MPI_Comm         mpi_communicator;
       std::vector<XDMFEntry> xdmf_entries;
     };
