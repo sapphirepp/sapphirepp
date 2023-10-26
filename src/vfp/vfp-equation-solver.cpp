@@ -978,7 +978,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
                     // TODO: Check naming of BC
                     switch (boundary_condition)
                       {
-                        case BoundaryConditions::continous_gradients:
+                        case BoundaryConditions::continuous_gradients:
                           {
                             copy_data.cell_matrix(i, j) +=
                               fe_face_v.shape_value(i, q_index) *

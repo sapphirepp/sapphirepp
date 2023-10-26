@@ -209,7 +209,7 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
           s = prm.get(entry);
           if (s == "continous gradients")
             boundary_conditions[boundary_id] =
-              VFP::BoundaryConditions::continous_gradients;
+              VFP::BoundaryConditions::continuous_gradients;
           else if (s == "zero inflow")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::zero_inflow;
