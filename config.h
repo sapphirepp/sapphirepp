@@ -59,14 +59,6 @@ namespace Sapphire
                                           VFPFlags::time_independent_fields |
                                           VFPFlags::source;
 
-    // NOTE: All physical quantities are dimensionless. The reference values are
-    // defined in the reference-values.h header.
-    struct ParticleProperties
-    {
-      const double mass   = 1.;
-      const double charge = 1.;
-    };
-
     struct TransportOnly
     {
       // In the transport-only case (i.e. no dependence on p) the energy of the

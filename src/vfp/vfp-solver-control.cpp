@@ -126,6 +126,19 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
   } // Finite element
   prm.leave_subsection();
 
+  prm.enter_subsection("Particle properties");
+  {
+    prm.declare_entry("Mass",
+                      "1.",
+                      Patterns::Double(),
+                      "The mass of the particles.");
+    prm.declare_entry("Charge",
+                      "1.",
+                      Patterns::Double(),
+                      "The charge of the particles.");
+  } // Particle properties
+  prm.leave_subsection();
+
   prm.leave_subsection();
 }
 
@@ -268,6 +281,13 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
   {
     polynomial_degree = prm.get_integer("Polynomial degree");
   } // Finite element
+  prm.leave_subsection();
+
+  prm.enter_subsection("Particle properties");
+  {
+    mass   = prm.get_double("Mass");
+    charge = prm.get_double("Charge");
+  } // Particle properties
   prm.leave_subsection();
 
   prm.leave_subsection();

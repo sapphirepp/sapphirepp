@@ -50,16 +50,11 @@ namespace Sapphire
       double             theta;
       double             time_step;
       double             final_time;
-
-    private:
-      // void
-      // declare_parameters();
-      // void
-      // parse_parameters();
-      // void
-      //                          get_parameters();
-      // const std::string        parameter_file;
-      // dealii::ParameterHandler parameter_handler;
+      // Particle properties
+      // NOTE: All physical quantities are dimensionless. The reference values
+      // are defined in the reference-values.h header.
+      double mass;
+      double charge;
     };
   } // namespace VFP
 } // namespace Sapphire

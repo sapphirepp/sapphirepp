@@ -16,8 +16,9 @@
 
 template <int dim, bool has_momentum, bool logarithmic_p>
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
-  const PDESystem          &system,
-  const PhysicalProperties &physical_properties)
+  const PDESystem             &system,
+  const VFPSolverControl<dim> &solver_control,
+  const PhysicalProperties    &physical_properties)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))
@@ -32,6 +33,10 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
                                     std::vector<double>(matrix_size *
                                                         matrix_size))
   , background_velocity_field(physical_properties)
+  , particle_velocity_func(solver_control.mass)
+  , particle_gamma_func(solver_control.mass)
+  , mass(solver_control.mass)
+  , charge(solver_control.charge)
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}
@@ -576,7 +581,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
   else
     for (int i = 0; i < matrix_size * matrix_size; ++i)
       matrix_sum[i] =
-        -n_p * (gamma * particle_properties.mass *
+        -n_p * (gamma * mass *
                   (material_derivative[0] * advection_matrices[0][i] +
                    material_derivative[1] * advection_matrices[1][i] +
                    material_derivative[2] * advection_matrices[2][i]) +

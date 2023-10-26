@@ -17,24 +17,28 @@ namespace Sapphire
     class ParticleVelocity : public dealii::Function<dim>
     {
     public:
-      ParticleVelocity()
-      {}
+      ParticleVelocity(const double &mass);
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
                  std::vector<double>                   &velocities,
                  unsigned int component = 0) const override;
+
+    private:
+      const double mass;
     };
 
     template <int dim, bool logarithmic_p>
     class ParticleGamma : public dealii::Function<dim>
     {
     public:
-      ParticleGamma()
-      {}
+      ParticleGamma(const double &mass);
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
                  std::vector<double>                   &gammas,
                  unsigned int component = 0) const override;
+
+    private:
+      const double mass;
     };
   } // namespace VFP
 } // namespace Sapphire

@@ -27,8 +27,9 @@ namespace Sapphire
       static constexpr unsigned int dim_cs = dim - has_momentum;
 
     public:
-      UpwindFlux(const PDESystem          &system,
-                 const PhysicalProperties &physical_properties);
+      UpwindFlux(const PDESystem             &system,
+                 const VFPSolverControl<dim> &solver_control,
+                 const PhysicalProperties    &physical_properties);
       void
       set_time(double time);
       void
@@ -88,11 +89,14 @@ namespace Sapphire
       std::vector<std::vector<double>> eigenvectors_advection_matrices;
 
       // Physical input
-      ParticleProperties                   particle_properties;
       BackgroundVelocityField<dim>         background_velocity_field;
       ParticleVelocity<dim, logarithmic_p> particle_velocity_func;
       ParticleGamma<dim, logarithmic_p>    particle_gamma_func;
       TransportOnly                        transport_only;
+
+      // Particle properties
+      const double mass;
+      const double charge;
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:

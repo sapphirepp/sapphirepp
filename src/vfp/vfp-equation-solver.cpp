@@ -138,7 +138,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pde_system(vfp_solver_control.expansion_order)
-  , upwind_flux(pde_system, physical_properties)
+  , upwind_flux(pde_system, vfp_solver_control, physical_properties)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
@@ -494,14 +494,13 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
   ScatteringFrequency<dim_ps> scattering_frequency(physical_properties);
   scattering_frequency.set_time(time);
 
-  ParticleVelocity<dim_ps, logarithmic_p> particle_velocity;
-  ParticleGamma<dim_ps, logarithmic_p>    particle_gamma;
+  ParticleVelocity<dim_ps, logarithmic_p> particle_velocity(
+    vfp_solver_control.mass);
+  ParticleGamma<dim_ps, logarithmic_p> particle_gamma(vfp_solver_control.mass);
 
   // For the transport only case, the energy, the Lorentz factor and the
   // velocity are defined in TransportOnly struct
   TransportOnly transport_only;
-
-  ParticleProperties particle_properties;
 
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator      &cell,
@@ -635,10 +634,10 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
-                              particle_properties.charge *
+                              vfp_solver_control.charge *
                               magnetic_field_values[q_index][coordinate] /
                               (particle_gammas[q_index] *
-                               particle_properties.mass) *
+                               vfp_solver_control.mass) *
                               generator_rotation_matrices[coordinate](
                                 component_i, component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -648,10 +647,9 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // fixed energy case (i.e. transport only)
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
-                              particle_properties.charge *
+                              vfp_solver_control.charge *
                               magnetic_field_values[q_index][coordinate] /
-                              (transport_only.gamma *
-                               particle_properties.mass) *
+                              (transport_only.gamma * vfp_solver_control.mass) *
                               generator_rotation_matrices[coordinate](
                                 component_i, component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -678,7 +676,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // -\phi m/(gamma * p) * du^k/dt * A_k * \phi
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
-                              particle_properties.mass /
+                              vfp_solver_control.mass /
                               (particle_gammas[q_index] *
                                std::exp(q_points[q_index][dim_ps - 1])) *
                               material_derivative_vel[q_index][coordinate] *
@@ -786,7 +784,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             copy_data.cell_matrix(i, j) +=
                               fe_v.shape_grad(i, q_index)[dim_ps - 1] *
                               particle_gammas[q_index] *
-                              particle_properties.mass *
+                              vfp_solver_control.mass *
                               material_derivative_vel[q_index][coordinate] *
                               advection_matrices[coordinate](component_i,
                                                              component_j) *
@@ -794,7 +792,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // \phi m * v * du^k/dt * A_k * \phi
                             copy_data.cell_matrix(i, j) +=
                               fe_v.shape_value(i, q_index) *
-                              particle_properties.mass *
+                              vfp_solver_control.mass *
                               particle_velocities[q_index] *
                               material_derivative_vel[q_index][coordinate] *
                               advection_matrices[coordinate](component_i,
