@@ -59,16 +59,6 @@ namespace Sapphire
                                           VFPFlags::time_independent_fields |
                                           VFPFlags::source;
 
-    struct TransportOnly
-    {
-      // In the transport-only case (i.e. no dependence on p) the energy of the
-      // particles has to be given.
-      const double gamma = 3.;
-      // Compute the partilces Lorentz factor gamma and its velocity
-      // TODO: here is a mistake: it must be gamma^2, not gama^4 ?!
-      const double velocity = std::sqrt(1 - 1 / std::pow((gamma * gamma), 2));
-    };
-
     // Initial values
     template <int dim>
     class InitialValueFunction : public dealii::Function<dim>

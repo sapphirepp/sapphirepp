@@ -37,6 +37,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   , particle_gamma_func(solver_control.mass)
   , mass(solver_control.mass)
   , charge(solver_control.charge)
+  , velocity(solver_control.velocity)
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}
@@ -140,7 +141,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
         {
           std::fill(particle_velocities.begin(),
                     particle_velocities.end(),
-                    transport_only.velocity);
+                    velocity);
         }
       // Compute flux at every quadrature point
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)

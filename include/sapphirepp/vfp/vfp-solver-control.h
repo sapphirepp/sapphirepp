@@ -51,10 +51,15 @@ namespace Sapphire
       double             time_step;
       double             final_time;
       // Particle properties
-      // NOTE: All physical quantities are dimensionless. The reference values
-      // are defined in the reference-values.h header.
+      //  NOTE: All physical quantities are dimensionless. The reference values
+      //  are defined in the reference-values.h header.
       double mass;
       double charge;
+      // TransportOnly
+      //  In the transport-only case (i.e. no dependence on p) the energy of the
+      //  particles has to be given.
+      double gamma;
+      double velocity;
     };
   } // namespace VFP
 } // namespace Sapphire

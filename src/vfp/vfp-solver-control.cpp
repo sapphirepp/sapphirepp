@@ -139,6 +139,15 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
   } // Particle properties
   prm.leave_subsection();
 
+  prm.enter_subsection("TransportOnly");
+  {
+    prm.declare_entry("Gamma",
+                      "3.",
+                      Patterns::Double(),
+                      "The Lorentz factor of the particles.");
+  } // TransportOnly
+  prm.leave_subsection();
+
   prm.leave_subsection();
 }
 
@@ -288,6 +297,13 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
     mass   = prm.get_double("Mass");
     charge = prm.get_double("Charge");
   } // Particle properties
+  prm.leave_subsection();
+
+  prm.enter_subsection("TransportOnly");
+  {
+    gamma    = prm.get_double("Gamma");
+    velocity = std::sqrt(1 - 1 / (gamma * gamma));
+  } // TransportOnly
   prm.leave_subsection();
 
   prm.leave_subsection();

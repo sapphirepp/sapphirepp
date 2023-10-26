@@ -92,11 +92,12 @@ namespace Sapphire
       BackgroundVelocityField<dim>         background_velocity_field;
       ParticleVelocity<dim, logarithmic_p> particle_velocity_func;
       ParticleGamma<dim, logarithmic_p>    particle_gamma_func;
-      TransportOnly                        transport_only;
 
       // Particle properties
       const double mass;
       const double charge;
+      // TransportOnly
+      const double velocity;
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:

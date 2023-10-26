@@ -498,10 +498,6 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
     vfp_solver_control.mass);
   ParticleGamma<dim_ps, logarithmic_p> particle_gamma(vfp_solver_control.mass);
 
-  // For the transport only case, the energy, the Lorentz factor and the
-  // velocity are defined in TransportOnly struct
-  TransportOnly transport_only;
-
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator      &cell,
                                ScratchData<dim_ps> &scratch_data,
@@ -614,7 +610,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // fixed energy case (i.e. transport only)
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_grad(i, q_index)[coordinate] *
-                              transport_only.velocity *
+                              vfp_solver_control.velocity *
                               advection_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -649,7 +645,8 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                               fe_v.shape_value(i, q_index) *
                               vfp_solver_control.charge *
                               magnetic_field_values[q_index][coordinate] /
-                              (transport_only.gamma * vfp_solver_control.mass) *
+                              (vfp_solver_control.gamma *
+                               vfp_solver_control.mass) *
                               generator_rotation_matrices[coordinate](
                                 component_i, component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
