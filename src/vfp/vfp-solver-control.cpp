@@ -55,31 +55,31 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
     prm.leave_subsection();
     prm.enter_subsection("Boundary conditions");
     {
-      // TODO: possible z-boundary for p indepentent 3D
+      // TODO: possible z-boundary for p independent 3D
       const auto boundary_pattern =
-        Patterns::Selection("continous gradients|zero inflow|periodic");
+        Patterns::Selection("continuous gradients|zero inflow|periodic");
       prm.declare_entry("lower x",
-                        "continous gradients",
+                        "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the lower x boundary.");
       prm.declare_entry("upper x",
-                        "continous gradients",
+                        "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the upper x boundary.");
       prm.declare_entry("lower y",
-                        "continous gradients",
+                        "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the lower y boundary.");
       prm.declare_entry("upper y",
-                        "continous gradients",
+                        "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the upper y boundary.");
       prm.declare_entry("lower p",
-                        "continous gradients",
+                        "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the lower p boundary.");
       prm.declare_entry("upper p",
-                        "continous gradients",
+                        "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the upper p boundary.");
     }
@@ -190,7 +190,7 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
 
     prm.enter_subsection("Boundary conditions");
     {
-      // TODO: Check if all indices are assigend correct
+      // TODO: Check if all indices are assigned correct
       boundary_conditions.resize(2 * dim);
 
       for (unsigned int boundary_id = 0; boundary_id < 2 * dim; ++boundary_id)
@@ -211,7 +211,7 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
             AssertThrow(false, ExcNotImplemented());
 
           s = prm.get(entry);
-          if (s == "continous gradients")
+          if (s == "continuous gradients")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::continuous_gradients;
           else if (s == "zero inflow")
