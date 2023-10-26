@@ -17,6 +17,8 @@ enum class TestParameter
   mpi_processes
 };
 
+const unsigned int dim = 2;
+
 int
 error_with_parameter(std::string               parameter_filename,
                      const TestParameter       test_parameter,
@@ -72,11 +74,11 @@ error_with_parameter(std::string               parameter_filename,
   saplog.push("Gyro");
   saplog << "Test for " << parameter_name << std::endl;
 
-  Timer                  timer;
-  ParameterHandler       prm;
-  VFPSolverControl       vfp_solver_control;
-  PhysicalProperties     physical_properties;
-  Utils::OutputModule<2> output_module;
+  Timer                    timer;
+  ParameterHandler         prm;
+  VFPSolverControl<dim>    vfp_solver_control;
+  PhysicalProperties       physical_properties;
+  Utils::OutputModule<dim> output_module;
 
   vfp_solver_control.declare_parameters(prm);
   physical_properties.declare_parameters(prm);
@@ -113,11 +115,11 @@ error_with_parameter(std::string               parameter_filename,
             vfp_solver_control.time_step = values[i];
             break;
           case TestParameter::num_cells:
-            if (vfp_solver_control.dim == 1)
+            if (dim == 1)
               vfp_solver_control.n_cells = {uint(values[i])};
-            else if (vfp_solver_control.dim == 2)
+            else if (dim == 2)
               vfp_solver_control.n_cells = {uint(values[i]), uint(values[i])};
-            else if (vfp_solver_control.dim == 3)
+            else if (dim == 3)
               vfp_solver_control.n_cells = {uint(values[i]),
                                             uint(values[i]),
                                             uint(values[i])};
@@ -147,9 +149,9 @@ error_with_parameter(std::string               parameter_filename,
       vfp_equation_solver.run();
       timer.stop();
 
-      InitialValueFunction<VFPSolverControl::dim> cylinder(
-        physical_properties, vfp_solver_control.expansion_order);
-      const double L2_error =
+      InitialValueFunction<dim> cylinder(physical_properties,
+                                         vfp_solver_control.expansion_order);
+      const double              L2_error =
         vfp_equation_solver.compute_global_error(cylinder,
                                                  VectorTools::L2_norm,
                                                  VectorTools::L2_norm);
@@ -200,7 +202,7 @@ calculate_gyro(std::string parameter_filename, double max_expected_error = 0)
   saplog.push("Gyro");
   Timer                  timer;
   ParameterHandler       prm;
-  VFPSolverControl       vfp_solver_control;
+  VFPSolverControl<dim>  vfp_solver_control;
   PhysicalProperties     physical_properties;
   Utils::OutputModule<2> output_module;
 
@@ -232,9 +234,9 @@ calculate_gyro(std::string parameter_filename, double max_expected_error = 0)
   vfp_equation_solver.run();
   timer.stop();
 
-  InitialValueFunction<VFPSolverControl::dim> cylinder(
-    physical_properties, vfp_solver_control.expansion_order);
-  double error =
+  InitialValueFunction<dim> cylinder(physical_properties,
+                                     vfp_solver_control.expansion_order);
+  double                    error =
     vfp_equation_solver.compute_global_error(cylinder,
                                              VectorTools::L2_norm,
                                              //  VectorTools::Linfty_norm);

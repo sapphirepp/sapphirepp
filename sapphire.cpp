@@ -5,6 +5,12 @@
 #include "output-module.h"
 #include "vfp-equation-solver.h"
 
+// Deactivating the spatial advection term is equivalent to assuming a
+// homogeneous distribution function (i.e. a distribution function which
+// does not depend on x,y z). In this program this is equivalent to set
+// dimension of the configuration to zero.
+const int dim = 2;
+
 int
 main(int argc, char *argv[])
 {
@@ -36,10 +42,10 @@ main(int argc, char *argv[])
              << Utilities::System::get_time() << "]" << std::endl;
 
       saplog.push("main");
-      ParameterHandler       prm;
-      VFPSolverControl       vfp_solver_control;
-      PhysicalProperties     physical_properties;
-      Utils::OutputModule<2> output_module;
+      ParameterHandler         prm;
+      VFPSolverControl<dim>    vfp_solver_control;
+      PhysicalProperties       physical_properties;
+      Utils::OutputModule<dim> output_module;
 
       vfp_solver_control.declare_parameters(prm);
       physical_properties.declare_parameters(prm);

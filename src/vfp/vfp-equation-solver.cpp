@@ -118,7 +118,7 @@ namespace Sapphire
 } // namespace Sapphire
 
 Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
-  const VFPSolverControl            &vfp_solver_control,
+  const VFPSolverControl<dim_ps>    &vfp_solver_control,
   const PhysicalProperties          &physical_properties,
   const Utils::OutputModule<dim_ps> &output_module)
   : vfp_solver_control(vfp_solver_control)

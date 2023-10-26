@@ -7,11 +7,14 @@
 
 #include "sapphire-logstream.h"
 
-Sapphire::VFP::VFPSolverControl::VFPSolverControl()
+template <int dim>
+Sapphire::VFP::VFPSolverControl<dim>::VFPSolverControl()
 {}
 
+
+template <int dim>
 void
-Sapphire::VFP::VFPSolverControl::declare_parameters(ParameterHandler &prm)
+Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix p("VFPSolverControl", saplog);
   saplog << "Declaring parameters" << std::endl;
@@ -127,8 +130,9 @@ Sapphire::VFP::VFPSolverControl::declare_parameters(ParameterHandler &prm)
 }
 
 
+template <int dim>
 void
-Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
+Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix p("VFPSolverControl", saplog);
   saplog << "Parsing parameters" << std::endl;
@@ -268,3 +272,8 @@ Sapphire::VFP::VFPSolverControl::parse_parameters(ParameterHandler &prm)
 
   prm.leave_subsection();
 }
+
+// Explicit instantiation
+template class Sapphire::VFP::VFPSolverControl<1>;
+template class Sapphire::VFP::VFPSolverControl<2>;
+template class Sapphire::VFP::VFPSolverControl<3>;

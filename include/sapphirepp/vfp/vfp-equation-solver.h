@@ -99,7 +99,7 @@ namespace Sapphire
       static constexpr int dim_cs = dim_configuration_space;
 
     public:
-      VFPEquationSolver(const VFPSolverControl            &vfp_solver_control,
+      VFPEquationSolver(const VFPSolverControl<dim_ps>    &vfp_solver_control,
                         const PhysicalProperties          &physical_properties,
                         const Utils::OutputModule<dim_ps> &output_module);
       void
@@ -114,8 +114,8 @@ namespace Sapphire
       get_n_dofs() const;
 
     private:
-      const VFPSolverControl   vfp_solver_control;
-      const PhysicalProperties physical_properties;
+      const VFPSolverControl<dim_ps> vfp_solver_control;
+      const PhysicalProperties       physical_properties;
 
       // Triangulation
       void

@@ -15,15 +15,10 @@ namespace Sapphire
   namespace VFP
   {
     using namespace dealii;
+
+    template <int dim>
     class VFPSolverControl
     {
-    private:
-      static constexpr bool momentum =
-        (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
-
-    public:
-      static constexpr int dim = dim_configuration_space + momentum;
-
     public:
       VFPSolverControl();
 
