@@ -17,6 +17,13 @@ namespace Sapphire
     using namespace dealii;
     class VFPSolverControl
     {
+    private:
+      static constexpr bool momentum =
+        (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+
+    public:
+      static constexpr int dim = dim_configuration_space + momentum;
+
     public:
       VFPSolverControl();
 
@@ -24,25 +31,6 @@ namespace Sapphire
       declare_parameters(ParameterHandler &prm);
       void
       parse_parameters(ParameterHandler &prm);
-
-      // The following static_assert uses an exlusive or (xor),
-      // represented in C/C++ as "!=" for expressions of boolean type: Either
-      // the spatial advection term is included in the equation or the dimension
-      // of the configuration space is set to zero.
-      static_assert(
-        (((vfp_terms & VFPFlags::spatial_advection) != VFPFlags::none) !=
-         (dim_configuration_space == 0)),
-        "If the spatial advection term is deactivated, the "
-        "distribtuion function is assumed to be homogeneous, i.e. the "
-        "dimension of the configuratin space needs to be set to zero.");
-      // Compute the total dimension and set momentum to true
-      static constexpr bool momentum =
-        ((vfp_terms & VFPFlags::momentum) != VFPFlags::none ? true : false);
-      static constexpr int dim = dim_configuration_space + momentum;
-      static_assert(
-        dim <= 3,
-        "The total dimension must be greater than or equal to one and "
-        "smaller or equal to three.");
 
       // Runtime settings
       // These settings are read from a parameter file

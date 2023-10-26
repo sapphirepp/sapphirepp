@@ -137,20 +137,25 @@ Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pde_system(vfp_solver_control.expansion_order)
-  , upwind_flux(pde_system, vfp_solver_control, physical_properties)
+  , upwind_flux(pde_system, physical_properties)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
-  saplog << vfp_terms << std::endl;
-  // It should be checked if the results folder exists and if not it should
-  // be tried to create it Only one processor needs to check and create the
-  // folder if (rank == 0)
-  //   if (!std::filesystem::exists(vfp_solver_control.results_path + "/" +
-  //                                vfp_solver_control.simulation_id))
-  //     std::filesystem::create_directories(vfp_solver_control.results_path
-  //     +
-  //                                         "/" +
-  //                                         vfp_solver_control.simulation_id);
+  saplog << vfp_flags << std::endl;
+
+  // Consistency checks for vfp_flags:
+  AssertThrow(
+    ((vfp_flags & VFPFlags::spatial_advection) != VFPFlags::none) !=
+      (dim_configuration_space == 0),
+    ExcMessage(
+      "If the spatial advection term is deactivated, the distribution function"
+      " is assumed to be homogeneous, i.e. the dimension of the configuration"
+      " space needs to be set to zero."));
+  AssertThrow(
+    1 <= dim_ps and dim_ps <= 3,
+    ExcMessage(
+      "The total dimension must be greater than or equal to one and smaller or"
+      " equal to three."));
 }
 
 void
@@ -483,8 +488,8 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
   ScatteringFrequency<dim_ps> scattering_frequency(physical_properties);
   scattering_frequency.set_time(time);
 
-  ParticleVelocity<dim_ps> particle_velocity;
-  ParticleGamma<dim_ps>    particle_gamma;
+  ParticleVelocity<dim_ps, logarithmic_p> particle_velocity;
+  ParticleGamma<dim_ps, logarithmic_p>    particle_gamma;
 
   // For the transport only case, the energy, the Lorentz factor and the
   // velocity are defined in TransportOnly struct
@@ -1326,7 +1331,8 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
   // Source term
   if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
-      if constexpr (time_dependent_source)
+      if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
+                    VFPFlags::none) // time dependent source
         {
           system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
           // Update the source term
@@ -1344,7 +1350,8 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
   // magnetice field) and the velocity field may depend on time, it needs to
   // reassembled every time step. This is not true for the mass matrix ( but
   // it may if the grid adapts after a specified amount of time steps)
-  if constexpr (time_dependent_fields)
+  if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
+                VFPFlags::none) // time dependent fields
     {
       dg_matrix = 0;
       assemble_dg_matrix(time + time_step);
@@ -1429,7 +1436,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   PETScWrappers::MPI::Vector k_1(locally_owned_dofs, mpi_communicator);
   // Comute dg_matrix(time + c[1] * time_step) if the fields are time
   // dependent
-  if constexpr (time_dependent_fields)
+  if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
+                VFPFlags::none) // time dependent fields
     {
       dg_matrix = 0;
       assemble_dg_matrix(time + c[1] * time_step);
@@ -1438,7 +1446,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   dg_matrix.vmult(system_rhs, temp);
   if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
-      if constexpr (time_dependent_source)
+      if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
+                    VFPFlags::none) // time dependent source
         {
           Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + c[1] * time_step);
@@ -1465,7 +1474,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   dg_matrix.vmult(system_rhs, temp);
   if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
-      if constexpr (time_dependent_source)
+      if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
+                    VFPFlags::none) // time dependent source
         {
           Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + c[2] * time_step);
@@ -1488,7 +1498,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   PETScWrappers::MPI::Vector k_3(locally_owned_dofs, mpi_communicator);
   // Comute dg_matrix(time + c[1] * time_step) if the fields are time
   // dependent
-  if constexpr (time_dependent_fields)
+  if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
+                VFPFlags::none) // time dependent fields
     {
       dg_matrix = 0;
       assemble_dg_matrix(time + c[3] * time_step);
@@ -1497,7 +1508,8 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   dg_matrix.vmult(system_rhs, temp);
   if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
     {
-      if constexpr (time_dependent_source)
+      if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
+                    VFPFlags::none) // time dependent source
         {
           Source<dim_ps> source_function(physical_properties, expansion_order);
           source_function.set_time(time + c[3] * time_step);
@@ -1568,16 +1580,19 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
     {
       // only assemble the dg_matrix in every stage if the fields are time
       // dependent
-      if constexpr (time_dependent_fields)
+      if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
+                    VFPFlags::none) // time dependent fields
         assemble_dg_matrix(time + c[s] * time_step);
 
       dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
-      if constexpr (time_dependent_fields)
+      if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
+                    VFPFlags::none) // time dependent fields
         dg_matrix = 0;
 
       if constexpr ((flags & VFPFlags::source) != VFPFlags::none)
         {
-          if constexpr (time_dependent_source)
+          if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
+                        VFPFlags::none) // time dependent source
             {
               Source<dim_ps> source_function(physical_properties,
                                              expansion_order);

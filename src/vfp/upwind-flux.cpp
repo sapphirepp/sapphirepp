@@ -14,10 +14,9 @@
 
 #include "config.h"
 
-template <int dim>
-Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
+template <int dim, bool has_momentum, bool logarithmic_p>
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   const PDESystem          &system,
-  const VFPSolverControl   &solver_control,
   const PhysicalProperties &physical_properties)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
@@ -41,7 +40,6 @@ Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
   , // see Documentation of xsyever
   int_dummy{&dealii::LAPACKSupport::one}
   , double_dummy{1.}
-  , momentum{solver_control.momentum}
 {
   // NOTE: Since we very often call compute_matrix_sum and the matrixes classes
   // of dealii do not allow unchecked access to there raw data, we create copies
@@ -73,27 +71,28 @@ Sapphire::VFP::UpwindFlux<dim>::UpwindFlux(
   prepare_upwind_fluxes();
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::set_time(double time)
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
+  double time)
 {
   background_velocity_field.set_time(time);
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
-  const std::vector<dealii::Point<dim>>     &q_points,
-  const std::vector<dealii::Tensor<1, dim>> &normals,
-  std::vector<dealii::FullMatrix<double>>   &positive_flux_matrices,
-  std::vector<dealii::FullMatrix<double>>   &negative_flux_matrices)
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  compute_upwind_fluxes(
+    const std::vector<dealii::Point<dim>>     &q_points,
+    const std::vector<dealii::Tensor<1, dim>> &normals,
+    std::vector<dealii::FullMatrix<double>>   &positive_flux_matrices,
+    std::vector<dealii::FullMatrix<double>>   &negative_flux_matrices)
 {
   // Determine if we are computing the flux of an interior face whose normal
   // points into the x,y,z or p direction. Since we are using a rectangular
   // grid, the normal is the same for all quadrature points and it points either
   // in the x, y, z or p direction. Hence it can determined outside the loop
   // over the quadrature points
-  unsigned int dim_cs    = dim - momentum;
   unsigned int component = 1000; // Produces an error if not overwritten
   for (unsigned int i = 0; i < dim; ++i)
     {
@@ -126,7 +125,7 @@ Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
 
       // Particle
       std::vector<double> particle_velocities(q_points.size());
-      if (momentum)
+      if constexpr (has_momentum)
         {
           // if distribution functions depends on p, the particle velocity
           // depends on the position in the phase space and needs to be computed
@@ -175,9 +174,10 @@ Sapphire::VFP::UpwindFlux<dim>::compute_upwind_fluxes(
     }
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::prepare_work_arrays_for_lapack()
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  prepare_work_arrays_for_lapack()
 {
   // Preparations for the eigenvalue and eigenvector computations
   //
@@ -261,9 +261,10 @@ Sapphire::VFP::UpwindFlux<dim>::prepare_work_arrays_for_lapack()
   iwork.resize(liwork);
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::prepare_upwind_fluxes()
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  prepare_upwind_fluxes()
 {
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
   // eigenvalues of A_x are the roots of the associated legendre polynomials.
@@ -374,9 +375,9 @@ Sapphire::VFP::UpwindFlux<dim>::prepare_upwind_fluxes()
   // get the eigenvectors of A_y and A_z
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::test()
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 {
   std::cout << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
@@ -481,15 +482,16 @@ Sapphire::VFP::UpwindFlux<dim>::test()
   test_negative_flux_matrix.print_formatted(std::cout);
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::compute_flux_in_space_directions(
-  const unsigned int          component,
-  const double                n_component,
-  const double                background_velocity,
-  const double                particle_velocity,
-  dealii::FullMatrix<double> &positive_flux_matrix,
-  dealii::FullMatrix<double> &negative_flux_matrix)
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  compute_flux_in_space_directions(
+    const unsigned int          component,
+    const double                n_component,
+    const double                background_velocity,
+    const double                particle_velocity,
+    dealii::FullMatrix<double> &positive_flux_matrix,
+    dealii::FullMatrix<double> &negative_flux_matrix)
 {
   // Create a copy of the eigenvalues of the advection matrices to compute the
   // positive and negative fluxes at point q at time t
@@ -546,9 +548,9 @@ Sapphire::VFP::UpwindFlux<dim>::compute_flux_in_space_directions(
     }
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::compute_matrix_sum(
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
   const double                               n_p,
   const double                               momentum,
   const double                               gamma,
@@ -587,16 +589,17 @@ Sapphire::VFP::UpwindFlux<dim>::compute_matrix_sum(
                    (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
 }
 
-template <int dim>
+template <int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim>::compute_flux_in_p_direction(
-  const double                               n_p,
-  const double                               momentum,
-  const double                               gamma,
-  const dealii::Vector<double>              &material_derivative,
-  const std::vector<dealii::Vector<double>> &jacobian,
-  dealii::FullMatrix<double>                &positive_flux_matrix,
-  dealii::FullMatrix<double>                &negative_flux_matrix)
+Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  compute_flux_in_p_direction(
+    const double                               n_p,
+    const double                               momentum,
+    const double                               gamma,
+    const dealii::Vector<double>              &material_derivative,
+    const std::vector<dealii::Vector<double>> &jacobian,
+    dealii::FullMatrix<double>                &positive_flux_matrix,
+    dealii::FullMatrix<double>                &negative_flux_matrix)
 {
   // compute the matrix sum at the point q at time t. Overwrites the member
   // variable matrix_sum
@@ -670,6 +673,15 @@ Sapphire::VFP::UpwindFlux<dim>::compute_flux_in_p_direction(
 }
 
 // explicit instantiation
-template class Sapphire::VFP::UpwindFlux<1>;
-template class Sapphire::VFP::UpwindFlux<2>;
-template class Sapphire::VFP::UpwindFlux<3>;
+template class Sapphire::VFP::UpwindFlux<1, true, true>;
+template class Sapphire::VFP::UpwindFlux<1, true, false>;
+template class Sapphire::VFP::UpwindFlux<1, false, true>;
+template class Sapphire::VFP::UpwindFlux<1, false, false>;
+template class Sapphire::VFP::UpwindFlux<2, true, true>;
+template class Sapphire::VFP::UpwindFlux<2, true, false>;
+template class Sapphire::VFP::UpwindFlux<2, false, true>;
+template class Sapphire::VFP::UpwindFlux<2, false, false>;
+template class Sapphire::VFP::UpwindFlux<3, true, true>;
+template class Sapphire::VFP::UpwindFlux<3, true, false>;
+template class Sapphire::VFP::UpwindFlux<3, false, true>;
+template class Sapphire::VFP::UpwindFlux<3, false, false>;

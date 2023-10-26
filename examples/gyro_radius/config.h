@@ -50,16 +50,11 @@ namespace Sapphire
 
   namespace VFP
   {
-    static constexpr VFPFlags vfp_terms =
-      VFPFlags::spatial_advection | VFPFlags::magnetic;
-
-    static constexpr bool logarithmic_p = true; // unused
+    static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
+                                          VFPFlags::magnetic |
+                                          VFPFlags::time_independent_fields;
 
     static constexpr int dim_configuration_space = 2;
-
-    static constexpr bool time_dependent_fields = false;
-
-    static constexpr bool time_dependent_source = false; // unused
 
     struct ParticleProperties
     {

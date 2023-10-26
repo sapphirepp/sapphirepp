@@ -20,12 +20,14 @@ namespace Sapphire
 {
   namespace VFP
   {
-    template <int dim>
+    template <int dim, bool has_momentum, bool logarithmic_p>
     class UpwindFlux
     {
+    private:
+      static constexpr unsigned int dim_cs = dim - has_momentum;
+
     public:
       UpwindFlux(const PDESystem          &system,
-                 const VFPSolverControl   &solver_control,
                  const PhysicalProperties &physical_properties);
       void
       set_time(double time);
@@ -86,11 +88,11 @@ namespace Sapphire
       std::vector<std::vector<double>> eigenvectors_advection_matrices;
 
       // Physical input
-      ParticleProperties           particle_properties;
-      BackgroundVelocityField<dim> background_velocity_field;
-      ParticleVelocity<dim>        particle_velocity_func;
-      ParticleGamma<dim>           particle_gamma_func;
-      TransportOnly                transport_only;
+      ParticleProperties                   particle_properties;
+      BackgroundVelocityField<dim>         background_velocity_field;
+      ParticleVelocity<dim, logarithmic_p> particle_velocity_func;
+      ParticleGamma<dim, logarithmic_p>    particle_gamma_func;
+      TransportOnly                        transport_only;
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:
@@ -131,10 +133,6 @@ namespace Sapphire
       // referenced when the routine is called.
       const dealii::types::blas_int *const int_dummy;
       const double                         double_dummy;
-
-      // The upwind flux computations require to know if the momentum direction
-      // exits or not.
-      const bool momentum;
     };
   } // namespace VFP
 } // namespace Sapphire

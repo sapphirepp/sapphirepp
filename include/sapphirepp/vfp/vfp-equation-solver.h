@@ -90,9 +90,13 @@ namespace Sapphire
     class VFPEquationSolver
     {
     private:
-      static constexpr int      dim_ps = VFPSolverControl::dim;
-      static constexpr int      dim_cs = dim_configuration_space;
-      static constexpr VFPFlags flags  = vfp_terms;
+      static constexpr VFPFlags flags = vfp_flags;
+      static constexpr bool     logarithmic_p =
+        (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
+      static constexpr bool momentum =
+        (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+      static constexpr int dim_ps = dim_configuration_space + momentum;
+      static constexpr int dim_cs = dim_configuration_space;
 
     public:
       VFPEquationSolver(const VFPSolverControl            &vfp_solver_control,
@@ -186,8 +190,8 @@ namespace Sapphire
       const AffineConstraints<double> constraints;
 
       // PDE System
-      PDESystem          pde_system;
-      UpwindFlux<dim_ps> upwind_flux;
+      PDESystem                                   pde_system;
+      UpwindFlux<dim_ps, momentum, logarithmic_p> upwind_flux;
 
       SparsityPattern                  sparsity_pattern;
       PETScWrappers::MPI::SparseMatrix mass_matrix;

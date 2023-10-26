@@ -4,9 +4,9 @@
 
 #include "config.h"
 
-template <int dim>
+template <int dim, bool logarithmic_p>
 void
-Sapphire::VFP::ParticleVelocity<dim>::value_list(
+Sapphire::VFP::ParticleVelocity<dim, logarithmic_p>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &velocities,
   unsigned int                           component) const
@@ -30,13 +30,17 @@ Sapphire::VFP::ParticleVelocity<dim>::value_list(
 }
 
 // explicit instantiation
-template class Sapphire::VFP::ParticleVelocity<1>;
-template class Sapphire::VFP::ParticleVelocity<2>;
-template class Sapphire::VFP::ParticleVelocity<3>;
+template class Sapphire::VFP::ParticleVelocity<1, true>;
+template class Sapphire::VFP::ParticleVelocity<1, false>;
+template class Sapphire::VFP::ParticleVelocity<2, true>;
+template class Sapphire::VFP::ParticleVelocity<2, false>;
+template class Sapphire::VFP::ParticleVelocity<3, true>;
+template class Sapphire::VFP::ParticleVelocity<3, false>;
 
-template <int dim>
+
+template <int dim, bool logarithmic_p>
 void
-Sapphire::VFP::ParticleGamma<dim>::value_list(
+Sapphire::VFP::ParticleGamma<dim, logarithmic_p>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &gammas,
   unsigned int                           component) const
@@ -56,6 +60,9 @@ Sapphire::VFP::ParticleGamma<dim>::value_list(
 }
 
 // explicit instantiation
-template class Sapphire::VFP::ParticleGamma<1>;
-template class Sapphire::VFP::ParticleGamma<2>;
-template class Sapphire::VFP::ParticleGamma<3>;
+template class Sapphire::VFP::ParticleGamma<1, true>;
+template class Sapphire::VFP::ParticleGamma<1, false>;
+template class Sapphire::VFP::ParticleGamma<2, true>;
+template class Sapphire::VFP::ParticleGamma<2, false>;
+template class Sapphire::VFP::ParticleGamma<3, true>;
+template class Sapphire::VFP::ParticleGamma<3, false>;

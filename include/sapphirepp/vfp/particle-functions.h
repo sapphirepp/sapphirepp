@@ -13,7 +13,7 @@ namespace Sapphire
 {
   namespace VFP
   {
-    template <int dim>
+    template <int dim, bool logarithmic_p>
     class ParticleVelocity : public dealii::Function<dim>
     {
     public:
@@ -25,7 +25,7 @@ namespace Sapphire
                  unsigned int component = 0) const override;
     };
 
-    template <int dim>
+    template <int dim, bool logarithmic_p>
     class ParticleGamma : public dealii::Function<dim>
     {
     public:
