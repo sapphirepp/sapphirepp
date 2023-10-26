@@ -59,12 +59,6 @@ namespace Sapphire
                                           VFPFlags::time_independent_fields |
                                           VFPFlags::source;
 
-    // Deactivating the spatial advection term is equivalent to assuming a
-    // homogeneous distribution function (i.e. a distribution function which
-    // does not depend on x,y z). In this program this is equivalent to set
-    // dimension of the configuration to zero.
-    static constexpr int dim_configuration_space = 2;
-
     // NOTE: All physical quantities are dimensionless. The reference values are
     // defined in the reference-values.h header.
     struct ParticleProperties

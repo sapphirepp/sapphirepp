@@ -203,9 +203,9 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
 
           if (boundary_id / 2 == 0)
             entry += "x";
-          else if ((dim_configuration_space == 2) and (boundary_id / 2 == 1))
+          else if ((dim_cs == 2) and (boundary_id / 2 == 1))
             entry += "y";
-          else if (boundary_id / 2 == dim_configuration_space)
+          else if (boundary_id / 2 == dim_cs)
             entry += "p";
           else
             AssertThrow(false, ExcNotImplemented());

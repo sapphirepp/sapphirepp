@@ -19,6 +19,12 @@ namespace Sapphire
     template <int dim>
     class VFPSolverControl
     {
+    private:
+      static constexpr bool momentum =
+        (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+      static constexpr int dim_ps = dim;
+      static constexpr int dim_cs = dim - momentum;
+
     public:
       VFPSolverControl();
 

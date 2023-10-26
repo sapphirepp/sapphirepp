@@ -87,6 +87,7 @@ namespace Sapphire
   {
     using namespace dealii;
 
+    template <int dim>
     class VFPEquationSolver
     {
     private:
@@ -94,8 +95,8 @@ namespace Sapphire
         (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
       static constexpr bool momentum =
         (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
-      static constexpr int dim_ps = dim_configuration_space + momentum;
-      static constexpr int dim_cs = dim_configuration_space;
+      static constexpr int dim_ps = dim;
+      static constexpr int dim_cs = dim - momentum;
 
     public:
       VFPEquationSolver(const VFPSolverControl<dim_ps>    &vfp_solver_control,
@@ -140,12 +141,10 @@ namespace Sapphire
       output_results(const unsigned int time_step_number);
 
       // auxiliary functions
-      template <int dim>
       void
       project(const Function<dim>        &f,
               PETScWrappers::MPI::Vector &projected_function);
       // compute the source term
-      template <int dim>
       void
       compute_source_term(const Function<dim> &source_function);
 

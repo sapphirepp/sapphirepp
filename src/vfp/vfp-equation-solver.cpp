@@ -117,7 +117,8 @@ namespace Sapphire
   } // namespace VFP
 } // namespace Sapphire
 
-Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
+template <int dim>
+Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
   const VFPSolverControl<dim_ps>    &vfp_solver_control,
   const PhysicalProperties          &physical_properties,
   const Utils::OutputModule<dim_ps> &output_module)
@@ -145,21 +146,22 @@ Sapphire::VFP::VFPEquationSolver::VFPEquationSolver(
 
   // Consistency checks for vfp_flags:
   AssertThrow(
+    1 <= dim and dim <= 3,
+    ExcMessage(
+      "The total dimension must be greater than or equal to one and smaller or"
+      " equal to three."));
+  AssertThrow(
     ((vfp_flags & VFPFlags::spatial_advection) != VFPFlags::none) !=
-      (dim_configuration_space == 0),
+      (dim_cs == 0),
     ExcMessage(
       "If the spatial advection term is deactivated, the distribution function"
       " is assumed to be homogeneous, i.e. the dimension of the configuration"
       " space needs to be set to zero."));
-  AssertThrow(
-    1 <= dim_ps and dim_ps <= 3,
-    ExcMessage(
-      "The total dimension must be greater than or equal to one and smaller or"
-      " equal to three."));
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::run()
+Sapphire::VFP::VFPEquationSolver<dim>::run()
 {
   LogStream::Prefix p("VFP", saplog);
   saplog << "Run VFP equation solver. \t\t[" << Utilities::System::get_time()
@@ -228,8 +230,9 @@ Sapphire::VFP::VFPEquationSolver::run()
   timer.reset();
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::make_grid()
+Sapphire::VFP::VFPEquationSolver<dim>::make_grid()
 {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   saplog << "Create the grid" << std::endl;
@@ -332,8 +335,9 @@ Sapphire::VFP::VFPEquationSolver::make_grid()
   triangulation.add_periodicity(matched_pairs);
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::setup_system()
+Sapphire::VFP::VFPEquationSolver<dim>::setup_system()
 {
   TimerOutput::Scope timer_section(timer, "FE system");
   saplog << "Setup the finite element system" << std::endl;
@@ -391,8 +395,9 @@ Sapphire::VFP::VFPEquationSolver::setup_system()
                        mpi_communicator);
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::assemble_mass_matrix()
+Sapphire::VFP::VFPEquationSolver<dim>::assemble_mass_matrix()
 {
   TimerOutput::Scope timer_section(timer, "Mass matrix");
 
@@ -451,8 +456,9 @@ Sapphire::VFP::VFPEquationSolver::assemble_mass_matrix()
   saplog << "The mass matrix was assembled." << std::endl;
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
+Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
 {
   TimerOutput::Scope timer_section(timer, "DG matrix");
   /*
@@ -1191,7 +1197,7 @@ Sapphire::VFP::VFPEquationSolver::assemble_dg_matrix(const double time)
 
 template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::project(
+Sapphire::VFP::VFPEquationSolver<dim>::project(
   const Function<dim>        &f,
   PETScWrappers::MPI::Vector &projected_function)
 {
@@ -1262,7 +1268,7 @@ Sapphire::VFP::VFPEquationSolver::project(
 
 template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::compute_source_term(
+Sapphire::VFP::VFPEquationSolver<dim>::compute_source_term(
   const Function<dim> &source_function)
 {
   FEValues<dim_ps> fe_v(mapping,
@@ -1313,9 +1319,10 @@ Sapphire::VFP::VFPEquationSolver::compute_source_term(
   locally_owned_current_source.compress(VectorOperation::add);
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
-                                               const double time_step)
+Sapphire::VFP::VFPEquationSolver<dim>::theta_method(const double time,
+                                                    const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "Theta method");
   LogStream::Prefix  p("theta_method", saplog);
@@ -1389,9 +1396,11 @@ Sapphire::VFP::VFPEquationSolver::theta_method(const double time,
          << " iterations." << std::endl;
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
-                                                       const double time_step)
+Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
+  const double time,
+  const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "ERK4");
   LogStream::Prefix  p("ERK4", saplog);
@@ -1534,8 +1543,9 @@ Sapphire::VFP::VFPEquationSolver::explicit_runge_kutta(const double time,
   locally_relevant_current_solution = locally_owned_current_solution;
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
+Sapphire::VFP::VFPEquationSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
 {
@@ -1622,8 +1632,9 @@ Sapphire::VFP::VFPEquationSolver::low_storage_explicit_runge_kutta(
   locally_relevant_current_solution = locally_owned_previous_solution;
 }
 
+template <int dim>
 void
-Sapphire::VFP::VFPEquationSolver::output_results(
+Sapphire::VFP::VFPEquationSolver<dim>::output_results(
   const unsigned int time_step_number)
 {
   TimerOutput::Scope timer_section(timer, "Output");
@@ -1655,8 +1666,9 @@ Sapphire::VFP::VFPEquationSolver::output_results(
   output_module.write_results(data_out, time_step_number);
 }
 
+template <int dim>
 double
-Sapphire::VFP::VFPEquationSolver::compute_global_error(
+Sapphire::VFP::VFPEquationSolver<dim>::compute_global_error(
   const Function<dim_ps>      &exact_solution,
   const VectorTools::NormType &cell_norm,
   const VectorTools::NormType &global_norm) const
@@ -1689,8 +1701,14 @@ Sapphire::VFP::VFPEquationSolver::compute_global_error(
   return global_error;
 }
 
+template <int dim>
 unsigned int
-Sapphire::VFP::VFPEquationSolver::get_n_dofs() const
+Sapphire::VFP::VFPEquationSolver<dim>::get_n_dofs() const
 {
   return dof_handler.n_dofs();
 }
+
+// Explicit instantiations
+template class Sapphire::VFP::VFPEquationSolver<1>;
+template class Sapphire::VFP::VFPEquationSolver<2>;
+template class Sapphire::VFP::VFPEquationSolver<3>;

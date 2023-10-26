@@ -67,9 +67,9 @@ main(int argc, char *argv[])
       output_module.init(prm);
 
       saplog.pop();
-      VFPEquationSolver vfp_equation_solver(vfp_solver_control,
-                                            physical_properties,
-                                            output_module);
+      VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
+                                                 physical_properties,
+                                                 output_module);
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)

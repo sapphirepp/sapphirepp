@@ -143,9 +143,9 @@ error_with_parameter(std::string               parameter_filename,
         "solution_" + parameter_name + "_" + std::to_string(values[i]) + "_";
 
       timer.start();
-      VFPEquationSolver vfp_equation_solver(vfp_solver_control,
-                                            physical_properties,
-                                            output_module);
+      VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
+                                                 physical_properties,
+                                                 output_module);
       vfp_equation_solver.run();
       timer.stop();
 
@@ -228,9 +228,9 @@ calculate_gyro(std::string parameter_filename, double max_expected_error = 0)
   saplog.pop();
 
   timer.start();
-  VFPEquationSolver vfp_equation_solver(vfp_solver_control,
-                                        physical_properties,
-                                        output_module);
+  VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
+                                             physical_properties,
+                                             output_module);
   vfp_equation_solver.run();
   timer.stop();
 
