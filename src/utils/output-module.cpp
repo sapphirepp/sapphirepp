@@ -112,6 +112,14 @@ Sapphire::Utils::OutputModule<dim>::parse_parameters_callback(
                   ExcMessage("'vtu' format only works with a single "
                              "processor. Use 'pvtu' instead."));
     }
+  else if (format == OutputFormat::hdf5)
+    {
+      AssertThrow(
+        dim > 1,
+        ExcMessage(
+          "HDF5 only supports datasets that live in 2 or 3 dimensions. "
+          "Use 'vtu' or 'pvtu' instead."));
+    }
 }
 
 template <int dim>
