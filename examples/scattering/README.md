@@ -1,6 +1,5 @@
 # Introduction and Basic Usage: Scattering {#scattering}
 
-Table of contents:
 @tableofcontents
 
 ## Introduction {#introduction}
