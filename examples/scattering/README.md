@@ -229,3 +229,70 @@ Last, we have to close the namespaces again and end the include guard.
 This concludes the `config.h` file. Next, we have to implement the `main` in the
 `scattering.cpp` file.
 
+## scattering.cpp
+
+In this file, we will define the `main` function for the scattering
+example.First, we include the header files we need:
+
+@snippet{lineno} examples/scattering/scattering.cpp Includes
+
+Then we define the `main` function:
+
+@snippet{lineno} examples/scattering/scattering.cpp main func
+
+We will run the program inside a try-catch block to catch any exceptions and
+output them.
+
+@snippet{lineno} examples/scattering/scattering.cpp try catch block begin
+
+First, we need to initialize MPI for parallel runs:
+
+@snippet{lineno} examples/scattering/scattering.cpp MPI init
+
+We will use the `Sapphire::Log` class to output information to the console. The
+`depth_console()` functions allows to specify how detailed the output should be.
+We will set it to 2, which results in one line of output per time-step. For
+parallel runs, we will turn of the output of all but the first process.
+
+@snippet{lineno} examples/scattering/scattering.cpp Saplog
+
+The program allows to specify the parameter file as a command line argument. In
+case no argument is given, it will default to the file `parameter.prm`. When
+starting the program, we output the configuration specified by command line
+arguments.
+
+@snippet{lineno} examples/scattering/scattering.cpp Saplog
+
+Next, we create all object that declare runtime parameter. We prefix these lines
+with `main` in the log stream, to silence the initialisation process in a run
+with low verbosity.
+
+@snippet{lineno} examples/scattering/scattering.cpp Run time params
+
+We now declare all parameters that the ParameterHandler should expect.
+
+@note All parameters have to be declared before we can parse the parameter file.
+
+@snippet{lineno} examples/scattering/scattering.cpp Declare params
+
+After declaring the parameters, we can parse the parameter file and the
+parameters of the objects
+
+@snippet{lineno} examples/scattering/scattering.cpp Parse params
+
+Finally, we can create the VFP equation solver and run it.
+
+@snippet{lineno} examples/scattering/scattering.cpp VFP Solver
+
+After the simulation ended, we can compute the error by comparing to the
+analytic solution (implemented in `InitialValueFunction`).
+
+@snippet{lineno} examples/scattering/scattering.cpp L2 error
+
+In case an exception is thrown, we will catch it, output it to std::err and
+return with an error code.
+
+@snippet{lineno} examples/scattering/scattering.cpp try catch block end
+
+This concludes the `main` function for the scattering example.
+
