@@ -150,13 +150,13 @@ Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
     ExcMessage(
       "The total dimension must be greater than or equal to one and smaller or"
       " equal to three."));
-  AssertThrow(
-    ((vfp_flags & VFPFlags::spatial_advection) != VFPFlags::none) !=
-      (dim_cs == 0),
-    ExcMessage(
-      "If the spatial advection term is deactivated, the distribution function"
-      " is assumed to be homogeneous, i.e. the dimension of the configuration"
-      " space needs to be set to zero."));
+  // AssertThrow(
+  //   ((vfp_flags & VFPFlags::spatial_advection) != VFPFlags::none) !=
+  //     (dim_cs == 0),
+  //   ExcMessage(
+  //     "If the spatial advection term is deactivated, the distribution
+  //     function" " is assumed to be homogeneous, i.e. the dimension of the
+  //     configuration" " space needs to be set to zero."));
 }
 
 template <int dim>
@@ -1664,19 +1664,16 @@ Sapphire::VFP::VFPEquationSolver<dim>::output_results(
 template <int dim>
 double
 Sapphire::VFP::VFPEquationSolver<dim>::compute_global_error(
-  const Function<dim_ps>      &exact_solution,
-  const VectorTools::NormType &cell_norm,
-  const VectorTools::NormType &global_norm) const
+  const Function<dim_ps>         &exact_solution,
+  const VectorTools::NormType    &cell_norm,
+  const VectorTools::NormType    &global_norm,
+  const Function<dim_ps, double> *weight) const
 {
   LogStream::Prefix p("VFP", saplog);
   saplog << "Compute the global error" << std::endl;
   LogStream::Prefix p2("Error", saplog);
 
-  // exact_solution.set_time(current_time); //TODO
-
   Vector<float> cell_errors(triangulation.n_locally_owned_active_cells());
-
-  ComponentSelectFunction<dim_ps> mask(0, num_exp_coefficients);
 
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
@@ -1685,7 +1682,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::compute_global_error(
                                     cell_errors,
                                     quadrature,
                                     cell_norm,
-                                    &mask);
+                                    weight);
 
   double global_error =
     VectorTools::compute_global_error(triangulation, cell_errors, global_norm);

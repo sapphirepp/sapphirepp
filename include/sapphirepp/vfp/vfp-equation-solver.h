@@ -106,9 +106,11 @@ namespace Sapphire
       run();
 
       double
-      compute_global_error(const Function<dim_ps>      &exact_solution,
-                           const VectorTools::NormType &cell_norm,
-                           const VectorTools::NormType &global_norm) const;
+      compute_global_error(
+        const Function<dim_ps>         &exact_solution,
+        const VectorTools::NormType    &cell_norm,
+        const VectorTools::NormType    &global_norm,
+        const Function<dim_ps, double> *weight = nullptr) const;
 
       unsigned int
       get_n_dofs() const;
