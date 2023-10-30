@@ -1,14 +1,19 @@
 # Introduction and Basic Usage: Scattering {#scattering}
 
 Table of contents:
-\tableofcontents
-\todo Table of contents is not working
+@tableofcontents
+@todo Table of contents is not working
 
 
-Reference by hand
+Table of contents (by hand):
 
-- \ref introduction
-- \ref code
+- [Introduction](@ref introduction)
+- [Implementation](@ref code)
+    - [config.h](@ref config)
+    - [scattering.cpp](@ref main)
+- [Results](@ref results)
+    - [Parameter file](@ref parameter)
+- [The plain program](@ref plainCode)
 
 
 ## Introduction {#introduction}
@@ -28,7 +33,7 @@ how to interpret it.
 
 As an introductory example, we want to study the simple case with only a
 scattering term in the VFP equation,
-\todo Check sign in front of scattering operator
+@todo Check sign in front of scattering operator
 $$
   \frac{\partial f}{\partial t} =  \frac{\nu}{2} \Delta_{\theta, \varphi} f \,.
 $$

@@ -948,7 +948,7 @@ INPUT                  = index.md \
                          ../examples/scattering/README.md \
                          ../examples/scattering/config.h \
                          ../examples/scattering/scattering.cpp \
-                         ../examples/scattering/results.md \
+                         ../examples/scattering/doc/results.md \
                          ..
 
 # This tag can be used to specify the character encoding of the source files
