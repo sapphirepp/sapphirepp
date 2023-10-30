@@ -2,19 +2,6 @@
 
 Table of contents:
 @tableofcontents
-@todo Table of contents is not working
-
-
-Table of contents (by hand):
-
-- [Introduction](@ref introduction)
-- [Implementation](@ref code)
-    - [config.h](@ref config)
-    - [scattering.cpp](@ref main)
-- [Results](@ref results)
-    - [Parameter file](@ref parameter)
-- [The plain program](@ref plainCode)
-
 
 ## Introduction {#introduction}
 
