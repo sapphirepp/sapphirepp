@@ -32,6 +32,9 @@ namespace Sapphire
       // lms indices
       const std::vector<std::array<unsigned int, 3>> &
       get_lms_indices() const;
+      static void
+      create_lms_indices(int                                       l,
+                         std::vector<std::array<unsigned int, 3>> &lms_indices);
 
       // returns the size of the system
       unsigned int

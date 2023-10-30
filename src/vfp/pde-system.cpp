@@ -23,19 +23,7 @@ Sapphire::VFP::PDESystem::PDESystem(int l)
   shrink_matrices();
 
   // Create the map between i and the the lms indices
-  for (int s = 0, idx = 0; s <= 1; ++s)
-    {
-      for (int l = 0; l <= expansion_order; ++l)
-        {
-          for (int m = l; m >= s; --m)
-            {
-              idx                 = l * (l + 1) - (s ? -1 : 1) * m;
-              lms_indices[idx][0] = l;
-              lms_indices[idx][1] = m;
-              lms_indices[idx][2] = s;
-            }
-        }
-    }
+  create_lms_indices(expansion_order, lms_indices);
 }
 
 const std::vector<dealii::LAPACKFullMatrix<double>> &
@@ -73,6 +61,27 @@ const std::vector<std::array<unsigned int, 3>> &
 Sapphire::VFP::PDESystem::get_lms_indices() const
 {
   return lms_indices;
+}
+
+void
+Sapphire::VFP::PDESystem::create_lms_indices(
+  int                                       expansion_order,
+  std::vector<std::array<unsigned int, 3>> &lms_indices)
+{
+  lms_indices.resize((expansion_order + 1) * (expansion_order + 1));
+  for (int s = 0, idx = 0; s <= 1; ++s)
+    {
+      for (int l = 0; l <= expansion_order; ++l)
+        {
+          for (int m = l; m >= s; --m)
+            {
+              idx                 = l * (l + 1) - (s ? -1 : 1) * m;
+              lms_indices[idx][0] = l;
+              lms_indices[idx][1] = m;
+              lms_indices[idx][2] = s;
+            }
+        }
+    }
 }
 
 unsigned int
