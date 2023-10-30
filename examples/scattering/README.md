@@ -337,12 +337,29 @@ Sapphire:VFP::Compute the global error
 Sapphire::L2 error: 0.000654138
 ```
 
-The results of the run will be saved in the 'results/scattering` folder.
+The results of the run will be saved in the `results/scattering` folder. In the
+folder are two different kinds of files. First, the `log.prm` is a log of the
+parameter file used for the run. This allows to reproduce/identify the results
+of a simulation at a later stage. Second, the `solution_*.vtu` files with the
+solution at the different time steps. These files can be visualized using
+visualization software like ParaView or Visit.
+
+In our example the result is not very interesting. The values for $f_{lms}(x,t)$
+are given where $x$ goes from $-1$ to $1$. As expected, the solution decays with
+time as $f_{lms}(t) = \exp\left(- \frac{l(l + 1)}{2} t \right)$.
+
+The following image shows the results at $t=2$ for $l = 0,1,2,3$:
+
+![Results at t=2](/Users/flo/Documents/PhD/Code/sapphire/examples/scattering/doc/results_scattering.png)
+
+@todo Use relative picture path, or path to git.
 
 
 ### Parameter file {#parameter}
 
-We run the program with the following parameter file:
+The parameter file can either be a `.prm`, `.json` or `.xml` file. Here, we use
+a `.prm` for easy readability. For more information on the different input
+formats, we refer to the `deal.II` `ParameterHandler` documentation.
 
 \include{lineno} scattering/parameter.prm
 
