@@ -142,6 +142,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
+  LogStream::Prefix p2("Constructor", saplog);
   saplog << vfp_flags << std::endl;
 
   // Consistency checks for vfp_flags:
