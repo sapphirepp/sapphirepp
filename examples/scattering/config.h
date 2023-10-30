@@ -74,13 +74,13 @@ namespace Sapphire
   namespace VFP
   {
     /// [Namespace VFP]
-    /// [ Var dim]
+    /// [Var dim]
     static constexpr int dimension = 1;
-    /// [ Var dim]
+    /// [Var dim]
 
-    /// [ Var vfp flags]
+    /// [Var vfp flags]
     static constexpr VFPFlags vfp_flags = VFPFlags::collision;
-    /// [ Var vfp flags]
+    /// [Var vfp flags]
 
     /// [Initial value constructor]
     template <int dim>
