@@ -35,7 +35,9 @@ main(int argc, char *argv[])
       /// First, we need to initialize MPI for parallel runs:
       using namespace Sapphire;
       using namespace VFP;
-      Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+      dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
+                                                                  argv,
+                                                                  1);
 
       /// \page scattering
       /// \until CODEBLOCK_DELIMITER
@@ -45,15 +47,13 @@ main(int argc, char *argv[])
       /// one line of output per time-step. For parallel runs, we will turn of
       /// the output of all but the first process.
       saplog.depth_console(2);
+      // saplog.depth_console(-1);
       const unsigned int mpi_rank =
-        Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+        dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
       if (mpi_rank > 0)
         {
           saplog.depth_console(0);
-          // char buffer[4];
-          // std::snprintf(buffer, 4, "%03d", mpi_rank);
-          // saplog.push("mpi" + std::string(buffer));
-          saplog.push("mpi" + Utilities::to_string(mpi_rank, 3));
+          saplog.push("mpi" + dealii::Utilities::to_string(mpi_rank, 3));
         }
 
       /// \page scattering
@@ -66,11 +66,11 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+      int mpi_size = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
       saplog << "Start example scattering with parameter file \""
              << parameter_filename << "\" on " << mpi_size << " processor(s) ["
-             << Utilities::System::get_date() << " "
-             << Utilities::System::get_time() << "]" << std::endl;
+             << dealii::Utilities::System::get_date() << " "
+             << dealii::Utilities::System::get_time() << "]" << std::endl;
 
       /// \page scattering
       /// \until CODEBLOCK_DELIMITER
@@ -150,5 +150,3 @@ main(int argc, char *argv[])
 /// \until END_OF_FILE
 ///
 /// This concludes the `main` function for the scattering example.
-/// And now we can show all the code without the documentation:
-/// \include scattering/scattering.cpp

@@ -192,7 +192,7 @@ namespace Sapphire
           {
             const int    l = 0; // TODO
             const double t = this->get_time();
-            f[0]           = f0 * std::exp(-nu * l * (l + 1) / 2. * t);
+            f[i]           = f0 * std::exp(-nu * l * (l + 1) / 2. * t);
           }
       }
 

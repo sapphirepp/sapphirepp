@@ -5,6 +5,12 @@ Table of contents:
 \todo Table of contents is not working
 
 
+Reference by hand
+
+- \ref introduction
+- \ref code
+
+
 ## Introduction {#introduction}
 
 In this example, we want to give an introduction to `Sapphire++` and show the
