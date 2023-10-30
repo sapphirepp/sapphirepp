@@ -150,14 +150,17 @@ error_with_parameter(std::string               parameter_filename,
 
       InitialValueFunction<dim> cylinder(physical_properties,
                                          vfp_solver_control.expansion_order);
-      const double              L2_error =
-        vfp_equation_solver.compute_global_error(cylinder,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::L2_norm);
-      const double Linfty_error =
-        vfp_equation_solver.compute_global_error(cylinder,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::Linfty_norm);
+
+
+      ComponentSelectFunction<dim> mask(
+        0,
+        (vfp_solver_control.expansion_order + 1) *
+          (vfp_solver_control.expansion_order + 1));
+
+      const double L2_error = vfp_equation_solver.compute_global_error(
+        cylinder, VectorTools::L2_norm, VectorTools::L2_norm, &mask);
+      const double Linfty_error = vfp_equation_solver.compute_global_error(
+        cylinder, VectorTools::L2_norm, VectorTools::Linfty_norm, &mask);
 
       saplog << values[i] << "\t" << L2_error << "\t" << Linfty_error << "\t"
              << timer.cpu_time() << "\t" << timer.wall_time() << "\t"

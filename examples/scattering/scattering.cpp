@@ -113,6 +113,21 @@ main(int argc, char *argv[])
                                                        physical_properties,
                                                        output_module);
       vfp_equation_solver.run();
+
+      /// \page scattering
+      /// \until CODEBLOCK_DELIMITER
+      /// After the simulation ended, we can compute the error by comparing to
+      /// the analytic solution (implemented in `InitialValueFunction`).
+      InitialValueFunction<dimension> analytic_solution(
+        physical_properties, vfp_solver_control.expansion_order);
+      analytic_solution.set_time(vfp_solver_control.final_time);
+
+      const double L2_error =
+        vfp_equation_solver.compute_global_error(analytic_solution,
+                                                 VectorTools::L2_norm,
+                                                 VectorTools::L2_norm);
+
+      saplog << "L2 error: " << L2_error << std::endl;
     }
   /// \page scattering
   /// \until CODEBLOCK_DELIMITER

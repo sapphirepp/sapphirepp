@@ -25,6 +25,7 @@
 #  include <ostream>
 #  include <vector>
 
+#  include "pde-system.h"
 #  include "sapphire-logstream.h"
 #  include "vfp-flags.h"
 
@@ -160,6 +161,8 @@ namespace Sapphire
     /// The function has to provide a value for each component \f$ f_{lms} \f$.
     /// Therefore it is a __vector-valued__ fuction with \f$ (l_{\rm max} +1)^2
     /// \f$ components.
+    /// To convert between the system index \f$ i \f$ and the spherical harmonic
+    /// indices \f$ l, m, s \f$ we need a mapping given by `lms_indices`.
     template <int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
@@ -169,7 +172,9 @@ namespace Sapphire
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
         , f0(physical_properties.f0)
         , nu(physical_properties.nu)
-      {}
+      {
+        PDESystem::create_lms_indices(exp_order, lms_indices);
+      }
 
       /// \page scattering
       /// \until CODEBLOCK_DELIMITER
@@ -179,8 +184,7 @@ namespace Sapphire
       /// component.
       /// In this example, value is given by
       /// \f[ f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t
-      /// \right)
-      /// \,. \f]
+      /// \right) \,. \f]
       void
       vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &f) const override
@@ -190,14 +194,15 @@ namespace Sapphire
         for (unsigned int i = 0; i < InitialValueFunction<dim>::n_components;
              i++)
           {
-            const int    l = 0; // TODO
+            const int    l = lms_indices[i][0];
             const double t = this->get_time();
             f[i]           = f0 * std::exp(-nu * l * (l + 1) / 2. * t);
           }
       }
 
-      const double f0;
-      const double nu;
+      const double                             f0;
+      const double                             nu;
+      std::vector<std::array<unsigned int, 3>> lms_indices;
     };
 
     /// \page scattering
