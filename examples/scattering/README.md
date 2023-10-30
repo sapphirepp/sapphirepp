@@ -98,3 +98,134 @@ since the physical setup is defined in the `config.h` file, the `main.cpp`
 will be nearly identical for most use-cases of `Sapphire++`.
 The last file that has to be created is the `Parameter.prm` which defines
 the run time parameter of Sapphire.
+
+## config.h {#config}
+
+We start by going line by line trough the `config.h` file. First, we have to
+make sure that the file is only included onces, and then import some
+dependencies:
+
+@snippet{lineno} examples/scattering/config.h Includes
+
+Everything implemented in `Sapphire++` is part of the namespace Sapphire.
+
+@snippet{lineno} examples/scattering/config.h Namespace Sapphire
+
+@todo How should we name Sapphire in the docs? Sapphire, Sapphire++,
+`Sapphire++`, ...?
+
+Often we parametrize the physical setup with some runtime parameter. Since it is
+setup dependent what these parameters are, they have to be specified by the
+user. The PhysicalProperties class allows for this. It uses the deal.II concept
+of a ParameterHandler, for more details see ...
+
+@todo Link to deal.II, and how to name deal.II ?
+
+The PhysicalProperties class consists of __public__ variables for the user
+defined runtime parameter, a default constructor and tho functions to
+__delcare__ and __parse__ the parameter from the parameter file. In this
+example, we have two parameter that we want to specify, the scattering frequency
+$\nu$ and the initial value of the expansion coefficients, $f_{lms,0}$. We will
+call these parameters `nu` and `f0` respectively, assuming all expansion
+coefficients have the same initial value.
+
+@snippet{lineno} examples/scattering/config.h Physical prop
+
+The declare_parameters function is using the dealii::ParameterHandler class to
+delcare parameter in the parameter file. We sort all parameter in a subsection
+"Physical properties". In addition, we write a message to the custom Sapphire
+logstream `saplog`. The LogStream::Prefix ensures, that the message is prefixed
+and only shown, if detailed output is requested. The declaration of the
+parameter is straight forward, using the `declare_entry` function of the
+ParameterHandler. It takes the name of the parameter, a default value and its
+type/pattern. Additionally, can give a description of the parameter.
+
+@snippet{lineno} examples/scattering/config.h Declare params
+
+The parsing of the parameter is equally simple. We use the `get_double()`
+function of the ParameterParser to get the value for a previously declared
+parameter.
+
+At the end, we define the runtime parameter as __public__ variables of the
+class, so that subsequent functions have easy access to them.
+
+@snippet{lineno} examples/scattering/config.h Runtime params
+
+Next, we define static variables and functions related to the VFP equation. We
+therefore use the namespace `VFP` to collect them in one place.
+
+@snippet{lineno} examples/scattering/config.h Namespace VFP
+
+First, we define the dimensionality of the problem. Since the solution does not
+depend on either $\mathbf{x}$ nor $p$, we just use one space dimension.
+
+@todo Use dimension = 0 if possible
+
+@snippet{lineno} examples/scattering/config.h Var dim
+
+Next, we define which terms of the VFP equation we use. To this end, we define a
+`static constexpr` which the __compiler__ can use to determine which terms are
+activated. Selecting only the relevant terms here results in big performance
+gains, even though setting the respective terms to 0 at runtime would produce the
+same results. In this example, we only have a scattering term, and no $p$
+dependence. We therefore only activate the `collision` term, while all other
+terms (and the $p$ dependence are turned off by default.)
+
+@snippet{lineno} examples/scattering/config.h Var vfp flags
+
+To define the initial values, we use the class `Function` provided by `deal.II`.
+We define our own class `InitialValueFunction` functions that inherits all
+properties of the parent class `Function`. Keeping the style of `deal.II`, we
+keep the dimension as a template parameter (even so it is at the moment defined
+by the compile time variable `dimension`).
+
+As we have seen before, the inital condition depends on only one parameter,
+`f0`. But in this example, we will extend the scope of this function, by using
+it as the analytic solution we can compare to. Therefore, the function will also
+depend on `nu` as a function of time. The function has to provide a value for
+each component $f_{lms}$. Therefore it is a __vector-valued__ fuction with
+$(l_{\rm max} +1)^2$ components. To convert between the system index $i$ and the
+spherical harmonic indices $l, m, s$ we need a mapping given by `lms_indices`.
+
+@snippet{lineno} examples/scattering/config.h Initial value constructor
+
+After defining the constructor of the function, we have to define its value. For
+this we override the `vector_value` function of the parent class. At a *point*
+`p` it has to provide a *value* `f` for each component. In this example, value
+is given by
+
+$$
+f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t\right)\,.
+$$
+
+ @snippet{lineno} examples/scattering/config.h Initial value vector value
+
+The definition of the scattering frequency works similar. The only difference
+is, that the scattering frequency is a scalar function, therefore we use the
+function `value_list` to get the scattering frequency at multiple points in one
+function call.
+
+@snippet{lineno} examples/scattering/config.h Scattering frequ
+
+Since `Sapphire++` a definition of the function `Source`, `MagneticField` and
+`BackgroundVelocityField` in the `config.h`, we have to implement them here. We
+can however leave the implementation empty, since the functions won't be used in
+this example.
+
+@snippet{lineno} examples/scattering/config.h Source
+
+Empty implementation of the magnetic field:
+
+@snippet{lineno} examples/scattering/config.h Magnetic field
+
+Empty implementation of the background velocity field:
+
+@snippet{lineno} examples/scattering/config.h Velocity field
+
+Last, we have to close the namespaces again and end the include guard.
+
+@snippet{lineno} examples/scattering/config.h Close namespaces
+
+This concludes the `config.h` file. Next, we have to implement the `main` in the
+`scattering.cpp` file.
+
