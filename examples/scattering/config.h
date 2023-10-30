@@ -4,31 +4,12 @@
 /// \date 2023-10-27
 /// @copyright Copyright (c) 2023
 
-/// \page scattering Introduction and Basic Usage: Scattering
-/// Table of contents:
-/// \tableofcontents
-/// \section intro Introduction
-/// \include{doc} scattering/introduction.md
-/// \section code Implementation
-/// To implement the example in `Sapphire++`, we need to create two.
-/// The first one is the header file `config.h` which implements compile time
-/// flags and the physical setup. The later one consist of the definition of the
-/// inital condition \f$ f_{lms, 0} \f$ "InitialValueFunction", the scattering
-/// frequency \f$ \nu \f$ "ScatteringFrequency", the source \f$ S \f$ "Source",
-/// the magnetic field \f$ \mathbf{B} \f$ "MagneticField" and the background
-/// velocity field \f$ \mathbf{u} \f$ "BackgroundVelocityField".
-/// The second file is a `.cpp` file that implements the main function. The
-/// since the phyiscal setup is defined in the `config.h` file, the `main.cpp`
-/// will be nearly identical for most use-cases of `Sapphire++`.
-/// The last file that has to be created is the `Parameter.prm` which defines
-/// the run time parameter of Sapphire.
-///
+/// \page scattering
 /// \subsection config config.h
 /// \dontinclude scattering/config.h
 /// We start by going line by line trough the `config.h` file.
 /// First, we have to make sure that the file is only included onces, and then
 /// import some dependencies:
-
 #ifndef CONFIG_H
 #  define CONFIG_H
 
@@ -120,7 +101,7 @@ namespace Sapphire
       prm.enter_subsection("Physical properties");
 
       nu = prm.get_double("nu");
-      f0 = prm.get_double("fo");
+      f0 = prm.get_double("f0");
 
       prm.leave_subsection();
     };

@@ -2,9 +2,10 @@
 
 Table of contents:
 \tableofcontents
+\todo Table of contents is not working
 
 
-## Introduction
+## Introduction {#introduction}
 
 In this example, we want to give an introduction to `Sapphire++` and show the
 basic usage.
@@ -70,3 +71,19 @@ $$
 $$
 where $f_{lms, 0} = f_{lms}(t=0)$. We will use this solution to check the
 correctness of the numerical solution.
+
+
+## Implementation {#code}
+
+To implement the example in `Sapphire++`, we need to create two.
+The first one is the header file `config.h` which implements compile time
+flags and the physical setup. The later one consist of the definition of the
+initial condition $f_{lms, 0}$ "InitialValueFunction", the scattering
+frequency $\nu$ "ScatteringFrequency", the source $S$ "Source",
+the magnetic field $\mathbf{B}$ "MagneticField" and the background
+velocity field $\mathbf{u}$ "BackgroundVelocityField".
+The second file is a `.cpp` file that implements the main function. The
+since the physical setup is defined in the `config.h` file, the `main.cpp`
+will be nearly identical for most use-cases of `Sapphire++`.
+The last file that has to be created is the `Parameter.prm` which defines
+the run time parameter of Sapphire.
