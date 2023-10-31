@@ -388,7 +388,7 @@ formats, we refer to the `deal.II` `ParameterHandler` documentation.
 
 \include{lineno} scattering/scattering.cpp
 
---
+---
 
 @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
 @date 2023-10-30
