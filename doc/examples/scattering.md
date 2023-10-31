@@ -110,9 +110,9 @@ setup dependent what these parameters are, they have to be specified by the
 user. The PhysicalProperties class allows for this. It uses the @dealii concept
 of a @dealref{ParameterHandler}, for more details see ...
 
-The PhysicalProperties class consists of __public__ variables for the user
+The PhysicalProperties class consists of **public** variables for the user
 defined runtime parameter, a default constructor and tho functions to
-__delcare__ and __parse__ the parameter from the parameter file. In this
+**delcare** and **parse** the parameter from the parameter file. In this
 example, we have two parameter that we want to specify, the scattering frequency
 $\nu$ and the initial value of the expansion coefficients, $f_{lms,0}$. We will
 call these parameters `nu` and `f0` respectively, assuming all expansion
@@ -137,7 +137,7 @@ The parsing of the parameter is equally simple. We use the
 @dealref{ParameterHandler.get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
 function to get the value for a previously declared parameter.
 
-At the end, we define the runtime parameter as __public__ variables of the
+At the end, we define the runtime parameter as **public** variables of the
 class, so that subsequent functions have easy access to them.
 
 @snippet{lineno} examples/scattering/config.h Runtime params
@@ -155,7 +155,7 @@ depend on either $\mathbf{x}$ nor $p$, we just use one space dimension.
 @snippet{lineno} examples/scattering/config.h Var dim
 
 Next, we define which terms of the VFP equation we use. To this end, we define a
-`static constexpr` which the __compiler__ can use to determine which terms are
+`static constexpr` which the **compiler** can use to determine which terms are
 activated. Selecting only the relevant terms here results in big performance
 gains, even though setting the respective terms to 0 at runtime would produce
 the same results. In this example, we only have a scattering term, and no $p$
@@ -174,7 +174,7 @@ As we have seen before, the inital condition depends on only one parameter,
 `f0`. But in this example, we will extend the scope of this function, by using
 it as the analytic solution we can compare to. Therefore, the function will also
 depend on `nu` as a function of time. The function has to provide a value for
-each component $f_{lms}$. Therefore it is a __vector-valued__ fuction with
+each component $f_{lms}$. Therefore it is a **vector-valued** fuction with
 $(l_{\rm max} +1)^2$ components. To convert between the system index $i$ and the
 spherical harmonic indices $l, m, s$ we need a mapping given by `lms_indices`.
 
