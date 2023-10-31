@@ -287,7 +287,8 @@ ALIASES                = sapphire="Sapphire++" \
                          dealii="<A HREF=\"https://www.dealii.org\"> deal.II </A>" \
                          dealref{2}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html\"> \1 </A>" \
                          dealref{3}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html#\3\"> \1 </A>" \
-                         dealref{1}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/class\1.html\"> \1 </A>"
+                         dealref{1}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/class\1.html\"> \1 </A>" \
+                         vfpref{1}="@ref Sapphire::VFP::\1 \"\1\""
 
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources

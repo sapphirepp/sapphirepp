@@ -54,7 +54,7 @@ $$
 $$
 
 The matrix $\mathbf{C}$ represents the scattering operator and is given by (see
-\cite Schween2024)
+@cite Schween2024)
 
 $$
   (\mathbf{C})_{i(l'm's')j(l,m,s)} = \frac{l(l + 1)}{2}\delta_{l'l}\delta_{m'm}
@@ -80,17 +80,17 @@ correctness of the numerical solution.
 
 ## Implementation {#code}
 
-To implement the example in @sapphire, we need to create two. The first one
-is the header file `config.h` which implements compile time flags and the
-physical setup. The later one consist of the definition of the initial condition
-$f_{lms, 0}$ "InitialValueFunction", the scattering frequency $\nu$
-"ScatteringFrequency", the source $S$ "Source", the magnetic field $\mathbf{B}$
-"MagneticField" and the background velocity field $\mathbf{u}$
-"BackgroundVelocityField". The second file is a `.cpp` file that implements the
-main function. The since the physical setup is defined in the `config.h` file,
-the `main.cpp` will be nearly identical for most use-cases of @sapphire. The
-last file that has to be created is the `Parameter.prm` which defines the run
-time parameter of @sapphire.
+To implement the example in @sapphire, we need to create two. The first one is
+the header file `config.h` which implements compile time flags and the physical
+setup. The later one consist of the definition of the initial condition $f_{lms,
+0}$ @vfpref{InitialValueFunction}, the scattering frequency $\nu$
+@vfpref{ScatteringFrequency}, the source $S$ "Source", the magnetic field
+$\mathbf{B}$ @vfpref{MagneticField} and the background velocity field
+$\mathbf{u}$ @vfpref{BackgroundVelocityField}. The second file is a `.cpp` file
+that implements the main function. The since the physical setup is defined in
+the `config.h` file, the `main.cpp` will be nearly identical for most use-cases
+of @sapphire. The last file that has to be created is the `Parameter.prm` which
+defines the run time parameter of @sapphire.
 
 
 ## config.h {#config}
@@ -107,11 +107,11 @@ Everything implemented in @sapphire is part of the namespace Sapphire.
 
 Often we parametrize the physical setup with some runtime parameter. Since it is
 setup dependent what these parameters are, they have to be specified by the
-user. The PhysicalProperties class allows for this. It uses the @dealii concept
-of a @dealref{ParameterHandler}, for more details see ...
+user. The @vfpref{PhysicalProperties} class allows for this. It uses the @dealii
+concept of a @dealref{ParameterHandler}, for more details see ...
 
-The PhysicalProperties class consists of **public** variables for the user
-defined runtime parameter, a default constructor and tho functions to
+The @vfpref{PhysicalProperties} class consists of **public** variables for the
+user defined runtime parameter, a default constructor and tho functions to
 **delcare** and **parse** the parameter from the parameter file. In this
 example, we have two parameter that we want to specify, the scattering frequency
 $\nu$ and the initial value of the expansion coefficients, $f_{lms,0}$. We will
@@ -120,14 +120,14 @@ coefficients have the same initial value.
 
 @snippet{lineno} examples/scattering/config.h Physical prop
 
-The declare_parameters function is using the
-@dealref{ParameterHandler} class to delcare parameter in
-the parameter file. We sort all parameter in a subsection "Physical properties".
-In addition, we write a message to the custom Sapphire logstream `saplog`. The
+The declare_parameters function is using the @dealref{ParameterHandler} class to
+delcare parameter in the parameter file. We sort all parameter in a subsection
+"Physical properties". In addition, we write a message to the custom @ref
+Sapphire::Utils::SapphireLogStream "SapphireLogStream" `saplog`. The
 @dealref{LogStream::Prefix,classLogStream_1_1Prefix} ensures, that the message
 is prefixed and only shown, if detailed output is requested. The declaration of
 the parameter is straight forward, using the
-@dealref{ParameterHandler.declary_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
+@dealref{ParameterHandler.declare_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
 function. It takes the name of the parameter, a default value and its
 type/pattern. Additionally, can give a description of the parameter.
 
@@ -143,7 +143,8 @@ class, so that subsequent functions have easy access to them.
 @snippet{lineno} examples/scattering/config.h Runtime params
 
 Next, we define static variables and functions related to the VFP equation. We
-therefore use the namespace `VFP` to collect them in one place.
+therefore use the namespace @ref Sapphire::VFP "VFP" to collect them in one
+place.
 
 @snippet{lineno} examples/scattering/config.h Namespace VFP
 
