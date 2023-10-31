@@ -56,8 +56,8 @@ $$
   \partial_{t} \boldsymbol{f} + \nu \, \mathbf{C} \boldsymbol{f} = 0 \,.
 $$
 
-The matrix $\mathbf{C}$ represents the scattering operator and is given by \todo
-Insert citation to DG paper
+The matrix $\mathbf{C}$ represents the scattering operator and is given by (see
+\cite Schween2024)
 
 $$
   (\mathbf{C})_{i(l'm's')j(l,m,s)} = \frac{l(l + 1)}{2}\delta_{l'l}\delta_{m'm}
