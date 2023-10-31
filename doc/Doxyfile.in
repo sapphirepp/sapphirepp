@@ -283,7 +283,13 @@ TAB_SIZE               = 4
 # with the commands \{ and \} for these it is advised to use the version @{ and
 # @} or use a double escape (\\{ and \\})
 
-ALIASES                =
+ALIASES                = sapphire="Sapphire++" \
+                         dealii="<A HREF=\"https://www.dealii.org\"> deal.II </A>" \
+                         dealref{2}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html\"> \1 </A>" \
+                         dealref{3}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html#\3\"> \1 </A>" \
+                         dealref{1}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/class\1.html\"> \1 </A>" \
+                         vfpref{1}="@ref Sapphire::VFP::\1 \"\1\""
+
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -825,7 +831,7 @@ LAYOUT_FILE            =
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
 # search path. See also \cite for info how to create references.
 
-CITE_BIB_FILES         =
+CITE_BIB_FILES         = @PROJECT_SOURCE_DIR@/doc/bibliography.bib
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
@@ -943,13 +949,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = index.md \
-                         examples/examples.md \
-                         ../examples/scattering/README.md \
-                         ../examples/scattering/config.h \
-                         ../examples/scattering/scattering.cpp \
-                         ../examples/scattering/doc/results.md \
-                         ..
+INPUT                  = @PROJECT_SOURCE_DIR@
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1079,7 +1079,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = ../examples
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and

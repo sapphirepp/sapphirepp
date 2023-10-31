@@ -1,19 +1,4 @@
-/////////////////////////////////////////////////
-/// @file examples/scattering/config.h
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief config.h file for the scattering example
-/// @date 2023-10-30
-///
-/// @copyright Copyright (c) 2023
-///
-/////////////////////////////////////////////////
-
-/// @page scattering
-/// @subsection config config.h
-/// @dontinclude scattering/config.h
-/// We start by going line by line trough the `config.h` file.
-/// First, we have to make sure that the file is only included onces, and then
-/// import some dependencies:
+/// [Includes]
 #ifndef CONFIG_H
 #  define CONFIG_H
 
@@ -32,48 +17,19 @@
 #  include "pde-system.h"
 #  include "sapphire-logstream.h"
 #  include "vfp-flags.h"
+/// [Includes]
 
-/// @page scattering
-/// @skip ifndef
-/// @until CODEBLOCK_DELIMITER
-/// Everything implemented in `Sapphire++` is part of the namespace Sapphire.
-/// @todo How should we name Sapphire in the docs? Sapphire, Sapphire++,
-/// `Sapphire++`, ...?
+/// [Namespace Sapphire]
 namespace Sapphire
 {
-  /// @page scattering
-  /// @until CODEBLOCK_DELIMITER
-  /// Often we parametrize the physical setup with some runtime parameter.
-  /// Since it is setup dependent what these parameters are, they have to be
-  /// specified by the user. The PhysicalProperties class allows for this. It
-  /// uses the deal.II  concept of a ParameterHandler, for more details see
-  /// ... @todo Link to deal.II, and how to name deal.II ?
-  ///
-  /// The PhysicalProperties class consists of __public__ variables for the
-  /// user defined runtime parameter, a default constructor and tho functions
-  /// to __delcare__ and __parse__ the parameter from the parameter file.
-  /// In this example, we have two parameter that we want to specify, the
-  /// scattering frequency @f$ \nu @f$ and the initial value of the expansion
-  /// coefficients, @f$ f_{lms, 0} @f$. We will call these parameters `nu` and
-  /// `f0` respectively, assuming all expansion coefficients have the same
-  /// initial value.
+  /// [Namespace Sapphire]
+  /// [Physical prop]
   class PhysicalProperties
   {
   public:
     PhysicalProperties() = default;
-
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// The declare_parameters function is using the dealii::ParameterHandler
-    /// class to delcare parameter in the parameter file. We sort all parameter
-    /// in a subsection "Physical properties".
-    /// In addition, we write a message to the custom Sapphire logstream
-    /// `saplog`. The LogStream::Prefix ensures, that the message is prefixed
-    /// and only shown, if detailed output is requested.
-    /// The declaration of the parameter is straight forward, using the
-    /// `declare_entry` function of the ParameterHandler. It takes the name of
-    /// the parameter, a default value and its type/pattern. Additionally, can
-    /// give a description of the parameter.
+    /// [Physical prop]
+    /// [Declare params]
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
@@ -92,12 +48,9 @@ namespace Sapphire
 
       prm.leave_subsection();
     };
+    /// [Declare params]
 
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// The parsing of the parameter is equally simple. We use the
-    /// `get_double()` function of the ParameterParser to get the value for a
-    /// previously declared parameter.
+    /// [Parse params]
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
@@ -110,63 +63,26 @@ namespace Sapphire
 
       prm.leave_subsection();
     };
+    /// [Parse params]
 
-
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// At the end, we define the runtime parameter as __public__ variables of
-    /// the class, so that subsequent functions have easy access to them.
+    /// [Runtime params]
     double nu;
     double f0;
   };
-
-
-  /// @page scattering
-  /// @until CODEBLOCK_DELIMITER
-  /// Next, we define static variables and functions related to the VFP
-  /// equation. We therefore use the namespace `VFP` to collect them in one
-  /// place.
+  /// [Runtime params]
+  /// [Namespace VFP]
   namespace VFP
   {
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// First, we define the dimensionality of the problem. Since the solution
-    /// does not depend on either @f$ \mathbf{x} @f$ nor @f$ p @f$, we just use
-    /// one space dimension.
-    /// @todo Use dimension = 0 if possible
+    /// [Namespace VFP]
+    /// [Var dim]
     static constexpr int dimension = 1;
+    /// [Var dim]
 
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// Next, we define which terms of the VFP equation we use. To this end, we
-    /// define a `static constexpr` which the __compiler__ can use to determine
-    /// which terms are activated. Selecting only the relevant terms here
-    /// results in big performance gains, even so setting the respective terms
-    /// to 0 at runtime would produce the same results.
-    /// In this example, we only have a scattering term, and no @f$ p @f$
-    /// dependence. We therefore only activate the `collision` term, while all
-    /// other terms (and the @f$ p @f$ dependence are turned off by default.)
+    /// [Var vfp flags]
     static constexpr VFPFlags vfp_flags = VFPFlags::collision;
+    /// [Var vfp flags]
 
-
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// To define the initial values, we use the class `Function` provided by
-    /// `deal.II`. We define our own class `InitialValueFunction` functions that
-    /// inherits all properties of the parent class `Function`. Keeping the
-    /// style of `deal.II`, we keep the dimension as a template parameter (even
-    /// so it is at the moment defined by the compile time variable
-    /// `dimension`).
-    ///
-    /// As we have seen before, the inital condition depends on only one
-    /// parameter, `f0`. But in this example, we will extend the scope of this
-    /// function, by using it as the analytic solution we can compare to.
-    /// Therefore, the function will also depend on `nu` as a function of time.
-    /// The function has to provide a value for each component @f$ f_{lms} @f$.
-    /// Therefore it is a __vector-valued__ fuction with @f$ (l_{\rm max} +1)^2
-    /// @f$ components.
-    /// To convert between the system index @f$ i @f$ and the spherical harmonic
-    /// indices @f$ l, m, s @f$ we need a mapping given by `lms_indices`.
+    /// [Initial value constructor]
     template <int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
@@ -179,18 +95,9 @@ namespace Sapphire
       {
         PDESystem::create_lms_indices(exp_order, lms_indices);
       }
+      /// [Initial value constructor]
 
-      /// @page scattering
-      /// @until CODEBLOCK_DELIMITER
-      /// After defining the constructor of the function, we have to define its
-      /// value. For this we override the `vector_value` function of the parent
-      /// class. At a *point* `p` it has to provide a *value* `f` for each
-      /// component.
-      /// In this example, value is given by
-      /// @f[
-      ///   f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t \right)
-      ///   \,.
-      /// @f]
+      /// [Initial value vector value]
       void
       vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &f) const override
@@ -210,13 +117,9 @@ namespace Sapphire
       const double                             nu;
       std::vector<std::array<unsigned int, 3>> lms_indices;
     };
+    /// [Initial value vector value]
 
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// The definition of the scattering frequency works similar. The only
-    /// difference is, that the scattering frequency is a scalar function,
-    /// therefore we use the function `value_list` to get the scattering
-    /// frequency at multiple points in one function call.
+    /// [Scattering freq]
     template <int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
@@ -243,13 +146,9 @@ namespace Sapphire
 
       const double nu;
     };
+    /// [Scattering freq]
 
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// Since `Sapphire++` a definition of the function `Source`,
-    /// `MagneticField` and `BackgroundVelocityField` in the `config.h`, we have
-    /// to implement them here. We can however leave the implementation empty,
-    /// since the functions won't be used in this example.
+    /// [Source]
     template <int dim>
     class Source : public dealii::Function<dim>
     {
@@ -270,10 +169,9 @@ namespace Sapphire
         values[0] = 0.; // unused
       }
     };
+    /// [Source]
 
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// Empty implementation of the magnetic field:
+    /// [Magnetic field]
     template <int dim>
     class MagneticField : public dealii::Function<dim>
     {
@@ -296,10 +194,9 @@ namespace Sapphire
         magnetic_field[2] = 0.;
       }
     };
+    /// [Magnetic field]
 
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// Empty implementation of the background velocity field:
+    /// [Velocity field]
     template <int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
@@ -384,15 +281,9 @@ namespace Sapphire
           }
       }
     };
-
-    /// @page scattering
-    /// @until CODEBLOCK_DELIMITER
-    /// Last, we have to close the namespaces again and end the include guard.
+    /// [Velocity field]
+    /// [Close namespaces]
   } // namespace VFP
 } // namespace Sapphire
 #endif
-
-/// @page scattering
-/// @until END_OF_FILE
-/// This concludes the `config.h` file. Next, we have to implement the `main` in
-/// the `scattering.cpp` file.
+/// [Close namespaces]

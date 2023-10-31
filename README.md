@@ -31,8 +31,8 @@ diffuses.
 
 To solve the above equation, we expand $f$ using real spherical harmonics, namely
 $$
- f(\mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0} \sum^{1}_{s
- = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi) \,.
+ f(\mathbf{x}, \mathbf{p}, t) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
+ \sum^{1}_{s = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi) \,.
 $$
 
 This turns the original equation into a system of equations determining the
