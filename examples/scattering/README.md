@@ -31,8 +31,8 @@ the directional part of the momentum $\mathbf{p} = (p \cos\theta, p \cos\varphi
 to solve the VFP equation. The distribution function can therefore be written as
 
 $$
-  f(\mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0} \sum^{1}_{s
-  = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi) \,.
+  f(\mathbf{x}, \mathbf{p}, t) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
+  \sum^{1}_{s = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi) \,.
 $$
 
 This expansion uses, that the distribution function is nearly isotropic, with
