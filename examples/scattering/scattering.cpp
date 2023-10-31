@@ -26,7 +26,6 @@ main(int argc, char *argv[])
       /// [MPI init]
       /// [Saplog]
       saplog.depth_console(2);
-      saplog.depth_console(-1);
       const unsigned int mpi_rank =
         dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
       if (mpi_rank > 0)

@@ -1,7 +1,7 @@
 # Examples {#examples}
 
- 1. @subpage scattering \n
-    This example acts as an introduction to `Sapphire++`. It uses the scattering
+ 1. @subpage scattering  
+    This example acts as an introduction to @sapphire. It uses the scattering
     term in the VFP equation to arrive at a simple test showing the usage of
-    `Sapphire++`.
+    @sapphire.
  2. Gyro-test

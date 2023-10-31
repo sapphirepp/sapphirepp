@@ -27,8 +27,9 @@ the scattering frequency. The Laplacian $\Delta_{\theta, \varphi}$ only acts on
 the directional part of the momentum $\mathbf{p} = (p \cos\theta, p \cos\varphi
 \sin\theta, p \sin\varphi \cos\theta)^{\top}$.
 
-@sapphire uses an expansion real spherical harmonics, $Y_{lms}(\theta,\varphi)$,
-to solve the VFP equation. The distribution function can therefore be written as
+@sapphire uses an expansion with real spherical harmonics,
+$Y_{lms}(\theta,\varphi)$, to solve the VFP equation. The distribution function
+can therefore be written as
 
 $$
   f(\mathbf{x}, \mathbf{p}, t) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
@@ -80,62 +81,65 @@ correctness of the numerical solution.
 
 ## Implementation {#code}
 
-To implement the example in @sapphire, we need to create two. The first one is
-the header file `config.h` which implements compile time flags and the physical
-setup. The later one consist of the definition of the initial condition $f_{lms,
-0}$ @vfpref{InitialValueFunction}, the scattering frequency $\nu$
-@vfpref{ScatteringFrequency}, the source $S$ "Source", the magnetic field
-$\mathbf{B}$ @vfpref{MagneticField} and the background velocity field
-$\mathbf{u}$ @vfpref{BackgroundVelocityField}. The second file is a `.cpp` file
-that implements the main function. The since the physical setup is defined in
-the `config.h` file, the `main.cpp` will be nearly identical for most use-cases
-of @sapphire. The last file that has to be created is the `Parameter.prm` which
-defines the run time parameter of @sapphire.
+The implementation of the example in @sapphire is split in two files. The first
+one is the header file `config.h` which implements compile time flags and the
+physical setup. The later one consist of the definition of the initial condition
+$f_{lms, 0}$ (@vfpref{InitialValueFunction}), the scattering frequency $\nu$
+(@vfpref{ScatteringFrequency}), the source $S$ (@vfpref{Source}), the magnetic
+field $\mathbf{B}$ (@vfpref{MagneticField}) and the background velocity field
+$\mathbf{u}$ (@vfpref{BackgroundVelocityField}). The second file is the
+`scattering.cpp` file that implements the `main` function. The since the
+physical setup is defined in the `config.h` file, the `main` will be nearly
+identical for most use-cases of @sapphire. Runtime parameter will be defined in
+a parameter file `parameter.prm`.
 
 
-## config.h {#config}
+### config.h {#config}
 
-We start by going line by line trough the `config.h` file. First, we have to
-make sure that the file is only included onces, and then import some
+We start by going line by line through the `config.h` file. First, we have to
+make sure that the file is only included once, and then import some
 dependencies:
 
 @snippet{lineno} examples/scattering/config.h Includes
 
-Everything implemented in @sapphire is part of the namespace Sapphire.
+Everything implemented in @sapphire is part of the namespace @ref Sapphire.
 
 @snippet{lineno} examples/scattering/config.h Namespace Sapphire
 
 Often we parametrize the physical setup with some runtime parameter. Since it is
-setup dependent what these parameters are, they have to be specified by the
+set up dependent what these parameters are, they have to be specified by the
 user. The @vfpref{PhysicalProperties} class allows for this. It uses the @dealii
-concept of a @dealref{ParameterHandler}, for more details see ...
+concept of a @dealref{ParameterHandler}.
 
 The @vfpref{PhysicalProperties} class consists of **public** variables for the
-user defined runtime parameter, a default constructor and tho functions to
-**delcare** and **parse** the parameter from the parameter file. In this
-example, we have two parameter that we want to specify, the scattering frequency
-$\nu$ and the initial value of the expansion coefficients, $f_{lms,0}$. We will
-call these parameters `nu` and `f0` respectively, assuming all expansion
-coefficients have the same initial value.
+user defined runtime parameter, a default constructor and two functions to
+**declare** and **parse** the parameter from the parameter file. In this
+example, we have two parameters that we want to specify, the scattering
+frequency $\nu$ and the initial value of the expansion coefficients,
+$f_{lms,0}$. We will call these parameters `nu` and `f0` respectively, assuming
+all expansion coefficients have the same initial value.
 
 @snippet{lineno} examples/scattering/config.h Physical prop
 
-The declare_parameters function is using the @dealref{ParameterHandler} class to
-delcare parameter in the parameter file. We sort all parameter in a subsection
-"Physical properties". In addition, we write a message to the custom @ref
+The @ref Sapphire::PhysicalProperties::declare_parameters "declare_parameters()"
+function is using the @dealref{ParameterHandler} class to declare parameter in
+the parameter file. We sort all parameter in a subsection "Physical properties".
+In addition, we write a message to the custom @ref
 Sapphire::Utils::SapphireLogStream "SapphireLogStream" `saplog`. The
 @dealref{LogStream::Prefix,classLogStream_1_1Prefix} ensures, that the message
 is prefixed and only shown, if detailed output is requested. The declaration of
 the parameter is straight forward, using the
 @dealref{ParameterHandler.declare_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
 function. It takes the name of the parameter, a default value and its
-type/pattern. Additionally, can give a description of the parameter.
+type/pattern. Additionally, one can give a description of the parameter.
 
 @snippet{lineno} examples/scattering/config.h Declare params
 
 The parsing of the parameter is equally simple. We use the
 @dealref{ParameterHandler.get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
 function to get the value for a previously declared parameter.
+
+@snippet{lineno} examples/scattering/config.h Parse params
 
 At the end, we define the runtime parameter as **public** variables of the
 class, so that subsequent functions have easy access to them.
@@ -151,7 +155,7 @@ place.
 First, we define the dimensionality of the problem. Since the solution does not
 depend on either $\mathbf{x}$ nor $p$, we just use one space dimension.
 
-@todo Use dimension = 0 if possible
+@todo Throw warning because dim != 0
 
 @snippet{lineno} examples/scattering/config.h Var dim
 
@@ -166,16 +170,16 @@ terms (and the $p$ dependence are turned off by default.)
 @snippet{lineno} examples/scattering/config.h Var vfp flags
 
 To define the initial values, we use the class @dealref{Function} provided by
-@dealii. We define our own class `InitialValueFunction` functions that inherits
-all properties of the parent class @dealref{Function}. Keeping the style of
-@dealii, we keep the dimension as a template parameter (even so it is at the
-moment defined by the compile time variable `dimension`).
+@dealii. We define our own class @vfpref{InitialValueFunction} that inherits all
+properties of the parent class @dealref{Function}. Keeping the style of @dealii,
+we keep the dimension as a template parameter (even though it is at the moment
+defined by the compile time variable `dimension`).
 
-As we have seen before, the inital condition depends on only one parameter,
+As we have seen before, the initial condition depends on only one parameter,
 `f0`. But in this example, we will extend the scope of this function, by using
 it as the analytic solution we can compare to. Therefore, the function will also
 depend on `nu` as a function of time. The function has to provide a value for
-each component $f_{lms}$. Therefore it is a **vector-valued** fuction with
+each component $f_{lms}$. Therefore, it is a **vector-valued** function with
 $(l_{\rm max} +1)^2$ components. To convert between the system index $i$ and the
 spherical harmonic indices $l, m, s$ we need a mapping given by `lms_indices`.
 
@@ -188,22 +192,22 @@ function of the parent class. At a *point* `p` it has to provide a *value* `f`
 for each component. In this example, value is given by
 
 $$
-f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t\right)\,.
+  f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t\right)\,.
 $$
 
- @snippet{lineno} examples/scattering/config.h Initial value vector value
+@snippet{lineno} examples/scattering/config.h Initial value vector value
 
 The definition of the scattering frequency works similar. The only difference
 is, that the scattering frequency is a scalar function, therefore we use the
 function @dealref{value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
 to get the scattering frequency at multiple points in one function call.
 
-@snippet{lineno} examples/scattering/config.h Scattering frequ
+@snippet{lineno} examples/scattering/config.h Scattering freq
 
-Since @sapphire a definition of the function `Source`, `MagneticField` and
-`BackgroundVelocityField` in the `config.h`, we have to implement them here. We
-can however leave the implementation empty, since the functions won't be used in
-this example.
+Since @sapphire expects a definition of the function @vfpref{Source},
+@vfpref{MagneticField} and @vfpref{BackgroundVelocityField} in `config.h`,
+we have to implement them here. We can however leave the implementation empty,
+since the functions won't be used in this example.
 
 @snippet{lineno} examples/scattering/config.h Source
 
@@ -215,18 +219,15 @@ Empty implementation of the background velocity field:
 
 @snippet{lineno} examples/scattering/config.h Velocity field
 
-Last, we have to close the namespaces again and end the include guard.
+Last, we have to close the namespaces and the include guard.
 
 @snippet{lineno} examples/scattering/config.h Close namespaces
 
-This concludes the `config.h` file. Next, we have to implement the `main` in the
-`scattering.cpp` file.
 
-
-## scattering.cpp
+### scattering.cpp {#mainFunction}
 
 In this file, we will define the `main` function for the scattering
-example.First, we include the header files we need:
+example. First, we include the header files we need:
 
 @snippet{lineno} examples/scattering/scattering.cpp Includes
 
@@ -243,10 +244,12 @@ First, we need to initialize MPI for parallel runs:
 
 @snippet{lineno} examples/scattering/scattering.cpp MPI init
 
-We will use the `Sapphire::Log` class to output information to the console. The
-`depth_console()` functions allows to specify how detailed the output should be.
-We will set it to 2, which results in one line of output per time-step. For
-parallel runs, we will turn of the output of all but the first process.
+We will use the @ref Sapphire::Utils::SapphireLogStream "SapphireLogStream"
+class to output information to the console. The
+@dealref{depth_console(),classLogStream,a8028e970ad8388596d625ed463894e98}
+function allows specifying how detailed the output should be. We will set it to
+2, which results in one line of output per time-step. For parallel runs, we will
+turn of the output of all but the first process.
 
 @snippet{lineno} examples/scattering/scattering.cpp Saplog
 
@@ -255,11 +258,11 @@ case no argument is given, it will default to the file `parameter.prm`. When
 starting the program, we output the configuration specified by command line
 arguments.
 
-@snippet{lineno} examples/scattering/scattering.cpp Saplog
+@snippet{lineno} examples/scattering/scattering.cpp Command line argument
 
-Next, we create all object that declare runtime parameter. We prefix these lines
-with `main` in the log stream, to silence the initialisation process in a run
-with low verbosity.
+Next, we create all objects that declare runtime parameter. We prefix these
+lines with `main` in the log stream, to silence the initialization process in a
+run with low verbosity.
 
 @snippet{lineno} examples/scattering/scattering.cpp Run time params
 
@@ -279,16 +282,17 @@ Finally, we can create the VFP equation solver and run it.
 @snippet{lineno} examples/scattering/scattering.cpp VFP Solver
 
 After the simulation ended, we can compute the error by comparing to the
-analytic solution (implemented in `InitialValueFunction`).
+analytic solution (implemented in @vfpref{InitialValueFunction}).
 
 @snippet{lineno} examples/scattering/scattering.cpp L2 error
 
-In case an exception is thrown, we will catch it, output it to std::err and
+In case an exception is thrown, we will catch it, output it to `std::err` and
 return with an error code.
 
 @snippet{lineno} examples/scattering/scattering.cpp try catch block end
 
-This concludes the `main` function for the scattering example.
+
+@todo Add section "Compiling the example" including the "CMakeLists.txt"
 
 
 ## Results {#results}
@@ -350,15 +354,16 @@ folder are two different kinds of files. First, the `log.prm` is a log of the
 parameter file used for the run. This allows to reproduce/identify the results
 of a simulation at a later stage. Second, the `solution_*.vtu` files with the
 solution at the different time steps. These files can be visualized using
-visualization software like ParaView or Visit.
+visualization software like [ParaView](https://www.paraview.org) or
+[VisIt](https://visit-dav.github.io/visit-website/).
 
 In our example the result is not very interesting. The values for $f_{lms}(x,t)$
-are given where $x$ goes from $-1$ to $1$. As expected, the solution decays with
-time as $f_{lms}(t) = \exp\left(- \frac{l(l + 1)}{2} t \right)$.
+are calculated for $x$ between $-1$ and $1$. As expected, the solution decays
+with time as $f_{lms}(t) = \exp\left(- \frac{l(l + 1)}{2} t \right)$.
 
 The following image shows the results at $t=2$ for $l = 0,1,2,3$:
 
-![Results at t=2](/Users/flo/Documents/PhD/Code/sapphire/examples/scattering/doc/results_scattering.png)
+![Results at t=2](/path/to/image)
 
 @todo Use relative picture path, or path to git.
 
@@ -387,4 +392,4 @@ formats, we refer to the @dealref{ParameterHandler} documentation.
 ---
 
 @author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
-@date 2023-10-30
+@date 2023-10-31

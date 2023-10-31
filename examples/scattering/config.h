@@ -119,7 +119,7 @@ namespace Sapphire
     };
     /// [Initial value vector value]
 
-    /// [Scattering frequ]
+    /// [Scattering freq]
     template <int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
@@ -146,7 +146,7 @@ namespace Sapphire
 
       const double nu;
     };
-    /// [Scattering frequ]
+    /// [Scattering freq]
 
     /// [Source]
     template <int dim>
