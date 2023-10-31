@@ -10,7 +10,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. 
 
 set(DEAL_II_DIR "~/.local/lib/dealii")
 
-find_package(deal.II 9.4.0 REQUIRED
+set(DEAL_II_MIN_VERSION "9.4.0")
+
+find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
   HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with

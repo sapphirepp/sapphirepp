@@ -5,20 +5,18 @@
 
 ## Introduction {#introduction}
 
-In this example, we want to give an introduction to `Sapphire++` and show the
-basic usage. All examples are structured in the following way: First, we give an
+In this example, we want to give an introduction to @sapphire and show the basic
+usage. All examples are structured in the following way: First, we give an
 introduction, showing which parts of the VFP equation we want to solve, giving a
-physical motivation and show how `Sapphire++` translates this problem to finite
-elements. Next, we show how to implement the example in `Sapphire++`. We start
-with a detailed description of the `config.h`, going through the file line by
-line giving some explanatory comments. Similarly, we present the
-`scattering.cpp` which implements the `main` function. In the results section,
-we show the expected output of the program and explain how to interpret it.
+physical motivation and show how @sapphire translates this problem to finite
+elements. Next, we show how to implement the example in @sapphire. We start with
+a detailed description of the `config.h`, going through the file line by line
+giving some explanatory comments. Similarly, we present the `scattering.cpp`
+which implements the `main` function. In the results section, we show the
+expected output of the program and explain how to interpret it.
 
 As an introductory example, we want to study the simple case with only a
 scattering term in the VFP equation,
-
-@todo Check sign in front of scattering operator
 
 $$
   \frac{\partial f}{\partial t} =  \frac{\nu}{2} \Delta_{\theta, \varphi} f \,.
@@ -29,9 +27,8 @@ the scattering frequency. The Laplacian $\Delta_{\theta, \varphi}$ only acts on
 the directional part of the momentum $\mathbf{p} = (p \cos\theta, p \cos\varphi
 \sin\theta, p \sin\varphi \cos\theta)^{\top}$.
 
-`Sapphire++` uses an expansion real spherical harmonics,
-$Y_{lms}(\theta,\varphi)$, to solve the VFP equation. The distribution function
-can therefore be written as
+@sapphire uses an expansion real spherical harmonics, $Y_{lms}(\theta,\varphi)$,
+to solve the VFP equation. The distribution function can therefore be written as
 
 $$
   f(\mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0} \sum^{1}_{s
@@ -83,7 +80,7 @@ correctness of the numerical solution.
 
 ## Implementation {#code}
 
-To implement the example in `Sapphire++`, we need to create two. The first one
+To implement the example in @sapphire, we need to create two. The first one
 is the header file `config.h` which implements compile time flags and the
 physical setup. The later one consist of the definition of the initial condition
 $f_{lms, 0}$ "InitialValueFunction", the scattering frequency $\nu$
@@ -91,9 +88,9 @@ $f_{lms, 0}$ "InitialValueFunction", the scattering frequency $\nu$
 "MagneticField" and the background velocity field $\mathbf{u}$
 "BackgroundVelocityField". The second file is a `.cpp` file that implements the
 main function. The since the physical setup is defined in the `config.h` file,
-the `main.cpp` will be nearly identical for most use-cases of `Sapphire++`. The
+the `main.cpp` will be nearly identical for most use-cases of @sapphire. The
 last file that has to be created is the `Parameter.prm` which defines the run
-time parameter of Sapphire.
+time parameter of @sapphire.
 
 
 ## config.h {#config}
@@ -104,19 +101,14 @@ dependencies:
 
 @snippet{lineno} examples/scattering/config.h Includes
 
-Everything implemented in `Sapphire++` is part of the namespace Sapphire.
+Everything implemented in @sapphire is part of the namespace Sapphire.
 
 @snippet{lineno} examples/scattering/config.h Namespace Sapphire
 
-@todo How should we name Sapphire in the docs? Sapphire, Sapphire++,
-`Sapphire++`, ...?
-
 Often we parametrize the physical setup with some runtime parameter. Since it is
 setup dependent what these parameters are, they have to be specified by the
-user. The PhysicalProperties class allows for this. It uses the deal.II concept
-of a ParameterHandler, for more details see ...
-
-@todo Link to deal.II, and how to name deal.II ?
+user. The PhysicalProperties class allows for this. It uses the @dealii concept
+of a @dealref{ParameterHandler}, for more details see ...
 
 The PhysicalProperties class consists of __public__ variables for the user
 defined runtime parameter, a default constructor and tho functions to
@@ -128,20 +120,22 @@ coefficients have the same initial value.
 
 @snippet{lineno} examples/scattering/config.h Physical prop
 
-The declare_parameters function is using the dealii::ParameterHandler class to
-delcare parameter in the parameter file. We sort all parameter in a subsection
-"Physical properties". In addition, we write a message to the custom Sapphire
-logstream `saplog`. The LogStream::Prefix ensures, that the message is prefixed
-and only shown, if detailed output is requested. The declaration of the
-parameter is straight forward, using the `declare_entry` function of the
-ParameterHandler. It takes the name of the parameter, a default value and its
+The declare_parameters function is using the
+@dealref{ParameterHandler} class to delcare parameter in
+the parameter file. We sort all parameter in a subsection "Physical properties".
+In addition, we write a message to the custom Sapphire logstream `saplog`. The
+@dealref{LogStream::Prefix,classLogStream_1_1Prefix} ensures, that the message
+is prefixed and only shown, if detailed output is requested. The declaration of
+the parameter is straight forward, using the
+@dealref{ParameterHandler.declary_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
+function. It takes the name of the parameter, a default value and its
 type/pattern. Additionally, can give a description of the parameter.
 
 @snippet{lineno} examples/scattering/config.h Declare params
 
-The parsing of the parameter is equally simple. We use the `get_double()`
-function of the ParameterParser to get the value for a previously declared
-parameter.
+The parsing of the parameter is equally simple. We use the
+@dealref{ParameterHandler.get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
+function to get the value for a previously declared parameter.
 
 At the end, we define the runtime parameter as __public__ variables of the
 class, so that subsequent functions have easy access to them.
@@ -170,11 +164,11 @@ terms (and the $p$ dependence are turned off by default.)
 
 @snippet{lineno} examples/scattering/config.h Var vfp flags
 
-To define the initial values, we use the class `Function` provided by `deal.II`.
-We define our own class `InitialValueFunction` functions that inherits all
-properties of the parent class `Function`. Keeping the style of `deal.II`, we
-keep the dimension as a template parameter (even so it is at the moment defined
-by the compile time variable `dimension`).
+To define the initial values, we use the class @dealref{Function} provided by
+@dealii. We define our own class `InitialValueFunction` functions that inherits
+all properties of the parent class @dealref{Function}. Keeping the style of
+@dealii, we keep the dimension as a template parameter (even so it is at the
+moment defined by the compile time variable `dimension`).
 
 As we have seen before, the inital condition depends on only one parameter,
 `f0`. But in this example, we will extend the scope of this function, by using
@@ -187,9 +181,10 @@ spherical harmonic indices $l, m, s$ we need a mapping given by `lms_indices`.
 @snippet{lineno} examples/scattering/config.h Initial value constructor
 
 After defining the constructor of the function, we have to define its value. For
-this we override the `vector_value` function of the parent class. At a *point*
-`p` it has to provide a *value* `f` for each component. In this example, value
-is given by
+this we override the
+@dealref{vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
+function of the parent class. At a *point* `p` it has to provide a *value* `f`
+for each component. In this example, value is given by
 
 $$
 f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t\right)\,.
@@ -199,12 +194,12 @@ $$
 
 The definition of the scattering frequency works similar. The only difference
 is, that the scattering frequency is a scalar function, therefore we use the
-function `value_list` to get the scattering frequency at multiple points in one
-function call.
+function @dealref{value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
+to get the scattering frequency at multiple points in one function call.
 
 @snippet{lineno} examples/scattering/config.h Scattering frequ
 
-Since `Sapphire++` a definition of the function `Source`, `MagneticField` and
+Since @sapphire a definition of the function `Source`, `MagneticField` and
 `BackgroundVelocityField` in the `config.h`, we have to implement them here. We
 can however leave the implementation empty, since the functions won't be used in
 this example.
@@ -371,7 +366,7 @@ The following image shows the results at $t=2$ for $l = 0,1,2,3$:
 
 The parameter file can either be a `.prm`, `.json` or `.xml` file. Here, we use
 a `.prm` for easy readability. For more information on the different input
-formats, we refer to the `deal.II` `ParameterHandler` documentation.
+formats, we refer to the @dealref{ParameterHandler} documentation.
 
 \include{lineno} scattering/parameter.prm
 
@@ -390,5 +385,5 @@ formats, we refer to the `deal.II` `ParameterHandler` documentation.
 
 ---
 
-@author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+@author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
 @date 2023-10-30
