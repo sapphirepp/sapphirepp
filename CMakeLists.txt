@@ -34,6 +34,7 @@ if(Sapphire)
   
   include(CTest)
   add_subdirectory(examples)
+  add_subdirectory(tests)
 
 endif(Sapphire)
 
@@ -54,4 +55,3 @@ if(DOXYGEN_FOUND)
         VERBATIM
       )
 endif()
-
