@@ -1,1 +1,2 @@
+add_subdirectory(scattering)
 add_subdirectory(gyro)

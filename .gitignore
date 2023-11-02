@@ -3,3 +3,5 @@ build
 .cache
 *.prm
 !parameter-template.prm
+!examples/*/*prm
+!tests/*/*.prm
