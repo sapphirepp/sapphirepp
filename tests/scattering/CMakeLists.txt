@@ -6,7 +6,7 @@ target_include_directories(scattering_test PUBLIC ${CONFIG_HEADER_DIR})
 target_link_libraries(scattering_test UtilsLib)
 
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-add_test(NAME scattering COMMAND ./scattering_test parameter.prm 1e-3)
+add_test(NAME scattering COMMAND ./scattering_test parameter.prm test_run 1e-3)
 set_property(TEST scattering PROPERTY LABELS "scattering" "fast" "1d")
 
 
