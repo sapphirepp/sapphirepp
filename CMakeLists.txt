@@ -6,28 +6,35 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 # if( NOT CMAKE_BUILD_TYPE )       # be explicit, if you want a debug build
 #   set( CMAKE_BUILD_TYPE Debug) # CMAKE_BUILD_TYPE information is also
 # endif()   
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. to recognise the include libraries)
 
-set(DEAL_II_DIR "~/.local/lib/dealii")
 
-set(DEAL_II_MIN_VERSION "9.4.0")
-
-find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
-  HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
-  )
-deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
 
 project(Sapphire VERSION 1.0.2)
-add_subdirectory(src/utils)
 option(Sapphire "Compile Sapphire++" ON )
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
+
 if(Sapphire)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. to recognise the include libraries)
+  set(DEAL_II_DIR "~/.local/lib/dealii")
+
+  set(DEAL_II_MIN_VERSION "9.4.0")
+
+  find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
+  HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR} )
+  deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
+  file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
+
+  add_subdirectory(src/utils)
   file(GLOB VFP_SOURCES src/vfp/*.cpp)
+
   add_executable(sapphire sapphire.cpp ${VFP_SOURCES})
   deal_ii_setup_target(sapphire)
   target_include_directories(sapphire PUBLIC ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
   target_include_directories(sapphire PUBLIC ${CONFIG_HEADER_DIR})
   target_link_libraries(sapphire UtilsLib)
+  
+  include(CTest)
+  add_subdirectory(examples)
+
 endif(Sapphire)
 
 find_package(Doxygen)
@@ -45,8 +52,6 @@ if(DOXYGEN_FOUND)
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Generating Doxygen documentation"
         VERBATIM
-    )
+      )
 endif()
 
-include(CTest)
-add_subdirectory(examples)
