@@ -5,9 +5,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 option(SAPPHIRE "Compile Sapphire++" ON )
 option(VFP "Build with VFP module" ON)
-option(EXAMPLES "Build with examples" ON)
-option(TESTS "Build with tests" ON)
-option(DOC "Build with documentation" ON)
+option(EXAMPLES "Build with examples" OFF)
+option(TESTS "Build with tests" OFF)
+option(DOC "Build with documentation" OFF)
 
 project(Sapphire VERSION 1.0.2)
 
