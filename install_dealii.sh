@@ -120,6 +120,12 @@ function print_configuration {
         echo "Do not run test suite after installation"
     fi
     echo ""
+
+    read -p "Is this configuration correct? [y/N]: " confirm_input
+    if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
+        echo "Installation aborted."
+        exit 1
+    fi
 }
 
 function install_prerequisites {
@@ -391,13 +397,7 @@ fi
 # Print configuration
 print_configuration
 
-# Ask for confirmation
-read -p "Do you want to continue with the installation? [y/N]: " confirm_input
-# Abort the installation if the user does not confirm
-if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
-    echo "Installation aborted."
-    exit 1
-fi
+echo "Starting installation. This may take a while!"
 
 # Install PETSc
 if [ $INSTALL_PETSC == true ]; then

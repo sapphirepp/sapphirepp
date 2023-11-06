@@ -53,16 +53,27 @@ In order to compile and use @sapphire you need the following programs installed:
 - For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/) or
   [ParaView](http://www.paraview.org/)
 
-We provide an [installation script](../install_dealii.sh) to install @dealii and
-all prerequisites in the configuration needed for @sapphire. Execute it with
+To install @dealii and all necessary prerequisites for @sapphire, we provide an
+[installation script](../install_dealii.sh). Run the script by executing:
 
 ```shell
 ./install_dealii.sh
 ```
 
-and follow the instructions.
-For macOS user, @dealii offers prepackaged `.dmg` files that include all
-necessary dependencies. For a streamlined installation process, follow the
+Follow the on-screen instructions during the installation process. If the script
+aborts due to failed tests from a missing Fortran compiler, try rerunning the
+script and skip the installation of already installed packages. If the
+installation process is interrupted during the compilation of @dealii, you can
+resume the installation with the following commands:
+
+
+```shell
+cd dealii-X.X.X/build
+make -j install
+```
+
+For macOS user, @dealii offers prepackaged `.dmg` files with all dependencies
+included. To install, follow the
 [deal.II Mac OSX Instructions](https://github.com/dealii/dealii/wiki/MacOSX).
 
 
