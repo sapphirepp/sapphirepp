@@ -2,8 +2,11 @@
 set -e
 
 # Set default values
-INTERACTIVE=false
-INSTALL_PREREQUISITE=false
+INTERACTIVE=true
+SKIP_PREREQUISITE=false
+PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost lapack tbb"
+PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb"
+PREREQUISITES_APT="gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev liblapack-dev libtbb2 libtbb2-dev"
 if [[ $(uname) == "Darwin" ]]; then
     PACKAGE_INSTALLER="brew"
 else
@@ -42,7 +45,6 @@ WORKPWD=${WORKPWD:-$(pwd)}
 # Define functions
 function set_configuration {
     # Prompt the user for input
-    read -p "Do you want to install prerequisites? [y/N]: " install_prerequisite_input
     read -p "Is PETSc already installed on your machine? [y/N]: " install_petsc_input
     read -p "Enter the installation directory for PETSc (default: $PETSC_DIR): " petsc_dir_input
     read -p "Is SLEPc already installed on your machine? [y/N]: " install_slepc_input
@@ -55,9 +57,6 @@ function set_configuration {
     read -p "Do you want to run the test suite after installation? [y/N]: " run_test_input
 
     # Set the configuration based on user input
-    if [[ $install_prerequisite_input =~ ^[Yy]$ ]]; then
-        INSTALL_PREREQUISITE=true
-    fi
     if [[ $install_petsc_input =~ ^[Nn]$ ]]; then
         INSTALL_PETSC=true
     fi
@@ -94,11 +93,6 @@ function print_configuration {
     echo ""
     echo "Configuration to be installed"
     echo "-----------------------------------"
-    if [ $INSTALL_PREREQUISITE == true ]; then
-        echo "Install prerequisites using $PACKAGE_INSTALLER"
-    else
-        echo "Not installing prerequisites"
-    fi
     if [ $INSTALL_PETSC == true ]; then
         echo "Install PETSc-v$PETSC_VERSION in \"$PETSC_DIR\""
     else
@@ -129,15 +123,51 @@ function print_configuration {
 }
 
 function install_prerequisites {
-    echo "Installing prerequisites using $PACKAGE_INSTALLER"
-    if [ $PACKAGE_INSTALLER == "brew" ]; then
-        brew install gcc make cmake open-mpi hdf5-mpi boost lapack tbb
-    elif [ $PACKAGE_INSTALLER == "apt" ]; then
-        sudo apt install gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev liblapack-dev libtbb2 libtbb2-dev
-    else
-        echo "$PACKAGE_INSTALLER is not a supported package installer. Use one of brew, apt."
-        exit 1
+    echo "Are the following prerequisites installed on your machine?"
+    echo ""
+    echo "  $PREREQUISITES"
+    echo ""
+    read -p "[y/N]: " install_prerequisite_input
+
+    if [[ ! $install_prerequisite_input =~ ^[Nn]$ ]]; then
+        return
     fi
+
+    read -p "Which package manager do you want to use to install the prerequisites? [brew/apt/apt-get/...]: " package_installer_input
+    echo ""
+    if [[ $package_installer_input ]]; then
+        PACKAGE_INSTALLER=$package_installer_input
+    fi
+
+    if [ $PACKAGE_INSTALLER == "brew" ]; then
+        echo "To install the prerequisites with brew, run the following command:"
+        echo ""
+        echo "  brew install $PREREQUISITES_BREW"
+        echo ""
+        echo "We recommend to pin the installed packages:"
+        echo ""
+        echo "  brew pin $PREREQUISITES_BREW"
+        echo ""
+    elif [ $PACKAGE_INSTALLER == "apt" ]; then
+        echo "To install the prerequisites with apt, run the following command:"
+        echo ""
+        echo "  sudo apt install $PREREQUISITES_APT"
+        echo ""
+    elif [ $PACKAGE_INSTALLER == "apt-get" ]; then
+        echo "To install the prerequisites with apt-get, run the following command:"
+        echo ""
+        echo "  sudo apt-get install $PREREQUISITES_APT"
+        echo ""
+    else
+        echo "Please install the prerequisites manually."
+        echo "Hint: If you are using a Debian-based distribution like Ubuntu, the following command can be used:"
+        echo ""
+        echo "  sudo apt install $PREREQUISITES_APT"
+    fi
+    echo "Afterwards you can continue with the installation with:"
+    echo ""
+    echo "  ./install_dealii.sh --skip-prerequisites"
+    exit 2
 }
 
 function install_petsc {
@@ -264,17 +294,12 @@ while [[ $# -gt 0 ]]; do
     key="$1"
 
     case $key in
-    -i | --interactive)
-        INTERACTIVE=true
+    -n | --non-interactive)
+        INTERACTIVE=false
         shift
         ;;
-    -p | --prerequisites)
-        INSTALL_PREREQUISITE=true
-        shift
-        ;;
-    -pm | --package-manager)
-        PACKAGE_INSTALLER="$2"
-        shift
+    -skp | --skip-prerequisites)
+        SKIP_PREREQUISITE=true
         shift
         ;;
     -psc | --petsc)
@@ -349,6 +374,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Install prerequisites
+if [ $SKIP_PREREQUISITE == false ] && [ $INTERACTIVE == true ]; then
+    install_prerequisites
+fi
+
 # Set configuration interactively
 if [ $INTERACTIVE == true ]; then
     set_configuration
@@ -363,11 +393,6 @@ read -p "Do you want to continue with the installation? [y/N]: " confirm_input
 if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
     echo "Installation aborted."
     exit 1
-fi
-
-# Install prerequisites
-if [ $INSTALL_PREREQUISITE == true ]; then
-    install_prerequisites
 fi
 
 # Install PETSc

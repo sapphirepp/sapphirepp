@@ -57,7 +57,7 @@ We provide an [installation script](../install_dealii.sh) to install @dealii and
 all prerequisites in the configuration needed for @sapphire. Execute it with
 
 ```shell
-./install_dealii.sh -i
+./install_dealii.sh
 ```
 
 and follow the instructions.
