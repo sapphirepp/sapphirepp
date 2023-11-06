@@ -43,13 +43,13 @@ WORKPWD=${WORKPWD:-$(pwd)}
 function set_configuration {
     # Prompt the user for input
     read -p "Do you want to install prerequisites? [y/N]: " install_prerequisite_input
-    read -p "Do you want to install PETSc? [y/N]: " install_petsc_input
+    read -p "Is PETSc already installed on your machine? [y/N]: " install_petsc_input
     read -p "Enter the installation directory for PETSc (default: $PETSC_DIR): " petsc_dir_input
-    read -p "Do you want to install SLEPc? [y/N]: " install_slepc_input
+    read -p "Is SLEPc already installed on your machine? [y/N]: " install_slepc_input
     read -p "Enter the installation directory for SLEPc (default: $SLEPC_DIR): " slepc_dir_input
-    read -p "Do you want to install p4est? [y/N]: " install_p4est_input
+    read -p "Is p4est already installed on your machine? [y/N]: " install_p4est_input
     read -p "Enter the installation directory for p4est (default: $P4EST_DIR): " p4est_dir_input
-    read -p "Do you want to install deal.II? [y/N]: " install_deal_ii_input
+    read -p "Is deal.II already installed on your machine? [y/N]: " install_deal_ii_input
     read -p "Enter the installation directory for deal.II (default: $DEAL_II_DIR): " deal_ii_dir_input
     read -p "Enter the number of processors to use for compilation (default: $NUMBER_JOBS): " number_jobs_input
     read -p "Do you want to run the test suite after installation? [y/N]: " run_test_input
@@ -58,25 +58,25 @@ function set_configuration {
     if [[ $install_prerequisite_input =~ ^[Yy]$ ]]; then
         INSTALL_PREREQUISITE=true
     fi
-    if [[ $install_petsc_input =~ ^[Yy]$ ]]; then
+    if [[ $install_petsc_input =~ ^[Nn]$ ]]; then
         INSTALL_PETSC=true
     fi
     if [[ $petsc_dir_input ]]; then
         PETSC_DIR=$petsc_dir_input
     fi
-    if [[ $install_slepc_input =~ ^[Yy]$ ]]; then
+    if [[ $install_slepc_input =~ ^[Nn]$ ]]; then
         INSTALL_SLEPC=true
     fi
     if [[ $slepc_dir_input ]]; then
         SLEPC_DIR=$slepc_dir_input
     fi
-    if [[ $install_p4est_input =~ ^[Yy]$ ]]; then
+    if [[ $install_p4est_input =~ ^[Nn]$ ]]; then
         INSTALL_P4EST=true
     fi
     if [[ $p4est_dir_input ]]; then
         P4EST_DIR=$p4est_dir_input
     fi
-    if [[ $install_deal_ii_input =~ ^[Yy]$ ]]; then
+    if [[ $install_deal_ii_input =~ ^[Nn]$ ]]; then
         INSTALL_DEAL_II=true
     fi
     if [[ $deal_ii_dir_input ]]; then
@@ -102,29 +102,31 @@ function print_configuration {
     if [ $INSTALL_PETSC == true ] ; then
         echo "Install PETSc-v$PETSC_VERSION in \"$PETSC_DIR\""
     else
-        echo "Use PETSc installation in $PETSC_DIR"
+        echo "Use PETSc installation in \"$PETSC_DIR\""
     fi
     if [ $INSTALL_SLEPC == true ] ; then
         echo "Install SLEPc-v$SLEPC_VERSION in \"$SLEPC_DIR\""
     else
-        echo "Use SLEPc installation in $SLEPC_DIR"
+        echo "Use SLEPc installation in \"$SLEPC_DIR\""
     fi
     if [ $INSTALL_P4EST == true ] ; then
         echo "Install p4est-v$P4EST_VERSION in \"$P4EST_DIR\""
     else
-        echo "Use p4est installation in $P4EST_DIR"
+        echo "Use p4est installation in \"$P4EST_DIR\""
     fi
     if [ $INSTALL_DEAL_II == true ] ; then
         echo "Install deal.II-v$DEAL_II_VERSION in \"$DEAL_II_DIR\""
     else
-        echo "Use deal.II installation in $DEAL_II_DIR"
+        echo "Use deal.II installation in \"$DEAL_II_DIR\""
     fi
     echo "Compile on $NUMBER_JOBS processor(s)"
-    echo "RUN_TEST=$RUN_TEST"
+    if [ $RUN_TEST == true ] ; then
+        echo "Run test suite after installation"
+    else
+        echo "Do not run test suite after installation"
+    fi
     echo ""
 }
-
-#TODO: Validate configuration (e.g. check if directories exist)
 
 function install_prerequisites {
     echo "Installing prerequisites using $PACKAGE_INSTALLER"
