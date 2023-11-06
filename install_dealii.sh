@@ -94,33 +94,33 @@ function print_configuration {
     echo ""
     echo "Configuration to be installed"
     echo "-----------------------------------"
-    if [ $INSTALL_PREREQUISITE == true ] ; then
+    if [ $INSTALL_PREREQUISITE == true ]; then
         echo "Install prerequisites using $PACKAGE_INSTALLER"
     else
         echo "Not installing prerequisites"
     fi
-    if [ $INSTALL_PETSC == true ] ; then
+    if [ $INSTALL_PETSC == true ]; then
         echo "Install PETSc-v$PETSC_VERSION in \"$PETSC_DIR\""
     else
         echo "Use PETSc installation in \"$PETSC_DIR\""
     fi
-    if [ $INSTALL_SLEPC == true ] ; then
+    if [ $INSTALL_SLEPC == true ]; then
         echo "Install SLEPc-v$SLEPC_VERSION in \"$SLEPC_DIR\""
     else
         echo "Use SLEPc installation in \"$SLEPC_DIR\""
     fi
-    if [ $INSTALL_P4EST == true ] ; then
+    if [ $INSTALL_P4EST == true ]; then
         echo "Install p4est-v$P4EST_VERSION in \"$P4EST_DIR\""
     else
         echo "Use p4est installation in \"$P4EST_DIR\""
     fi
-    if [ $INSTALL_DEAL_II == true ] ; then
+    if [ $INSTALL_DEAL_II == true ]; then
         echo "Install deal.II-v$DEAL_II_VERSION in \"$DEAL_II_DIR\""
     else
         echo "Use deal.II installation in \"$DEAL_II_DIR\""
     fi
     echo "Compile on $NUMBER_JOBS processor(s)"
-    if [ $RUN_TEST == true ] ; then
+    if [ $RUN_TEST == true ]; then
         echo "Run test suite after installation"
     else
         echo "Do not run test suite after installation"
@@ -130,9 +130,9 @@ function print_configuration {
 
 function install_prerequisites {
     echo "Installing prerequisites using $PACKAGE_INSTALLER"
-    if [ $PACKAGE_INSTALLER == "brew" ] ; then
+    if [ $PACKAGE_INSTALLER == "brew" ]; then
         brew install gcc make cmake open-mpi hdf5-mpi boost lapack tbb
-    elif [ $PACKAGE_INSTALLER == "apt" ] ; then
+    elif [ $PACKAGE_INSTALLER == "apt" ]; then
         sudo apt install gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev liblapack-dev libtbb2 libtbb2-dev
     else
         echo "$PACKAGE_INSTALLER is not a supported package installer. Use one of brew, apt."
@@ -245,7 +245,7 @@ function install_deal_ii {
 
     # Configure and build deal.II
     rm -rf "$DEAL_II_DIR"
-    cmake -S . -B build  "${deal_ii_flags[@]}"
+    cmake -S . -B build "${deal_ii_flags[@]}"
     cd build
     make -j"$NUMBER_JOBS" install
 
@@ -260,90 +260,89 @@ function install_deal_ii {
 }
 
 # Parse command line arguments
-while [[ $# -gt 0 ]]
-do
+while [[ $# -gt 0 ]]; do
     key="$1"
 
     case $key in
-        -i|--interactive)
+    -i | --interactive)
         INTERACTIVE=true
         shift
         ;;
-        -p|--prerequisites)
+    -p | --prerequisites)
         INSTALL_PREREQUISITE=true
         shift
         ;;
-        -pm|--package-manager)
+    -pm | --package-manager)
         PACKAGE_INSTALLER="$2"
         shift
         shift
         ;;
-        -psc|--petsc)
+    -psc | --petsc)
         INSTALL_PETSC=true
         shift
         ;;
-        -pscd|--petsc-dir)
+    -pscd | --petsc-dir)
         PETSC_DIR="$2"
         shift
         shift
         ;;
-        -pscv|--petsc-version)
+    -pscv | --petsc-version)
         PETSC_VERSION="$2"
         shift
         shift
         ;;
-        -slc|--slepc)
+    -slc | --slepc)
         INSTALL_SLEPC=true
         shift
         ;;
-        -slcd|--slepc-dir)
+    -slcd | --slepc-dir)
         SLEPC_DIR="$2"
         shift
         shift
         ;;
-        -slcv|--slepc-version)
+    -slcv | --slepc-version)
         SLEPC_VERSION="$2"
         shift
         shift
         ;;
-        -p4e|--p4est)
+    -p4e | --p4est)
         INSTALL_P4EST=true
         shift
         ;;
-        -p4ed|--p4est-dir)
+    -p4ed | --p4est-dir)
         P4EST_DIR="$2"
         shift
         shift
         ;;
-        -p4ev|--p4est-version)
+    -p4ev | --p4est-version)
         P4EST_VERSION="$2"
         shift
         shift
         ;;
-        -d|--dealii)
+    -d | --dealii)
         INSTALL_DEAL_II=true
         shift
         ;;
-        -dd|--dealii-dir)
+    -dd | --dealii-dir)
         DEAL_II_DIR="$2"
         shift
         shift
         ;;
-        -dv|--dealii-version)
+    -dv | --dealii-version)
         DEAL_II_VERSION="$2"
         shift
         shift
         ;;
-        -np|--number-of-processors)
+    -np | --number-of-processors)
         NUMBER_JOBS="$2"
         shift
         shift
         ;;
-        -t|--test)
+    -t | --test)
         RUN_TEST=true
         shift
         ;;
-        *)
+    *)
         echo "Unknown option: $1"
         exit 1
         ;;
@@ -351,7 +350,7 @@ do
 done
 
 # Set configuration interactively
-if [ $INTERACTIVE == true ] ; then
+if [ $INTERACTIVE == true ]; then
     set_configuration
 fi
 
@@ -367,27 +366,27 @@ if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
 fi
 
 # Install prerequisites
-if [ $INSTALL_PREREQUISITE == true ] ; then
+if [ $INSTALL_PREREQUISITE == true ]; then
     install_prerequisites
 fi
 
 # Install PETSc
-if [ $INSTALL_PETSC == true ] ; then
+if [ $INSTALL_PETSC == true ]; then
     install_petsc
 fi
 
 # Install SLEPc
-if [ $INSTALL_SLEPC == true ] ; then
+if [ $INSTALL_SLEPC == true ]; then
     install_slepc
 fi
 
 # Install p4est
-if [ $INSTALL_P4EST == true ] ; then
+if [ $INSTALL_P4EST == true ]; then
     install_p4est
 fi
 
 # Install deal.II
-if [ $INSTALL_DEAL_II == true ] ; then
+if [ $INSTALL_DEAL_II == true ]; then
     install_deal_ii
 fi
 
