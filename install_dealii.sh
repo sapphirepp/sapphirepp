@@ -15,16 +15,16 @@ fi
 
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
-PETSC_VERSION="3.19.5"
+PETSC_VERSION="3.20.0"
 if [[ $(uname) == "Darwin" ]]; then
-    PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"} #TODO: Use debug or opt: arch-darwin-c-opt?
+    PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
     PETSC_ARCH=${PETSC_ARCH:-"arch-linux-c-debug"}
 fi
 
 INSTALL_SLEPC=false
 SLEPC_DIR=${SLEPC_DIR:-"$HOME/.local/lib/slepc"}
-SLEPC_VERSION="3.19.2"
+SLEPC_VERSION="3.20.0"
 
 INSTALL_P4EST=false
 P4EST_DIR=${P4EST_DIR:-"$HOME/.local/lib/p4est"}
@@ -181,6 +181,7 @@ function install_petsc {
     curl -LO "https://gitlab.com/petsc/petsc/-/archive/v$PETSC_VERSION/$dirname.tar.gz"
     tar -xzf "$dirname.tar.gz"
     rm "$dirname.tar.gz"
+    mkdir -p "$PETSC_DIR"
     rm -rf "$PETSC_DIR"
     mv "$dirname" "$PETSC_DIR"
     cd "$PETSC_DIR"
@@ -206,6 +207,7 @@ function install_slepc {
     curl -LO "https://slepc.upv.es/download/distrib/$dirname.tar.gz"
     tar -xzf "$dirname.tar.gz"
     rm "$dirname.tar.gz"
+    mkdir -p "$SLEPC_DIR"
     rm -rf "$SLEPC_DIR"
     mv "$dirname" "$SLEPC_DIR"
     cd "$SLEPC_DIR"
@@ -230,6 +232,7 @@ function install_p4est {
     dirname="p4est-$P4EST_VERSION"
     curl -LO "https://p4est.github.io/release/$dirname.tar.gz"
     curl -LO "https://dealii.org/current/external-libs/p4est-setup.sh"
+    mkdir -p "$P4EST_DIR"
     rm -rf "$P4EST_DIR"
     bash p4est-setup.sh "$dirname.tar.gz" "$P4EST_DIR"
 
@@ -274,6 +277,7 @@ function install_deal_ii {
     echo "${deal_ii_flags[@]}"
 
     # Configure and build deal.II
+    mkdir -p "$DEAL_II_DIR"
     rm -rf "$DEAL_II_DIR"
     cmake -S . -B build "${deal_ii_flags[@]}"
     cd build
