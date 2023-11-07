@@ -155,8 +155,6 @@ place.
 First, we define the dimensionality of the problem. Since the solution does not
 depend on either $\mathbf{x}$ nor $p$, we just use one space dimension.
 
-@todo Throw warning because dim != 0
-
 @snippet{lineno} examples/scattering/config.h Var dim
 
 Next, we define which terms of the VFP equation we use. To this end, we define a
@@ -308,6 +306,10 @@ output:
 
 ```bash
 Sapphire::Start example scattering with parameter file "parameter.prm" on 1 processor(s) [2023/10/30 13:17:39]
+WARNING: spatial advection is deactivated, but dim_cs > 0
+  If the spatial advection term is deactivated,
+  the distribution function is assumed to be homogeneous
+  i.e. the dimension of the configuration space should be zero.
 Sapphire:VFP::Run VFP equation solver.          [13:17:39]
 Sapphire:VFP::Time step    1 at t = 0.00000     [13:17:39]
 Sapphire:VFP::Time step    2 at t = 0.100000    [13:17:39]
@@ -348,6 +350,8 @@ Sapphire:VFP::The simulation ended.             [13:17:39]
 Sapphire:VFP::Compute the global error
 Sapphire::L2 error: 0.000654138
 ```
+
+@todo Explain console output
 
 The results of the run will be saved in the `results/scattering` folder. In the
 folder are two different kinds of files. First, the `log.prm` is a log of the

@@ -151,13 +151,18 @@ Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
     ExcMessage(
       "The total dimension must be greater than or equal to one and smaller or"
       " equal to three."));
-  // AssertThrow(
-  //   ((vfp_flags & VFPFlags::spatial_advection) != VFPFlags::none) !=
-  //     (dim_cs == 0),
-  //   ExcMessage(
-  //     "If the spatial advection term is deactivated, the distribution
-  //     function" " is assumed to be homogeneous, i.e. the dimension of the
-  //     configuration" " space needs to be set to zero."));
+  if (((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none) and
+      (dim_cs != 0))
+    {
+      std::cerr
+        << "WARNING: spatial advection is deactivated, but dim_cs > 0"
+        << std::endl
+        << "  If the spatial advection term is deactivated," << std::endl
+        << "  the distribution function is assumed to be homogeneous"
+        << std::endl
+        << "  i.e. the dimension of the configuration space should be zero."
+        << std::endl;
+    }
 }
 
 template <int dim>
