@@ -1,5 +1,7 @@
 #include "vfp-equation-solver.h"
 
+#include <deal.II/base/discrete_time.h>
+
 #include <deal.II/grid/grid_in.h>
 
 namespace Sapphire
@@ -203,15 +205,16 @@ Sapphire::VFP::VFPEquationSolver<dim>::run()
       }
   }
 
-  double       time_step        = vfp_solver_control.time_step;
-  double       final_time       = vfp_solver_control.final_time;
-  unsigned int time_step_number = 1;
-  for (double time = 0.; time < final_time;
-       time += time_step, ++time_step_number)
+  DiscreteTime discrete_time(0,
+                             vfp_solver_control.final_time,
+                             vfp_solver_control.time_step);
+  for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
     {
-      saplog << "Time step " << std::setw(4) << std::right << time_step_number
-             << " at t = " << time << " \t[" << Utilities::System::get_time()
-             << "]" << std::endl;
+      saplog << "Time step " << std::setw(4) << std::right
+             << discrete_time.get_step_number()
+             << " at t = " << discrete_time.get_current_time() << " \t["
+             << Utilities::System::get_time() << "]" << std::endl;
+      // saplog << discrete_time << std::endl;
       // Time stepping method
       if (vfp_solver_control.time_stepping_method ==
             TimeSteppingMethod::forward_euler ||
@@ -219,18 +222,21 @@ Sapphire::VFP::VFPEquationSolver<dim>::run()
             TimeSteppingMethod::backward_euler ||
           vfp_solver_control.time_stepping_method ==
             TimeSteppingMethod::crank_nicolson)
-        theta_method(time, time_step);
+        theta_method(discrete_time.get_current_time(),
+                     discrete_time.get_next_step_size());
       else if (vfp_solver_control.time_stepping_method ==
                TimeSteppingMethod::erk4)
-        explicit_runge_kutta(time, time_step);
+        explicit_runge_kutta(discrete_time.get_current_time(),
+                             discrete_time.get_next_step_size());
       else if (vfp_solver_control.time_stepping_method ==
                TimeSteppingMethod::lserk)
-        low_storage_explicit_runge_kutta(time, time_step);
+        low_storage_explicit_runge_kutta(discrete_time.get_current_time(),
+                                         discrete_time.get_next_step_size());
 
-      output_results(time_step_number);
+      output_results(discrete_time.get_step_number() + 1);
     }
-  saplog << "The simulation ended. \t\t[" << Utilities::System::get_time()
-         << "]" << std::endl;
+  saplog << "Simulation ended at t = " << discrete_time.get_current_time()
+         << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
   timer.print_wall_time_statistics(mpi_communicator);
   timer.reset();
