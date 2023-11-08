@@ -121,8 +121,10 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
     prm.declare_entry(
       "Method",
       "Crank-Nicolson",
-      Patterns::Selection(
-        "Forward Euler|Backward Euler|Crank-Nicolson|ERK4|LSERK"),
+      /// @todo "LSERK" is not working, so we exclude it for now
+      // Patterns::Selection(
+      //   "Forward Euler|Backward Euler|Crank-Nicolson|ERK4|LSERK"),
+      Patterns::Selection("Forward Euler|Backward Euler|Crank-Nicolson|ERK4"),
       "The time stepping method.");
     prm.declare_entry("Time step size",
                       "7.8125e-3",
