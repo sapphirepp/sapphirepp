@@ -1,6 +1,6 @@
 <p align="center">
 <img
-src="https://git.mpi-hd.mpg.de/schween/sapphire/media/branch/main/logo/sapphire-logo-text.png"
+src="https://sapphirepp.org/img/logo/sapphire-logo-text.png"
 width=563 height=300 > 
 </p>
 
@@ -47,7 +47,7 @@ finite element library [deal.ii](https://dealii.org/).
 Clone the repository
 
 ```shell
-git clone https://git.mpi-hd.mpg.de/schween/sapphire.git
+git clone https://github.com/sapphirepp/sapphirepp.git
 ```
 
 ## Personal Computer
