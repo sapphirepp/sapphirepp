@@ -73,6 +73,8 @@ resume the installation with the following commands:
 cd dealii-X.X.X/build
 make -j install
 ```
+If this process fails, it may be that your system has run out of memory. In 
+such case, specifiy the number of threads after `-j`.
 
 For macOS user, @dealii offers prepackaged `.dmg` files with all dependencies
 included. To install, follow the
