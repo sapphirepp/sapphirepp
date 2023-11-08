@@ -1376,14 +1376,7 @@ HTML_EXTRA_STYLESHEET  = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-aw
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
 HTML_EXTRA_FILES       = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-awesome-darkmode-toggle.js \
-		         @PROJECT_SOURCE_DIR@/logo/sapphire-logo-text.png \
-			 @PROJECT_SOURCE_DIR@/doc/favicons/favicon-16x16.png \
-			 @PROJECT_SOURCE_DIR@/doc/favicons/favicon-32x32.png \
-			 @PROJECT_SOURCE_DIR@/doc/favicons/apple-touch-icon.png \
-			 @PROJECT_SOURCE_DIR@/doc/favicons/android-chrome-192x192.png \
-			 @PROJECT_SOURCE_DIR@/doc/favicons/android-chrome-512x512.png \
-			 @PROJECT_SOURCE_DIR@/doc/favicons/site.webmanifest
-
+		         @PROJECT_SOURCE_DIR@/logo/sapphire-logo-text.png
 
 # The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
 # should be rendered with a dark or light theme.
