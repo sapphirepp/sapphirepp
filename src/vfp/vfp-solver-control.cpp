@@ -24,6 +24,7 @@
 #include <deal.II/base/patterns.h>
 
 #include <cctype>
+#include <filesystem>
 #include <sstream>
 
 #include "sapphire-logstream.h"
@@ -190,33 +191,53 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
         grid_type = GridType::hypercube;
         prm.enter_subsection("Hypercube");
         // Two diagonally opposite corner points of the grid
-        s = prm.get("Point 1");
+        int i = 0;
+        s     = prm.get("Point 1");
         std::stringstream p1_string(s);
-        for (auto [coordinate, i] =
-               std::tuple<std::string, unsigned int>{std::string(), 0};
-             std::getline(p1_string, coordinate, ',');
+        for (std::string coordinate; std::getline(p1_string, coordinate, ',');
              ++i)
           {
             if (i < dim)
               p1[i] = std::stod(coordinate);
           }
-
+        AssertThrow(i == dim,
+                    ExcMessage(
+                      "Point 1 specification does not match dimension. "
+                      "Please enter the coordinates of the lower left corner "
+                      "of the grid: \n"
+                      "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
+                      "You entered: " +
+                      s));
+        i = 0;
         s = prm.get("Point 2");
         std::stringstream p2_string(s);
-        for (auto [coordinate, i] =
-               std::tuple<std::string, unsigned int>{std::string(), 0};
-             std::getline(p2_string, coordinate, ',');
+        for (std::string coordinate; std::getline(p2_string, coordinate, ',');
              ++i)
           {
             if (i < dim)
               p2[i] = std::stod(coordinate);
           }
+        AssertThrow(i == dim,
+                    ExcMessage(
+                      "Point 2 specification does not match dimension. "
+                      "Please enter the coordinates of the lower left corner "
+                      "of the grid: \n"
+                      "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
+                      "You entered: " +
+                      s));
 
         // Number of cells
         s = prm.get("Number of cells");
         std::stringstream n_cells_string(s);
         for (std::string n; std::getline(n_cells_string, n, ',');)
           n_cells.push_back(std::stoi(n));
+        AssertThrow(n_cells.size() == dim,
+                    ExcMessage(
+                      "Number of cells specification does not match dimension. "
+                      "Please enter the number of cells in each coordinate: \n"
+                      "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
+                      "You entered: " +
+                      s));
         n_cells.resize(dim);
 
         prm.leave_subsection();
@@ -226,6 +247,9 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
         grid_type = GridType::file;
         prm.enter_subsection("File");
         grid_file = prm.get("File name");
+        AssertThrow(std::filesystem::exists(grid_file),
+                    ExcMessage("Grid file \"" + grid_file +
+                               "\" does not exist!"));
         prm.leave_subsection();
       }
     else
