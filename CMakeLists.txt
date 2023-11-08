@@ -51,7 +51,9 @@ endif(SAPPHIRE)
 if(DOC)
   find_package(Doxygen)
   if(DOXYGEN_FOUND)
-      set(MATHJAX_PATH "https://cdn.jsdelivr.net/npm/mathjax@3" CACHE STRING "MathJax path")
+      # An empty string implies the usage of a Content Delivery Network (CDN)
+      # for Mathjax. Doxygen defaults to https://cdn.jsdelivr.net/npm/mathjax@3
+      set(MATHJAX_PATH "" CACHE STRING "MathJax path")
 
       # Configuration file for Doxygen
       set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/doc/Doxyfile.in)
