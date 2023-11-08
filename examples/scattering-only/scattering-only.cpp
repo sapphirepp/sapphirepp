@@ -61,7 +61,7 @@ main(int argc, char *argv[])
         parameter_filename = argv[1];
 
       int mpi_size = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-      saplog << "Start example scattering with parameter file \""
+      saplog << "Start example scattering-only with parameter file \""
              << parameter_filename << "\" on " << mpi_size << " processor(s) ["
              << dealii::Utilities::System::get_date() << " "
              << dealii::Utilities::System::get_time() << "]" << std::endl;

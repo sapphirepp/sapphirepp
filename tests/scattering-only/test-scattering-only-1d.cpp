@@ -189,9 +189,10 @@ main(int argc, char *argv[])
           saplog.push("mpi" + dealii::Utilities::to_string(mpi_rank, 3));
         }
       int mpi_size = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-      saplog << "Start scattering_test on " << mpi_size << " processor(s) ["
-             << dealii::Utilities::System::get_date() << " "
-             << dealii::Utilities::System::get_time() << "]" << std::endl;
+      saplog << "Start test-scattering-only-1d on " << mpi_size
+             << " processor(s) [" << dealii::Utilities::System::get_date()
+             << " " << dealii::Utilities::System::get_time() << "]"
+             << std::endl;
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
