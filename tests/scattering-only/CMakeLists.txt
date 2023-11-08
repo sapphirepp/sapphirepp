@@ -1,6 +1,7 @@
 file(COPY parameter-1d-CN.prm parameter-1d-ERK4.prm parameter-1d-LSERK.prm
           parameter-1d-FE.prm parameter-1d-BE.prm
           parameter-2d-ERK4.prm
+          parameter-3d-ERK4.prm
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
@@ -61,6 +62,21 @@ add_test(NAME scattering-only-2d
 set_property(TEST scattering-only-2d PROPERTY
              LABELS "scattering-only"
                     "2d" "scattering"
+                    "ERK4" "periodic BC")
+
+
+add_executable(test-scattering-only-3d test-scattering-only-3d.cpp ${VFP_SOURCES})
+deal_ii_setup_target(test-scattering-only-3d)
+file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/scattering-only)
+target_include_directories(test-scattering-only-3d PUBLIC ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+target_include_directories(test-scattering-only-3d PUBLIC ${CONFIG_HEADER_DIR})
+target_link_libraries(test-scattering-only-3d UtilsLib)
+
+add_test(NAME scattering-only-3d
+         COMMAND ./test-scattering-only-3d parameter-3d-ERK4.prm 4e-4)
+set_property(TEST scattering-only-3d PROPERTY
+             LABELS "scattering-only"
+                    "3d" "scattering"
                     "ERK4" "periodic BC")
 
 
