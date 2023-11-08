@@ -14,13 +14,13 @@ Sapphire is an acronym and stands for \"<strong>S</strong>imulating
 It is made to simulate the interaction of particles with a background plasma. To
 this end it solves a Vlasov-Fokker-Planck equation in mixed coordinates, namely
 
-$$
-  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x}
-  f - \left( \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}
+```math
+  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f
+  - \left( \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}
   + \mathbf{p} \cdot\nabla_{x} \mathbf{u} \right) \cdot \nabla_{p} f
-  + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
-  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S(\mathbf{x}, \mathbf{p}, t)\, .
-$$
+  + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) 
+  =  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S(\mathbf{x}, \mathbf{p}, t).
+```
 
 $f$ is a __number__ density of particles in phase space. The above equation models
 how this distribution evolves in time assuming that the particles interact with
@@ -30,10 +30,10 @@ by the right-hand side of the equation: It models particles whose direction
 diffuses.
 
 To solve the above equation, we expand $f$ using real spherical harmonics, namely
-$$
- f(\mathbf{x}, \mathbf{p}, t) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
- \sum^{1}_{s = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi) \,.
-$$
+```math
+f(\mathbf{x}, \mathbf{p}, t) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
+\sum^{1}_{s = 0} f_{lms}(\mathbf{x}, p ,t) Y_{lms}(\theta,\varphi).
+```
 
 This turns the original equation into a system of equations determining the
 coefficients $f_{lms}$ of the expansion. And they are the output of the
