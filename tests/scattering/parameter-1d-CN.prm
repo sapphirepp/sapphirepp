@@ -1,0 +1,39 @@
+subsection Output
+  set Format                       = vtu
+  set Number of digits for counter = 4
+  set Output frequency             = 1
+end
+
+subsection Physical properties
+  set f0 = 1.
+  set nu = 0.1
+end
+
+subsection VFP
+  subsection Expansion
+    set Expansion order = 9
+  end
+
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+
+  subsection Mesh
+    set Grid type = Hypercube
+    subsection Hypercube
+      set Number of cells = 8
+      set Point 1         = -1
+      set Point 2         = 1
+    end
+    subsection Boundary conditions
+      set lower x = periodic
+      set upper x = periodic
+    end
+  end
+
+  subsection Time stepping
+    set Final time     = 1
+    set Method         = Crank-Nicolson
+    set Time step size = 0.1
+  end
+end

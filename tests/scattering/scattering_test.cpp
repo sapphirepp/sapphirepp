@@ -132,8 +132,9 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
                                              VectorTools::L2_norm,
                                              VectorTools::L2_norm);
 
-  saplog << "L2_error=" << L2_error << " CPU/wall time = " << timer.cpu_time()
-         << "/" << timer.wall_time() << " s" << std::endl;
+  saplog << "L2_error = " << L2_error
+         << ", CPU/wall time = " << timer.cpu_time() << "/" << timer.wall_time()
+         << " s" << std::endl;
 
   AssertThrow(L2_error < max_L2_error,
               dealii::ExcMessage(
