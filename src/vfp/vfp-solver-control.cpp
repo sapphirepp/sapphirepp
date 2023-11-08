@@ -77,7 +77,6 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
     prm.leave_subsection();
     prm.enter_subsection("Boundary conditions");
     {
-      // TODO: possible z-boundary for p independent 3D
       const auto boundary_pattern =
         Patterns::Selection("continuous gradients|zero inflow|periodic");
       prm.declare_entry("lower x",
@@ -96,6 +95,14 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
                         "continuous gradients",
                         boundary_pattern,
                         "Boundary condition at the upper y boundary.");
+      prm.declare_entry("lower z",
+                        "continuous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the lower z boundary.");
+      prm.declare_entry("upper z",
+                        "continuous gradients",
+                        boundary_pattern,
+                        "Boundary condition at the upper z boundary.");
       prm.declare_entry("lower p",
                         "continuous gradients",
                         boundary_pattern,
@@ -257,7 +264,6 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
 
     prm.enter_subsection("Boundary conditions");
     {
-      // TODO: Check if all indices are assigned correct
       boundary_conditions.resize(2 * dim);
 
       for (unsigned int boundary_id = 0; boundary_id < 2 * dim; ++boundary_id)
@@ -268,12 +274,14 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
           else
             entry = "upper ";
 
-          if (boundary_id / 2 == 0)
-            entry += "x";
-          else if ((dim_cs == 2) and (boundary_id / 2 == 1))
-            entry += "y";
-          else if (boundary_id / 2 == dim_cs)
+          if (boundary_id / 2 == dim_cs)
             entry += "p";
+          else if (boundary_id / 2 == 0)
+            entry += "x";
+          else if (boundary_id / 2 == 1)
+            entry += "y";
+          else if (boundary_id / 2 == 2)
+            entry += "z";
           else
             AssertThrow(false, ExcNotImplemented());
 
