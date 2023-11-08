@@ -38,7 +38,7 @@ namespace Sapphire
       prm.enter_subsection("Physical properties");
 
       prm.declare_entry("nu",
-                        "1.",
+                        "0.1",
                         dealii::Patterns::Double(),
                         "Scattering frequency");
       prm.declare_entry("f0",

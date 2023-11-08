@@ -17,13 +17,13 @@ subsection Output
   # Relative ot absolute path to the results folder.
   set Results folder               = ./results
   # Subfolder for the simulation. Leave empty for no subfolder.
-  set Simulation identifier        = scattering
+  set Simulation identifier        = scattering-only
 end
 
 # Next, we set the parameters defined in "PhysicalProperties".
 subsection Physical properties
   set f0 = 1.
-  set nu = 1.
+  set nu = 0.1
 end
 
 # The "VFP" subsection defines all parameters related to the VFP solver.
@@ -43,7 +43,7 @@ subsection VFP
   subsection Mesh
     set Grid type = Hypercube
     subsection Hypercube
-      set Number of cells = 16
+      set Number of cells = 8
       set Point 1         = -1
       set Point 2         = 1
     end
@@ -53,11 +53,11 @@ subsection VFP
     end
   end
 
-  # We run the simulation till t=2 using a crank-nicolson time stepping scheme
-  # with a time step size of 0.1.
+  # We run the simulation till t=1 using an explicit fourth order Runge-Kutta
+  # time stepping scheme with a time step size of 0.1.
   subsection Time stepping
-    set Final time     = 2
-    set Method         = Crank-Nicolson
+    set Final time     = 1
+    set Method         = ERK4
     set Time step size = 0.1
   end
 end
