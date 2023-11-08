@@ -316,53 +316,21 @@ Sapphire::VFP::VFPEquationSolver<dim>::make_grid()
   std::vector<
     GridTools::PeriodicFacePair<typename Triangulation<dim_ps>::cell_iterator>>
     matched_pairs;
-
-  // Fill the matched_pairs vector manually if dim_ps = 1. At the moment
-  // there is no instance of the template collect_period_faces for
-  // MeshType = parallel::shared::Triangulation<1,1>.
-  // https://github.com/dealii/dealii/issues/14879
-  if constexpr (dim_ps == 1)
+  for (unsigned int i = 0; i < dim_ps; ++i)
     {
-      // TODO: Check if extra case for 1d is still needed
-      if (vfp_solver_control.boundary_conditions[0] ==
+      if (vfp_solver_control.boundary_conditions[2 * i] ==
             BoundaryConditions::periodic or
-          vfp_solver_control.boundary_conditions[1] ==
+          vfp_solver_control.boundary_conditions[2 * i + 1] ==
             BoundaryConditions::periodic)
         {
-          AssertThrow(vfp_solver_control.boundary_conditions[0] ==
+          AssertThrow(vfp_solver_control.boundary_conditions[2 * i] ==
                           BoundaryConditions::periodic and
-                        vfp_solver_control.boundary_conditions[1] ==
+                        vfp_solver_control.boundary_conditions[2 * i + 1] ==
                           BoundaryConditions::periodic,
                       ExcMessage(
                         "Periodic boundary conditions did not match."));
-          matched_pairs.resize(1);
-          matched_pairs[0].cell[0]     = triangulation.begin();
-          matched_pairs[0].cell[1]     = triangulation.last();
-          matched_pairs[0].face_idx[0] = 0;
-          matched_pairs[0].face_idx[1] = 1;
-          std::bitset<3> temp_bitset;
-          temp_bitset[0]               = true;
-          matched_pairs[0].orientation = temp_bitset;
-        }
-    }
-  else
-    {
-      for (unsigned int i = 0; i < dim_ps; ++i)
-        {
-          if (vfp_solver_control.boundary_conditions[2 * i] ==
-                BoundaryConditions::periodic or
-              vfp_solver_control.boundary_conditions[2 * i + 1] ==
-                BoundaryConditions::periodic)
-            {
-              AssertThrow(vfp_solver_control.boundary_conditions[2 * i] ==
-                              BoundaryConditions::periodic and
-                            vfp_solver_control.boundary_conditions[2 * i + 1] ==
-                              BoundaryConditions::periodic,
-                          ExcMessage(
-                            "Periodic boundary conditions did not match."));
-              GridTools::collect_periodic_faces(
-                triangulation, 2 * i, 2 * i + 1, i, matched_pairs);
-            }
+          GridTools::collect_periodic_faces(
+            triangulation, 2 * i, 2 * i + 1, i, matched_pairs);
         }
     }
   triangulation.add_periodicity(matched_pairs);
