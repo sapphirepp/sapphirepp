@@ -18,9 +18,9 @@ subsection VFP
   subsection Mesh
     set Grid type = Hypercube
     subsection Hypercube
-      set Number of cells = 32, 32, 32
-      set Point 1         = -3., -3., -3.
-      set Point 2         = 3., 3., 3.
+      set Number of cells = 32, 32
+      set Point 1         = -3., -3.
+      set Point 2         = 3., 3.
     end
     subsection Boundary conditions
       set lower x = continuous gradients

@@ -18,7 +18,7 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-
+///
 #include <deal.II/base/mpi.h>
 
 #include <mpi.h>
