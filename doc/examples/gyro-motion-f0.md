@@ -3,7 +3,7 @@
 @tableofcontents
 
 
-## Introduction {#introduction}
+## Introduction {#introduction-gyro-motion-f0}
 
 In this example, we want to give an overview on how magnetic fields work in
 @sapphire. Here, we will focus on only the isotropic part of the distribution,
@@ -77,32 +77,32 @@ i.e.
 @todo Is it correct, that $f_{l>0}$ returns to $0$?
 
 
-## Implementation {#code}
+## Implementation {#implementation-gyro-motion-f0}
 
 
-### config.h {#config}
+### config.h {#config-gyro-motion-f0}
 
 
-### gyro-motion-f0.cpp {#mainFunction}
+### gyro-motion-f0.cpp {#main-gyro-motion-f0}
 
 
-## Results {#results}
+## Results {#results-gyro-motion-f0}
 
 
-### Parameter file {#parameter}
+### Parameter file {#parameter-gyro-motion-f0}
 
 @include{lineno} examples/gyro-motion-f0/parameter.prm
 
 
-## The plain program {#plainCode}
+## The plain program {#plain-gyro-motion-f0}
 
 
-### config.h {#plainConfig}
+### config.h {#plain-config-gyro-motion-f0}
 
 @include{lineno} examples/gyro-motion-f0/config.h
 
 
-### gyro-motion-f0.cpp {#plainMain}
+### gyro-motion-f0.cpp {#plain-main-gyro-motion-f0}
 
 @include{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp
 

@@ -3,7 +3,7 @@
 @tableofcontents
 
 
-## Introduction {#introduction}
+## Introduction {#introduction-scattering-only}
 
 In this example, we want to give an introduction to @sapphire and show the basic
 usage. All examples are structured in the following way: First, we give an
@@ -80,7 +80,7 @@ where $f_{lms, 0} = f_{lms}(t=0)$. We will use this solution to check the
 correctness of the numerical solution.
 
 
-## Implementation {#code}
+## Implementation {#implementation-scattering-only}
 
 The implementation of the example in @sapphire is split in two files. The first
 one is the header file `config.h` which implements compile time flags and the
@@ -95,7 +95,7 @@ identical for most use-cases of @sapphire. Runtime parameter will be defined in
 a parameter file `parameter.prm`.
 
 
-### config.h {#config}
+### config.h {#config-scattering-only}
 
 We start by going line by line through the `config.h` file. First, we have to
 make sure that the file is only included once, and then import some
@@ -120,7 +120,7 @@ frequency $\nu$ and the initial value of the expansion coefficients,
 $f_{lms,0}$. We will call these parameters `nu` and `f0` respectively, assuming
 all expansion coefficients have the same initial value.
 
-@snippet{lineno} examples/scattering-only/config.h Physical prop
+@snippet{lineno} examples/scattering-only/config.h PhysicalProperties
 
 The @ref Sapphire::PhysicalProperties::declare_parameters "declare_parameters()"
 function is using the @dealref{ParameterHandler} class to declare parameter in
@@ -134,18 +134,18 @@ the parameter is straight forward, using the
 function. It takes the name of the parameter, a default value and its
 type/pattern. Additionally, one can give a description of the parameter.
 
-@snippet{lineno} examples/scattering-only/config.h Declare params
+@snippet{lineno} examples/scattering-only/config.h Declare parameters
 
 The parsing of the parameter is equally simple. We use the
 @dealref{ParameterHandler.get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
 function to get the value for a previously declared parameter.
 
-@snippet{lineno} examples/scattering-only/config.h Parse params
+@snippet{lineno} examples/scattering-only/config.h Parse parameters
 
 At the end, we define the runtime parameter as **public** variables of the
 class, so that subsequent functions have easy access to them.
 
-@snippet{lineno} examples/scattering-only/config.h Runtime params
+@snippet{lineno} examples/scattering-only/config.h Define parameters
 
 Next, we define static variables and functions related to the VFP equation. We
 therefore use the namespace @ref Sapphire::VFP "VFP" to collect them in one
@@ -156,7 +156,7 @@ place.
 First, we define the dimensionality of the problem. Since the solution does not
 depend on either $\mathbf{x}$ nor $p$, we just use one space dimension.
 
-@snippet{lineno} examples/scattering-only/config.h Var dim
+@snippet{lineno} examples/scattering-only/config.h Dimension
 
 Next, we define which terms of the VFP equation we use. To this end, we define a
 `static constexpr` which the **compiler** can use to determine which terms are
@@ -166,7 +166,7 @@ the same results. In this example, we only have a scattering term, and no $p$
 dependence. We therefore only activate the `collision` term, while all other
 terms (and the $p$ dependence are turned off by default.)
 
-@snippet{lineno} examples/scattering-only/config.h Var vfp flags
+@snippet{lineno} examples/scattering-only/config.h VFP flags
 
 To define the initial values, we use the class @dealref{Function} provided by
 @dealii. We define our own class @vfpref{InitialValueFunction} that inherits all
@@ -182,7 +182,7 @@ each component $f_{lms}$. Therefore, it is a **vector-valued** function with
 $(l_{\rm max} +1)^2$ components. To convert between the system index $i$ and the
 spherical harmonic indices $l, m, s$ we need a mapping given by `lms_indices`.
 
-@snippet{lineno} examples/scattering-only/config.h Initial value constructor
+@snippet{lineno} examples/scattering-only/config.h InitialValueFunction constructor
 
 After defining the constructor of the function, we have to define its value. For
 this we override the
@@ -194,14 +194,14 @@ $$
   f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t\right)\,.
 $$
 
-@snippet{lineno} examples/scattering-only/config.h Initial value vector value
+@snippet{lineno} examples/scattering-only/config.h InitialValueFunction value
 
 The definition of the scattering frequency works similar. The only difference
 is, that the scattering frequency is a scalar function, therefore we use the
 function @dealref{value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
 to get the scattering frequency at multiple points in one function call.
 
-@snippet{lineno} examples/scattering-only/config.h Scattering freq
+@snippet{lineno} examples/scattering-only/config.h ScatteringFrequency
 
 Since @sapphire expects a definition of the function @vfpref{Source},
 @vfpref{MagneticField} and @vfpref{BackgroundVelocityField} in `config.h`,
@@ -212,18 +212,18 @@ since the functions won't be used in this example.
 
 Empty implementation of the magnetic field:
 
-@snippet{lineno} examples/scattering-only/config.h Magnetic field
+@snippet{lineno} examples/scattering-only/config.h MagneticField
 
 Empty implementation of the background velocity field:
 
-@snippet{lineno} examples/scattering-only/config.h Velocity field
+@snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField
 
 Last, we have to close the namespaces and the include guard.
 
 @snippet{lineno} examples/scattering-only/config.h Close namespaces
 
 
-### scattering-only.cpp {#mainFunction}
+### scattering-only.cpp {#main-scattering-only}
 
 In this file, we will define the `main` function for the scattering
 example. First, we include the header files we need:
@@ -232,16 +232,16 @@ example. First, we include the header files we need:
 
 Then we define the `main` function:
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp main func
+@snippet{lineno} examples/scattering-only/scattering-only.cpp Main function
 
 We will run the program inside a try-catch block to catch any exceptions and
 output them.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp try catch block begin
+@snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch begin
 
 First, we need to initialize MPI for parallel runs:
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp MPI init
+@snippet{lineno} examples/scattering-only/scattering-only.cpp MPI initialization
 
 We will use the @ref Sapphire::Utils::SapphireLogStream "SapphireLogStream"
 class to output information to the console. The
@@ -263,18 +263,18 @@ Next, we create all objects that declare runtime parameter. We prefix these
 lines with `main` in the log stream, to silence the initialization process in a
 run with low verbosity.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Run time params
+@snippet{lineno} examples/scattering-only/scattering-only.cpp Run time parameters
 
 We now declare all parameters that the ParameterHandler should expect.
 
 @note All parameters have to be declared before we can parse the parameter file.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Declare params
+@snippet{lineno} examples/scattering-only/scattering-only.cpp Declare parameters
 
 After declaring the parameters, we can parse the parameter file and the
 parameters of the objects
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Parse params
+@snippet{lineno} examples/scattering-only/scattering-only.cpp Parse parameters
 
 Finally, we can create the VFP equation solver and run it.
 
@@ -288,13 +288,13 @@ analytic solution (implemented in @vfpref{InitialValueFunction}).
 In case an exception is thrown, we will catch it, output it to `std::err` and
 return with an error code.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp try catch block end
+@snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch end
 
 
 @todo Add section "Compiling the example" including the "CMakeLists.txt"
 
 
-## Results {#results}
+## Results {#results-scattering-only}
 
 After compiling the example program, we can run it with
 
@@ -373,26 +373,26 @@ The following image shows the results at $t=2$ for $l = 0,1,2,3$:
 @todo Use relative picture path, or path to git.
 
 
-### Parameter file {#parameter}
+### Parameter file {#parameter-scattering-only}
 
 The parameter file can either be a `.prm`, `.json` or `.xml` file. Here, we use
 a `.prm` for easy readability. For more information on the different input
 formats, we refer to the @dealref{ParameterHandler} documentation.
 
-\include{lineno} examples/scattering-only/parameter.prm
+@include{lineno} examples/scattering-only/parameter.prm
 
 
-## The plain program {#plainCode}
+## The plain program {#plain-scattering-only}
 
 
-### config.h {#plainConfig}
+### config.h {#plain-config-scattering-only}
 
-\include{lineno} examples/scattering-only/config.h
+@include{lineno} examples/scattering-only/config.h
 
 
-### scattering-only.cpp {#plainMain}
+### scattering-only.cpp {#plain-main-scattering-only}
 
-\include{lineno} examples/scattering-only/scattering-only.cpp
+@include{lineno} examples/scattering-only/scattering-only.cpp
 
 ---
 

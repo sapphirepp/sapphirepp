@@ -29,22 +29,22 @@
 #include "vfp-equation-solver.h"
 /// [Includes]
 
-/// [main func]
+/// [Main function]
 int
 main(int argc, char *argv[])
 {
-  /// [main func]
-  /// [try catch block begin]
+  /// [Main function]
+  /// [Try-Catch begin]
   try
     {
-      /// [try catch block begin]
-      /// [MPI init]
+      /// [Try-Catch begin]
+      /// [MPI initialization]
       using namespace Sapphire;
       using namespace VFP;
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-      /// [MPI init]
+      /// [MPI initialization]
       /// [Saplog]
       saplog.depth_console(2);
       const unsigned int mpi_rank =
@@ -67,20 +67,20 @@ main(int argc, char *argv[])
              << dealii::Utilities::System::get_time() << "]" << std::endl;
       /// [Command line argument]
 
-      /// [Run time params]
+      /// [Run time parameters]
       saplog.push("main");
       ParameterHandler               prm;
       VFPSolverControl<dimension>    vfp_solver_control;
       PhysicalProperties             physical_properties;
       Utils::OutputModule<dimension> output_module;
-      /// [Run time params]
+      /// [Run time parameters]
 
-      /// [Declare params]
+      /// [Declare parameters]
       vfp_solver_control.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
       output_module.declare_parameters(prm);
-      /// [Declare params]
-      /// [Parse params]
+      /// [Declare parameters]
+      /// [Parse parameters]
       prm.parse_input(parameter_filename);
 
       vfp_solver_control.parse_parameters(prm);
@@ -88,7 +88,7 @@ main(int argc, char *argv[])
       output_module.parse_parameters(prm);
 
       saplog.pop(); // pop "main" prefix
-      /// [Parse params]
+      /// [Parse parameters]
 
       /// [VFP Solver]
       VFPEquationSolver<dimension> vfp_equation_solver(vfp_solver_control,
@@ -110,7 +110,7 @@ main(int argc, char *argv[])
       saplog << "L2 error: " << L2_error << std::endl;
     }
   /// [L2 error]
-  /// [try catch block end]
+  /// [Try-Catch end]
   catch (std::exception &exc)
     {
       std::cerr << std::endl
@@ -138,4 +138,4 @@ main(int argc, char *argv[])
     }
   return 0;
 }
-/// [try catch block end]
+/// [Try-Catch end]

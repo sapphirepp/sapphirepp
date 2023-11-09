@@ -44,13 +44,13 @@
 namespace Sapphire
 {
   /// [Namespace Sapphire]
-  /// [Physical prop]
+  /// [PhysicalProperties]
   class PhysicalProperties
   {
   public:
     PhysicalProperties() = default;
-    /// [Physical prop]
-    /// [Declare params]
+    /// [PhysicalProperties]
+    /// [Declare parameters]
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
@@ -69,9 +69,9 @@ namespace Sapphire
 
       prm.leave_subsection();
     };
-    /// [Declare params]
+    /// [Declare parameters]
 
-    /// [Parse params]
+    /// [Parse parameters]
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
@@ -84,26 +84,26 @@ namespace Sapphire
 
       prm.leave_subsection();
     };
-    /// [Parse params]
+    /// [Parse parameters]
 
-    /// [Runtime params]
+    /// [Define parameters]
     double nu;
     double f0;
   };
-  /// [Runtime params]
+  /// [Define parameters]
   /// [Namespace VFP]
   namespace VFP
   {
     /// [Namespace VFP]
-    /// [Var dim]
+    /// [Dimension]
     static constexpr int dimension = 1;
-    /// [Var dim]
+    /// [Dimension]
 
-    /// [Var vfp flags]
+    /// [VFP flags]
     static constexpr VFPFlags vfp_flags = VFPFlags::collision;
-    /// [Var vfp flags]
+    /// [VFP flags]
 
-    /// [Initial value constructor]
+    /// [InitialValueFunction constructor]
     template <int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
@@ -116,9 +116,9 @@ namespace Sapphire
       {
         PDESystem::create_lms_indices(exp_order, lms_indices);
       }
-      /// [Initial value constructor]
+      /// [InitialValueFunction constructor]
 
-      /// [Initial value vector value]
+      /// [InitialValueFunction value]
       void
       vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &f) const override
@@ -138,9 +138,9 @@ namespace Sapphire
       const double                             nu;
       std::vector<std::array<unsigned int, 3>> lms_indices;
     };
-    /// [Initial value vector value]
+    /// [InitialValueFunction value]
 
-    /// [Scattering freq]
+    /// [ScatteringFrequency]
     template <int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
@@ -167,7 +167,7 @@ namespace Sapphire
 
       const double nu;
     };
-    /// [Scattering freq]
+    /// [ScatteringFrequency]
 
     /// [Source]
     template <int dim>
@@ -192,7 +192,7 @@ namespace Sapphire
     };
     /// [Source]
 
-    /// [Magnetic field]
+    /// [MagneticField]
     template <int dim>
     class MagneticField : public dealii::Function<dim>
     {
@@ -215,9 +215,9 @@ namespace Sapphire
         magnetic_field[2] = 0.;
       }
     };
-    /// [Magnetic field]
+    /// [MagneticField]
 
-    /// [Velocity field]
+    /// [BackgroundVelocityField]
     template <int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
@@ -302,7 +302,7 @@ namespace Sapphire
           }
       }
     };
-    /// [Velocity field]
+    /// [BackgroundVelocityField]
     /// [Close namespaces]
   } // namespace VFP
 } // namespace Sapphire
