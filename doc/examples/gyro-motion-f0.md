@@ -30,13 +30,13 @@ Considering a single particle, it will gyrate in the magnetic field with a
 gyroradius
 
 $$
-  r_g = \frac{p_{\perp}}{q B} = \frac{\gamma m v_{\perp}}{q B}
+  r_g = \frac{p_{\perp} c}{q B} = \frac{\gamma m c v_{\perp}}{q B}
 $$
 
 and a gyrofrequency
 
 $$
-  \omega_g = \frac{q B}{\gamma m} \,.
+  \omega_g = \frac{q B}{\gamma m c} \,.
 $$
 
 With the $B$-field orientated in $z$-direction, the motion will only take place
@@ -54,33 +54,116 @@ Here $\sigma$ is the spread of the initial Gaussian, and $r = \sqrt{x^2 + y^2}$
 is the radial distance from the origin. After one gyroperiod,
 
 $$
-  T_g = \frac{2 \pi}{\omega_g} = \frac{2 \pi q B_0}{\gamma m} \,,
+  T_g = \frac{2 \pi}{\omega_g} = \frac{2 \pi \gamma m c}{q B_0} \,,
 $$
 
-every particle performed a full gyro cycle and returned to the initial position,
-undistinguishable from its initial state. Therefore, the distribution function
-after $n \times T_g$ with $n \in \mathbb{N}$ is the same as the initial
-condition:
+every particle performed a full gyro cycle and returned to the initial position.
+Therefore, after $n \times T_g$ with $n \in \mathbb{N}$ the particle
+distribution returns to its initial condition:
 
 $$
-  f_l(\mathbf{r}, t = n \times T_g) = f_l(\mathbf{r}, t = 0) \,
+  f_0(\mathbf{r}, t = n \times T_g) = f_0(\mathbf{r}, t = 0)
+  = e^{- \frac{r^2}{2 \sigma^2}} \,.
 $$
 
-i.e.
-
-\begin{align*}
-  %Gaussian
-  f_0(\mathbf{r}, t = n \times T_g) &= e^{- \frac{r^2}{2 \sigma^2}} \,, \\
-  f_{l>0}(\mathbf{r}, t = n \times T_g) &= 0 \,.
-\end{align*}
-
-@todo Is it correct, that $f_{l>0}$ returns to $0$?
+Note that truncating the expansion of the distribution function at $l_{\rm max}$
+leads to deviations. Therefore, $f_{l>0}(\mathbf{r}, t = n \times T_g) \neq 0$
+even though the initial condition is isotropic.
 
 
 ## Implementation {#implementation-gyro-motion-f0}
 
 
 ### config.h {#config-gyro-motion-f0}
+
+We again start with some includes and open the namespace @ref Sapphire.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h Includes
+
+Next, we define the runtime parameters in the @ref Sapphire::PhysicalProperties
+"PhysicalProperties" class. We need the magnetic field strength $B_0$, and the
+initial spread of the distribution function $\sigma$. The mass $m$, charge $q$
+and velocity/gamma factor $\gamma$ of the particles are already implemented as
+runtime parameters in the class @vfpref{VFPSolverControl}. Notice, that instead
+of $B_0$ we use $\frac{B_0}{2 \pi}$ as an input parameter. This is, so that
+`Final time = gamma` corresponds to one full gyroperiod $T_g$ (for $m = q = c
+=1$).
+
+
+@snippet{lineno} examples/gyro-motion-f0/config.h PhysicalProperties
+
+The rest of the set-up is again collected in the namespace @ref Sapphire::VFP
+"VFP".
+
+@snippet{lineno} examples/gyro-motion-f0/config.h Namespace VFP
+
+We set the dimensionality of the problem to 2D, since the motion is only in the
+$x$-$y$-plane.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h Dimension
+
+In this example, we only have the magnetic and spatial advection terms in the
+VFP equation. Furthermore, the magnetic field is constant, so we can use the
+@vfpref{VFPFlags::time_independent_fields} flag:
+
+@snippet{lineno} examples/gyro-motion-f0/config.h VFP flags
+
+The initial condition is an isotropic Gaussian distribution as described above.
+In @sapphire, this is implemented in the @vfpref{InitialValueFunction} function.
+We first set the system size to $(l+1)^2$ and the value of $\sigma$ in the
+constructor.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h InitialValueFunction constructor
+
+Then we calculate the value for each component $f_{i(l,m,s)}$ in the
+@vfpref{InitialValueFunction::vector_value()} function. We first check if the
+provided output vector `f` has the correct size using the
+@dealref{AssertDimension(),group__Exceptions,ga9442b63275c9ef3fab29bc222831c49c}
+macro provided by @dealii. Next, we set all entries in the vector to zero,
+before we set only the isotropic component $f_0$ to a Gaussian distribution.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h InitialValueFunction value
+
+The $B$-field is defined in the @vfpref{MagneticField} function. It has three
+components, $x$, $y$, $z$, even if the dimension of the problem is only 2D.
+Again, the run time parameter `B0` is provided by the @ref
+Sapphire::PhysicalProperties "PhysicalProperties" class and set in the
+constructor.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h MagneticField constructor
+
+The value of the magnetic field is set in the @vfpref{MagneticField::value()}
+function. We again first check if the provided output vector `magnetic_field`
+has the correct size, before setting the components according to
+$B(\mathbf{r},t) = B_0 \hat{\mathbf{e}}_z$.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h MagneticField value
+
+The last term that @sapphire will use in the computation is the background
+velocity field $\mathbf{u}$. Even though the background velocity field is zero
+in our case, using the @vfpref{VFPFlags::spatial_advection} flag will activate
+the full $(\mathbf{u} + \mathbf{v}) \cdot \nabla_x f$ term. We can however just
+set $\mathbf{u} = 0$ explicitly. This is what we do in the
+@vfpref{BackgroundVelocityField} function, we set its value $\mathbf{u}$
+@vfpref{BackgroundVelocityField::vector_value()}, divergence $\nabla \cdot
+\mathbf{u}$ @vfpref{BackgroundVelocityField::divergence_list()}, material
+derivative $\frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}$
+@vfpref{BackgroundVelocityField::material_derivative_list()} and Jacobi matrix
+$\frac{\partial u_i}{\partial x_j}$
+@vfpref{BackgroundVelocityField::jacobian_list()} to zero.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h BackgroundVelocityField
+
+For the scattering frequency and the source term we can provide empty
+implementations, since @sapphire will not use them in this example.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h ScatteringFrequency
+
+@snippet{lineno} examples/gyro-motion-f0/config.h Source
+
+Finally, we close the namespaces and terminate the include guard.
+
+@snippet{lineno} examples/gyro-motion-f0/config.h Close namespaces
 
 
 ### gyro-motion-f0.cpp {#main-gyro-motion-f0}
