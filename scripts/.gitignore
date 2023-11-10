@@ -1,0 +1,4 @@
+# Ignore output of install-dealii.sh
+petsc*
+p4est*
+dealii*
