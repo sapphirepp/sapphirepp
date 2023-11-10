@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.5.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
+set(DEAL_II_MIN_VERSION "9.4.0") #TODO: check if this is the correct version
+set(DOXYGEN_MIN_VERSION "1.8.0") #TODO: check if this is the correct version
+
 option(SAPPHIRE "Compile Sapphire++" ON )
 option(VFP "Build with VFP module" ON)
 option(EXAMPLES "Build with examples" OFF)
@@ -15,7 +18,6 @@ if(SAPPHIRE)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. to recognise the include libraries)
 
   set(DEAL_II_DIR "~/.local/lib/dealii")
-  set(DEAL_II_MIN_VERSION "9.4.0")
 
 
   find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
@@ -49,7 +51,7 @@ endif(SAPPHIRE)
 
   
 if(DOC)
-  find_package(Doxygen)
+  find_package(Doxygen ${DOXYGEN_MIN_VERSION})
   if(DOXYGEN_FOUND)
       # An empty string implies the usage of a Content Delivery Network (CDN)
       # for Mathjax. Doxygen defaults to https://cdn.jsdelivr.net/npm/mathjax@3

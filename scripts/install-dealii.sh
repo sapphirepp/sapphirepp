@@ -22,10 +22,6 @@ else
     PETSC_ARCH=${PETSC_ARCH:-"arch-linux-c-debug"}
 fi
 
-INSTALL_SLEPC=false
-SLEPC_DIR=${SLEPC_DIR:-"$HOME/.local/lib/slepc"}
-SLEPC_VERSION="3.20.0"
-
 INSTALL_P4EST=false
 P4EST_DIR=${P4EST_DIR:-"$HOME/.local/lib/p4est"}
 P4EST_VERSION="2.8.5"
@@ -47,8 +43,6 @@ function set_configuration {
     # Prompt the user for input
     read -p "Is PETSc already installed on your machine? [y/N]: " install_petsc_input
     read -p "Enter the installation directory for PETSc (default: $PETSC_DIR): " petsc_dir_input
-    read -p "Is SLEPc already installed on your machine? [y/N]: " install_slepc_input
-    read -p "Enter the installation directory for SLEPc (default: $SLEPC_DIR): " slepc_dir_input
     read -p "Is p4est already installed on your machine? [y/N]: " install_p4est_input
     read -p "Enter the installation directory for p4est (default: $P4EST_DIR): " p4est_dir_input
     read -p "Is deal.II already installed on your machine? [y/N]: " install_deal_ii_input
@@ -62,12 +56,6 @@ function set_configuration {
     fi
     if [[ $petsc_dir_input ]]; then
         PETSC_DIR=$petsc_dir_input
-    fi
-    if [[ $install_slepc_input =~ ^[Nn]$ ]]; then
-        INSTALL_SLEPC=true
-    fi
-    if [[ $slepc_dir_input ]]; then
-        SLEPC_DIR=$slepc_dir_input
     fi
     if [[ $install_p4est_input =~ ^[Nn]$ ]]; then
         INSTALL_P4EST=true
@@ -97,11 +85,6 @@ function print_configuration {
         echo "Install PETSc-v$PETSC_VERSION in \"$PETSC_DIR\""
     else
         echo "Use PETSc installation in \"$PETSC_DIR\""
-    fi
-    if [ $INSTALL_SLEPC == true ]; then
-        echo "Install SLEPc-v$SLEPC_VERSION in \"$SLEPC_DIR\""
-    else
-        echo "Use SLEPc installation in \"$SLEPC_DIR\""
     fi
     if [ $INSTALL_P4EST == true ]; then
         echo "Install p4est-v$P4EST_VERSION in \"$P4EST_DIR\""
@@ -202,32 +185,6 @@ function install_petsc {
     cd "$WORKPWD"
 }
 
-function install_slepc {
-    echo ""
-    echo "Installing SLEPc-v$SLEPC_VERSION in \"$SLEPC_DIR\""
-    echo "-----------------------------------"
-    echo ""
-
-    cd "$WORKPWD"
-    dirname="slepc-$SLEPC_VERSION"
-    curl -LO "https://slepc.upv.es/download/distrib/$dirname.tar.gz"
-    tar -xzf "$dirname.tar.gz"
-    rm "$dirname.tar.gz"
-    mkdir -p "$SLEPC_DIR"
-    rm -rf "$SLEPC_DIR"
-    mv "$dirname" "$SLEPC_DIR"
-    cd "$SLEPC_DIR"
-
-    ./configure
-    make -j"$NUMBER_JOBS" SLEPC_DIR="$SLEPC_DIR" PETSC_DIR="$PETSC_DIR" PETSC_ARCH="$PETSC_ARCH" all
-
-    if [[ $RUN_TEST == true ]]; then
-        make SLEPC_DIR="$SLEPC_DIR" PETSC_DIR="$PETSC_DIR" PETSC_ARCH="$PETSC_ARCH" check
-    fi
-
-    cd "$WORKPWD"
-}
-
 function install_p4est {
     echo ""
     echo "Installing p4est-v$P4EST_VERSION in \"$P4EST_DIR\""
@@ -273,8 +230,6 @@ function install_deal_ii {
         "-DDEAL_II_WITH_PETSC=ON"
         "-DPETSC_DIR=$PETSC_DIR"
         "-DPETSC_ARCH=$PETSC_ARCH"
-        "-DDEAL_II_WITH_SLEPC=ON"
-        "-DSLEPC_DIR=$SLEPC_DIR"
         "-DDEAL_II_WITH_P4EST=ON"
         "-DP4EST_DIR=$P4EST_DIR"
     )
@@ -323,20 +278,6 @@ while [[ $# -gt 0 ]]; do
         ;;
     -pscv | --petsc-version)
         PETSC_VERSION="$2"
-        shift
-        shift
-        ;;
-    -slc | --slepc)
-        INSTALL_SLEPC=true
-        shift
-        ;;
-    -slcd | --slepc-dir)
-        SLEPC_DIR="$2"
-        shift
-        shift
-        ;;
-    -slcv | --slepc-version)
-        SLEPC_VERSION="$2"
         shift
         shift
         ;;
@@ -402,11 +343,6 @@ echo "Starting installation. This may take a while!"
 # Install PETSc
 if [ $INSTALL_PETSC == true ]; then
     install_petsc
-fi
-
-# Install SLEPc
-if [ $INSTALL_SLEPC == true ]; then
-    install_slepc
 fi
 
 # Install p4est

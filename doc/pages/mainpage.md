@@ -34,28 +34,28 @@ $$
 
 @sapphire uses the C++ library @dealii to solve the differential equations with
 finite elements. We use MPI to parallelize @sapphire. For optimized parallel
-grid generation, linear algebra operations and linear system solvers, we use the
-[p4est](https://www.p4est.org), [PETSc](https://petsc.org),
-[SLEPc](https://slepc.upv.es) and interface of @dealii.
-In order to compile and use @sapphire you need the following programs installed:
+grid generation and linear algebra operations, we use the
+[p4est](https://www.p4est.org), [PETSc](https://petsc.org) and though their
+interface in @dealii. In order to compile and use @sapphire you need the
+following programs installed:
 
-- [CMake](http://www.cmake.org/) version 3.5.0 or later
+- [CMake](http://www.cmake.org/) version @cmake_min_version or later
 - [GNU make](http://www.gnu.org/software/make/)
-- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) with MPI support
 - [Open-MPI](https://www.open-mpi.org)
-- [boost](https://www.boost.org)
-- [LAPACK](https://www.netlib.org/lapack/)
 - [Threading Building Blocks (TBB)](https://github.com/oneapi-src/oneTBB)
+- [boost](https://www.boost.org)
+- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) with MPI support
+- [LAPACK](https://www.netlib.org/lapack/)
 - [p4est](https://www.p4est.org)
 - [PETSc](https://petsc.org)
-- [SLEPc](https://slepc.upv.es)
-- @dealii
-- For generating the documentation: [Doxygen](https://www.doxygen.nl) with `dot`
+- @dealii version @dealii_min_version or later
+- For generating the documentation: [Doxygen](https://www.doxygen.nl) version
+  @doxygen_min_version or later with `dot`
 - For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/) or
   [ParaView](http://www.paraview.org/)
 
 To install @dealii and all necessary prerequisites for @sapphire, we provide an
-[installation script](https://git.mpi-hd.mpg.de/schween/sapphire/install_dealii.sh).
+[installation script](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/install-dealii.sh).
 Run the script by executing:
 
 ```shell
@@ -71,10 +71,11 @@ resume the installation with the following commands:
 
 ```shell
 cd dealii-X.X.X/build
-make -j install
+make -j N install
 ```
-If this process fails, it may be that your system has run out of memory. In 
-such case, specifiy the number of threads after `-j`.
+
+where `X.X.X` is the version number of @dealii and `N` is the number of threads
+to use for the compilation (should match number of processors on your system).
 
 For macOS user, @dealii offers prepackaged `.dmg` files with all dependencies
 included. To install, follow the
