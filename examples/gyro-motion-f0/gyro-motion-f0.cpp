@@ -18,9 +18,9 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-/// @file gyro-motion-f0.cpp
+/// @file examples/gyro-motion-f0/gyro-motion-f0.cpp
 /// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief
+/// @brief Implement the main function for the gyro-motion-f0 example
 
 /// [Includes]
 #include <deal.II/base/mpi.h>
@@ -36,14 +36,12 @@
 int
 main(int argc, char *argv[])
 {
-  /// [Main function]
-  /// [Try-Catch begin]
   try
     {
-      /// [Try-Catch begin]
-      /// [MPI initialization]
       using namespace Sapphire;
       using namespace VFP;
+      /// [Main function]
+      /// [MPI initialization]
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
@@ -101,12 +99,28 @@ main(int argc, char *argv[])
       /// [VFP Solver]
 
       /// [L2 error]
-      InitialValueFunction<dimension> analytic_solution(
+      // Assume that the final time is a multiple of the gyroperiod
+      const double gyroperiod =
+        2. * M_PI * vfp_solver_control.gamma * vfp_solver_control.mass /
+        (physical_properties.B0 * vfp_solver_control.charge);
+      AssertThrow(std::fmod(vfp_solver_control.final_time, gyroperiod) == 0.,
+                  dealii::ExcMessage(
+                    "Final time is not a multiple of the gyroperiod.\n\t" +
+                    dealii::Utilities::to_string(
+                      vfp_solver_control.final_time) +
+                    " != n * " + dealii::Utilities::to_string(gyroperiod)));
+
+
+      InitialValueFunction<dimension> initial_condition(
         physical_properties, vfp_solver_control.expansion_order);
-      analytic_solution.set_time(vfp_solver_control.final_time);
+
+      const ComponentSelectFunction<dimension> mask(
+        0,
+        (vfp_solver_control.expansion_order + 1) *
+          (vfp_solver_control.expansion_order + 1));
 
       const double L2_error =
-        vfp_equation_solver.compute_global_error(analytic_solution,
+        vfp_equation_solver.compute_global_error(initial_condition,
                                                  VectorTools::L2_norm,
                                                  VectorTools::L2_norm);
 

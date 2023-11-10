@@ -168,8 +168,69 @@ Finally, we close the namespaces and terminate the include guard.
 
 ### gyro-motion-f0.cpp {#main-gyro-motion-f0}
 
+In the `gyro-motion-f0.cpp` we define the main function for the executable. We
+start by including the header files for MPI, @dealii and @sapphire.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Includes
+
+Next, we define the main function and open a `try-catch` block to abort the
+program on exceptions with a meaningful error message.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Main function
+
+We initialize MPI using the @dealii wrapper
+@dealref{MPI_InitFinalize,classUtilities_1_1MPI_1_1MPI__InitFinalize}
+to initialize the MPI and PETSc and p4est. We use one thread per process, so all
+parallelisation is done via MPI.
+
+@note It is also possible, to use MPI for the communication between nodes, and
+      use TBB to parallelise the computation on a single node.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp MPI initialization
+
+Next, we create set the @ref Sapphire::Utils:SapphireLogStream "saplog" to only
+show the progress of the simulation, and not the debug messages.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Saplog
+
+The parameter file to be used is given via a command line argument.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Command line argument
+
+As it is @dealii convention, we first need to create all `Parameters` objects
+that handle runtime parameters.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Run time parameters
+
+We then declare the parameters in the @dealref{ParameterHandler},
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Declare parameters
+
+and parse them from the parameter file.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Parse parameters
+
+Now we can create the @vfpref{VFPEquationSolver} and run the simulation.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp VFP solver
+
+After the simulation finished, we can compare the result with our expectation.
+Assuming the end time of the `Final time` of the simulation corresponds to
+multiple of the gyroperiod, we expect the particle distribution $f_0$ to return
+to its initial condition. But we only want to compare the $f_0$ component of the
+solution with the initial condition, and neglect higher order components. To
+this end mask the solution with the @dealref{ComponentSelectFunction}.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp L2 error
+
+Finally, we end the `try-catch` block and terminate the program.
+
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Try-Catch end
+
 
 ## Results {#results-gyro-motion-f0}
+
+@todo Add results section
 
 
 ### Parameter file {#parameter-gyro-motion-f0}

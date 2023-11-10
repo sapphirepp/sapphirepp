@@ -18,7 +18,7 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-/// @file gyro-motion-f0/config.h
+/// @file examples/gyro-motion-f0/config.h
 /// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
 /// @brief Implement physical setup for gyro-motion-f0 example
 
