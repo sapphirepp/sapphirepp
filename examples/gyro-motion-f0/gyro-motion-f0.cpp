@@ -47,29 +47,19 @@ main(int argc, char *argv[])
                                                                   1);
       /// [MPI initialization]
       /// [Saplog]
+      saplog.init();
       saplog.depth_console(2);
-      const unsigned int mpi_rank =
-        dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-      if (mpi_rank > 0)
-        {
-          saplog.depth_console(0);
-          saplog.push("mpi" + dealii::Utilities::to_string(mpi_rank, 3));
-        }
       /// [Saplog]
       /// [Command line argument]
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
-      int mpi_size = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
       saplog << "Start example gyro-motion-f0 with parameter file \""
-             << parameter_filename << "\" on " << mpi_size << " processor(s) ["
-             << dealii::Utilities::System::get_date() << " "
-             << dealii::Utilities::System::get_time() << "]" << std::endl;
+             << parameter_filename << "\"" << std::endl;
       /// [Command line argument]
 
       /// [Run time parameters]
-      saplog.push("main");
       ParameterHandler               prm;
       VFPSolverControl<dimension>    vfp_solver_control;
       PhysicalProperties             physical_properties;
@@ -87,8 +77,6 @@ main(int argc, char *argv[])
       vfp_solver_control.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
-
-      saplog.pop(); // pop "main" prefix
       /// [Parse parameters]
 
       /// [VFP Solver]

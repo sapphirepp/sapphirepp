@@ -38,7 +38,8 @@ template <int dim>
 void
 Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix p("VFPSolverControl", saplog);
+  LogStream::Prefix pre1("Startup", saplog);
+  LogStream::Prefix pre2("VFPSolverControl", saplog);
   saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("VFP");
 
@@ -187,7 +188,8 @@ template <int dim>
 void
 Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix p("VFPSolverControl", saplog);
+  LogStream::Prefix pre1("Startup", saplog);
+  LogStream::Prefix pre2("VFPSolverControl", saplog);
   saplog << "Parsing parameters" << std::endl;
   std::string s;
   prm.enter_subsection("VFP");

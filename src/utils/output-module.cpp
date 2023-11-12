@@ -36,7 +36,8 @@ template <int dim>
 void
 Sapphire::Utils::OutputModule<dim>::declare_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix p("OutputModule", saplog);
+  LogStream::Prefix pre1("Startup", saplog);
+  LogStream::Prefix pre2("OutputModule", saplog);
   saplog << "Declaring parameters" << std::endl;
 
   prm.enter_subsection("Output");
@@ -80,7 +81,8 @@ template <int dim>
 void
 Sapphire::Utils::OutputModule<dim>::parse_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix p("OutputModule", saplog);
+  LogStream::Prefix pre1("Startup", saplog);
+  LogStream::Prefix pre2("OutputModule", saplog);
   saplog << "Parsing parameters" << std::endl;
   std::string s;
   prm.enter_subsection("Output");

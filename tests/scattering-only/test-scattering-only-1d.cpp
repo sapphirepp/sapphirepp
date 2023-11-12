@@ -55,30 +55,26 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
   vfp_solver_control.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
   output_module.parse_parameters(prm);
-  saplog.pop();
 
   std::ofstream log_file(output_module.output_path /
                            ("convergence_expansion_order.csv"),
                          std::ios::app);
   saplog.attach(log_file, false);
 
+  saplog.pop();
   saplog << "# "
          << "expansion_order"
          << "\t L2\t Linfty\t CPU time [s]\t Wall time [s]\t n_dof"
          << std::endl;
+  saplog.push("Tests");
   for (unsigned int i = 0; i < values.size(); i++)
     {
-      vfp_solver_control.expansion_order = uint(values[i]);
-
-      saplog.push("Tests");
       saplog << "expansion_order"
              << "=" << values[i] << std::endl;
-      saplog.pop();
-
+      vfp_solver_control.expansion_order = uint(values[i]);
       output_module.base_file_name =
         "expansion_order_" + dealii::Utilities::to_string(values[i]);
 
-      timer.start();
       VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
                                                  physical_properties,
                                                  output_module);
@@ -97,10 +93,11 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
         vfp_equation_solver.compute_global_error(analytic_solution,
                                                  VectorTools::L2_norm,
                                                  VectorTools::Linfty_norm);
-
+      saplog.pop();
       saplog << values[i] << "\t" << L2_error << "\t" << Linfty_error << "\t"
              << timer.cpu_time() << "\t" << timer.wall_time() << "\t"
              << vfp_equation_solver.get_n_dofs() << std::endl;
+      saplog.push("Tests");
     }
 
   saplog.detach();
@@ -134,7 +131,6 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
   vfp_solver_control.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
   output_module.parse_parameters(prm);
-  saplog.pop();
 
   timer.start();
   VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
@@ -143,7 +139,6 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
   vfp_equation_solver.run();
   timer.stop();
 
-  saplog.push("Tests");
   InitialValueFunction<dim> analytic_solution(
     physical_properties, vfp_solver_control.expansion_order);
   analytic_solution.set_time(vfp_solver_control.final_time);
@@ -178,21 +173,11 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
+      saplog.init();
       saplog.pop();
-      saplog.depth_console(1);
+      saplog.depth_console(2);
       saplog.depth_file(0);
-      const unsigned int mpi_rank =
-        dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-      if (mpi_rank > 0)
-        {
-          saplog.depth_console(0);
-          saplog.push("mpi" + dealii::Utilities::to_string(mpi_rank, 3));
-        }
-      int mpi_size = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-      saplog << "Start test-scattering-only-1d on " << mpi_size
-             << " processor(s) [" << dealii::Utilities::System::get_date()
-             << " " << dealii::Utilities::System::get_time() << "]"
-             << std::endl;
+      saplog << "Start test-scattering-only-1d" << std::endl;
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)

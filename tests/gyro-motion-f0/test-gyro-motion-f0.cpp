@@ -43,13 +43,7 @@ main(int argc, char *argv[])
                                                                   1);
 
       saplog.depth_console(2);
-      const unsigned int mpi_rank =
-        dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-      if (mpi_rank > 0)
-        {
-          saplog.depth_console(0);
-          saplog.push("mpi" + dealii::Utilities::to_string(mpi_rank, 3));
-        }
+      saplog.init();
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
@@ -59,14 +53,10 @@ main(int argc, char *argv[])
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 
-      int mpi_size = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
       saplog << "Start test-gyro-motion-f0 with parameter file \""
              << parameter_filename << "\" and maximal L2 error of "
-             << max_L2_error << " on " << mpi_size << " processor(s) ["
-             << dealii::Utilities::System::get_date() << " "
-             << dealii::Utilities::System::get_time() << "]" << std::endl;
+             << max_L2_error << std::endl;
 
-      saplog.push("Tests");
       dealii::Timer                  timer;
       ParameterHandler               prm;
       VFPSolverControl<dimension>    vfp_solver_control;
@@ -82,8 +72,6 @@ main(int argc, char *argv[])
       vfp_solver_control.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
-
-      saplog.pop();
 
       timer.start();
       VFPEquationSolver<dimension> vfp_equation_solver(vfp_solver_control,

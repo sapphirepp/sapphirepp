@@ -47,7 +47,8 @@ namespace Sapphire
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
-      dealii::LogStream::Prefix p("Physical properties", saplog);
+      dealii::LogStream::Prefix pre1("Startup", saplog);
+      dealii::LogStream::Prefix pre2("Physical properties", saplog);
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical properties");
 
@@ -57,7 +58,8 @@ namespace Sapphire
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
-      dealii::LogStream::Prefix p("PhysicalProperties", saplog);
+      dealii::LogStream::Prefix pre1("Startup", saplog);
+      dealii::LogStream::Prefix pre2("PhysicalProperties", saplog);
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical properties");
 
