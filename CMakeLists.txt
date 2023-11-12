@@ -21,10 +21,25 @@ if(SAPPHIRE)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server
 
   set(DEAL_II_DIR "~/.local/lib/dealii")
-
-
   find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
                HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR})
+  IF(NOT ${deal.II_FOUND})
+  MESSAGE(FATAL_ERROR
+    "*** Could not locate a (sufficiently recent) version of deal.II. ***\n"
+    "You may want to either pass a flag -DDEAL_II_DIR=/path/to/deal.II to cmake"
+    " or set an environment variable \"DEAL_II_DIR\".")
+  ENDIF()
+
+  IF(NOT DEAL_II_WITH_PETSC OR NOT DEAL_II_WITH_P4EST)
+  MESSAGE(FATAL_ERROR
+    "*** deal.II dependencies not met ***\n"
+    "Sapphire++ requires deal.II to be configured with the following options:
+     DEAL_II_WITH_PETSC = ON
+     DEAL_II_WITH_P4EST = ON\n"
+    "However, the detected deal.II configuration found at ${DEAL_II_PATH} is:
+     DEAL_II_WITH_PETSC = ${DEAL_II_WITH_PETSC}
+     DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}")
+  ENDIF()
 
   deal_ii_initialize_cached_variables()
   file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
