@@ -19,34 +19,44 @@
 //
 // -----------------------------------------------------------------------------
 
-/**
- * @file sapphire-logstream.h
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define saplog
- * @version 0.1
- * @date 2023-07-17
- */
+/// @file sapphirepp-logstream.h
+/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+/// @brief Define saplog
 
 #ifndef UTILS_SAPPHIREPPLOGSTREAM_H
 #define UTILS_SAPPHIREPPLOGSTREAM_H
 
 #include <deal.II/base/logstream.h>
 
-#include <string>
-
 namespace Sapphire
 {
   namespace Utils
   {
 
+    /// @brief LogStream for @sapphire
+    ///
+    /// The Stream is prefixed with `Sapphire`.
+    /// In case of parallel execution, all but the first process are prefixed
+    /// with `mpi<rank>`.
+    ///
+    /// For more details see @dealref{LogStream} documentation
     class SapphireppLogStream : public dealii::LogStream
     {
     public:
+      /// @brief Constructor
       SapphireppLogStream();
+
+      /// @brief Initialize the log stream
+      /// This function must only be called after MPI initialization.
+      /// It prefixes the log stream with `MPI<rank>` for all but the first
+      /// rank. In addition, it shows a start-up message.
+      void
+      init();
     };
 
   } // namespace Utils
 
+  /// @brief The standard log stream for @sapphire
   extern Sapphire::Utils::SapphireppLogStream saplog;
 } // namespace Sapphire
 #endif

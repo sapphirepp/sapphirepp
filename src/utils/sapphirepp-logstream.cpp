@@ -19,9 +19,17 @@
 //
 // -----------------------------------------------------------------------------
 
+/// @file sapphirepp-logstream.cpp
+/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+/// @brief Implement @ref Sapphire::Utils::SapphireppLogStream
+
 #include "sapphirepp-logstream.h"
 
-#include <iostream>
+#include <deal.II/base/mpi.h>
+
+#include <mpi.h>
+
+#include "version.h"
 
 Sapphire::Utils::SapphireppLogStream Sapphire::saplog;
 
@@ -30,4 +38,28 @@ Sapphire::Utils::SapphireppLogStream::SapphireppLogStream()
 {
   pop();
   push("Sapphire");
+}
+
+
+
+void
+Sapphire::Utils::SapphireppLogStream::init()
+{
+  int is_initialized;
+  MPI_Initialized(&is_initialized);
+  Assert(is_initialized,
+         dealii::ExcMessage("saplog.init() must be called after MPI "
+                            "initialization!"));
+
+  pop();
+  const unsigned int mpi_rank =
+    dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  if (mpi_rank > 0)
+    push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
+  push("Sapphire");
+
+  *this << "Start Sapphire++ v" << SAPPHIREPP_VERSION << " with "
+        << dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
+        << " MPI process(es) [" << dealii::Utilities::System::get_date() << " "
+        << dealii::Utilities::System::get_time() << "]" << std::endl;
 }
