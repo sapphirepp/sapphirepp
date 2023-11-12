@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.12.0)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -6,8 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(DEAL_II_MIN_VERSION "9.4.0") #TODO: check if this is the correct version
 set(DOXYGEN_MIN_VERSION "1.8.0") #TODO: check if this is the correct version
 
-file(READ ${CMAKE_SOURCE_DIR}/VERSION PROJECT_VERSION)
-message("Sapphire++ version ${PROJECT_VERSION}")
+file(READ ${CMAKE_SOURCE_DIR}/VERSION SAPPHIREPP_VERSION)
+string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-.*)?" "\\1"
+       PROJECT_VERSION ${SAPPHIREPP_VERSION})
+
+message("Sapphire++ version ${SAPPHIREPP_VERSION}")
 
 option(SAPPHIRE "Compile Sapphire++" ON )
 option(VFP "Build with VFP module" ON)
