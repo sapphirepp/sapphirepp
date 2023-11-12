@@ -6,35 +6,43 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(DEAL_II_MIN_VERSION "9.4.0") #TODO: check if this is the correct version
 set(DOXYGEN_MIN_VERSION "1.8.0") #TODO: check if this is the correct version
 
+file(READ ${CMAKE_SOURCE_DIR}/VERSION PROJECT_VERSION)
+message("Sapphire++ version ${PROJECT_VERSION}")
+
 option(SAPPHIRE "Compile Sapphire++" ON )
 option(VFP "Build with VFP module" ON)
 option(EXAMPLES "Build with examples" OFF)
 option(TESTS "Build with tests" OFF)
 option(DOC "Build with documentation" OFF)
 
-project(Sapphire VERSION 1.0.2)
+project(Sapphire VERSION ${PROJECT_VERSION})
 
 if(SAPPHIRE)
-  set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server (e.g. to recognise the include libraries)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server
 
   set(DEAL_II_DIR "~/.local/lib/dealii")
 
 
   find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
-  HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR} )
-  deal_ii_initialize_cached_variables() # CMAKE_BUILD_TYPE is set to the whatever dealII was built with
+               HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR})
+
+  deal_ii_initialize_cached_variables()
   file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
+
+  configure_file(${PROJECT_SOURCE_DIR}/include/sapphirepp/version.h.in
+                 ${PROJECT_BINARY_DIR}/include/sapphirepp/version.h @ONLY)
 
   add_subdirectory(src/utils)
 
   if(VFP)
-    # The VFP source files have to be compiled together with the main/config file
+    # VFP source files have to be compiled together with the main/config file
     file(GLOB VFP_SOURCES src/vfp/*.cpp)
 
-    file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
+    file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
     add_executable(sapphire sapphire.cpp ${VFP_SOURCES})
     deal_ii_setup_target(sapphire)
-    target_include_directories(sapphire PUBLIC ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+    target_include_directories(sapphire PUBLIC
+                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
     target_include_directories(sapphire PUBLIC ${CONFIG_HEADER_DIR})
     target_link_libraries(sapphire UtilsLib)
   endif(VFP)
