@@ -27,8 +27,8 @@
  * @date 2023-07-17
  */
 
-#ifndef SAPPHIREUTISL_SAPPHIRELOGSTREAM_H
-#define SAPPHIREUTISL_SAPPHIRELOGSTREAM_H
+#ifndef UTILS_SAPPHIREPPLOGSTREAM_H
+#define UTILS_SAPPHIREPPLOGSTREAM_H
 
 #include <deal.II/base/logstream.h>
 
@@ -39,14 +39,14 @@ namespace Sapphire
   namespace Utils
   {
 
-    class SapphireLogStream : public dealii::LogStream
+    class SapphireppLogStream : public dealii::LogStream
     {
     public:
-      SapphireLogStream();
+      SapphireppLogStream();
     };
 
   } // namespace Utils
 
-  extern Sapphire::Utils::SapphireLogStream saplog;
+  extern Sapphire::Utils::SapphireppLogStream saplog;
 } // namespace Sapphire
 #endif

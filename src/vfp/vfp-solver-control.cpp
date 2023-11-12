@@ -27,7 +27,7 @@
 #include <filesystem>
 #include <sstream>
 
-#include "sapphire-logstream.h"
+#include "sapphirepp-logstream.h"
 
 template <int dim>
 Sapphire::VFP::VFPSolverControl<dim>::VFPSolverControl()

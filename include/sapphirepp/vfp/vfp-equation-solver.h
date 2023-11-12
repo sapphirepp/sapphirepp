@@ -95,7 +95,7 @@
 #include "output-module.h"
 #include "particle-functions.h"
 #include "pde-system.h"
-#include "sapphire-logstream.h"
+#include "sapphirepp-logstream.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-solver-control.h"

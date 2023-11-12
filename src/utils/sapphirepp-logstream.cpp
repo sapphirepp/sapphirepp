@@ -19,13 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "sapphire-logstream.h"
+#include "sapphirepp-logstream.h"
 
 #include <iostream>
 
-Sapphire::Utils::SapphireLogStream Sapphire::saplog;
+Sapphire::Utils::SapphireppLogStream Sapphire::saplog;
 
-Sapphire::Utils::SapphireLogStream::SapphireLogStream()
+Sapphire::Utils::SapphireppLogStream::SapphireppLogStream()
   : dealii::LogStream()
 {
   pop();

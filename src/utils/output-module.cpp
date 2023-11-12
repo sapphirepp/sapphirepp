@@ -26,7 +26,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "sapphire-logstream.h"
+#include "sapphirepp-logstream.h"
 
 template <int dim>
 Sapphire::Utils::OutputModule<dim>::OutputModule()

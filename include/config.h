@@ -34,7 +34,7 @@
 #include <ostream>
 #include <vector>
 
-#include "sapphire-logstream.h"
+#include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
 
 namespace Sapphire

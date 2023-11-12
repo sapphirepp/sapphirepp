@@ -36,7 +36,7 @@
 #  include <vector>
 
 #  include "pde-system.h"
-#  include "sapphire-logstream.h"
+#  include "sapphirepp-logstream.h"
 #  include "vfp-flags.h"
 /// [Includes]
 
