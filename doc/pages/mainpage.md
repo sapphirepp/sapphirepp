@@ -110,7 +110,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 Developers are advised to use the following options:
 
 ```shell
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -DCMAKE_CXX_FLAGS="-Werror"
 ```
 
 To run sapphire, use:

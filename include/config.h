@@ -174,6 +174,7 @@ namespace Sapphire
                dealii::ExcDimensionMismatch(scattering_frequencies.size(),
                                             points.size()));
         static_cast<void>(component);
+        static_cast<void>(points);
         // EXAMPLES:
         // Constant scattering frequency
         std::fill(scattering_frequencies.begin(),
@@ -318,6 +319,7 @@ namespace Sapphire
       {
         Assert(divergence.size() == points.size(),
                dealii::ExcDimensionMismatch(divergence.size(), points.size()));
+        static_cast<void>(points); // suppress compiler warning
         // EXAMPLES:
         // constant velocity
         std::fill(divergence.begin(), divergence.end(), 0.);

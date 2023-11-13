@@ -160,7 +160,9 @@ namespace Sapphire
         Assert(scattering_frequencies.size() == points.size(),
                dealii::ExcDimensionMismatch(scattering_frequencies.size(),
                                             points.size()));
-        static_cast<void>(component); // suppress compiler warning
+        // suppress compiler warning
+        static_cast<void>(component);
+        static_cast<void>(points);
 
         std::fill(scattering_frequencies.begin(),
                   scattering_frequencies.end(),
@@ -252,6 +254,7 @@ namespace Sapphire
       {
         Assert(divergence.size() == points.size(),
                dealii::ExcDimensionMismatch(divergence.size(), points.size()));
+        static_cast<void>(points); // suppress compiler warning
 
         // zero velocity
         std::fill(divergence.begin(), divergence.end(), 0.);
