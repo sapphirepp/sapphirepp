@@ -982,38 +982,39 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_face_v.get_fe().system_to_component_index(j).first;
-                if constexpr ((vfp_flags & VFPFlags::spatial_advection) !=
-                              VFPFlags::none)
+
+                // TODO: Removed constexpr check - why was it here?
+                // if constexpr ((vfp_flags & VFPFlags::spatial_advection) !=
+                //               VFPFlags::none)
+
+                // TODO: Check naming of BC
+                switch (boundary_condition)
                   {
-                    // TODO: Check naming of BC
-                    switch (boundary_condition)
+                    case BoundaryConditions::continuous_gradients:
                       {
-                        case BoundaryConditions::continuous_gradients:
-                          {
-                            copy_data.cell_matrix(i, j) +=
-                              fe_face_v.shape_value(i, q_index) *
-                              positive_flux_matrices[q_index](component_i,
-                                                              component_j) *
-                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                            copy_data.cell_matrix(i, j) +=
-                              fe_face_v.shape_value(i, q_index) *
-                              negative_flux_matrices[q_index](component_i,
-                                                              component_j) *
-                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                            break;
-                          }
-                        case BoundaryConditions::zero_inflow:
-                          {
-                            copy_data.cell_matrix(i, j) +=
-                              fe_face_v.shape_value(i, q_index) *
-                              positive_flux_matrices[q_index](component_i,
-                                                              component_j) *
-                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                            break;
-                          }
-                        default:
-                          Assert(false, ExcNotImplemented());
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          positive_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          negative_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        break;
                       }
+                    case BoundaryConditions::zero_inflow:
+                      {
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          positive_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        break;
+                      }
+                    default:
+                      Assert(false, ExcNotImplemented());
                   }
               }
           }
