@@ -30,7 +30,8 @@
 
 template <int dim>
 Sapphire::Utils::OutputModule<dim>::OutputModule()
-  : mpi_communicator(MPI_COMM_WORLD){};
+  : mpi_communicator(MPI_COMM_WORLD)
+{}
 
 template <int dim>
 void
