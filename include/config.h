@@ -53,7 +53,7 @@ namespace Sapphire
       prm.enter_subsection("Physical properties");
 
       prm.leave_subsection();
-    };
+    }
 
     void
     parse_parameters(dealii::ParameterHandler &prm)
@@ -64,7 +64,7 @@ namespace Sapphire
       prm.enter_subsection("Physical properties");
 
       prm.leave_subsection();
-    };
+    }
   };
 
 

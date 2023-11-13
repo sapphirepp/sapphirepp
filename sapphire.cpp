@@ -56,7 +56,7 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+      unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
       saplog << "Start sapphire with parameter file \"" << parameter_filename
              << "\" on " << mpi_size << " processor(s) ["
              << Utilities::System::get_date() << " "

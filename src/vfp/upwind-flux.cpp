@@ -436,7 +436,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
     operator()()
     {
       return m_uniform_dist(m_re);
-    };
+    }
     void
     seed(unsigned int s)
     {

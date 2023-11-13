@@ -68,7 +68,7 @@ namespace Sapphire
                         "Spread of the initial distribution");
 
       prm.leave_subsection();
-    };
+    }
 
     void
     parse_parameters(dealii::ParameterHandler &prm)
@@ -81,7 +81,7 @@ namespace Sapphire
       sigma = prm.get_double("sigma");
 
       prm.leave_subsection();
-    };
+    }
 
     double B0;
     double sigma;

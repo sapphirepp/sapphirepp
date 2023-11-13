@@ -69,7 +69,7 @@ namespace Sapphire
                         "Initial value of the expansion coefficients");
 
       prm.leave_subsection();
-    };
+    }
     /// [Declare parameters]
 
     /// [Parse parameters]
@@ -85,7 +85,7 @@ namespace Sapphire
       f0 = prm.get_double("f0");
 
       prm.leave_subsection();
-    };
+    }
     /// [Parse parameters]
 
     /// [Define parameters]
