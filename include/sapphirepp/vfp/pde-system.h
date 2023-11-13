@@ -35,7 +35,7 @@ namespace Sapphire
     class PDESystem
     {
     public:
-      PDESystem(int l);
+      PDESystem(unsigned int expansion_order);
       // get functions
       // matrices
       const std::vector<dealii::LAPACKFullMatrix<double>> &
@@ -54,7 +54,7 @@ namespace Sapphire
       const std::vector<std::array<unsigned int, 3>> &
       get_lms_indices() const;
       static void
-      create_lms_indices(int                                       l,
+      create_lms_indices(unsigned int expansion_order,
                          std::vector<std::array<unsigned int, 3>> &lms_indices);
 
       // returns the size of the system
@@ -99,7 +99,7 @@ namespace Sapphire
       shrink_matrices();
 
       // PDE System data
-      int          expansion_order; // Order of the spherical harmonic expansion
+      unsigned int expansion_order; // Order of the spherical harmonic expansion
       unsigned int system_sz;       // size of system , i.e. of the quadaratic
                                     // matrices
       // Advection matrices
