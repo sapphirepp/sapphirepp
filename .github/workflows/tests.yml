@@ -1,0 +1,48 @@
+name: GitHub CI
+
+on:
+  push:
+    branches:
+        - main
+        - devel
+  pull_request:
+    branches:
+        - main
+        - devel
+#   schedule:
+#   - cron:  '0 0 * * *'
+    
+env:
+  COMPILE_JOBS: 2
+
+jobs:
+  build:
+    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: ["Release", "Debug"]
+        dealii_version: ["master"]
+    
+    container:
+      image: dealii/dealii:${{ matrix.dealii_version }}-focal
+      options: --user root
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Compile
+        run: |
+          mkdir build
+          cd build
+          cmake ../ -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DSAPPHIRE=On -DVFP=ON -DEXAMPLES=ON -DTESTS=ON
+          make -j${{ env.COMPILE_JOBS }}
+          
+      - name: Test
+        run: |
+          export OMPI_ALLOW_RUN_AS_ROOT=1
+          export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+          cd build
+          ctest -V -L fast
