@@ -1055,8 +1055,9 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @PROJECT_SOURCE_DIR@/examples \
-		                 @PROJECT_SOURCE_DIR@/tests \
-		        	     @PROJECT_SOURCE_DIR@/README.md
+		       	 @PROJECT_SOURCE_DIR@/tests \
+		         @PROJECT_SOURCE_DIR@/README.md \
+			 @PROJECT_SOURCE_DIR@/CONTRIBUTING.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1145,7 +1146,8 @@ INPUT_FILTER           =
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
 
-FILTER_PATTERNS        = *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
+FILTER_PATTERNS        = */doc/pages/contributing.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CONTRIBUTING.md" \
+		         *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using
 # INPUT_FILTER) will also be used to filter the input files that are used for
