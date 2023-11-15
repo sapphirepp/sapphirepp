@@ -1,4 +1,4 @@
-# Contributing to Sapphire++
+# Contributing
 
 Sapphire++ aims to become a community project with use cases and members from a
 wide range of research fields. It is our goal to build an inclusive and
@@ -43,13 +43,16 @@ if you are not sure what to do.
 
 Since Sapphire++ builds heavily on the [deal.II](https://www.dealii.org) library
 for finite elements, we recommand to familiarize yourself with the
-[deal.II tutorials](https://www.dealii.org). However, Sapphire++ is build such
-that you can use it without knowledge of [deal.II](https://www.dealii.org). If
-you want to contribute new use cases or examples on a top level, you may skip
-this step.
+[deal.II tutorials](https://www.dealii.org/current/doxygen/deal.II/Tutorial.html)
+or the
+[deal.II lectures](https://www.math.colostate.edu/~bangerth/videos.html).
+However, Sapphire++ is build such that you can use it without knowledge of
+[deal.II](https://www.dealii.org). If you want to contribute new use cases or
+examples on a top level, you may skip this step.
 
-To keep the style of the source code consistent we use a set of [coding
-conventions](LINK). This convention essentially consists of following the
+To keep the style of the source code consistent we use a set of
+[coding conventions](https://sapphirepp.org/latest/coding-convetions.html).
+This convention essentially follows the
 [deal.II coding conventions](https://www.dealii.org/developer/doxygen/deal.II/CodingConventions.html)
 by using `clang-format` for indentation, camel case for classes, and lower case
 letters with underscores for everything else. If you are new to the project then

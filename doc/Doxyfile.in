@@ -954,6 +954,7 @@ WARN_LOGFILE           =
 
 INPUT                  = @PROJECT_SOURCE_DIR@/doc/pages/mainpage.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/examples.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/contributing.md \
                          @PROJECT_SOURCE_DIR@
 
 # This tag can be used to specify the character encoding of the source files
@@ -1055,9 +1056,9 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @PROJECT_SOURCE_DIR@/examples \
-		       	 @PROJECT_SOURCE_DIR@/tests \
-		         @PROJECT_SOURCE_DIR@/README.md \
-			 @PROJECT_SOURCE_DIR@/CONTRIBUTING.md
+		       	         @PROJECT_SOURCE_DIR@/tests \
+			             @PROJECT_SOURCE_DIR@/CONTRIBUTING.md \
+		                 @PROJECT_SOURCE_DIR@/README.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

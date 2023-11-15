@@ -1,9 +1,9 @@
+<!-- The add-contributions-md.sh script adds the CONTRIBUTING.md file here -->
+
 @tableofcontents
 
 
-## Coding style
+### Coding style
 
-Here is a description of what we have to take care of
-
-
+Our coding conventions are can be found here:
 @subpage coding-conventions
