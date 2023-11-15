@@ -80,8 +80,8 @@ We again start with some includes and open the namespace @ref Sapphire.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Includes
 
-Next, we define the runtime parameters in the @ref Sapphire::PhysicalProperties
-"PhysicalProperties" class. We need the magnetic field strength $B_0$, and the
+Next, we define the runtime parameters in the @ref Sapphire::PhysicalParameters
+"PhysicalParameters" class. We need the magnetic field strength $B_0$, and the
 initial spread of the distribution function $\sigma$. The mass $m$, charge $q$
 and velocity/gamma factor $\gamma$ of the particles are already implemented as
 runtime parameters in the class @vfpref{VFPParameters}. Notice, that instead
@@ -90,7 +90,7 @@ of $B_0$ we use $\frac{B_0}{2 \pi}$ as an input parameter. This is, so that
 =1$).
 
 
-@snippet{lineno} examples/gyro-motion-f0/config.h PhysicalProperties
+@snippet{lineno} examples/gyro-motion-f0/config.h PhysicalParameters
 
 The rest of the set-up is again collected in the namespace @ref Sapphire::VFP
 "VFP".
@@ -127,7 +127,7 @@ before we set only the isotropic component $f_0$ to a Gaussian distribution.
 The $B$-field is defined in the @vfpref{MagneticField} function. It has three
 components, $x$, $y$, $z$, even if the dimension of the problem is only 2D.
 Again, the run time parameter `B0` is provided by the @ref
-Sapphire::PhysicalProperties "PhysicalProperties" class and set in the
+Sapphire::PhysicalParameters "PhysicalParameters" class and set in the
 constructor.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h MagneticField constructor

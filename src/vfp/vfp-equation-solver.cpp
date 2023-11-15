@@ -143,10 +143,10 @@ namespace Sapphire
 template <int dim>
 Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
   const VFPParameters<dim_ps>           &vfp_parameters,
-  const PhysicalProperties              &physical_properties,
+  const PhysicalParameters              &physical_parameters,
   const Utils::OutputParameters<dim_ps> &output_parameters)
   : vfp_parameters(vfp_parameters)
-  , physical_properties(physical_properties)
+  , physical_parameters(physical_parameters)
   , mpi_communicator(MPI_COMM_WORLD)
   , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , rank(Utilities::MPI::this_mpi_process(mpi_communicator))
@@ -161,7 +161,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pde_system(vfp_parameters.expansion_order)
-  , upwind_flux(pde_system, vfp_parameters, physical_properties)
+  , upwind_flux(pde_system, vfp_parameters, physical_parameters)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
@@ -203,7 +203,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::run()
     assemble_mass_matrix();
 
     // Project the initial values
-    InitialValueFunction<dim_ps> initial_value_function(physical_properties,
+    InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
                                                         expansion_order);
     PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
                                                  mpi_communicator);
@@ -220,7 +220,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::run()
     // Source term at t = 0;
     if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
       {
-        Source<dim_ps> source_function(physical_properties, expansion_order);
+        Source<dim_ps> source_function(physical_parameters, expansion_order);
         source_function.set_time(0);
         compute_source_term(source_function);
       }
@@ -486,11 +486,11 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
   const Vector<double> &collision_matrix = pde_system.get_collision_matrix();
 
   BackgroundVelocityField<dim_ps> background_velocity_field(
-    physical_properties);
+    physical_parameters);
   background_velocity_field.set_time(time);
-  MagneticField<dim_ps> magnetic_field(physical_properties);
+  MagneticField<dim_ps> magnetic_field(physical_parameters);
   magnetic_field.set_time(time);
-  ScatteringFrequency<dim_ps> scattering_frequency(physical_properties);
+  ScatteringFrequency<dim_ps> scattering_frequency(physical_parameters);
   scattering_frequency.set_time(time);
 
   ParticleVelocity<dim_ps, logarithmic_p> particle_velocity(
@@ -1338,7 +1338,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::theta_method(const double time,
         {
           system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
           // Update the source term
-          Source<dim_ps> source_function(physical_properties, expansion_order);
+          Source<dim_ps> source_function(physical_parameters, expansion_order);
           source_function.set_time(time + time_step);
           compute_source_term(source_function);
           system_rhs.add(theta * time_step, locally_owned_current_source);
@@ -1454,7 +1454,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
-          Source<dim_ps> source_function(physical_properties, expansion_order);
+          Source<dim_ps> source_function(physical_parameters, expansion_order);
           source_function.set_time(time + c[1] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1483,7 +1483,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
-          Source<dim_ps> source_function(physical_properties, expansion_order);
+          Source<dim_ps> source_function(physical_parameters, expansion_order);
           source_function.set_time(time + c[2] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1518,7 +1518,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::explicit_runge_kutta(
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
-          Source<dim_ps> source_function(physical_properties, expansion_order);
+          Source<dim_ps> source_function(physical_parameters, expansion_order);
           source_function.set_time(time + c[3] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1603,7 +1603,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::low_storage_explicit_runge_kutta(
           if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                         VFPFlags::none) // time dependent source
             {
-              Source<dim_ps> source_function(physical_properties,
+              Source<dim_ps> source_function(physical_parameters,
                                              expansion_order);
               source_function.set_time(time + c[s] * time_step);
               compute_source_term(source_function);

@@ -7,7 +7,7 @@ subsection Output
   set Results folder               = results
   set Simulation identifier        = gyro_test
 end
-subsection Physical properties
+subsection Physical parameters
 end
 subsection VFP
   subsection Expansion
@@ -43,7 +43,7 @@ subsection VFP
     set Gamma = 2.
   end
 end
-subsection Physical properties
+subsection Physical parameters
   set B0/2pi = 1.
   set sigma  = 1.
 end

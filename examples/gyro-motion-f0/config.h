@@ -44,19 +44,19 @@
 namespace Sapphire
 {
   /// [Includes]
-  /// [PhysicalProperties]
-  class PhysicalProperties
+  /// [PhysicalParameters]
+  class PhysicalParameters
   {
   public:
-    PhysicalProperties() = default;
+    PhysicalParameters() = default;
 
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
       dealii::LogStream::Prefix pre1("Startup", saplog);
-      dealii::LogStream::Prefix pre2("Physical properties", saplog);
+      dealii::LogStream::Prefix pre2("Physical parameters", saplog);
       saplog << "Declaring parameters" << std::endl;
-      prm.enter_subsection("Physical properties");
+      prm.enter_subsection("Physical parameters");
 
       prm.declare_entry("B0/2pi",
                         "1.",
@@ -74,9 +74,9 @@ namespace Sapphire
     parse_parameters(dealii::ParameterHandler &prm)
     {
       dealii::LogStream::Prefix pre1("Startup", saplog);
-      dealii::LogStream::Prefix pre2("PhysicalProperties", saplog);
+      dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
-      prm.enter_subsection("Physical properties");
+      prm.enter_subsection("Physical parameters");
       B0    = prm.get_double("B0/2pi") * 2. * M_PI;
       sigma = prm.get_double("sigma");
 
@@ -86,7 +86,7 @@ namespace Sapphire
     double B0;
     double sigma;
   };
-  /// [PhysicalProperties]
+  /// [PhysicalParameters]
   /// [Namespace VFP]
   namespace VFP
   {
@@ -106,10 +106,10 @@ namespace Sapphire
     class InitialValueFunction : public dealii::Function<dim>
     {
     public:
-      InitialValueFunction(const PhysicalProperties &physical_properties,
+      InitialValueFunction(const PhysicalParameters &physical_parameters,
                            int                       exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-        , sigma(physical_properties.sigma)
+        , sigma(physical_parameters.sigma)
       {}
       /// [InitialValueFunction constructor]
 
@@ -135,9 +135,9 @@ namespace Sapphire
     class MagneticField : public dealii::Function<dim>
     {
     public:
-      MagneticField(const PhysicalProperties &physical_properties)
+      MagneticField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
-        , B0(physical_properties.B0)
+        , B0(physical_parameters.B0)
       {}
       /// [MagneticField constructor]
 
@@ -164,10 +164,10 @@ namespace Sapphire
     class BackgroundVelocityField : public dealii::Function<dim>
     {
     public:
-      BackgroundVelocityField(const PhysicalProperties &physical_properties)
+      BackgroundVelocityField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
       {
-        static_cast<void>(physical_properties); // suppress compiler warning
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
       void
@@ -248,10 +248,10 @@ namespace Sapphire
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
-      ScatteringFrequency(const PhysicalProperties &physical_properties)
+      ScatteringFrequency(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(1)
       {
-        static_cast<void>(physical_properties); // suppress compiler warning
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
       void
@@ -272,11 +272,11 @@ namespace Sapphire
     class Source : public dealii::Function<dim>
     {
     public:
-      Source(const PhysicalProperties &physical_properties,
+      Source(const PhysicalParameters &physical_parameters,
              unsigned int              exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
       {
-        static_cast<void>(physical_properties); // suppress compiler warning
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
       void

@@ -60,22 +60,22 @@ main(int argc, char *argv[])
       dealii::Timer                      timer;
       ParameterHandler                   prm;
       VFPParameters<dimension>           vfp_parameters;
-      PhysicalProperties                 physical_properties;
+      PhysicalParameters                 physical_parameters;
       Utils::OutputParameters<dimension> output_parameters;
 
       vfp_parameters.declare_parameters(prm);
-      physical_properties.declare_parameters(prm);
+      physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
 
       prm.parse_input(parameter_filename);
 
       vfp_parameters.parse_parameters(prm);
-      physical_properties.parse_parameters(prm);
+      physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
 
       timer.start();
       VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
-                                                       physical_properties,
+                                                       physical_parameters,
                                                        output_parameters);
       vfp_equation_solver.run();
       timer.stop();
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
       // Assume that the final time is a multiple of the gyroperiod
       const double gyroperiod =
         2. * M_PI * vfp_parameters.gamma * vfp_parameters.mass /
-        (physical_properties.B0 * vfp_parameters.charge);
+        (physical_parameters.B0 * vfp_parameters.charge);
       AssertThrow(std::fmod(vfp_parameters.final_time, gyroperiod) == 0.,
                   dealii::ExcMessage(
                     "Final time is not a multiple of the gyroperiod.\n\t" +
@@ -92,7 +92,7 @@ main(int argc, char *argv[])
 
 
       InitialValueFunction<dimension> initial_condition(
-        physical_properties, vfp_parameters.expansion_order);
+        physical_parameters, vfp_parameters.expansion_order);
 
       const ComponentSelectFunction<dimension> mask(
         0,

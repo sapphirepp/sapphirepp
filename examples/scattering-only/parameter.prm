@@ -20,8 +20,8 @@ subsection Output
   set Simulation identifier        = scattering-only
 end
 
-# Next, we set the parameters defined in "PhysicalProperties".
-subsection Physical properties
+# Next, we set the parameters defined in "PhysicalParameters".
+subsection Physical parameters
   set f0 = 1.
   set nu = 0.1
 end

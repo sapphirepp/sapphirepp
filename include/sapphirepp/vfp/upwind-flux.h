@@ -50,7 +50,7 @@ namespace Sapphire
     public:
       UpwindFlux(const PDESystem          &system,
                  const VFPParameters<dim> &solver_control,
-                 const PhysicalProperties &physical_properties);
+                 const PhysicalParameters &physical_parameters);
       void
       set_time(double time);
       void

@@ -4,7 +4,7 @@ subsection Output
   set Output frequency             = 1
 end
 
-subsection Physical properties
+subsection Physical parameters
   set f0 = 1.
   set nu = 0.1
 end

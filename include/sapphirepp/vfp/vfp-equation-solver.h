@@ -122,7 +122,7 @@ namespace Sapphire
     public:
       VFPEquationSolver(
         const VFPParameters<dim_ps>           &vfp_parameters,
-        const PhysicalProperties              &physical_properties,
+        const PhysicalParameters              &physical_parameters,
         const Utils::OutputParameters<dim_ps> &output_parameters);
       void
       run();
@@ -139,7 +139,7 @@ namespace Sapphire
 
     private:
       const VFPParameters<dim_ps> vfp_parameters;
-      const PhysicalProperties    physical_properties;
+      const PhysicalParameters    physical_parameters;
 
       // Triangulation
       void

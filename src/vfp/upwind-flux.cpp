@@ -39,7 +39,7 @@ template <int dim, bool has_momentum, bool logarithmic_p>
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   const PDESystem          &system,
   const VFPParameters<dim> &solver_control,
-  const PhysicalProperties &physical_properties)
+  const PhysicalParameters &physical_parameters)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))
@@ -53,7 +53,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   , eigenvectors_advection_matrices(3,
                                     std::vector<double>(matrix_size *
                                                         matrix_size))
-  , background_velocity_field(physical_properties)
+  , background_velocity_field(physical_parameters)
   , particle_velocity_func(solver_control.mass)
   , particle_gamma_func(solver_control.mass)
   , mass(solver_control.mass)

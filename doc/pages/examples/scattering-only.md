@@ -109,10 +109,10 @@ Everything implemented in @sapphire is part of the namespace @ref Sapphire.
 
 Often we parametrize the physical setup with some runtime parameter. Since it is
 set up dependent what these parameters are, they have to be specified by the
-user. The @vfpref{PhysicalProperties} class allows for this. It uses the @dealii
+user. The @vfpref{PhysicalParameters} class allows for this. It uses the @dealii
 concept of a @dealref{ParameterHandler}.
 
-The @vfpref{PhysicalProperties} class consists of **public** variables for the
+The @vfpref{PhysicalParameters} class consists of **public** variables for the
 user defined runtime parameter, a default constructor and two functions to
 **declare** and **parse** the parameter from the parameter file. In this
 example, we have two parameters that we want to specify, the scattering
@@ -120,11 +120,11 @@ frequency $\nu$ and the initial value of the expansion coefficients,
 $f_{lms,0}$. We will call these parameters `nu` and `f0` respectively, assuming
 all expansion coefficients have the same initial value.
 
-@snippet{lineno} examples/scattering-only/config.h PhysicalProperties
+@snippet{lineno} examples/scattering-only/config.h PhysicalParameters
 
-The @ref Sapphire::PhysicalProperties::declare_parameters "declare_parameters()"
+The @ref Sapphire::PhysicalParameters::declare_parameters "declare_parameters()"
 function is using the @dealref{ParameterHandler} class to declare parameter in
-the parameter file. We sort all parameter in a subsection "Physical properties".
+the parameter file. We sort all parameter in a subsection "Physical parameters".
 In addition, we write a message to the custom @ref
 Sapphire::Utils::SapphireLogStream "SapphireLogStream" `saplog`. The
 @dealref{LogStream::Prefix,classLogStream_1_1Prefix} ensures, that the message
