@@ -51,7 +51,7 @@ However, Sapphire++ is build such that you can use it without knowledge of
 examples on a top level, you may skip this step.
 
 To keep the style of the source code consistent we use a set of
-[coding conventions](https://sapphirepp.org/latest/coding-convetions.html).
+[coding conventions](https://sapphirepp.org/latest/coding-conventions.html).
 This convention essentially follows the
 [deal.II coding conventions](https://www.dealii.org/developer/doxygen/deal.II/CodingConventions.html)
 by using `clang-format` for indentation, camel case for classes, and lower case

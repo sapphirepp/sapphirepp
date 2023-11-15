@@ -16,7 +16,7 @@ things become clear already by looking at the style a piece of code is written,
 without having to look up the exact definition of something.
 
 These coding conventions are based on the
-[deal.II coding conventions](https://www.dealii.org/developer/doxygen/deal.II/coding_conventions.html)
+[deal.II coding conventions](https://www.dealii.org/developer/doxygen/deal.II/CodingConventions.html)
 with only a few modifications.
 
 @note These coding conventions are to be understood as goal. You may find, that
