@@ -20,15 +20,15 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file output_module.h
+ * @file output_parameters.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define OutputModule class
+ * @brief Define OutputParameters class
  * @version 0.1
  * @date 2023-07-17
  */
 
-#ifndef UTILS_OUTPUTMODULE_H
-#define UTILS_OUTPUTMODULE_H
+#ifndef UTILS_OUTPUTPARAMETERS_H
+#define UTILS_OUTPUTPARAMETERS_H
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
@@ -53,10 +53,10 @@ namespace Sapphire
     };
 
     template <int dim>
-    class OutputModule
+    class OutputParameters
     {
     public:
-      OutputModule();
+      OutputParameters();
 
       void
       declare_parameters(ParameterHandler &prm);

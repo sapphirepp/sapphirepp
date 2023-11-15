@@ -25,7 +25,7 @@
 #include <mpi.h>
 
 #include "config.h"
-#include "output-module.h"
+#include "output-parameters.h"
 #include "vfp-equation-solver.h"
 /// [Includes]
 
@@ -59,29 +59,29 @@ main(int argc, char *argv[])
       /// [Command line argument]
 
       /// [Run time parameters]
-      ParameterHandler               prm;
-      VFPParameters<dimension>       vfp_parameters;
-      PhysicalProperties             physical_properties;
-      Utils::OutputModule<dimension> output_module;
+      ParameterHandler                   prm;
+      VFPParameters<dimension>           vfp_parameters;
+      PhysicalProperties                 physical_properties;
+      Utils::OutputParameters<dimension> output_parameters;
       /// [Run time parameters]
 
       /// [Declare parameters]
       vfp_parameters.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
-      output_module.declare_parameters(prm);
+      output_parameters.declare_parameters(prm);
       /// [Declare parameters]
       /// [Parse parameters]
       prm.parse_input(parameter_filename);
 
       vfp_parameters.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
-      output_module.parse_parameters(prm);
+      output_parameters.parse_parameters(prm);
       /// [Parse parameters]
 
       /// [VFP Solver]
       VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
                                                        physical_properties,
-                                                       output_module);
+                                                       output_parameters);
       vfp_equation_solver.run();
       /// [VFP Solver]
 

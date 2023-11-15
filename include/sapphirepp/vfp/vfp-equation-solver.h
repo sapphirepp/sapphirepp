@@ -92,7 +92,7 @@
 #include <vector>
 
 #include "config.h"
-#include "output-module.h"
+#include "output-parameters.h"
 #include "particle-functions.h"
 #include "pde-system.h"
 #include "sapphirepp-logstream.h"
@@ -120,9 +120,10 @@ namespace Sapphire
       static constexpr int dim_cs = dim - momentum;
 
     public:
-      VFPEquationSolver(const VFPParameters<dim_ps>       &vfp_parameters,
-                        const PhysicalProperties          &physical_properties,
-                        const Utils::OutputModule<dim_ps> &output_module);
+      VFPEquationSolver(
+        const VFPParameters<dim_ps>           &vfp_parameters,
+        const PhysicalProperties              &physical_properties,
+        const Utils::OutputParameters<dim_ps> &output_parameters);
       void
       run();
 
@@ -175,8 +176,8 @@ namespace Sapphire
       const unsigned int n_mpi_procs;
       const unsigned int rank;
 
-      ConditionalOStream          pcout;
-      Utils::OutputModule<dim_ps> output_module;
+      ConditionalOStream              pcout;
+      Utils::OutputParameters<dim_ps> output_parameters;
 
       // NOTE: parallel::distributed:Triangulation does not allow 1D. This
       // excludes the 1D transport (i.e. no momentum terms) only case. But I

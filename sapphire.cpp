@@ -23,7 +23,7 @@
 
 #include <mpi.h>
 
-#include "output-module.h"
+#include "output-parameters.h"
 #include "vfp-equation-solver.h"
 
 // Deactivating the spatial advection term is equivalent to assuming a
@@ -63,14 +63,14 @@ main(int argc, char *argv[])
              << Utilities::System::get_time() << "]" << std::endl;
 
       saplog.push("main");
-      ParameterHandler         prm;
-      VFPParameters<dim>       vfp_parameters;
-      PhysicalProperties       physical_properties;
-      Utils::OutputModule<dim> output_module;
+      ParameterHandler             prm;
+      VFPParameters<dim>           vfp_parameters;
+      PhysicalProperties           physical_properties;
+      Utils::OutputParameters<dim> output_parameters;
 
       vfp_parameters.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
-      output_module.declare_parameters(prm);
+      output_parameters.declare_parameters(prm);
 
       if (mpi_rank == 0)
         {
@@ -83,12 +83,12 @@ main(int argc, char *argv[])
 
       vfp_parameters.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
-      output_module.parse_parameters(prm);
+      output_parameters.parse_parameters(prm);
 
       saplog.pop();
       VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
                                                  physical_properties,
-                                                 output_module);
+                                                 output_parameters);
       vfp_equation_solver.run();
     }
   catch (std::exception &exc)

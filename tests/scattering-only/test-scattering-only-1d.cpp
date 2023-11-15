@@ -24,7 +24,7 @@
 #include <mpi.h>
 
 #include "config.h"
-#include "output-module.h"
+#include "output-parameters.h"
 #include "vfp-equation-solver.h"
 
 
@@ -40,23 +40,23 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
   saplog.push("Tests");
   saplog << "Compute convergence with expansion_order" << std::endl;
 
-  Timer                    timer;
-  ParameterHandler         prm;
-  VFPParameters<dim>       vfp_parameters;
-  PhysicalProperties       physical_properties;
-  Utils::OutputModule<dim> output_module;
+  Timer                        timer;
+  ParameterHandler             prm;
+  VFPParameters<dim>           vfp_parameters;
+  PhysicalProperties           physical_properties;
+  Utils::OutputParameters<dim> output_parameters;
 
   vfp_parameters.declare_parameters(prm);
   physical_properties.declare_parameters(prm);
-  output_module.declare_parameters(prm);
+  output_parameters.declare_parameters(prm);
 
   prm.parse_input(parameter_filename);
 
   vfp_parameters.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
-  output_module.parse_parameters(prm);
+  output_parameters.parse_parameters(prm);
 
-  std::ofstream log_file(output_module.output_path /
+  std::ofstream log_file(output_parameters.output_path /
                            ("convergence_expansion_order.csv"),
                          std::ios::app);
   saplog.attach(log_file, false);
@@ -72,12 +72,12 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
       saplog << "expansion_order"
              << "=" << values[i] << std::endl;
       vfp_parameters.expansion_order = uint(values[i]);
-      output_module.base_file_name =
+      output_parameters.base_file_name =
         "expansion_order_" + dealii::Utilities::to_string(values[i]);
 
       VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
                                                  physical_properties,
-                                                 output_module);
+                                                 output_parameters);
       vfp_equation_solver.run();
       timer.stop();
 
@@ -117,25 +117,25 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
   saplog << "Test run with parameter file \"" << parameter_filename
          << "\" and maximal L2 error of " << max_L2_error << std::endl;
 
-  dealii::Timer            timer;
-  ParameterHandler         prm;
-  VFPParameters<dim>       vfp_parameters;
-  PhysicalProperties       physical_properties;
-  Utils::OutputModule<dim> output_module;
+  dealii::Timer                timer;
+  ParameterHandler             prm;
+  VFPParameters<dim>           vfp_parameters;
+  PhysicalProperties           physical_properties;
+  Utils::OutputParameters<dim> output_parameters;
 
   vfp_parameters.declare_parameters(prm);
   physical_properties.declare_parameters(prm);
-  output_module.declare_parameters(prm);
+  output_parameters.declare_parameters(prm);
   prm.parse_input(parameter_filename);
 
   vfp_parameters.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
-  output_module.parse_parameters(prm);
+  output_parameters.parse_parameters(prm);
 
   timer.start();
   VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
                                              physical_properties,
-                                             output_module);
+                                             output_parameters);
   vfp_equation_solver.run();
   timer.stop();
 

@@ -1,5 +1,5 @@
 add_library(UtilsLib
-  output-module.cpp
+  output-parameters.cpp
   sapphirepp-logstream.cpp)
 deal_ii_setup_target(UtilsLib)
 target_include_directories(UtilsLib PUBLIC

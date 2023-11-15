@@ -27,7 +27,7 @@
 #include <mpi.h>
 
 #include "config.h"
-#include "output-module.h"
+#include "output-parameters.h"
 #include "vfp-equation-solver.h"
 
 int
@@ -57,26 +57,26 @@ main(int argc, char *argv[])
              << parameter_filename << "\" and maximal L2 error of "
              << max_L2_error << std::endl;
 
-      dealii::Timer                  timer;
-      ParameterHandler               prm;
-      VFPParameters<dimension>       vfp_parameters;
-      PhysicalProperties             physical_properties;
-      Utils::OutputModule<dimension> output_module;
+      dealii::Timer                      timer;
+      ParameterHandler                   prm;
+      VFPParameters<dimension>           vfp_parameters;
+      PhysicalProperties                 physical_properties;
+      Utils::OutputParameters<dimension> output_parameters;
 
       vfp_parameters.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
-      output_module.declare_parameters(prm);
+      output_parameters.declare_parameters(prm);
 
       prm.parse_input(parameter_filename);
 
       vfp_parameters.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
-      output_module.parse_parameters(prm);
+      output_parameters.parse_parameters(prm);
 
       timer.start();
       VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
                                                        physical_properties,
-                                                       output_module);
+                                                       output_parameters);
       vfp_equation_solver.run();
       timer.stop();
 

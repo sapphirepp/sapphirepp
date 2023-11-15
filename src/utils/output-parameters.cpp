@@ -19,7 +19,7 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "output-module.h"
+#include "output-parameters.h"
 
 #include <deal.II/grid/grid_out.h>
 
@@ -29,16 +29,17 @@
 #include "sapphirepp-logstream.h"
 
 template <int dim>
-Sapphire::Utils::OutputModule<dim>::OutputModule()
+Sapphire::Utils::OutputParameters<dim>::OutputParameters()
   : mpi_communicator(MPI_COMM_WORLD)
 {}
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::declare_parameters(ParameterHandler &prm)
+Sapphire::Utils::OutputParameters<dim>::declare_parameters(
+  ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("OutputModule", saplog);
+  LogStream::Prefix pre2("OutputParameters", saplog);
   saplog << "Declaring parameters" << std::endl;
 
   prm.enter_subsection("Output");
@@ -80,10 +81,10 @@ Sapphire::Utils::OutputModule<dim>::declare_parameters(ParameterHandler &prm)
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::parse_parameters(ParameterHandler &prm)
+Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("OutputModule", saplog);
+  LogStream::Prefix pre2("OutputParameters", saplog);
   saplog << "Parsing parameters" << std::endl;
   std::string s;
   prm.enter_subsection("Output");
@@ -113,7 +114,7 @@ Sapphire::Utils::OutputModule<dim>::parse_parameters(ParameterHandler &prm)
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::parse_parameters_callback(
+Sapphire::Utils::OutputParameters<dim>::parse_parameters_callback(
   ParameterHandler &prm) const
 {
   // create output directory
@@ -148,13 +149,13 @@ Sapphire::Utils::OutputModule<dim>::parse_parameters_callback(
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::write_results(
+Sapphire::Utils::OutputParameters<dim>::write_results(
   DataOut<dim>      &data_out,
   const unsigned int time_step_number)
 {
   if (time_step_number % output_frequency == 0)
     {
-      LogStream::Prefix p("OutputModule", saplog);
+      LogStream::Prefix p("OutputParameters", saplog);
       saplog << "Writing results at time_step " << time_step_number
              << std::endl;
       const unsigned int counter = time_step_number / output_frequency;
@@ -254,11 +255,11 @@ Sapphire::Utils::OutputModule<dim>::write_results(
 
 template <int dim>
 void
-Sapphire::Utils::OutputModule<dim>::write_grid(
+Sapphire::Utils::OutputParameters<dim>::write_grid(
   const Triangulation<dim> &triangulation,
   const std::string        &filename) const
 {
-  LogStream::Prefix p("OutputModule", saplog);
+  LogStream::Prefix p("OutputParameters", saplog);
   saplog << "Write grid " << filename << std::endl;
 
   GridOutFlags::Ucd ucd_flags;
@@ -272,6 +273,6 @@ Sapphire::Utils::OutputModule<dim>::write_grid(
 }
 
 // explicit instantiation
-template class Sapphire::Utils::OutputModule<1>;
-template class Sapphire::Utils::OutputModule<2>;
-template class Sapphire::Utils::OutputModule<3>;
+template class Sapphire::Utils::OutputParameters<1>;
+template class Sapphire::Utils::OutputParameters<2>;
+template class Sapphire::Utils::OutputParameters<3>;
