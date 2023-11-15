@@ -24,7 +24,7 @@
 #include <mpi.h>
 
 #include "output-parameters.h"
-#include "vfp-equation-solver.h"
+#include "vfp-solver.h"
 
 // Deactivating the spatial advection term is equivalent to assuming a
 // homogeneous distribution function (i.e. a distribution function which
@@ -86,10 +86,10 @@ main(int argc, char *argv[])
       output_parameters.parse_parameters(prm);
 
       saplog.pop();
-      VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
-                                                 physical_parameters,
-                                                 output_parameters);
-      vfp_equation_solver.run();
+      VFPSolver<dim> vfp_solver(vfp_parameters,
+                                physical_parameters,
+                                output_parameters);
+      vfp_solver.run();
     }
   catch (std::exception &exc)
     {

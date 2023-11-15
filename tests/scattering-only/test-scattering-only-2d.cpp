@@ -25,7 +25,7 @@
 
 #include "config.h"
 #include "output-parameters.h"
-#include "vfp-equation-solver.h"
+#include "vfp-solver.h"
 
 
 const unsigned int dim = 2;
@@ -74,10 +74,10 @@ main(int argc, char *argv[])
       output_parameters.parse_parameters(prm);
 
       timer.start();
-      VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
-                                                 physical_parameters,
-                                                 output_parameters);
-      vfp_equation_solver.run();
+      VFPSolver<dim> vfp_solver(vfp_parameters,
+                                physical_parameters,
+                                output_parameters);
+      vfp_solver.run();
       timer.stop();
 
       InitialValueFunction<dim> analytic_solution(
@@ -85,9 +85,9 @@ main(int argc, char *argv[])
       analytic_solution.set_time(vfp_parameters.final_time);
 
       const double L2_error =
-        vfp_equation_solver.compute_global_error(analytic_solution,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::L2_norm);
+        vfp_solver.compute_global_error(analytic_solution,
+                                        VectorTools::L2_norm,
+                                        VectorTools::L2_norm);
 
       saplog << "L2_error = " << L2_error
              << ", CPU/wall time = " << timer.cpu_time() << "/"

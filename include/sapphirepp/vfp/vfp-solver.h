@@ -19,8 +19,8 @@
 //
 // -----------------------------------------------------------------------------
 
-#ifndef VFP_VFPEQUATIONSOLVER_H
-#define VFP_VFPEQUATIONSOLVER_H
+#ifndef VFP_VFPSOLVER_H
+#define VFP_VFPSOLVER_H
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/data_out_base.h>
@@ -109,7 +109,7 @@ namespace Sapphire
     using namespace dealii;
 
     template <int dim>
-    class VFPEquationSolver
+    class VFPSolver
     {
     private:
       static constexpr bool logarithmic_p =
@@ -120,10 +120,9 @@ namespace Sapphire
       static constexpr int dim_cs = dim - momentum;
 
     public:
-      VFPEquationSolver(
-        const VFPParameters<dim_ps>           &vfp_parameters,
-        const PhysicalParameters              &physical_parameters,
-        const Utils::OutputParameters<dim_ps> &output_parameters);
+      VFPSolver(const VFPParameters<dim_ps>           &vfp_parameters,
+                const PhysicalParameters              &physical_parameters,
+                const Utils::OutputParameters<dim_ps> &output_parameters);
       void
       run();
 

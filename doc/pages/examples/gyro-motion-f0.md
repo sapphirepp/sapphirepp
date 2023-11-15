@@ -210,7 +210,7 @@ and parse them from the parameter file.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Parse parameters
 
-Now we can create the @vfpref{VFPEquationSolver} and run the simulation.
+Now we can create the @vfpref{VFPSolver} and run the simulation.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp VFP solver
 

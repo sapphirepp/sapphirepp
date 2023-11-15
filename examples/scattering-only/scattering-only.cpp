@@ -26,7 +26,7 @@
 
 #include "config.h"
 #include "output-parameters.h"
-#include "vfp-equation-solver.h"
+#include "vfp-solver.h"
 /// [Includes]
 
 /// [Main function]
@@ -79,10 +79,10 @@ main(int argc, char *argv[])
       /// [Parse parameters]
 
       /// [VFP Solver]
-      VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
-                                                       physical_parameters,
-                                                       output_parameters);
-      vfp_equation_solver.run();
+      VFPSolver<dimension> vfp_solver(vfp_parameters,
+                                      physical_parameters,
+                                      output_parameters);
+      vfp_solver.run();
       /// [VFP Solver]
 
       /// [L2 error]
@@ -91,9 +91,9 @@ main(int argc, char *argv[])
       analytic_solution.set_time(vfp_parameters.final_time);
 
       const double L2_error =
-        vfp_equation_solver.compute_global_error(analytic_solution,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::L2_norm);
+        vfp_solver.compute_global_error(analytic_solution,
+                                        VectorTools::L2_norm,
+                                        VectorTools::L2_norm);
 
       saplog << "L2 error: " << L2_error << std::endl;
     }

@@ -25,7 +25,7 @@
 
 #include "config.h"
 #include "output-parameters.h"
-#include "vfp-equation-solver.h"
+#include "vfp-solver.h"
 
 
 const unsigned int dim = 1;
@@ -75,10 +75,10 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
       output_parameters.base_file_name =
         "expansion_order_" + dealii::Utilities::to_string(values[i]);
 
-      VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
-                                                 physical_parameters,
-                                                 output_parameters);
-      vfp_equation_solver.run();
+      VFPSolver<dim> vfp_solver(vfp_parameters,
+                                physical_parameters,
+                                output_parameters);
+      vfp_solver.run();
       timer.stop();
 
       InitialValueFunction<dim> analytic_solution(
@@ -86,17 +86,17 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
       analytic_solution.set_time(vfp_parameters.final_time);
 
       const double L2_error =
-        vfp_equation_solver.compute_global_error(analytic_solution,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::L2_norm);
+        vfp_solver.compute_global_error(analytic_solution,
+                                        VectorTools::L2_norm,
+                                        VectorTools::L2_norm);
       const double Linfty_error =
-        vfp_equation_solver.compute_global_error(analytic_solution,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::Linfty_norm);
+        vfp_solver.compute_global_error(analytic_solution,
+                                        VectorTools::L2_norm,
+                                        VectorTools::Linfty_norm);
       saplog.pop();
       saplog << values[i] << "\t" << L2_error << "\t" << Linfty_error << "\t"
              << timer.cpu_time() << "\t" << timer.wall_time() << "\t"
-             << vfp_equation_solver.get_n_dofs() << std::endl;
+             << vfp_solver.get_n_dofs() << std::endl;
       saplog.push("Tests");
     }
 
@@ -133,20 +133,19 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
   output_parameters.parse_parameters(prm);
 
   timer.start();
-  VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
-                                             physical_parameters,
-                                             output_parameters);
-  vfp_equation_solver.run();
+  VFPSolver<dim> vfp_solver(vfp_parameters,
+                            physical_parameters,
+                            output_parameters);
+  vfp_solver.run();
   timer.stop();
 
   InitialValueFunction<dim> analytic_solution(physical_parameters,
                                               vfp_parameters.expansion_order);
   analytic_solution.set_time(vfp_parameters.final_time);
 
-  const double L2_error =
-    vfp_equation_solver.compute_global_error(analytic_solution,
-                                             VectorTools::L2_norm,
-                                             VectorTools::L2_norm);
+  const double L2_error = vfp_solver.compute_global_error(analytic_solution,
+                                                          VectorTools::L2_norm,
+                                                          VectorTools::L2_norm);
 
   saplog << "L2_error = " << L2_error
          << ", CPU/wall time = " << timer.cpu_time() << "/" << timer.wall_time()

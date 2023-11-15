@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include "output-parameters.h"
-#include "vfp-equation-solver.h"
+#include "vfp-solver.h"
 
 int
 main(int argc, char *argv[])
@@ -74,10 +74,10 @@ main(int argc, char *argv[])
       output_parameters.parse_parameters(prm);
 
       timer.start();
-      VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
-                                                       physical_parameters,
-                                                       output_parameters);
-      vfp_equation_solver.run();
+      VFPSolver<dimension> vfp_solver(vfp_parameters,
+                                      physical_parameters,
+                                      output_parameters);
+      vfp_solver.run();
       timer.stop();
 
       // Assume that the final time is a multiple of the gyroperiod
@@ -100,9 +100,9 @@ main(int argc, char *argv[])
           (vfp_parameters.expansion_order + 1));
 
       const double L2_error =
-        vfp_equation_solver.compute_global_error(initial_condition,
-                                                 VectorTools::L2_norm,
-                                                 VectorTools::L2_norm);
+        vfp_solver.compute_global_error(initial_condition,
+                                        VectorTools::L2_norm,
+                                        VectorTools::L2_norm);
 
       saplog << "L2_error = " << L2_error
              << ", CPU/wall time = " << timer.cpu_time() << "/"
