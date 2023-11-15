@@ -98,7 +98,7 @@
 #include "sapphirepp-logstream.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
-#include "vfp-solver-control.h"
+#include "vfp-parameters.h"
 
 
 
@@ -120,7 +120,7 @@ namespace Sapphire
       static constexpr int dim_cs = dim - momentum;
 
     public:
-      VFPEquationSolver(const VFPSolverControl<dim_ps>    &vfp_solver_control,
+      VFPEquationSolver(const VFPParameters<dim_ps>       &vfp_parameters,
                         const PhysicalProperties          &physical_properties,
                         const Utils::OutputModule<dim_ps> &output_module);
       void
@@ -137,8 +137,8 @@ namespace Sapphire
       get_n_dofs() const;
 
     private:
-      const VFPSolverControl<dim_ps> vfp_solver_control;
-      const PhysicalProperties       physical_properties;
+      const VFPParameters<dim_ps> vfp_parameters;
+      const PhysicalProperties    physical_properties;
 
       // Triangulation
       void
@@ -225,7 +225,7 @@ namespace Sapphire
 
       PETScWrappers::MPI::Vector locally_owned_current_source;
 
-      const int          expansion_order = vfp_solver_control.expansion_order;
+      const int          expansion_order      = vfp_parameters.expansion_order;
       const unsigned int num_exp_coefficients = static_cast<unsigned int>(
         (expansion_order + 1) * (expansion_order + 1));
 

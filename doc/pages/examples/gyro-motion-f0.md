@@ -84,7 +84,7 @@ Next, we define the runtime parameters in the @ref Sapphire::PhysicalProperties
 "PhysicalProperties" class. We need the magnetic field strength $B_0$, and the
 initial spread of the distribution function $\sigma$. The mass $m$, charge $q$
 and velocity/gamma factor $\gamma$ of the particles are already implemented as
-runtime parameters in the class @vfpref{VFPSolverControl}. Notice, that instead
+runtime parameters in the class @vfpref{VFPParameters}. Notice, that instead
 of $B_0$ we use $\frac{B_0}{2 \pi}$ as an input parameter. This is, so that
 `Final time = gamma` corresponds to one full gyroperiod $T_g$ (for $m = q = c
 =1$).

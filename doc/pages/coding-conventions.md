@@ -104,7 +104,7 @@ formatting in your IDE.
    They are declared in `declare_parameters()` and parsed in
    `parse_parameters()`. All other functions and classes should only ever get
    `const` access to the `Parameters` classes. Example:
-   @vfpref{VFPSolverControl}.
+   @vfpref{VFPParameters}.
 
 10. If a function has both input and output parameters, usually the input
     parameters shall precede the output parameters, unless there are good

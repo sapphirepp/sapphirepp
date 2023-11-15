@@ -19,8 +19,8 @@
 //
 // -----------------------------------------------------------------------------
 
-#ifndef VFP_VFPSOLVERCONTROL_H
-#define VFP_VFPSOLVERCONTROL_H
+#ifndef VFP_PARAMETERS_H
+#define VFP_PARAMETERS_H
 
 #include <deal.II/base/parameter_handler.h>
 
@@ -38,7 +38,7 @@ namespace Sapphire
     using namespace dealii;
 
     template <int dim>
-    class VFPSolverControl
+    class VFPParameters
     {
     private:
       static constexpr bool momentum =
@@ -47,7 +47,7 @@ namespace Sapphire
       static constexpr int dim_cs = dim - momentum;
 
     public:
-      VFPSolverControl();
+      VFPParameters();
 
       void
       declare_parameters(ParameterHandler &prm);

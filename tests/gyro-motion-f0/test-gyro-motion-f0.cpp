@@ -59,22 +59,22 @@ main(int argc, char *argv[])
 
       dealii::Timer                  timer;
       ParameterHandler               prm;
-      VFPSolverControl<dimension>    vfp_solver_control;
+      VFPParameters<dimension>       vfp_parameters;
       PhysicalProperties             physical_properties;
       Utils::OutputModule<dimension> output_module;
 
-      vfp_solver_control.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
       output_module.declare_parameters(prm);
 
       prm.parse_input(parameter_filename);
 
-      vfp_solver_control.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
 
       timer.start();
-      VFPEquationSolver<dimension> vfp_equation_solver(vfp_solver_control,
+      VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
                                                        physical_properties,
                                                        output_module);
       vfp_equation_solver.run();
@@ -82,23 +82,22 @@ main(int argc, char *argv[])
 
       // Assume that the final time is a multiple of the gyroperiod
       const double gyroperiod =
-        2. * M_PI * vfp_solver_control.gamma * vfp_solver_control.mass /
-        (physical_properties.B0 * vfp_solver_control.charge);
-      AssertThrow(std::fmod(vfp_solver_control.final_time, gyroperiod) == 0.,
+        2. * M_PI * vfp_parameters.gamma * vfp_parameters.mass /
+        (physical_properties.B0 * vfp_parameters.charge);
+      AssertThrow(std::fmod(vfp_parameters.final_time, gyroperiod) == 0.,
                   dealii::ExcMessage(
                     "Final time is not a multiple of the gyroperiod.\n\t" +
-                    dealii::Utilities::to_string(
-                      vfp_solver_control.final_time) +
+                    dealii::Utilities::to_string(vfp_parameters.final_time) +
                     " != n * " + dealii::Utilities::to_string(gyroperiod)));
 
 
       InitialValueFunction<dimension> initial_condition(
-        physical_properties, vfp_solver_control.expansion_order);
+        physical_properties, vfp_parameters.expansion_order);
 
       const ComponentSelectFunction<dimension> mask(
         0,
-        (vfp_solver_control.expansion_order + 1) *
-          (vfp_solver_control.expansion_order + 1));
+        (vfp_parameters.expansion_order + 1) *
+          (vfp_parameters.expansion_order + 1));
 
       const double L2_error =
         vfp_equation_solver.compute_global_error(initial_condition,

@@ -19,7 +19,7 @@
 //
 // -----------------------------------------------------------------------------
 
-#include "vfp-solver-control.h"
+#include "vfp-parameters.h"
 
 #include <deal.II/base/patterns.h>
 
@@ -30,16 +30,16 @@
 #include "sapphirepp-logstream.h"
 
 template <int dim>
-Sapphire::VFP::VFPSolverControl<dim>::VFPSolverControl()
+Sapphire::VFP::VFPParameters<dim>::VFPParameters()
 {}
 
 
 template <int dim>
 void
-Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
+Sapphire::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("VFPSolverControl", saplog);
+  LogStream::Prefix pre2("VFPParameters", saplog);
   saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("VFP");
 
@@ -186,10 +186,10 @@ Sapphire::VFP::VFPSolverControl<dim>::declare_parameters(ParameterHandler &prm)
 
 template <int dim>
 void
-Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
+Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("VFPSolverControl", saplog);
+  LogStream::Prefix pre2("VFPParameters", saplog);
   saplog << "Parsing parameters" << std::endl;
   std::string s;
   prm.enter_subsection("VFP");
@@ -367,6 +367,6 @@ Sapphire::VFP::VFPSolverControl<dim>::parse_parameters(ParameterHandler &prm)
 }
 
 // Explicit instantiation
-template class Sapphire::VFP::VFPSolverControl<1>;
-template class Sapphire::VFP::VFPSolverControl<2>;
-template class Sapphire::VFP::VFPSolverControl<3>;
+template class Sapphire::VFP::VFPParameters<1>;
+template class Sapphire::VFP::VFPParameters<2>;
+template class Sapphire::VFP::VFPParameters<3>;

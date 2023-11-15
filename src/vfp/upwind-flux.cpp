@@ -37,9 +37,9 @@
 
 template <int dim, bool has_momentum, bool logarithmic_p>
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
-  const PDESystem             &system,
-  const VFPSolverControl<dim> &solver_control,
-  const PhysicalProperties    &physical_properties)
+  const PDESystem          &system,
+  const VFPParameters<dim> &solver_control,
+  const PhysicalProperties &physical_properties)
   : pde_system{system}
   , matrix_size{static_cast<int>(pde_system.system_size())}
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))

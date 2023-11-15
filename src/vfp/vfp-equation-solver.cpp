@@ -142,10 +142,10 @@ namespace Sapphire
 
 template <int dim>
 Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
-  const VFPSolverControl<dim_ps>    &vfp_solver_control,
+  const VFPParameters<dim_ps>       &vfp_parameters,
   const PhysicalProperties          &physical_properties,
   const Utils::OutputModule<dim_ps> &output_module)
-  : vfp_solver_control(vfp_solver_control)
+  : vfp_parameters(vfp_parameters)
   , physical_properties(physical_properties)
   , mpi_communicator(MPI_COMM_WORLD)
   , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
@@ -155,13 +155,13 @@ Sapphire::VFP::VFPEquationSolver<dim>::VFPEquationSolver(
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
-  , fe(FE_DGQ<dim_ps>(vfp_solver_control.polynomial_degree),
-       (vfp_solver_control.expansion_order + 1) *
-         (vfp_solver_control.expansion_order + 1))
+  , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree),
+       (vfp_parameters.expansion_order + 1) *
+         (vfp_parameters.expansion_order + 1))
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , pde_system(vfp_solver_control.expansion_order)
-  , upwind_flux(pde_system, vfp_solver_control, physical_properties)
+  , pde_system(vfp_parameters.expansion_order)
+  , upwind_flux(pde_system, vfp_parameters, physical_properties)
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
@@ -227,8 +227,8 @@ Sapphire::VFP::VFPEquationSolver<dim>::run()
   }
 
   DiscreteTime discrete_time(0,
-                             vfp_solver_control.final_time,
-                             vfp_solver_control.time_step);
+                             vfp_parameters.final_time,
+                             vfp_parameters.time_step);
   for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
     {
       saplog << "Time step " << std::setw(4) << std::right
@@ -237,20 +237,18 @@ Sapphire::VFP::VFPEquationSolver<dim>::run()
              << Utilities::System::get_time() << "]" << std::endl;
       // saplog << discrete_time << std::endl;
       // Time stepping method
-      if (vfp_solver_control.time_stepping_method ==
+      if (vfp_parameters.time_stepping_method ==
             TimeSteppingMethod::forward_euler ||
-          vfp_solver_control.time_stepping_method ==
+          vfp_parameters.time_stepping_method ==
             TimeSteppingMethod::backward_euler ||
-          vfp_solver_control.time_stepping_method ==
+          vfp_parameters.time_stepping_method ==
             TimeSteppingMethod::crank_nicolson)
         theta_method(discrete_time.get_current_time(),
                      discrete_time.get_next_step_size());
-      else if (vfp_solver_control.time_stepping_method ==
-               TimeSteppingMethod::erk4)
+      else if (vfp_parameters.time_stepping_method == TimeSteppingMethod::erk4)
         explicit_runge_kutta(discrete_time.get_current_time(),
                              discrete_time.get_next_step_size());
-      else if (vfp_solver_control.time_stepping_method ==
-               TimeSteppingMethod::lserk)
+      else if (vfp_parameters.time_stepping_method == TimeSteppingMethod::lserk)
         low_storage_explicit_runge_kutta(discrete_time.get_current_time(),
                                          discrete_time.get_next_step_size());
 
@@ -270,24 +268,24 @@ Sapphire::VFP::VFPEquationSolver<dim>::make_grid()
   TimerOutput::Scope timer_section(timer, "Grid setup");
   saplog << "Create the grid" << std::endl;
 
-  switch (vfp_solver_control.grid_type)
+  switch (vfp_parameters.grid_type)
     {
       case GridType::hypercube:
         {
           saplog << "Create the grid from hyper rectangle" << std::endl;
           GridGenerator::subdivided_hyper_rectangle(triangulation,
-                                                    vfp_solver_control.n_cells,
-                                                    vfp_solver_control.p1,
-                                                    vfp_solver_control.p2,
+                                                    vfp_parameters.n_cells,
+                                                    vfp_parameters.p1,
+                                                    vfp_parameters.p2,
                                                     true);
           break;
         }
       case GridType::file:
         {
-          saplog << "Read grid from file \"" << vfp_solver_control.grid_file
-                 << "\"" << std::endl;
+          saplog << "Read grid from file \"" << vfp_parameters.grid_file << "\""
+                 << std::endl;
           GridIn<dim_ps> grid_in(triangulation);
-          std::ifstream  input(vfp_solver_control.grid_file);
+          std::ifstream  input(vfp_parameters.grid_file);
           grid_in.read_ucd(input);
           Assert(triangulation.all_reference_cells_are_hyper_cube(),
                  ExcNotImplemented("The grid must consist of hypercubes."));
@@ -318,14 +316,14 @@ Sapphire::VFP::VFPEquationSolver<dim>::make_grid()
     matched_pairs;
   for (unsigned int i = 0; i < dim_ps; ++i)
     {
-      if (vfp_solver_control.boundary_conditions[2 * i] ==
+      if (vfp_parameters.boundary_conditions[2 * i] ==
             BoundaryConditions::periodic or
-          vfp_solver_control.boundary_conditions[2 * i + 1] ==
+          vfp_parameters.boundary_conditions[2 * i + 1] ==
             BoundaryConditions::periodic)
         {
-          AssertThrow(vfp_solver_control.boundary_conditions[2 * i] ==
+          AssertThrow(vfp_parameters.boundary_conditions[2 * i] ==
                           BoundaryConditions::periodic and
-                        vfp_solver_control.boundary_conditions[2 * i + 1] ==
+                        vfp_parameters.boundary_conditions[2 * i + 1] ==
                           BoundaryConditions::periodic,
                       ExcMessage(
                         "Periodic boundary conditions did not match."));
@@ -496,8 +494,8 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
   scattering_frequency.set_time(time);
 
   ParticleVelocity<dim_ps, logarithmic_p> particle_velocity(
-    vfp_solver_control.mass);
-  ParticleGamma<dim_ps, logarithmic_p> particle_gamma(vfp_solver_control.mass);
+    vfp_parameters.mass);
+  ParticleGamma<dim_ps, logarithmic_p> particle_gamma(vfp_parameters.mass);
 
   // I do not no the meaning of the following "const" specifier
   const auto cell_worker = [&](const Iterator      &cell,
@@ -611,7 +609,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // fixed energy case (i.e. transport only)
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_grad(i, q_index)[coordinate] *
-                              vfp_solver_control.velocity *
+                              vfp_parameters.velocity *
                               advection_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -631,10 +629,9 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
-                              vfp_solver_control.charge *
+                              vfp_parameters.charge *
                               magnetic_field_values[q_index][coordinate] /
-                              (particle_gammas[q_index] *
-                               vfp_solver_control.mass) *
+                              (particle_gammas[q_index] * vfp_parameters.mass) *
                               generator_rotation_matrices[coordinate](
                                 component_i, component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -644,10 +641,9 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // fixed energy case (i.e. transport only)
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
-                              vfp_solver_control.charge *
+                              vfp_parameters.charge *
                               magnetic_field_values[q_index][coordinate] /
-                              (vfp_solver_control.gamma *
-                               vfp_solver_control.mass) *
+                              (vfp_parameters.gamma * vfp_parameters.mass) *
                               generator_rotation_matrices[coordinate](
                                 component_i, component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
@@ -674,7 +670,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // -\phi m/(gamma * p) * du^k/dt * A_k * \phi
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
-                              vfp_solver_control.mass /
+                              vfp_parameters.mass /
                               (particle_gammas[q_index] *
                                std::exp(q_points[q_index][dim_ps - 1])) *
                               material_derivative_vel[q_index][coordinate] *
@@ -781,8 +777,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // \phi
                             copy_data.cell_matrix(i, j) +=
                               fe_v.shape_grad(i, q_index)[dim_ps - 1] *
-                              particle_gammas[q_index] *
-                              vfp_solver_control.mass *
+                              particle_gammas[q_index] * vfp_parameters.mass *
                               material_derivative_vel[q_index][coordinate] *
                               advection_matrices[coordinate](component_i,
                                                              component_j) *
@@ -790,7 +785,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
                             // \phi m * v * du^k/dt * A_k * \phi
                             copy_data.cell_matrix(i, j) +=
                               fe_v.shape_value(i, q_index) *
-                              vfp_solver_control.mass *
+                              vfp_parameters.mass *
                               particle_velocities[q_index] *
                               material_derivative_vel[q_index][coordinate] *
                               advection_matrices[coordinate](component_i,
@@ -956,7 +951,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::assemble_dg_matrix(const double time)
 
     const unsigned int       boundary_id = cell->face(face_no)->boundary_id();
     const BoundaryConditions boundary_condition =
-      vfp_solver_control.boundary_conditions[boundary_id];
+      vfp_parameters.boundary_conditions[boundary_id];
 
     const std::vector<Point<dim_ps>> &q_points =
       fe_face_v.get_quadrature_points();
@@ -1327,7 +1322,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::theta_method(const double time,
   // time_step)) f(time + time_step) = (mass_matrix - time_step * (1 -
   // theta) * dg_matrix(time) ) f(time) + time_step * theta * s(time +
   // time_step) + time_step * (1 - theta) * s(time)
-  const double theta = vfp_solver_control.theta;
+  const double theta = vfp_parameters.theta;
 
   locally_owned_previous_solution = locally_relevant_current_solution;
 
@@ -1664,7 +1659,7 @@ Sapphire::VFP::VFPEquationSolver<dim>::output_results(
   data_out.add_data_vector(subdomain, "subdomain");
 
   // Adapt the output to the polynomial degree of the shape functions
-  data_out.build_patches(vfp_solver_control.polynomial_degree);
+  data_out.build_patches(vfp_parameters.polynomial_degree);
   output_module.write_results(data_out, time_step_number);
 }
 

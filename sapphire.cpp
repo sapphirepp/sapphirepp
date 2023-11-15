@@ -64,11 +64,11 @@ main(int argc, char *argv[])
 
       saplog.push("main");
       ParameterHandler         prm;
-      VFPSolverControl<dim>    vfp_solver_control;
+      VFPParameters<dim>       vfp_parameters;
       PhysicalProperties       physical_properties;
       Utils::OutputModule<dim> output_module;
 
-      vfp_solver_control.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
       output_module.declare_parameters(prm);
 
@@ -81,12 +81,12 @@ main(int argc, char *argv[])
 
       prm.parse_input(parameter_filename);
 
-      vfp_solver_control.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
 
       saplog.pop();
-      VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
+      VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
                                                  physical_properties,
                                                  output_module);
       vfp_equation_solver.run();

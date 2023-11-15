@@ -42,17 +42,17 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
 
   Timer                    timer;
   ParameterHandler         prm;
-  VFPSolverControl<dim>    vfp_solver_control;
+  VFPParameters<dim>       vfp_parameters;
   PhysicalProperties       physical_properties;
   Utils::OutputModule<dim> output_module;
 
-  vfp_solver_control.declare_parameters(prm);
+  vfp_parameters.declare_parameters(prm);
   physical_properties.declare_parameters(prm);
   output_module.declare_parameters(prm);
 
   prm.parse_input(parameter_filename);
 
-  vfp_solver_control.parse_parameters(prm);
+  vfp_parameters.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
   output_module.parse_parameters(prm);
 
@@ -71,19 +71,19 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
     {
       saplog << "expansion_order"
              << "=" << values[i] << std::endl;
-      vfp_solver_control.expansion_order = uint(values[i]);
+      vfp_parameters.expansion_order = uint(values[i]);
       output_module.base_file_name =
         "expansion_order_" + dealii::Utilities::to_string(values[i]);
 
-      VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
+      VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
                                                  physical_properties,
                                                  output_module);
       vfp_equation_solver.run();
       timer.stop();
 
       InitialValueFunction<dim> analytic_solution(
-        physical_properties, vfp_solver_control.expansion_order);
-      analytic_solution.set_time(vfp_solver_control.final_time);
+        physical_properties, vfp_parameters.expansion_order);
+      analytic_solution.set_time(vfp_parameters.final_time);
 
       const double L2_error =
         vfp_equation_solver.compute_global_error(analytic_solution,
@@ -119,29 +119,29 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
 
   dealii::Timer            timer;
   ParameterHandler         prm;
-  VFPSolverControl<dim>    vfp_solver_control;
+  VFPParameters<dim>       vfp_parameters;
   PhysicalProperties       physical_properties;
   Utils::OutputModule<dim> output_module;
 
-  vfp_solver_control.declare_parameters(prm);
+  vfp_parameters.declare_parameters(prm);
   physical_properties.declare_parameters(prm);
   output_module.declare_parameters(prm);
   prm.parse_input(parameter_filename);
 
-  vfp_solver_control.parse_parameters(prm);
+  vfp_parameters.parse_parameters(prm);
   physical_properties.parse_parameters(prm);
   output_module.parse_parameters(prm);
 
   timer.start();
-  VFPEquationSolver<dim> vfp_equation_solver(vfp_solver_control,
+  VFPEquationSolver<dim> vfp_equation_solver(vfp_parameters,
                                              physical_properties,
                                              output_module);
   vfp_equation_solver.run();
   timer.stop();
 
-  InitialValueFunction<dim> analytic_solution(
-    physical_properties, vfp_solver_control.expansion_order);
-  analytic_solution.set_time(vfp_solver_control.final_time);
+  InitialValueFunction<dim> analytic_solution(physical_properties,
+                                              vfp_parameters.expansion_order);
+  analytic_solution.set_time(vfp_parameters.final_time);
 
   const double L2_error =
     vfp_equation_solver.compute_global_error(analytic_solution,

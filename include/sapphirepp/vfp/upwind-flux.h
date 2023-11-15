@@ -35,7 +35,7 @@
 #include "config.h"
 #include "particle-functions.h"
 #include "pde-system.h"
-#include "vfp-solver-control.h"
+#include "vfp-parameters.h"
 
 namespace Sapphire
 {
@@ -48,9 +48,9 @@ namespace Sapphire
       static constexpr unsigned int dim_cs = dim - has_momentum;
 
     public:
-      UpwindFlux(const PDESystem             &system,
-                 const VFPSolverControl<dim> &solver_control,
-                 const PhysicalProperties    &physical_properties);
+      UpwindFlux(const PDESystem          &system,
+                 const VFPParameters<dim> &solver_control,
+                 const PhysicalProperties &physical_properties);
       void
       set_time(double time);
       void

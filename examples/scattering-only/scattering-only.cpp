@@ -60,26 +60,26 @@ main(int argc, char *argv[])
 
       /// [Run time parameters]
       ParameterHandler               prm;
-      VFPSolverControl<dimension>    vfp_solver_control;
+      VFPParameters<dimension>       vfp_parameters;
       PhysicalProperties             physical_properties;
       Utils::OutputModule<dimension> output_module;
       /// [Run time parameters]
 
       /// [Declare parameters]
-      vfp_solver_control.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
       physical_properties.declare_parameters(prm);
       output_module.declare_parameters(prm);
       /// [Declare parameters]
       /// [Parse parameters]
       prm.parse_input(parameter_filename);
 
-      vfp_solver_control.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
       physical_properties.parse_parameters(prm);
       output_module.parse_parameters(prm);
       /// [Parse parameters]
 
       /// [VFP Solver]
-      VFPEquationSolver<dimension> vfp_equation_solver(vfp_solver_control,
+      VFPEquationSolver<dimension> vfp_equation_solver(vfp_parameters,
                                                        physical_properties,
                                                        output_module);
       vfp_equation_solver.run();
@@ -87,8 +87,8 @@ main(int argc, char *argv[])
 
       /// [L2 error]
       InitialValueFunction<dimension> analytic_solution(
-        physical_properties, vfp_solver_control.expansion_order);
-      analytic_solution.set_time(vfp_solver_control.final_time);
+        physical_properties, vfp_parameters.expansion_order);
+      analytic_solution.set_time(vfp_parameters.final_time);
 
       const double L2_error =
         vfp_equation_solver.compute_global_error(analytic_solution,
