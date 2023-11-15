@@ -97,5 +97,9 @@ if(DOC)
           COMMENT "Generating Doxygen documentation"
           VERBATIM
       )
+
+    set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/doc/latest"
+    )
   endif(DOXYGEN_FOUND)
 endif(DOC)
