@@ -108,7 +108,7 @@ namespace Sapphire
   {
     using namespace dealii;
 
-    template <int dim>
+    template <unsigned int dim>
     class VFPSolver
     {
     private:

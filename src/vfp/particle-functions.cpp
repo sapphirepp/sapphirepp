@@ -25,14 +25,14 @@
 
 #include "config.h"
 
-template <int dim, bool logarithmic_p>
+template <unsigned int dim, bool logarithmic_p>
 Sapphire::VFP::ParticleVelocity<dim, logarithmic_p>::ParticleVelocity(
   const double &mass)
   : dealii::Function<dim>()
   , mass(mass)
 {}
 
-template <int dim, bool logarithmic_p>
+template <unsigned int dim, bool logarithmic_p>
 void
 Sapphire::VFP::ParticleVelocity<dim, logarithmic_p>::value_list(
   const std::vector<dealii::Point<dim>> &points,
@@ -63,14 +63,14 @@ template class Sapphire::VFP::ParticleVelocity<3, true>;
 template class Sapphire::VFP::ParticleVelocity<3, false>;
 
 
-template <int dim, bool logarithmic_p>
+template <unsigned int dim, bool logarithmic_p>
 Sapphire::VFP::ParticleGamma<dim, logarithmic_p>::ParticleGamma(
   const double &mass)
   : dealii::Function<dim>()
   , mass(mass)
 {}
 
-template <int dim, bool logarithmic_p>
+template <unsigned int dim, bool logarithmic_p>
 void
 Sapphire::VFP::ParticleGamma<dim, logarithmic_p>::value_list(
   const std::vector<dealii::Point<dim>> &points,

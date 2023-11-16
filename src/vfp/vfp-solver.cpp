@@ -32,7 +32,7 @@ namespace Sapphire
     using namespace dealii;
 
     // The mesh_loop function requires helper data types
-    template <int dim_ps>
+    template <unsigned int dim_ps>
     class ScratchData
     {
     public:
@@ -140,7 +140,7 @@ namespace Sapphire
   } // namespace VFP
 } // namespace Sapphire
 
-template <int dim>
+template <unsigned int dim>
 Sapphire::VFP::VFPSolver<dim>::VFPSolver(
   const VFPParameters<dim_ps>           &vfp_parameters,
   const PhysicalParameters              &physical_parameters,
@@ -188,7 +188,7 @@ Sapphire::VFP::VFPSolver<dim>::VFPSolver(
     }
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::run()
 {
@@ -261,7 +261,7 @@ Sapphire::VFP::VFPSolver<dim>::run()
   timer.reset();
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::make_grid()
 {
@@ -334,7 +334,7 @@ Sapphire::VFP::VFPSolver<dim>::make_grid()
   triangulation.add_periodicity(matched_pairs);
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::setup_system()
 {
@@ -394,7 +394,7 @@ Sapphire::VFP::VFPSolver<dim>::setup_system()
                        mpi_communicator);
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::assemble_mass_matrix()
 {
@@ -455,7 +455,7 @@ Sapphire::VFP::VFPSolver<dim>::assemble_mass_matrix()
   saplog << "The mass matrix was assembled." << std::endl;
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 {
@@ -1189,7 +1189,7 @@ Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   saplog << "The DG matrix was assembled." << std::endl;
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::project(
   const Function<dim>        &f,
@@ -1260,7 +1260,7 @@ Sapphire::VFP::VFPSolver<dim>::project(
   // constraints.distribute(projected_function);
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::compute_source_term(
   const Function<dim> &source_function)
@@ -1313,7 +1313,7 @@ Sapphire::VFP::VFPSolver<dim>::compute_source_term(
   locally_owned_current_source.compress(VectorOperation::add);
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::theta_method(const double time,
                                             const double time_step)
@@ -1390,7 +1390,7 @@ Sapphire::VFP::VFPSolver<dim>::theta_method(const double time,
          << " iterations." << std::endl;
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                     const double time_step)
@@ -1540,7 +1540,7 @@ Sapphire::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   locally_relevant_current_solution = locally_owned_current_solution;
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
@@ -1630,7 +1630,7 @@ Sapphire::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   locally_relevant_current_solution = locally_owned_previous_solution;
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPSolver<dim>::output_results(
   const unsigned int time_step_number)
@@ -1664,7 +1664,7 @@ Sapphire::VFP::VFPSolver<dim>::output_results(
   output_parameters.write_results(data_out, time_step_number);
 }
 
-template <int dim>
+template <unsigned int dim>
 double
 Sapphire::VFP::VFPSolver<dim>::compute_global_error(
   const Function<dim_ps>         &exact_solution,
@@ -1695,7 +1695,7 @@ Sapphire::VFP::VFPSolver<dim>::compute_global_error(
   return global_error;
 }
 
-template <int dim>
+template <unsigned int dim>
 unsigned int
 Sapphire::VFP::VFPSolver<dim>::get_n_dofs() const
 {

@@ -28,12 +28,12 @@
 
 #include "sapphirepp-logstream.h"
 
-template <int dim>
+template <unsigned int dim>
 Sapphire::Utils::OutputParameters<dim>::OutputParameters()
   : mpi_communicator(MPI_COMM_WORLD)
 {}
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::Utils::OutputParameters<dim>::declare_parameters(
   ParameterHandler &prm)
@@ -79,7 +79,7 @@ Sapphire::Utils::OutputParameters<dim>::declare_parameters(
   prm.leave_subsection();
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
 {
@@ -112,7 +112,7 @@ Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
   parse_parameters_callback(prm);
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::Utils::OutputParameters<dim>::parse_parameters_callback(
   ParameterHandler &prm) const
@@ -147,7 +147,7 @@ Sapphire::Utils::OutputParameters<dim>::parse_parameters_callback(
     }
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::Utils::OutputParameters<dim>::write_results(
   DataOut<dim>      &data_out,
@@ -249,7 +249,7 @@ Sapphire::Utils::OutputParameters<dim>::write_results(
     }
 }
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::Utils::OutputParameters<dim>::write_grid(
   const Triangulation<dim> &triangulation,

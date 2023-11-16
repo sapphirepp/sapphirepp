@@ -106,7 +106,7 @@ namespace Sapphire
     /// [VFP flags]
 
     /// [InitialValueFunction constructor]
-    template <int dim>
+    template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
     public:
@@ -143,7 +143,7 @@ namespace Sapphire
     /// [InitialValueFunction value]
 
     /// [ScatteringFrequency]
-    template <int dim>
+    template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
@@ -174,7 +174,7 @@ namespace Sapphire
     /// [ScatteringFrequency]
 
     /// [Source]
-    template <int dim>
+    template <unsigned int dim>
     class Source : public dealii::Function<dim>
     {
     public:
@@ -197,7 +197,7 @@ namespace Sapphire
     /// [Source]
 
     /// [MagneticField]
-    template <int dim>
+    template <unsigned int dim>
     class MagneticField : public dealii::Function<dim>
     {
     public:
@@ -222,7 +222,7 @@ namespace Sapphire
     /// [MagneticField]
 
     /// [BackgroundVelocityField]
-    template <int dim>
+    template <unsigned int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
     public:

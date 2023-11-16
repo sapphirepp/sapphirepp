@@ -323,7 +323,7 @@ list here:
    like this that we may imagine in a 1d code:
 
     ```cpp
-    template <int dim>
+    template <unsigned int dim>
     void foo ()
     {
       Point<dim> cell_center;
@@ -346,7 +346,7 @@ list here:
     A better way to do this would be as follows:
 
     ```cpp
-    template <int dim>
+    template <unsigned int dim>
     void foo ()
     {
       ... // something lengthy and complicated
@@ -380,7 +380,7 @@ list here:
    words, if this is the case, we may as well write things as follows:
 
     ```cpp
-    template <int dim>
+    template <unsigned int dim>
     void foo ()
     {
       ... // something lengthy and complicated
@@ -418,7 +418,7 @@ list here:
    @todo Find better example, maybe `PDESystem::create_lms_matrix`?
 
     ```cpp
-    template <int dim>
+    template <unsigned int dim>
     typename Triangulation<dim>::cell_iterator
     CellAccessor<dim>::child(const unsigned int child_no)
     {

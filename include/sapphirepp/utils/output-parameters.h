@@ -52,7 +52,7 @@ namespace Sapphire
       hdf5
     };
 
-    template <int dim>
+    template <unsigned int dim>
     class OutputParameters
     {
     public:

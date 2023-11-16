@@ -35,7 +35,7 @@
 
 #include "config.h"
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   const PDESystem          &system,
   const VFPParameters<dim> &solver_control,
@@ -98,7 +98,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   prepare_upwind_fluxes();
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
   double time)
@@ -106,7 +106,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
   background_velocity_field.set_time(time);
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   compute_upwind_fluxes(
@@ -201,7 +201,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
     }
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   prepare_work_arrays_for_lapack()
@@ -288,7 +288,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   iwork.resize(liwork);
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   prepare_upwind_fluxes()
@@ -402,7 +402,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // get the eigenvectors of A_y and A_z
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 {
@@ -509,7 +509,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
   test_negative_flux_matrix.print_formatted(std::cout);
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_space_directions(
@@ -575,7 +575,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
     }
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
   const double                               n_p,
@@ -616,7 +616,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
                    (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
 }
 
-template <int dim, bool has_momentum, bool logarithmic_p>
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_p_direction(

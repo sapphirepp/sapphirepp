@@ -29,12 +29,12 @@
 
 #include "sapphirepp-logstream.h"
 
-template <int dim>
+template <unsigned int dim>
 Sapphire::VFP::VFPParameters<dim>::VFPParameters()
 {}
 
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 {
@@ -184,7 +184,7 @@ Sapphire::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 }
 
 
-template <int dim>
+template <unsigned int dim>
 void
 Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 {
@@ -202,8 +202,8 @@ Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
         grid_type = GridType::hypercube;
         prm.enter_subsection("Hypercube");
         // Two diagonally opposite corner points of the grid
-        int i = 0;
-        s     = prm.get("Point 1");
+        unsigned int i = 0;
+        s              = prm.get("Point 1");
         std::stringstream p1_string(s);
         for (std::string coordinate; std::getline(p1_string, coordinate, ',');
              ++i)

@@ -83,7 +83,7 @@ namespace Sapphire
                                           VFPFlags::source;
 
     // Initial values
-    template <int dim>
+    template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
     public:
@@ -154,7 +154,7 @@ namespace Sapphire
     };
 
     // Scattering frequency
-    template <int dim>
+    template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
@@ -184,7 +184,7 @@ namespace Sapphire
     };
 
     // Source term
-    template <int dim>
+    template <unsigned int dim>
     class Source : public dealii::Function<dim>
     {
     public:
@@ -219,7 +219,7 @@ namespace Sapphire
     };
 
     // Magnetic field
-    template <int dim>
+    template <unsigned int dim>
     class MagneticField : public dealii::Function<dim>
     {
     public:
@@ -248,7 +248,7 @@ namespace Sapphire
     };
 
     // Background velocity field
-    template <int dim>
+    template <unsigned int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
     public:

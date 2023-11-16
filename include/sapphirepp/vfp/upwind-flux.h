@@ -41,7 +41,7 @@ namespace Sapphire
 {
   namespace VFP
   {
-    template <int dim, bool has_momentum, bool logarithmic_p>
+    template <unsigned int dim, bool has_momentum, bool logarithmic_p>
     class UpwindFlux
     {
     private:

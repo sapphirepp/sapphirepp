@@ -34,7 +34,7 @@ namespace Sapphire
 {
   namespace VFP
   {
-    template <int dim, bool logarithmic_p>
+    template <unsigned int dim, bool logarithmic_p>
     class ParticleVelocity : public dealii::Function<dim>
     {
     public:
@@ -48,7 +48,7 @@ namespace Sapphire
       const double mass;
     };
 
-    template <int dim, bool logarithmic_p>
+    template <unsigned int dim, bool logarithmic_p>
     class ParticleGamma : public dealii::Function<dim>
     {
     public:
