@@ -71,7 +71,7 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
     {
       saplog << "expansion_order"
              << "=" << values[i] << std::endl;
-      vfp_parameters.expansion_order = uint(values[i]);
+      vfp_parameters.expansion_order = static_cast<unsigned int>(values[i]);
       output_parameters.base_file_name =
         "expansion_order_" + dealii::Utilities::to_string(values[i]);
 

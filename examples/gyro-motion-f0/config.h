@@ -107,7 +107,7 @@ namespace Sapphire
     {
     public:
       InitialValueFunction(const PhysicalParameters &physical_parameters,
-                           int                       exp_order)
+                           unsigned int              exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
         , sigma(physical_parameters.sigma)
       {}

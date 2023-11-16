@@ -225,9 +225,8 @@ namespace Sapphire
 
       PETScWrappers::MPI::Vector locally_owned_current_source;
 
-      const int          expansion_order      = vfp_parameters.expansion_order;
-      const unsigned int num_exp_coefficients = static_cast<unsigned int>(
-        (expansion_order + 1) * (expansion_order + 1));
+      const unsigned int expansion_order;
+      const unsigned int num_exp_coefficients;
 
       TimerOutput timer;
     };

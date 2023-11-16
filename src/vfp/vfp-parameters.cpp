@@ -241,7 +241,7 @@ Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
         s = prm.get("Number of cells");
         std::stringstream n_cells_string(s);
         for (std::string n; std::getline(n_cells_string, n, ',');)
-          n_cells.push_back(std::stoi(n));
+          n_cells.push_back(std::stoul(n));
         AssertThrow(n_cells.size() == dim,
                     ExcMessage(
                       "Number of cells specification does not match dimension. "

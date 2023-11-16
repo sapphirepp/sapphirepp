@@ -91,8 +91,8 @@ namespace Sapphire
         dealii::FullMatrix<double>                &positive_flux_matrix,
         dealii::FullMatrix<double>                &negative_flux_matrix);
       // PDE System matrices
-      const PDESystem &pde_system;
-      const int        matrix_size;
+      const PDESystem              &pde_system;
+      const dealii::types::blas_int matrix_size;
 
       std::vector<std::vector<double>> advection_matrices;
       std::vector<std::vector<double>> adv_mat_products;

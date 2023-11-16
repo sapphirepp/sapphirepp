@@ -56,7 +56,7 @@ namespace Sapphire
 
       // Runtime settings
       // These settings are read from a parameter file
-      int expansion_order;
+      unsigned int expansion_order;
       // Mesh
       GridType                        grid_type;
       std::string                     grid_file;

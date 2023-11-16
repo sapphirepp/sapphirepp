@@ -162,6 +162,9 @@ Sapphire::VFP::VFPSolver<dim>::VFPSolver(
   , quadrature_face(fe.tensor_degree() + 1)
   , pde_system(vfp_parameters.expansion_order)
   , upwind_flux(pde_system, vfp_parameters, physical_parameters)
+  , expansion_order(vfp_parameters.expansion_order)
+  , num_exp_coefficients((vfp_parameters.expansion_order + 1) *
+                         (vfp_parameters.expansion_order + 1))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
