@@ -41,7 +41,8 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   const VFPParameters<dim> &solver_control,
   const PhysicalParameters &physical_parameters)
   : pde_system{system}
-  , matrix_size{static_cast<int>(pde_system.system_size())}
+  , matrix_size{pde_system.system_size()}
+  , matrix_size_blas{static_cast<dealii::types::blas_int>(matrix_size)}
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))
   , adv_mat_products(6, std::vector<double>(matrix_size * matrix_size))
   , matrix_sum(matrix_size * matrix_size)
@@ -76,8 +77,8 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
     pde_system.get_advection_matrices();
   for (unsigned int k = 0; k < 3; ++k)
     {
-      for (int i = 0; i < matrix_size; ++i)
-        for (int j = 0; j < matrix_size; ++j)
+      for (unsigned int i = 0; i < matrix_size; ++i)
+        for (unsigned int j = 0; j < matrix_size; ++j)
           // NOTE: When computing the eigenvalues of matrix_sum, I call a
           // Fortran routine which requires the matrix elements to be stored in
           // column-major order. But since the resulting matrix is symmteric,
@@ -89,8 +90,8 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
     pde_system.get_adv_mat_products();
   for (unsigned int k = 0; k < 6; ++k)
     {
-      for (int i = 0; i < matrix_size; ++i)
-        for (int j = 0; j < matrix_size; ++j)
+      for (unsigned int i = 0; i < matrix_size; ++i)
+        for (unsigned int j = 0; j < matrix_size; ++j)
           adv_mat_products[k][i * matrix_size + j] = adv_mat_prod[k](i, j);
     }
 
@@ -261,9 +262,9 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   dealii::syevr(jobz,
                 range,
                 uplo,
-                &matrix_size,
+                &matrix_size_blas,
                 matrix_sum.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 &double_dummy,
                 &double_dummy,
                 int_dummy,
@@ -272,7 +273,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &num_eigenvalues,
                 eigenvalues.data(),
                 eigenvectors.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 isuppz.data(),
                 work.data(),
                 &lwork,
@@ -284,8 +285,8 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // resize the working arrays
   lwork  = static_cast<dealii::types::blas_int>(work[0]);
   liwork = iwork[0];
-  work.resize(lwork);
-  iwork.resize(liwork);
+  work.resize(static_cast<unsigned int>(lwork));
+  iwork.resize(static_cast<unsigned int>(liwork));
 }
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
@@ -311,9 +312,9 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   dealii::syevr(jobz,
                 V,
                 uplo,
-                &matrix_size,
+                &matrix_size_blas,
                 A_x.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 &vl,
                 &vu,
                 int_dummy,
@@ -322,7 +323,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &num_eigenvalues,
                 eigenvalues_advection_matrices.data(),
                 eigenvectors_advection_matrices[0].data(),
-                &matrix_size,
+                &matrix_size_blas,
                 isuppz.data(),
                 work.data(),
                 &lwork,
@@ -343,9 +344,9 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   dealii::syevr(jobz,
                 V,
                 uplo,
-                &matrix_size,
+                &matrix_size_blas,
                 A_y.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 &vl,
                 &vu,
                 int_dummy,
@@ -354,7 +355,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &num_eigenvalues,
                 eigenvalues_advection_matrices.data(),
                 eigenvectors_advection_matrices[1].data(),
-                &matrix_size,
+                &matrix_size_blas,
                 isuppz.data(),
                 work.data(),
                 &lwork,
@@ -372,9 +373,9 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   dealii::syevr(jobz,
                 V,
                 uplo,
-                &matrix_size,
+                &matrix_size_blas,
                 A_z.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 &vl,
                 &vu,
                 int_dummy,
@@ -383,7 +384,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &num_eigenvalues,
                 eigenvalues_advection_matrices.data(),
                 eigenvectors_advection_matrices[2].data(),
-                &matrix_size,
+                &matrix_size_blas,
                 isuppz.data(),
                 work.data(),
                 &lwork,
@@ -552,9 +553,9 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // https://netlib.org/lapack/explore-html/d1/d54/group__double__blas__level3_gaeda3cbd99c8fb834a60a6412878226e1.html
   double temp_positive = 0;
   double temp_negative = 0;
-  for (int j = 0; j < matrix_size; ++j)
+  for (unsigned int j = 0; j < matrix_size; ++j)
     {
-      for (int l = 0; l < matrix_size; ++l)
+      for (unsigned int l = 0; l < matrix_size; ++l)
         {
           temp_positive =
             positive_eigenvalues[l] *
@@ -562,7 +563,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
           temp_negative =
             negative_eigenvalues[l] *
             eigenvectors_advection_matrices[component][l * matrix_size + j];
-          for (int i = 0; i < matrix_size; ++i)
+          for (unsigned int i = 0; i < matrix_size; ++i)
             {
               positive_flux_matrix(i, j) +=
                 temp_positive *
@@ -587,7 +588,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
   if (logarithmic_p)
     {
       double p = std::exp(momentum);
-      for (int i = 0; i < matrix_size * matrix_size; ++i)
+      for (unsigned int i = 0; i < matrix_size * matrix_size; ++i)
         matrix_sum[i] =
           -n_p * (gamma / p *
                     (material_derivative[0] * advection_matrices[0][i] +
@@ -601,7 +602,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
                   (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]);
     }
   else
-    for (int i = 0; i < matrix_size * matrix_size; ++i)
+    for (unsigned int i = 0; i < matrix_size * matrix_size; ++i)
       matrix_sum[i] =
         -n_p * (gamma * mass *
                   (material_derivative[0] * advection_matrices[0][i] +
@@ -636,9 +637,9 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   dealii::syevr(jobz,
                 range,
                 uplo,
-                &matrix_size,
+                &matrix_size_blas,
                 matrix_sum.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 &double_dummy,
                 &double_dummy,
                 int_dummy,
@@ -647,7 +648,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &num_eigenvalues,
                 eigenvalues.data(),
                 eigenvectors.data(),
-                &matrix_size,
+                &matrix_size_blas,
                 isuppz.data(),
                 work.data(),
                 &lwork,
@@ -680,15 +681,15 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // see comment in compute_flux_in_space_directions
   double temp_positive = 0;
   double temp_negative = 0;
-  for (int j = 0; j < matrix_size; ++j)
+  for (unsigned int j = 0; j < matrix_size; ++j)
     {
-      for (int l = 0; l < matrix_size; ++l)
+      for (unsigned int l = 0; l < matrix_size; ++l)
         {
           temp_positive =
             positive_eigenvalues[l] * eigenvectors[l * matrix_size + j];
           temp_negative =
             negative_eigenvalues[l] * eigenvectors[l * matrix_size + j];
-          for (int i = 0; i < matrix_size; ++i)
+          for (unsigned int i = 0; i < matrix_size; ++i)
             {
               positive_flux_matrix(i, j) +=
                 temp_positive * eigenvectors[l * matrix_size + i];

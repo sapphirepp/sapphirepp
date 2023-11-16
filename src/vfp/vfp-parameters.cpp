@@ -241,7 +241,7 @@ Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
         s = prm.get("Number of cells");
         std::stringstream n_cells_string(s);
         for (std::string n; std::getline(n_cells_string, n, ',');)
-          n_cells.push_back(std::stoul(n));
+          n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
         AssertThrow(n_cells.size() == dim,
                     ExcMessage(
                       "Number of cells specification does not match dimension. "
@@ -339,13 +339,15 @@ Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 
   prm.enter_subsection("Expansion");
   {
-    expansion_order = prm.get_integer("Expansion order");
+    expansion_order =
+      static_cast<unsigned int>(prm.get_integer("Expansion order"));
   } // Expansion
   prm.leave_subsection();
 
   prm.enter_subsection("Finite element");
   {
-    polynomial_degree = prm.get_integer("Polynomial degree");
+    polynomial_degree =
+      static_cast<unsigned int>(prm.get_integer("Polynomial degree"));
   } // Finite element
   prm.leave_subsection();
 

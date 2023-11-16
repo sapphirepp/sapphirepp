@@ -88,7 +88,7 @@ namespace Sapphire
     {
     public:
       InitialValueFunction(const PhysicalParameters &physical_parameters,
-                           int                       exp_order)
+                           unsigned int              exp_order)
         : // set the number of components with the constructor of the base class
         dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
       {

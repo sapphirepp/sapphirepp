@@ -91,17 +91,20 @@ Sapphire::VFP::PDESystem::create_lms_indices(
 {
   const unsigned int system_sz = (expansion_order + 1) * (expansion_order + 1);
   lms_indices.resize(system_sz);
-  for (int s = 0; s <= 1; ++s)
+  for (long s = 0; s <= 1; ++s)
     {
-      for (int l = 0; l <= static_cast<int>(expansion_order); ++l)
+      for (long l = 0; l <= static_cast<long>(expansion_order); ++l)
         {
-          for (int m = l; m >= s; --m)
+          for (long m = s; m <= l; ++m)
             {
-              const unsigned int index = l * (l + 1) - (s ? -1 : 1) * m;
+              const long index = l * (l + 1) - (s ? -1 : 1) * m;
               AssertIndexRange(index, system_sz);
-              lms_indices[index][0] = l;
-              lms_indices[index][1] = m;
-              lms_indices[index][2] = s;
+              lms_indices[static_cast<unsigned int>(index)][0] =
+                static_cast<unsigned int>(l);
+              lms_indices[static_cast<unsigned int>(index)][1] =
+                static_cast<unsigned int>(m);
+              lms_indices[static_cast<unsigned int>(index)][2] =
+                static_cast<unsigned int>(s);
             }
         }
     }

@@ -89,11 +89,12 @@ Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
   std::string s;
   prm.enter_subsection("Output");
 
-  results_path         = prm.get("Results folder");
-  simulation_id        = prm.get("Simulation identifier");
-  output_path          = this->results_path / this->simulation_id;
-  base_file_name       = prm.get("Base file name");
-  n_digits_for_counter = prm.get_integer("Number of digits for counter");
+  results_path   = prm.get("Results folder");
+  simulation_id  = prm.get("Simulation identifier");
+  output_path    = this->results_path / this->simulation_id;
+  base_file_name = prm.get("Base file name");
+  n_digits_for_counter =
+    static_cast<unsigned int>(prm.get_integer("Number of digits for counter"));
 
   s = prm.get("Format");
   if (s == "vtu")
@@ -105,7 +106,8 @@ Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
   else
     AssertThrow(false, ExcNotImplemented());
 
-  output_frequency = prm.get_integer("Output frequency");
+  output_frequency =
+    static_cast<unsigned int>(prm.get_integer("Output frequency"));
 
   prm.leave_subsection();
 

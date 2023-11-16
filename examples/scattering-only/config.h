@@ -130,9 +130,9 @@ namespace Sapphire
         for (unsigned int i = 0; i < InitialValueFunction<dim>::n_components;
              i++)
           {
-            const int    l = lms_indices[i][0];
-            const double t = this->get_time();
-            f[i]           = f0 * std::exp(-nu * l * (l + 1) / 2. * t);
+            const unsigned int l = lms_indices[i][0];
+            const double       t = this->get_time();
+            f[i]                 = f0 * std::exp(-nu * l * (l + 1) / 2. * t);
           }
       }
 
