@@ -438,33 +438,55 @@ list here:
 ## Documentation style {#coding-conventions-documentation}
 
 We build the documentation for @sapphire using
-[Doxygen](https://www.doxygen.nl/index.html). As documentation string we us
-`///`, Doxygen commands are prefixed with `\@`. You can include Latex formulas
-using `\f$ \alpha \f$` for inline and
+[Doxygen](https://www.doxygen.nl/index.html). We use the `/**` style for comment
+blocks, `///` for inline documentation and `@` for Doxygen commands. You can
+[Markdown](https://www.doxygen.nl/manual/markdown.html) syntax in your comments
+and include Latex formulas using `\f$ \alpha \f$` for inline and
 
-```cpp
-/// \f[
-///   \alpha
-/// \f]
+```plain
+\f[
+  \alpha
+\f]
 ```
 
 for display style formulas.
 
-An example documentation of a function would look like this:
+To document classes and functions, use the `@brief` tag for a short summary of
+the function or class, and the `@param` and `@return` tag to document each
+parameter and the return value respectively. An example documentation of a
+function would look like this:
 
-@todo Example documentation
-
-```cpp
-TODO
+```plain
+  /**
+   * @brief Add two numbers.
+   *
+   * This function add two numbers \f$ a \f$ and \f$ b \f$ and returns the
+   * sum \f$ a + b \f$.
+   *
+   * @param a The first number \f$ a \f$.
+   *        Indent following lines, if needed.
+   * @param b The second number \f$ b \f$
+   * @return double The sum \f$ a + b \f$
+   */
+  double
+  add_numbers(const double a, const double b);
 ```
 
 Every file starts with a header, first including the Copyright statement,
 followed by a brief description of the file:
 
-```cpp
+```plain
 COPYRIGHT STATEMENT
 
-TODO
+/**
+ * @file filename
+ * @author Author 1 (email)
+ * @author Author 2 (email)
+ * @author ...
+ * @brief A brief description of the contents of the file
+ */
+
+ #include ...
 ```
 
 To acknowledge your contribution, we will add you to the author list of all
@@ -489,8 +511,8 @@ git config --local pull.rebase true
 ```
 
 We use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to
-ensure meaning full and consistent commit messages. Please use the following
-commit message format:
+ensure meaning full and consistent commit messages. Please follow these
+conventions by using the following commit message format:
 
 ```text
 type(scope): subject
