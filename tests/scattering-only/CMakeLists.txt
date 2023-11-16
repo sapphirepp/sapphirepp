@@ -25,7 +25,7 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
                     "ERK4" "periodic BC"
-                    "fast")
+                    "fast" "commit")
 
 # add_test(NAME scattering-only-1d-LSERK
 #          COMMAND ./test-scattering-only-1d parameter-1d-LSERK.prm test_run 2e-4)
@@ -76,7 +76,8 @@ add_test(NAME scattering-only-3d
 set_property(TEST scattering-only-3d PROPERTY
              LABELS "scattering-only"
                     "3d" "scattering"
-                    "ERK4" "periodic BC")
+                    "ERK4" "periodic BC"
+                    "commit")
 
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES

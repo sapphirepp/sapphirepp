@@ -14,7 +14,8 @@ add_test(NAME gyro-motion-f0
 set_property(TEST gyro-motion-f0 PROPERTY
              LABELS "gyro-motion-f0"
                     "2d" "spatial_advection" "magnetic"
-                    "Crank-Nicholson" "continuos gradients")
+                    "Crank-Nicholson" "continuos gradients"
+                    "commit")
 
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES

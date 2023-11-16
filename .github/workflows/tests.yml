@@ -14,6 +14,7 @@ on:
     
 env:
   COMPILE_JOBS: 2
+  CXX_FLAGS: "-Werror -Wall -Wextra"
 
 jobs:
   build:
@@ -31,18 +32,28 @@ jobs:
       options: --user root
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Compile
         run: |
-          mkdir build
+          cmake -S . -B build -DSAPPHIRE=On -DVFP=ON -DEXAMPLES=ON -DTESTS=ON -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           cd build
-          cmake ../ -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DSAPPHIRE=On -DVFP=ON -DEXAMPLES=ON -DTESTS=ON
           make -j${{ env.COMPILE_JOBS }}
-          
-      - name: Test
+       
+      - name: Test (main branch)
+        if: github.ref == 'refs/heads/main'
+        env:
+          OMPI_ALLOW_RUN_AS_ROOT: 1
+          OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
         run: |
-          export OMPI_ALLOW_RUN_AS_ROOT=1
-          export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
           cd build
-          ctest -V -L fast
+          ctest -V
+
+      - name: Test (devel branch)
+        if: github.ref == 'refs/heads/devel'
+        env:
+          OMPI_ALLOW_RUN_AS_ROOT: 1
+          OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+        run: |
+          cd build
+          ctest -V -L commmit
