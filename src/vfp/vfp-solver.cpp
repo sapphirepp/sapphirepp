@@ -1008,6 +1008,8 @@ Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
+                    case BoundaryConditions::periodic:
+                      break;
                     default:
                       Assert(false, ExcNotImplemented());
                   }

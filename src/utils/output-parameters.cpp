@@ -244,11 +244,7 @@ Sapphire::Utils::OutputParameters<dim>::write_results(
               break;
             }
           default:
-            {
-              Assert(false,
-                     ExcNotImplemented("Output format not implemented."));
-              break;
-            }
+            Assert(false, ExcNotImplemented("Output format not implemented."));
         }
     }
 }
