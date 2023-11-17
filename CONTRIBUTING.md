@@ -17,11 +17,10 @@ review some resources available on the web.
 
 ## Getting help
 
-We host a Sapphire++ [mailing list](LINK) for questions and discussions about
-the library of all levels. To subscribe ...
-
-@todo Mailing list
-
+There is a Sapphire++ mailing list to get in contact with the developers and our
+community. It is the perfect place for questions and discussions about the
+library on all levels. Feel free to
+[subscribe](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a).
 
 ## Bug reports
 
