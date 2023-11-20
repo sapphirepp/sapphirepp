@@ -19,7 +19,7 @@
 //
 // -----------------------------------------------------------------------------
 
-/// [Includes]
+/** [Includes] */
 #include <deal.II/base/mpi.h>
 
 #include <mpi.h>
@@ -27,65 +27,65 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "vfp-solver.h"
-/// [Includes]
+/** [Includes] */
 
-/// [Main function]
+/** [Main function] */
 int
 main(int argc, char *argv[])
 {
-  /// [Main function]
-  /// [Try-Catch begin]
+  /** [Main function] */
+  /** [Try-Catch begin] */
   try
     {
-      /// [Try-Catch begin]
-      /// [MPI initialization]
+      /** [Try-Catch begin] */
+      /** [MPI initialization] */
       using namespace Sapphire;
       using namespace VFP;
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-      /// [MPI initialization]
-      /// [Saplog]
+      /** [MPI initialization] */
+      /** [Saplog] */
       saplog.init();
       saplog.depth_console(2);
-      /// [Saplog]
-      /// [Command line argument]
+      /** [Saplog] */
+      /** [Command line argument] */
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
       saplog << "Start example scattering-only with parameter file \""
              << parameter_filename << "\"" << std::endl;
-      /// [Command line argument]
+      /** [Command line argument] */
 
-      /// [Run time parameters]
+      /** [Run time parameters] */
       ParameterHandler                   prm;
       VFPParameters<dimension>           vfp_parameters;
       PhysicalParameters                 physical_parameters;
       Utils::OutputParameters<dimension> output_parameters;
-      /// [Run time parameters]
+      /** [Run time parameters] */
 
-      /// [Declare parameters]
+      /** [Declare parameters] */
       vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
-      /// [Declare parameters]
-      /// [Parse parameters]
+      /** [Declare parameters] */
+      /** [Parse parameters] */
       prm.parse_input(parameter_filename);
 
       vfp_parameters.parse_parameters(prm);
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
-      /// [Parse parameters]
+      /** [Parse parameters] */
 
-      /// [VFP Solver]
+      /** [VFP Solver] */
       VFPSolver<dimension> vfp_solver(vfp_parameters,
                                       physical_parameters,
                                       output_parameters);
       vfp_solver.run();
-      /// [VFP Solver]
+      /** [VFP Solver] */
 
-      /// [L2 error]
+      /** [L2 error] */
       InitialValueFunction<dimension> analytic_solution(
         physical_parameters, vfp_parameters.expansion_order);
       analytic_solution.set_time(vfp_parameters.final_time);
@@ -97,8 +97,8 @@ main(int argc, char *argv[])
 
       saplog << "L2 error: " << L2_error << std::endl;
     }
-  /// [L2 error]
-  /// [Try-Catch end]
+  /** [L2 error] */
+  /** [Try-Catch end] */
   catch (std::exception &exc)
     {
       std::cerr << std::endl
@@ -126,4 +126,4 @@ main(int argc, char *argv[])
     }
   return 0;
 }
-/// [Try-Catch end]
+/** [Try-Catch end] */

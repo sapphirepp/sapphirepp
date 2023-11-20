@@ -438,8 +438,8 @@ list here:
 ## Documentation style {#coding-conventions-documentation}
 
 We build the documentation for @sapphire using
-[Doxygen](https://www.doxygen.nl/index.html). We use the `/**` style for comment
-blocks, `///` for inline documentation and `@` for Doxygen commands. You can
+[Doxygen](https://www.doxygen.nl/index.html). We use the `/**` style for
+documentation strings and `@` for Doxygen commands. You can
 [Markdown](https://www.doxygen.nl/manual/markdown.html) syntax in your comments
 and include Latex formulas using `\f$ \alpha \f$` for inline and
 
@@ -493,8 +493,8 @@ To acknowledge your contribution, we will add you to the author list of all
 files you have contributed to. If you do not want to be listed, please let us
 know!
 
-High level documentation, like the introduction and examples, are written in
-Markdown.  
+High level documentation, like the introduction and examples, is written in
+Markdown and can be found in `doc/pages`.  
 We use some custom commands like `@ sapphire` and `@ dealii` (without the space)
 to refer to @sapphire and @dealii consistently.
 
@@ -502,9 +502,9 @@ to refer to @sapphire and @dealii consistently.
 ## Git {#coding-conventions-git}
 
 We would like to keep a clean and linear git history. To this end, we would like
-to ask you to `rebase` your branch on top of `main` or `devel` before opening a
-pull request. We prefer `rebase` over `merge` because it keeps the history
-linear. We also advice to use the following git configuration:
+to ask you to `rebase` your branch on top of `main` before opening a pull
+request. We prefer `rebase` over `merge` because it keeps the history linear. We
+also advice to use the following git configuration:
 
 ```bash
 git config --local pull.rebase true

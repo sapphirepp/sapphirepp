@@ -22,7 +22,7 @@
 /// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
 /// @brief Implement physical setup for gyro-motion-f0 example
 
-/// [Includes]
+/** [Includes] */
 #ifndef CONFIG_H
 #  define CONFIG_H
 
@@ -43,8 +43,8 @@
 
 namespace Sapphire
 {
-  /// [Includes]
-  /// [PhysicalParameters]
+  /** [Includes] */
+  /** [PhysicalParameters] */
   class PhysicalParameters
   {
   public:
@@ -86,22 +86,22 @@ namespace Sapphire
     double B0;
     double sigma;
   };
-  /// [PhysicalParameters]
-  /// [Namespace VFP]
+  /** [PhysicalParameters] */
+  /** [Namespace VFP] */
   namespace VFP
   {
-    /// [Namespace VFP]
-    /// [Dimension]
+    /** [Namespace VFP] */
+    /** [Dimension] */
     static constexpr int dimension = 2;
-    /// [Dimension]
+    /** [Dimension] */
 
-    /// [VFP flags]
+    /** [VFP flags] */
     static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
                                           VFPFlags::magnetic |
                                           VFPFlags::time_independent_fields;
-    /// [VFP flags]
+    /** [VFP flags] */
 
-    /// [InitialValueFunction constructor]
+    /** [InitialValueFunction constructor] */
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
@@ -111,9 +111,9 @@ namespace Sapphire
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
         , sigma(physical_parameters.sigma)
       {}
-      /// [InitialValueFunction constructor]
+      /** [InitialValueFunction constructor] */
 
-      /// [InitialValueFunction value]
+      /** [InitialValueFunction value] */
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &f) const override
@@ -128,9 +128,9 @@ namespace Sapphire
 
       const double sigma;
     };
-    /// [InitialValueFunction value]
+    /** [InitialValueFunction value] */
 
-    /// [MagneticField constructor]
+    /** [MagneticField constructor] */
     template <unsigned int dim>
     class MagneticField : public dealii::Function<dim>
     {
@@ -139,9 +139,9 @@ namespace Sapphire
         : dealii::Function<dim>(3)
         , B0(physical_parameters.B0)
       {}
-      /// [MagneticField constructor]
+      /** [MagneticField constructor] */
 
-      /// [MagneticField value]
+      /** [MagneticField value] */
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &magnetic_field) const override
@@ -157,9 +157,9 @@ namespace Sapphire
 
       const double B0;
     };
-    /// [MagneticField value]
+    /** [MagneticField value] */
 
-    /// [BackgroundVelocityField]
+    /** [BackgroundVelocityField] */
     template <unsigned int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
@@ -241,9 +241,9 @@ namespace Sapphire
           }
       }
     };
-    /// [BackgroundVelocityField]
+    /** [BackgroundVelocityField] */
 
-    /// [ScatteringFrequency]
+    /** [ScatteringFrequency] */
     template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
@@ -265,9 +265,9 @@ namespace Sapphire
         static_cast<void>(component);
       }
     };
-    /// [ScatteringFrequency]
+    /** [ScatteringFrequency] */
 
-    /// [Source]
+    /** [Source] */
     template <unsigned int dim>
     class Source : public dealii::Function<dim>
     {
@@ -288,9 +288,9 @@ namespace Sapphire
         static_cast<void>(values);
       }
     };
-    /// [Source]
-    /// [Close namespaces]
+    /** [Source] */
+    /** [Close namespaces] */
   } // namespace VFP
 } // namespace Sapphire
 #endif
-/// [Close namespaces]
+/** [Close namespaces] */
