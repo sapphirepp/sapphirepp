@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["master"]
+        dealii_version: ["v9.5.0"]
     
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal
@@ -34,9 +34,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy
+
       - name: Compile
         run: |
-          cmake -S . -B build -DSAPPHIRE=On -DVFP=ON -DEXAMPLES=ON -DTESTS=ON -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake -S . -B build -DSAPPHIRE=On -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
+                -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
+                -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
+                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           cd build
           make -j${{ env.COMPILE_JOBS }}
        
