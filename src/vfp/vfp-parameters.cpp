@@ -30,8 +30,7 @@
 #include "sapphirepp-logstream.h"
 
 template <unsigned int dim>
-Sapphire::VFP::VFPParameters<dim>::VFPParameters()
-{}
+Sapphire::VFP::VFPParameters<dim>::VFPParameters() = default;
 
 
 template <unsigned int dim>

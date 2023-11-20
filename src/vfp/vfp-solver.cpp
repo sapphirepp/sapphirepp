@@ -961,10 +961,12 @@ Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     const std::vector<double>            &JxW = fe_face_v.get_JxW_values();
     const std::vector<Tensor<1, dim_ps>> &normals =
       fe_face_v.get_normal_vectors();
+    // NOLINTBEGIN(google-readability-casting)
     std::vector<FullMatrix<double>> positive_flux_matrices(
       q_points.size(), FullMatrix<double>(num_exp_coefficients));
     std::vector<FullMatrix<double>> negative_flux_matrices(
       q_points.size(), FullMatrix<double>(num_exp_coefficients));
+    // NOLINTEND(google-readability-casting)
 
     upwind_flux.compute_upwind_fluxes(q_points,
                                       normals,
@@ -1070,10 +1072,12 @@ Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
       fe_v_face.get_normal_vectors();
     // For every interior face there is an in- and outflow represented by
     // the corresponding flux matrices
+    // NOLINTBEGIN(google-readability-casting)
     std::vector<FullMatrix<double>> positive_flux_matrices(
       q_points.size(), FullMatrix<double>(num_exp_coefficients));
     std::vector<FullMatrix<double>> negative_flux_matrices(
       q_points.size(), FullMatrix<double>(num_exp_coefficients));
+    // NOLINTEND(google-readability-casting)
 
     upwind_flux.compute_upwind_fluxes(q_points,
                                       normals,
@@ -1291,8 +1295,10 @@ Sapphire::VFP::VFPSolver<dim>::compute_source_term(
             fe_v.get_quadrature_points();
           const std::vector<double> &JxW = fe_v.get_JxW_values();
 
+          // NOLINTBEGIN(google-readability-casting)
           std::vector<Vector<double>> source_values(
             q_points.size(), Vector<double>(num_exp_coefficients));
+          // NOLINTEND(google-readability-casting)
           source_function.vector_value_list(q_points, source_values);
 
           for (const unsigned int q_index : fe_v.quadrature_point_indices())
@@ -1659,7 +1665,7 @@ Sapphire::VFP::VFPSolver<dim>::output_results(
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());
   for (unsigned int i = 0; i < subdomain.size(); ++i)
-    subdomain(i) = triangulation.locally_owned_subdomain();
+    subdomain(i) = static_cast<float>(triangulation.locally_owned_subdomain());
   data_out.add_data_vector(subdomain, "subdomain");
 
   // Adapt the output to the polynomial degree of the shape functions

@@ -43,17 +43,21 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   : pde_system{system}
   , matrix_size{pde_system.system_size()}
   , matrix_size_blas{static_cast<dealii::types::blas_int>(matrix_size)}
+  // NOLINTBEGIN(google-readability-casting)
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))
   , adv_mat_products(6, std::vector<double>(matrix_size * matrix_size))
+  // NOLINTEND(google-readability-casting)
   , matrix_sum(matrix_size * matrix_size)
   , eigenvalues(matrix_size)
   , eigenvectors(matrix_size * matrix_size)
   , positive_eigenvalues(matrix_size)
   , negative_eigenvalues(matrix_size)
   , eigenvalues_advection_matrices(matrix_size)
+  // NOLINTBEGIN(google-readability-casting)
   , eigenvectors_advection_matrices(3,
                                     std::vector<double>(matrix_size *
                                                         matrix_size))
+  // NOLINTEND(google-readability-casting)
   , background_velocity_field(physical_parameters)
   , particle_velocity_func(solver_control.mass)
   , particle_gamma_func(solver_control.mass)
@@ -530,20 +534,18 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   });
 
   // split eigenvalues in positive and negative ones
-  std::replace_copy_if(eigenvalues.begin(),
-                       eigenvalues.end(),
-                       positive_eigenvalues.begin(),
-                       std::bind(std::less<double>(),
-                                 std::placeholders::_1,
-                                 0.),
-                       0.);
-  std::replace_copy_if(eigenvalues.begin(),
-                       eigenvalues.end(),
-                       negative_eigenvalues.begin(),
-                       std::bind(std::greater<double>(),
-                                 std::placeholders::_1,
-                                 0.),
-                       0.);
+  std::replace_copy_if(
+    eigenvalues.begin(),
+    eigenvalues.end(),
+    positive_eigenvalues.begin(),
+    [](const double &val) { return val < 0.0; },
+    0.0);
+  std::replace_copy_if(
+    eigenvalues.begin(),
+    eigenvalues.end(),
+    negative_eigenvalues.begin(),
+    [](const double &val) { return val > 0.0; },
+    0.0);
 
   // compute the flux matrices: triple product V * Lambda_{+/-} * V^{T})
   //
@@ -662,20 +664,18 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
               << std::endl;
 
   // split eigenvalues in positive and negative ones
-  std::replace_copy_if(eigenvalues.begin(),
-                       eigenvalues.end(),
-                       positive_eigenvalues.begin(),
-                       std::bind(std::less<double>(),
-                                 std::placeholders::_1,
-                                 0.),
-                       0.);
-  std::replace_copy_if(eigenvalues.begin(),
-                       eigenvalues.end(),
-                       negative_eigenvalues.begin(),
-                       std::bind(std::greater<double>(),
-                                 std::placeholders::_1,
-                                 0.),
-                       0.);
+  std::replace_copy_if(
+    eigenvalues.begin(),
+    eigenvalues.end(),
+    positive_eigenvalues.begin(),
+    [](const double &val) { return val < 0.0; },
+    0.);
+  std::replace_copy_if(
+    eigenvalues.begin(),
+    eigenvalues.end(),
+    negative_eigenvalues.begin(),
+    [](const double &val) { return val > 0.0; },
+    0.);
 
   // compute the flux matrices
   // see comment in compute_flux_in_space_directions

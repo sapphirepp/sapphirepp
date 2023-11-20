@@ -67,13 +67,13 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
          << "\t L2\t Linfty\t CPU time [s]\t Wall time [s]\t n_dof"
          << std::endl;
   saplog.push("Tests");
-  for (unsigned int i = 0; i < values.size(); i++)
+  for (const double value : values)
     {
       saplog << "expansion_order"
-             << "=" << values[i] << std::endl;
-      vfp_parameters.expansion_order = static_cast<unsigned int>(values[i]);
+             << "=" << value << std::endl;
+      vfp_parameters.expansion_order = static_cast<unsigned int>(value);
       output_parameters.base_file_name =
-        "expansion_order_" + dealii::Utilities::to_string(values[i]);
+        "expansion_order_" + dealii::Utilities::to_string(value);
 
       VFPSolver<dim> vfp_solver(vfp_parameters,
                                 physical_parameters,
@@ -94,7 +94,7 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
                                         VectorTools::L2_norm,
                                         VectorTools::Linfty_norm);
       saplog.pop();
-      saplog << values[i] << "\t" << L2_error << "\t" << Linfty_error << "\t"
+      saplog << value << "\t" << L2_error << "\t" << Linfty_error << "\t"
              << timer.cpu_time() << "\t" << timer.wall_time() << "\t"
              << vfp_solver.get_n_dofs() << std::endl;
       saplog.push("Tests");
