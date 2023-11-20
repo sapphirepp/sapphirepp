@@ -56,8 +56,9 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
   physical_parameters.parse_parameters(prm);
   output_parameters.parse_parameters(prm);
 
-  std::ofstream log_file(output_parameters.output_path /
-                           ("convergence_expansion_order.csv"),
+  std::ofstream log_file(output_parameters.results_path /
+                           output_parameters.simulation_id /
+                           "convergence_expansion_order.csv",
                          std::ios::app);
   saplog.attach(log_file, false);
 

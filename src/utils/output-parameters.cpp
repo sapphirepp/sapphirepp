@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file output-parameters.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement @ref Sapphire::Utils::OutputParameters
+ */
+
 #include "output-parameters.h"
 
 #include <deal.II/grid/grid_out.h>
@@ -28,9 +35,13 @@
 
 #include "sapphirepp-logstream.h"
 
+
+
 Sapphire::Utils::OutputParameters::OutputParameters()
   : mpi_communicator(MPI_COMM_WORLD)
 {}
+
+
 
 void
 Sapphire::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
@@ -76,6 +87,8 @@ Sapphire::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 }
 
+
+
 void
 Sapphire::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
 {
@@ -110,6 +123,8 @@ Sapphire::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
   parse_parameters_callback(prm);
 }
 
+
+
 void
 Sapphire::Utils::OutputParameters::parse_parameters_callback(
   ParameterHandler &prm) const
@@ -125,6 +140,8 @@ Sapphire::Utils::OutputParameters::parse_parameters_callback(
       prm.print_parameters(output_path / "log.prm", ParameterHandler::ShortPRM);
     }
 }
+
+
 
 template <unsigned int dim>
 void
@@ -243,6 +260,8 @@ Sapphire::Utils::OutputParameters::write_results<2>(DataOut<2> &,
 template void
 Sapphire::Utils::OutputParameters::write_results<3>(DataOut<3> &,
                                                     const unsigned int);
+
+
 
 template <unsigned int dim>
 void

@@ -33,7 +33,11 @@
 
 #include "version.h"
 
+
+
 Sapphire::Utils::SapphireppLogStream Sapphire::saplog;
+
+
 
 Sapphire::Utils::SapphireppLogStream::SapphireppLogStream()
   : dealii::LogStream()
