@@ -22,6 +22,28 @@ community. It is the perfect place for questions and discussions about the
 library on all levels. Feel free to
 [subscribe](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a).
 
+The mailing list is a public forum, which can be accessed under
+[https://mailinglist.sapphirepp.org](https://mailinglist.sapphirepp.org) and
+which we consider a resource for any kind of problems users encounter when they
+user Sapphire++.
+
+We note that all emails sent to the list are distributed both to the list
+subscribers and copied to this public archive, for people to browse or search
+without the need to be subscribed.
+
+Subscribing to the mailing list is equivalent to confirming that you are okay
+with publishing your emails on this archive. Nonetheless, we use all
+possibilities, which the mailing list archive software provides,to hide sensible
+and irrelevant information . For example, your email address will be disguised.
+
+Please do not post any confidential information (e.g. email addresses of others)
+and follow all standards of good conduct.
+
+To unsubscribe follow this
+[link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
+and enter your email address. If you would like us to delete any of your
+contributions, please write an email to info@sapphirepp.org .
+
 ## Bug reports
 
 It is a great help to us if you report any bugs in the library that you may
