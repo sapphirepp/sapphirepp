@@ -1057,6 +1057,7 @@ RECURSIVE              = YES
 
 EXCLUDE                = @PROJECT_SOURCE_DIR@/examples \
 		       	         @PROJECT_SOURCE_DIR@/tests \
+		       	         @PROJECT_SOURCE_DIR@/build \
 			             @PROJECT_SOURCE_DIR@/CONTRIBUTING.md \
 		                 @PROJECT_SOURCE_DIR@/README.md
 

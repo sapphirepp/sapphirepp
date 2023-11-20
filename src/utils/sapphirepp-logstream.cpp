@@ -19,9 +19,11 @@
 //
 // -----------------------------------------------------------------------------
 
-/// @file sapphirepp-logstream.cpp
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief Implement @ref Sapphire::Utils::SapphireppLogStream
+/**
+ * @file sapphirepp-logstream.cpp
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement @ref Sapphire::Utils::SapphireppLogStream
+ */
 
 #include "sapphirepp-logstream.h"
 
@@ -36,27 +38,27 @@ Sapphire::Utils::SapphireppLogStream Sapphire::saplog;
 Sapphire::Utils::SapphireppLogStream::SapphireppLogStream()
   : dealii::LogStream()
 {
-  pop();
-  push("Sapphire");
+  this->pop();
+  this->push("Sapphire");
 }
 
 
 
 void
-Sapphire::Utils::SapphireppLogStream::init()
+Sapphire::Utils::SapphireppLogStream::init(const unsigned int depth_console)
 {
   int is_initialized;
   MPI_Initialized(&is_initialized);
   Assert(is_initialized,
          dealii::ExcMessage("saplog.init() must be called after MPI "
                             "initialization!"));
-
-  pop();
+  this->depth_console(depth_console);
+  this->pop();
   const unsigned int mpi_rank =
     dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
   if (mpi_rank > 0)
-    push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
-  push("Sapphire");
+    this->push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
+  this->push("Sapphire");
 
   *this << "Start Sapphire++ v" << SAPPHIREPP_VERSION << " with "
         << dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)

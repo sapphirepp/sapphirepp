@@ -19,9 +19,11 @@
 //
 // -----------------------------------------------------------------------------
 
-/// @file sapphirepp-logstream.h
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief Define saplog
+/**
+ * @file sapphirepp-logstream.h
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define @ref Sapphire::saplog
+ */
 
 #ifndef UTILS_SAPPHIREPPLOGSTREAM_H
 #define UTILS_SAPPHIREPPLOGSTREAM_H
@@ -33,30 +35,41 @@ namespace Sapphire
   namespace Utils
   {
 
-    /// @brief LogStream for @sapphire
-    ///
-    /// The Stream is prefixed with `Sapphire`.
-    /// In case of parallel execution, all but the first process are prefixed
-    /// with `mpi<rank>`.
-    ///
-    /// For more details see @dealref{LogStream} documentation
+    /**
+     * @brief LogStream for @sapphire
+     *
+     * The Stream is prefixed with `Sapphire`.
+     * In case of parallel execution, all but the first process are prefixed
+     * with `mpi<rank>`.
+     *
+     * For more details see @dealref{LogStream} documentation
+     */
     class SapphireppLogStream : public dealii::LogStream
     {
     public:
-      /// @brief Constructor
+      /** @brief Constructor */
       SapphireppLogStream();
 
-      /// @brief Initialize the log stream
-      /// This function must only be called after MPI initialization.
-      /// It prefixes the log stream with `MPI<rank>` for all but the first
-      /// rank. In addition, it shows a start-up message.
+      /**
+       * @brief Initialize the log stream
+       *
+       * This function must only be called after MPI initialization.
+       * It prefixes the log stream with `MPI<rank>` for all but the first
+       * rank. In addition, it shows a start-up message.
+       *
+       * @param depth_console The verbosity of the console output
+       *        - `0` silence the program
+       *        - `1` shows only the start-up message
+       *        - `2` show progress
+       *        - `>2` show different levels of debug messages
+       */
       void
-      init();
+      init(const unsigned int depth_console = 2);
     };
 
   } // namespace Utils
 
-  /// @brief The standard log stream for @sapphire
+  /** @brief The standard log stream for @sapphire */
   extern Sapphire::Utils::SapphireppLogStream saplog;
 } // namespace Sapphire
 #endif
