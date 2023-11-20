@@ -124,16 +124,6 @@ Sapphire::Utils::OutputParameters::parse_parameters_callback(
       prm.log_parameters(saplog);
       prm.print_parameters(output_path / "log.prm", ParameterHandler::ShortPRM);
     }
-
-
-  if (format == OutputFormat::vtu)
-    {
-      int comm_size;
-      MPI_Comm_size(mpi_communicator, &comm_size);
-      AssertThrow(comm_size == 1,
-                  ExcMessage("'vtu' format only works with a single "
-                             "processor. Use 'pvtu' instead."));
-    }
 }
 
 template <unsigned int dim>
@@ -160,8 +150,8 @@ Sapphire::Utils::OutputParameters::write_results(
                 base_file_name + "_" +
                 Utilities::int_to_string(counter, n_digits_for_counter) +
                 ".vtu";
-              std::ofstream output(output_path / filename_vtk);
-              data_out.write_vtu(output); // TODO: parallel
+              data_out.write_vtu_in_parallel(output_path / filename_vtk,
+                                             mpi_communicator);
               break;
             }
           case OutputFormat::pvtu:
