@@ -46,8 +46,7 @@ main(int argc, char *argv[])
                                                                   1);
       /** [MPI initialization] */
       /** [Saplog] */
-      saplog.init();
-      saplog.depth_console(2);
+      saplog.init(2);
       /** [Saplog] */
       /** [Command line argument] */
       std::string parameter_filename = "parameter.prm";
@@ -59,10 +58,10 @@ main(int argc, char *argv[])
       /** [Command line argument] */
 
       /** [Run time parameters] */
-      ParameterHandler                   prm;
-      VFPParameters<dimension>           vfp_parameters;
-      PhysicalParameters                 physical_parameters;
-      Utils::OutputParameters<dimension> output_parameters;
+      ParameterHandler         prm;
+      VFPParameters<dimension> vfp_parameters;
+      PhysicalParameters       physical_parameters;
+      Utils::OutputParameters  output_parameters;
       /** [Run time parameters] */
 
       /** [Declare parameters] */

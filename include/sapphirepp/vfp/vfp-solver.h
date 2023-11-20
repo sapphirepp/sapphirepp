@@ -120,9 +120,9 @@ namespace Sapphire
       static constexpr int dim_cs = dim - momentum;
 
     public:
-      VFPSolver(const VFPParameters<dim_ps>           &vfp_parameters,
-                const PhysicalParameters              &physical_parameters,
-                const Utils::OutputParameters<dim_ps> &output_parameters);
+      VFPSolver(const VFPParameters<dim_ps>   &vfp_parameters,
+                const PhysicalParameters      &physical_parameters,
+                const Utils::OutputParameters &output_parameters);
       void
       run();
 
@@ -175,8 +175,8 @@ namespace Sapphire
       const unsigned int n_mpi_procs;
       const unsigned int rank;
 
-      ConditionalOStream              pcout;
-      Utils::OutputParameters<dim_ps> output_parameters;
+      ConditionalOStream      pcout;
+      Utils::OutputParameters output_parameters;
 
       // NOTE: parallel::distributed:Triangulation does not allow 1D. This
       // excludes the 1D transport (i.e. no momentum terms) only case. But I

@@ -142,9 +142,9 @@ namespace Sapphire
 
 template <unsigned int dim>
 Sapphire::VFP::VFPSolver<dim>::VFPSolver(
-  const VFPParameters<dim_ps>           &vfp_parameters,
-  const PhysicalParameters              &physical_parameters,
-  const Utils::OutputParameters<dim_ps> &output_parameters)
+  const VFPParameters<dim_ps>   &vfp_parameters,
+  const PhysicalParameters      &physical_parameters,
+  const Utils::OutputParameters &output_parameters)
   : vfp_parameters(vfp_parameters)
   , physical_parameters(physical_parameters)
   , mpi_communicator(MPI_COMM_WORLD)
@@ -1670,7 +1670,7 @@ Sapphire::VFP::VFPSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);
-  output_parameters.write_results(data_out, time_step_number);
+  output_parameters.write_results<dim>(data_out, time_step_number);
 }
 
 template <unsigned int dim>

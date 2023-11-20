@@ -57,11 +57,11 @@ main(int argc, char *argv[])
              << parameter_filename << "\" and maximal L2 error of "
              << max_L2_error << std::endl;
 
-      dealii::Timer                      timer;
-      ParameterHandler                   prm;
-      VFPParameters<dimension>           vfp_parameters;
-      PhysicalParameters                 physical_parameters;
-      Utils::OutputParameters<dimension> output_parameters;
+      dealii::Timer            timer;
+      ParameterHandler         prm;
+      VFPParameters<dimension> vfp_parameters;
+      PhysicalParameters       physical_parameters;
+      Utils::OutputParameters  output_parameters;
 
       vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);

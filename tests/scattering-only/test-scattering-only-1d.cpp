@@ -40,11 +40,11 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
   saplog.push("Tests");
   saplog << "Compute convergence with expansion_order" << std::endl;
 
-  Timer                        timer;
-  ParameterHandler             prm;
-  VFPParameters<dim>           vfp_parameters;
-  PhysicalParameters           physical_parameters;
-  Utils::OutputParameters<dim> output_parameters;
+  Timer                   timer;
+  ParameterHandler        prm;
+  VFPParameters<dim>      vfp_parameters;
+  PhysicalParameters      physical_parameters;
+  Utils::OutputParameters output_parameters;
 
   vfp_parameters.declare_parameters(prm);
   physical_parameters.declare_parameters(prm);
@@ -117,11 +117,11 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
   saplog << "Test run with parameter file \"" << parameter_filename
          << "\" and maximal L2 error of " << max_L2_error << std::endl;
 
-  dealii::Timer                timer;
-  ParameterHandler             prm;
-  VFPParameters<dim>           vfp_parameters;
-  PhysicalParameters           physical_parameters;
-  Utils::OutputParameters<dim> output_parameters;
+  dealii::Timer           timer;
+  ParameterHandler        prm;
+  VFPParameters<dim>      vfp_parameters;
+  PhysicalParameters      physical_parameters;
+  Utils::OutputParameters output_parameters;
 
   vfp_parameters.declare_parameters(prm);
   physical_parameters.declare_parameters(prm);

@@ -63,10 +63,10 @@ main(int argc, char *argv[])
              << Utilities::System::get_time() << "]" << std::endl;
 
       saplog.push("main");
-      ParameterHandler             prm;
-      VFPParameters<dim>           vfp_parameters;
-      PhysicalParameters           physical_parameters;
-      Utils::OutputParameters<dim> output_parameters;
+      ParameterHandler        prm;
+      VFPParameters<dim>      vfp_parameters;
+      PhysicalParameters      physical_parameters;
+      Utils::OutputParameters output_parameters;
 
       vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);

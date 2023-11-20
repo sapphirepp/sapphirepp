@@ -60,10 +60,10 @@ main(int argc, char *argv[])
       /** [Command line argument] */
 
       /** [Run time parameters] */
-      ParameterHandler                   prm;
-      VFPParameters<dimension>           vfp_parameters;
-      PhysicalParameters                 physical_parameters;
-      Utils::OutputParameters<dimension> output_parameters;
+      ParameterHandler         prm;
+      VFPParameters<dimension> vfp_parameters;
+      PhysicalParameters       physical_parameters;
+      Utils::OutputParameters  output_parameters;
       /** [Run time parameters] */
 
       /** [Declare parameters] */

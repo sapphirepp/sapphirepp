@@ -28,15 +28,12 @@
 
 #include "sapphirepp-logstream.h"
 
-template <unsigned int dim>
-Sapphire::Utils::OutputParameters<dim>::OutputParameters()
+Sapphire::Utils::OutputParameters::OutputParameters()
   : mpi_communicator(MPI_COMM_WORLD)
 {}
 
-template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters<dim>::declare_parameters(
-  ParameterHandler &prm)
+Sapphire::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
   LogStream::Prefix pre2("OutputParameters", saplog);
@@ -79,9 +76,8 @@ Sapphire::Utils::OutputParameters<dim>::declare_parameters(
   prm.leave_subsection();
 }
 
-template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
+Sapphire::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
   LogStream::Prefix pre2("OutputParameters", saplog);
@@ -114,9 +110,8 @@ Sapphire::Utils::OutputParameters<dim>::parse_parameters(ParameterHandler &prm)
   parse_parameters_callback(prm);
 }
 
-template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters<dim>::parse_parameters_callback(
+Sapphire::Utils::OutputParameters::parse_parameters_callback(
   ParameterHandler &prm) const
 {
   // create output directory
@@ -139,19 +134,11 @@ Sapphire::Utils::OutputParameters<dim>::parse_parameters_callback(
                   ExcMessage("'vtu' format only works with a single "
                              "processor. Use 'pvtu' instead."));
     }
-  else if (format == OutputFormat::hdf5)
-    {
-      AssertThrow(
-        dim > 1,
-        ExcMessage(
-          "HDF5 only supports datasets that live in 2 or 3 dimensions. "
-          "Use 'vtu' or 'pvtu' instead."));
-    }
 }
 
 template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters<dim>::write_results(
+Sapphire::Utils::OutputParameters::write_results(
   DataOut<dim>      &data_out,
   const unsigned int time_step_number)
 {
@@ -174,7 +161,7 @@ Sapphire::Utils::OutputParameters<dim>::write_results(
                 Utilities::int_to_string(counter, n_digits_for_counter) +
                 ".vtu";
               std::ofstream output(output_path / filename_vtk);
-              data_out.write_vtu(output);
+              data_out.write_vtu(output); // TODO: parallel
               break;
             }
           case OutputFormat::pvtu:
@@ -188,6 +175,11 @@ Sapphire::Utils::OutputParameters<dim>::write_results(
             }
           case OutputFormat::hdf5:
             {
+              Assert(
+                dim > 1,
+                ExcMessage(
+                  "HDF5 only supports datasets that live in 2 or 3 dimensions."));
+
               // I follow this pull request:
               // https://github.com/dealii/dealii/pull/14958
               const std::string filename_h5 =
@@ -251,9 +243,20 @@ Sapphire::Utils::OutputParameters<dim>::write_results(
     }
 }
 
+// Explicit instantiation
+template void
+Sapphire::Utils::OutputParameters::write_results<1>(DataOut<1> &,
+                                                    const unsigned int);
+template void
+Sapphire::Utils::OutputParameters::write_results<2>(DataOut<2> &,
+                                                    const unsigned int);
+template void
+Sapphire::Utils::OutputParameters::write_results<3>(DataOut<3> &,
+                                                    const unsigned int);
+
 template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters<dim>::write_grid(
+Sapphire::Utils::OutputParameters::write_grid(
   const Triangulation<dim> &triangulation,
   const std::string        &filename) const
 {
@@ -270,7 +273,13 @@ Sapphire::Utils::OutputParameters<dim>::write_grid(
   grid_out.write_ucd(triangulation, output);
 }
 
-// explicit instantiation
-template class Sapphire::Utils::OutputParameters<1>;
-template class Sapphire::Utils::OutputParameters<2>;
-template class Sapphire::Utils::OutputParameters<3>;
+// Explicit
+template void
+Sapphire::Utils::OutputParameters::write_grid<1>(const Triangulation<1> &,
+                                                 const std::string &) const;
+template void
+Sapphire::Utils::OutputParameters::write_grid<2>(const Triangulation<2> &,
+                                                 const std::string &) const;
+template void
+Sapphire::Utils::OutputParameters::write_grid<3>(const Triangulation<3> &,
+                                                 const std::string &) const;

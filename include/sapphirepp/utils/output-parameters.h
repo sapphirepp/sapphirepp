@@ -52,7 +52,6 @@ namespace Sapphire
       hdf5
     };
 
-    template <unsigned int dim>
     class OutputParameters
     {
     public:
@@ -64,10 +63,12 @@ namespace Sapphire
       void
       parse_parameters(ParameterHandler &prm);
 
+      template <unsigned int dim>
       void
       write_results(DataOut<dim>      &data_out,
                     const unsigned int time_step_number);
 
+      template <unsigned int dim>
       void
       write_grid(const Triangulation<dim> &triangulation,
                  const std::string        &filename = "grid.vtu") const;
