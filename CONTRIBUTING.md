@@ -42,7 +42,9 @@ and follow all standards of good conduct.
 To unsubscribe follow this
 [link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
 and enter your email address. If you would like us to delete any of your
-contributions, please write an email to info@sapphirepp.org .
+contributions, please write an email to
+[contact@sapphirepp.org](mailto:contact@sapphirepp.org).
+
 
 ## Bug reports
 

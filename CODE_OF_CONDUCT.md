@@ -1,6 +1,12 @@
 
 # Contributor Covenant Code of Conduct
 
+Our code of conduct is designed to foster a collaborative and respectful
+environment. We strongly emphasise that Sapphire++ should be applied solely for
+academic or civilian purposes. Any use of the code for military purposes or in
+ways that may cause harm or conflict with these principles is strictly
+prohibited.
+
 
 ## Our Pledge
 
@@ -66,7 +72,10 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-[INSERT CONTACT METHOD].
+[contact@sapphirepp.org](mailto:contact@sapphirepp.org) which
+only goes to Nils Schween and Florian Schulze. To report an issue involving
+either of them please email Brian Reville
+([brian.reville@mpi-hd.mpg.de](mailto:brian.reville@mpi-hd.mpg.de)).  
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
