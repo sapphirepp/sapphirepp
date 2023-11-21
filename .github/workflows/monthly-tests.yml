@@ -1,27 +1,24 @@
-name: GitHub CI
+name: Monthly tests
 
 on:
-  push:
-    branches:
-        - main
-  pull_request:
-    branches:
-        - main
+  schedule:
+  - cron:  '0 0 1 * *'
+  workflow_dispatch:
     
 env:
   COMPILE_JOBS: 2
   CXX_FLAGS: "-Werror -Wall -Wextra"
 
 jobs:
-  tests:
-    name: Build and test ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+  montly-tests:
+    name: Monthly test ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.5.0"]
+        dealii_version: ["v9.5.0", "master"]
     
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal
@@ -47,7 +44,7 @@ jobs:
         env:
           OMPI_ALLOW_RUN_AS_ROOT: 1
           OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-          TEST_LABEL: commit-${{ matrix.build_type }}
+          TEST_LABEL: monthly-${{ matrix.build_type }}
         run: |
           cd build
           echo "Running tests with label ${{ env.TEST_LABEL }}"

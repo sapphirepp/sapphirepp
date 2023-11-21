@@ -17,7 +17,8 @@ add_test(NAME scattering-only-1d-CN
 set_property(TEST scattering-only-1d-CN PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
-                    "Crank-Nicholson" "periodic BC")
+                    "Crank-Nicholson" "periodic BC"
+                    "monthly-Release" "monthly-Debug")
 
 add_test(NAME scattering-only-1d-ERK4
          COMMAND ./test-scattering-only-1d parameter-1d-ERK4.prm test_run 2e-4)
@@ -25,7 +26,8 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
                     "ERK4" "periodic BC"
-                    "fast" "commit")
+                    "fast" "commit-Debug" "commit-Release"
+                    "monthly-Release" "monthly-Debug")
 
 # add_test(NAME scattering-only-1d-LSERK
 #          COMMAND ./test-scattering-only-1d parameter-1d-LSERK.prm test_run 2e-4)
@@ -39,14 +41,16 @@ add_test(NAME scattering-only-1d-FE
 set_property(TEST scattering-only-1d-FE PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
-                    "Forward Euler" "periodic BC")
+                    "Forward Euler" "periodic BC"
+                    "monthly-Debug" "monthly-Release")
 
 add_test(NAME scattering-only-1d-BE
          COMMAND ./test-scattering-only-1d parameter-1d-BE.prm test_run 3e-1)
 set_property(TEST scattering-only-1d-BE PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
-                    "Backward Euler" "periodic BC")
+                    "Backward Euler" "periodic BC"
+                    "monthly-Debug" "monthly-Release")
 
 
 add_executable(test-scattering-only-2d test-scattering-only-2d.cpp ${VFP_SOURCES})
@@ -61,7 +65,8 @@ add_test(NAME scattering-only-2d
 set_property(TEST scattering-only-2d PROPERTY
              LABELS "scattering-only"
                     "2d" "scattering"
-                    "ERK4" "periodic BC")
+                    "ERK4" "periodic BC"
+                    "monthly-Debug" "monthly-Release")
 
 
 add_executable(test-scattering-only-3d test-scattering-only-3d.cpp ${VFP_SOURCES})
@@ -77,7 +82,8 @@ set_property(TEST scattering-only-3d PROPERTY
              LABELS "scattering-only"
                     "3d" "scattering"
                     "ERK4" "periodic BC"
-                    "commit")
+                    "commit-Release"
+                    "monthly-Debug" "monthly-Release")
 
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
