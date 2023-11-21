@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.13.0)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-set(DEAL_II_MIN_VERSION "9.4.0") #TODO: check if this is the correct version
-set(DOXYGEN_MIN_VERSION "1.8.0") #TODO: check if this is the correct version
+set(DEAL_II_MIN_VERSION "9.5.0")
+set(DOXYGEN_MIN_VERSION "1.9.0")
 
 file(READ ${CMAKE_SOURCE_DIR}/VERSION SAPPHIREPP_VERSION)
 string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-.*)?" "\\1"
