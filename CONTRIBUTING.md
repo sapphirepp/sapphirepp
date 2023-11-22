@@ -27,19 +27,21 @@ library on all levels. Feel free to
 The mailing list is a public forum, which can be accessed under
 [https://mailinglist.sapphirepp.org](https://mailinglist.sapphirepp.org) and
 which we consider a resource for any kind of problems users encounter when they
-user Sapphire++.
+use Sapphire++.
 
 We note that all emails sent to the list are distributed both to the list
 subscribers and copied to this public archive, for people to browse or search
 without the need to be subscribed.
 
 Subscribing to the mailing list is equivalent to confirming that you are okay
-with publishing your emails on this archive. Nonetheless, we use all
-possibilities, which the mailing list archive software provides,to hide sensible
-and irrelevant information . For example, your email address will be disguised.
+with publishing the emails you sent to the mailing list on this archive.
+Nonetheless, we use all possibilities, which the mailing list archive software
+provides, to hide sensible and irrelevant information. For example, your email
+address will be disguised.
 
 Please do not post any confidential information (e.g. email addresses of others)
-and follow all standards of good conduct.
+and follow our
+[code of conduct](https://sapphirepp.org/latest/md__c_o_d_e___o_f___c_o_n_d_u_c_t.html).
 
 To unsubscribe follow this
 [link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
