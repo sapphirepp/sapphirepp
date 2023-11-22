@@ -4,3 +4,26 @@
     width: 72px;
     height: 72px;
 }
+
+.versionSelector {
+    position: absolute;
+    z-index: 20;
+    bottom:7px;
+    left:15px;
+    font-size:var(--page-font-size);
+}
+
+.versionSelector select{
+    height: var(--searchbar-height);
+    background: var(--searchbar-background);
+    border-radius: var(--searchbar-border-radius);
+    border: 2px solid var(--separator-color);
+    font-size: 12pt;
+    padding-left: 15px;
+    width: 100px;
+    font-size:10pt;
+}
+
+.versionSelector select:hover{
+    border: 2px solid var(--primary-light-color);
+}
