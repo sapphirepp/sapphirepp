@@ -955,6 +955,7 @@ WARN_LOGFILE           =
 INPUT                  = @PROJECT_SOURCE_DIR@/doc/pages/mainpage.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/examples.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/contributing.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/acknowledgements.md \
                          @PROJECT_SOURCE_DIR@
 
 # This tag can be used to specify the character encoding of the source files
@@ -1058,7 +1059,9 @@ RECURSIVE              = YES
 EXCLUDE                = @PROJECT_SOURCE_DIR@/examples \
 		       	         @PROJECT_SOURCE_DIR@/tests \
 		       	         @PROJECT_SOURCE_DIR@/build \
+		       	         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css \
 			             @PROJECT_SOURCE_DIR@/CONTRIBUTING.md \
+			             @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md \
 		                 @PROJECT_SOURCE_DIR@/README.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
@@ -1089,7 +1092,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1149,7 +1152,8 @@ INPUT_FILTER           =
 # properly processed by doxygen.
 
 FILTER_PATTERNS        = */doc/pages/contributing.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CONTRIBUTING.md" \
-		         *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
+                         */doc/pages/code-of-conduct.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md" \
+		                 *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using
 # INPUT_FILTER) will also be used to filter the input files that are used for

@@ -4,7 +4,7 @@ Sapphire++ aims to become a community project with use cases and members from a
 wide range of research fields. It is our goal to build an inclusive and
 participatory community, so we are happy that you are interested in
 participating. To this end, we have adopted a
-[code of conduct](https://sapphirepp.org/latest/md__c_o_d_e___o_f___c_o_n_d_u_c_t.html)
+[code of conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct.html)
 that we expect all participants to adhere to.
 
 
@@ -41,7 +41,7 @@ address will be disguised.
 
 Please do not post any confidential information (e.g. email addresses of others)
 and follow our
-[code of conduct](https://sapphirepp.org/latest/md__c_o_d_e___o_f___c_o_n_d_u_c_t.html).
+[code of conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct.html).
 
 To unsubscribe follow this
 [link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
