@@ -2,8 +2,8 @@
 
 @tableofcontents
 
+---
 
-### Coding style
+@subpage md__c_o_d_e___o_f___c_o_n_d_u_c_t "Code of Conduct"
 
-Our coding conventions are can be found here:
-@subpage coding-conventions
+@subpage coding-conventions "Coding Conventions"

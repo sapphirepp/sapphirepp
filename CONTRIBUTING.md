@@ -3,7 +3,9 @@
 Sapphire++ aims to become a community project with use cases and members from a
 wide range of research fields. It is our goal to build an inclusive and
 participatory community, so we are happy that you are interested in
-participating.
+participating. To this end, we have adopted a
+[code of conduct](https://sapphirepp.org/latest/md__c_o_d_e___o_f___c_o_n_d_u_c_t.html)
+that we expect all participants to adhere to.
 
 
 ## Getting started with git and GitHub
