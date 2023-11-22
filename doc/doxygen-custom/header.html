@@ -40,16 +40,14 @@
 
     <div class="versionSelector">
       <label for="versions">Version:</label>
-      <select name="versions" onchange="window.location.href=this.value">
-	<option value="latest">latest</option>
-	<?php
-	$folders=array_reverse(glob("v[0-9]\.[0-9]\.[0-9]", GLOB_ONLYDIR));
-	foreach ($folders as $dirname) {
-		echo "<option value=\"/$dirname\">$dirname</option>\n";
-	}
-	?>
+      <select name="versions" id="selector"
+	      onchange="window.location.href=this.value">
+	<option value="/latest">latest</option>
       </select>
     </div>
+    <script>
+      $('#selector').load('/scripts/version-folders.php');
+    </script>
     <!--BEGIN DISABLE_INDEX-->
     <!--BEGIN FULL_SIDEBAR-->
     <div id="side-nav" class="ui-resizable side-nav-resizable"><!-- do not remove this div, it is closed by doxygen! -->

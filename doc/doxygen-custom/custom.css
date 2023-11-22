@@ -13,7 +13,7 @@
     font-size:var(--page-font-size);
 }
 
-.versionSelector select{
+.versionSelector #selector{
     height: var(--searchbar-height);
     background: var(--searchbar-background);
     border-radius: var(--searchbar-border-radius);
@@ -24,6 +24,6 @@
     font-size:10pt;
 }
 
-.versionSelector select:hover{
+.versionSelector #selector:hover{
     border: 2px solid var(--primary-light-color);
 }
