@@ -3,7 +3,9 @@
 Sapphire++ aims to become a community project with use cases and members from a
 wide range of research fields. It is our goal to build an inclusive and
 participatory community, so we are happy that you are interested in
-participating.
+participating. To this end, we have adopted a
+[code of conduct](https://sapphirepp.org/latest/md__c_o_d_e___o_f___c_o_n_d_u_c_t.html)
+that we expect all participants to adhere to.
 
 
 ## Getting started with git and GitHub
@@ -25,24 +27,28 @@ library on all levels. Feel free to
 The mailing list is a public forum, which can be accessed under
 [https://mailinglist.sapphirepp.org](https://mailinglist.sapphirepp.org) and
 which we consider a resource for any kind of problems users encounter when they
-user Sapphire++.
+use Sapphire++.
 
 We note that all emails sent to the list are distributed both to the list
 subscribers and copied to this public archive, for people to browse or search
 without the need to be subscribed.
 
 Subscribing to the mailing list is equivalent to confirming that you are okay
-with publishing your emails on this archive. Nonetheless, we use all
-possibilities, which the mailing list archive software provides,to hide sensible
-and irrelevant information . For example, your email address will be disguised.
+with publishing the emails you sent to the mailing list on this archive.
+Nonetheless, we use all possibilities, which the mailing list archive software
+provides, to hide sensible and irrelevant information. For example, your email
+address will be disguised.
 
 Please do not post any confidential information (e.g. email addresses of others)
-and follow all standards of good conduct.
+and follow our
+[code of conduct](https://sapphirepp.org/latest/md__c_o_d_e___o_f___c_o_n_d_u_c_t.html).
 
 To unsubscribe follow this
 [link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
 and enter your email address. If you would like us to delete any of your
-contributions, please write an email to info@sapphirepp.org .
+contributions, please write an email to
+[contact@sapphirepp.org](mailto:contact@sapphirepp.org).
+
 
 ## Bug reports
 
