@@ -66,7 +66,7 @@ set_property(TEST scattering-only-2d PROPERTY
              LABELS "scattering-only"
                     "2d" "scattering"
                     "ERK4" "periodic BC"
-                    "monthly-Debug" "monthly-Release")
+                    "monthly-Release")
 
 
 add_executable(test-scattering-only-3d test-scattering-only-3d.cpp ${VFP_SOURCES})
@@ -83,7 +83,7 @@ set_property(TEST scattering-only-3d PROPERTY
                     "3d" "scattering"
                     "ERK4" "periodic BC"
                     "commit-Release"
-                    "monthly-Debug" "monthly-Release")
+                    "monthly-Release")
 
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
