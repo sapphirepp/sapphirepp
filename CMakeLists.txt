@@ -6,7 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(DEAL_II_MIN_VERSION "9.5.0")
 set(DOXYGEN_MIN_VERSION "1.9.0")
 
-file(READ ${CMAKE_SOURCE_DIR}/VERSION SAPPHIREPP_VERSION)
+# The version is redefined on the webserver to git describe --tags, where as the
+# version file is used for release.
+if(NOT DEFINED SAPPHIREPP_VERSION)
+  file(READ ${CMAKE_SOURCE_DIR}/VERSION SAPPHIREPP_VERSION)
+endif()
 string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-.*)?" "\\1"
        PROJECT_VERSION ${SAPPHIREPP_VERSION})
 
