@@ -60,6 +60,7 @@ To install @dealii and all necessary prerequisites for @sapphire, we provide an
 Run the script by executing:
 
 ```shell
+chmod u+x install-dealii.sh
 ./install_dealii.sh
 ```
 
@@ -85,22 +86,33 @@ included. To install, follow the
 
 ## Compiling @sapphire {#compilation}
 
-You can obtain @sapphire either as a `tar.gz` file
-[here](https://git.mpi-hd.mpg.de/schween/sapphire/releases/latest), or by
-cloning the `git` project:
+You can obtain @sapphire either as a tarball from the
+[release page](https://github.com/sapphirepp/sapphirepp/releases), or by
+cloning the `git` repository:
 
 ```shell
-git clone https://git.mpi-hd.mpg.de/schween/sapphire.git
+git clone https://github.com/sapphirepp/sapphirepp
 ```
 
-To compile the project, use `cmake`:
+@note Since the repository is still private, you need to use the following link:
+  ```shell
+  git clone https://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@github.com/sapphirepp/sapphirepp
+  ```
+
+Afterwards you can compile @sapphire, with `cmake` and `make`:
 
 ```shell
-cd sapphire
+cd sapphirepp
 export DEAL_II_DIR="path/to/deal.II"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cd build && make -j
+cd build && make
 ```
+
+@note On the MPIK cluster you need to load the following modules:
+  ```shell
+  module load python/3.11.6 cmake gcc/13.1.0 ucx/1.15.x-zen4 openmpi/4.1.5-zen4 boost/1.83.0 hdf5/1.14.1-2-zen4 intel-oneapi-mkl/2023.1.0-zen4 
+  export DEAL_II_DIR="/lfs/l8/tap/tapshared/lib/dealii"
+  ```
 
 For extensive simulation runs, it's recommended to use to the release version:
 
@@ -111,24 +123,46 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 Developers are advised to use the following options:
 
 ```shell
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -DCMAKE_CXX_FLAGS="-Werror"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -DCMAKE_CXX_FLAGS="-Werror -Wall -Wextra" -DCMAKE_CXX_CLANG_TIDY=clang-tidy
 ```
 
-To run sapphire, use:
+
+## Getting started {#getting-started}
+
+To run @sapphire, you need to provide a configuration file:
 
 ```shell
-./sapphire parameter.prm
+./sapphirepp parameter.prm
 ```
 
-or
+You enable parallel execution by using `mpirun`:
 
 ```shell
-mpirun ./sapphire parameter.prm
+mpirun ./sapphirepp parameter.prm
 ```
 
 For more details on using @sapphire, refer to the [examples](#examples).
 
-@todo Replace `Gitea` links <https://git.mpi-hd.mpg.de/schween/sapphire> with
-`GitHub` links (including the correct version)
 
-@todo Rename `sapphire` folder to `sapphirepp`
+# Licence
+
+Sapphire++ is distributed under the [LGPL 3.0 license](https://github.com/sapphirepp/sapphirepp/blob/main/LICENSE).
+
+If you use this software in your research, please cite the following paper:
+
+> [Your Name], [Paper Title], [Journal], [Year], DOI: [DOI]
+
+Here's the BibTeX entry for the paper:
+
+```bibtex
+@article{YourPaper,
+  title={Paper Title},
+  author={Your Name},
+  journal={Journal},
+  year={Year},
+  doi={DOI}
+}
+```
+
+@todo Add paper reference
+

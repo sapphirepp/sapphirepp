@@ -16,15 +16,15 @@ string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-.*)?" "\\1"
 
 message("Sapphire++ version ${SAPPHIREPP_VERSION}")
 
-option(SAPPHIRE "Compile Sapphire++" ON )
+option(SAPPHIREPP "Compile Sapphire++" ON )
 option(VFP "Build with VFP module" ON)
 option(EXAMPLES "Build with examples" OFF)
 option(TESTS "Build with tests" OFF)
 option(DOC "Build with documentation" OFF)
 
-project(Sapphire VERSION ${PROJECT_VERSION})
+project(Sapphire++ VERSION ${PROJECT_VERSION})
 
-if(SAPPHIRE)
+if(SAPPHIREPP)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # necessary for the language server
 
   set(DEAL_II_DIR "~/.local/lib/dealii")
@@ -61,12 +61,12 @@ if(SAPPHIRE)
     file(GLOB VFP_SOURCES src/vfp/*.cpp)
 
     file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
-    add_executable(sapphire sapphire.cpp ${VFP_SOURCES})
-    deal_ii_setup_target(sapphire)
-    target_include_directories(sapphire PUBLIC
+    add_executable(sapphirepp sapphirepp.cpp ${VFP_SOURCES})
+    deal_ii_setup_target(sapphirepp)
+    target_include_directories(sapphirepp PUBLIC
                                ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
-    target_include_directories(sapphire PUBLIC ${CONFIG_HEADER_DIR})
-    target_link_libraries(sapphire UtilsLib)
+    target_include_directories(sapphirepp PUBLIC ${CONFIG_HEADER_DIR})
+    target_link_libraries(sapphirepp UtilsLib)
   endif(VFP)
 
   if(EXAMPLES)
@@ -77,7 +77,7 @@ if(SAPPHIRE)
     include(CTest)
     add_subdirectory(tests)
   endif(TESTS)
-endif(SAPPHIRE)
+endif(SAPPHIREPP)
 
   
 if(DOC)
