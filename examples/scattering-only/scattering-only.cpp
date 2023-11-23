@@ -19,13 +19,22 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file examples/scattering-only/scattering-only.cpp
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement the main function for the scattering-only example.
+ */
+
 /** [Includes] */
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/parameter_handler.h>
 
 #include <mpi.h>
 
 #include "config.h"
 #include "output-parameters.h"
+#include "sapphirepp-logstream.h"
+#include "vfp-parameters.h"
 #include "vfp-solver.h"
 /** [Includes] */
 
@@ -37,10 +46,10 @@ main(int argc, char *argv[])
   /** [Try-Catch begin] */
   try
     {
-      /** [Try-Catch begin] */
-      /** [MPI initialization] */
       using namespace Sapphire;
       using namespace VFP;
+      /** [Try-Catch begin] */
+      /** [MPI initialization] */
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
@@ -52,16 +61,15 @@ main(int argc, char *argv[])
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
-
       saplog << "Start example scattering-only with parameter file \""
              << parameter_filename << "\"" << std::endl;
       /** [Command line argument] */
 
       /** [Run time parameters] */
       ParameterHandler         prm;
-      VFPParameters<dimension> vfp_parameters;
       PhysicalParameters       physical_parameters;
       Utils::OutputParameters  output_parameters;
+      VFPParameters<dimension> vfp_parameters;
       /** [Run time parameters] */
 
       /** [Declare parameters] */
@@ -72,9 +80,9 @@ main(int argc, char *argv[])
       /** [Parse parameters] */
       prm.parse_input(parameter_filename);
 
-      vfp_parameters.parse_parameters(prm);
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
       /** [Parse parameters] */
 
       /** [VFP Solver] */

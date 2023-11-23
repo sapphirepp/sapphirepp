@@ -43,8 +43,8 @@ particles are in many physical environments almost isotropic. It, thus,
 expresses $f$ as a series of spherical harmonics, i.e.
 
 $$
-	f(t, \mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
-	\sum^{1}_{s = 0} f_{lms}(t, \mathbf{x}, p) Y_{lms}(\theta,\varphi) \, ,
+ f(t, \mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
+ \sum^{1}_{s = 0} f_{lms}(t, \mathbf{x}, p) Y_{lms}(\theta,\varphi) \, ,
 $$
 
 whose zeroth order term is the isotropic part and higher order terms represent
@@ -64,7 +64,6 @@ compute the transport of radiation (interpreting $f$ as the intensity).
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
 group located at the [Max Planck Institute for Nuclear
 Physics](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
-
 
 
 # Installation {#installation}
@@ -145,7 +144,7 @@ Afterwards you can compile @sapphire, with `cmake` and `make`:
 ```shell
 cd sapphirepp
 export DEAL_II_DIR="path/to/deal.II"
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
 cd build && make
 ```
 
@@ -155,17 +154,14 @@ cd build && make
   export DEAL_II_DIR="/lfs/l8/tap/tapshared/lib/dealii"
   ```
 
-For extensive simulation runs, it's recommended to use to the release version:
-
-```shell
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-```
-
 Developers are advised to use the following options:
 
 ```shell
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -DCMAKE_CXX_FLAGS="-Werror -Wall -Wextra" -DCMAKE_CXX_CLANG_TIDY=clang-tidy
 ```
+
+@note Do not forget to switch to the optimized `Release` build before starting
+ extensive simulation runs.
 
 
 ## Getting started {#getting-started}

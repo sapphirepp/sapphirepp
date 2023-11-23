@@ -1,36 +1,33 @@
-# All parameters are group in subsections. To enter a subsection, use
-# "subsection SubsectionName" and to exit a subsection, use "end".
-# The subsections can be nested.
-# To set a parameter, use "set ParameterName = ParameterValue".
-# Notice that the section and parameter names are case sensitive and
-# can contain spaces.
-
-# The first subsection defines the output.
-# For simplicity, we use the a "vtu" format, but sapphire also supports
-#  - "pvtu" needed for parallel computations
-#  - "hdf5" with "xmf" for visualization (also parallel)
-subsection Output
-  set Base file name               = solution
-  set Format                       = vtu
-  set Number of digits for counter = 4
-  set Output frequency             = 1
-  # Relative ot absolute path to the results folder.
-  set Results folder               = ./results
-  # Subfolder for the simulation. Leave empty for no subfolder.
-  set Simulation identifier        = scattering-only
-end
-
-# Next, we set the parameters defined in "PhysicalParameters".
+# These are the user defined parameters
 subsection Physical parameters
   set f0 = 1.
   set nu = 0.1
 end
 
+subsection Output
+  set Base file name               = solution
+
+  # For simplicity, we use the a "vtu" format, but sapphire also supports
+  #  - "pvtu" needed for parallel computations
+  #  - "hdf5" with "xmf" for visualization (also parallel)
+  set Format                       = vtu
+
+  set Number of digits for counter = 4
+  set Output frequency             = 1
+
+  # Relative ot absolute path to the results folder.
+  set Results folder               = ./results
+
+  # Subfolder for the simulation. Leave empty for no subfolder.
+  set Simulation identifier        = scattering-only
+end
+
+
 # The "VFP" subsection defines all parameters related to the VFP solver.
 subsection VFP
   # The expansion order of the distribution function, l_max.
   subsection Expansion
-    set Expansion order = 3
+    set Expansion order = 9
   end
 
   # The polynomial degree of the finite elements. One means linear elements.
@@ -38,7 +35,7 @@ subsection VFP
     set Polynomial degree = 1
   end
 
-  # We use a mesh with 16 cells in x-direction.
+  # We use a mesh with 8 cells in x-direction.
   # Since the values are constants in x, we use periodic boundary conditions.
   subsection Mesh
     set Grid type = Hypercube

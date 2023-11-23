@@ -19,6 +19,12 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file examples/scattering-only/config.h
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief `config.h` file for the scattering-only example.
+ */
+
 /** [Includes] */
 #ifndef CONFIG_H
 #  define CONFIG_H
@@ -44,19 +50,20 @@
 namespace Sapphire
 {
   /** [Namespace Sapphire] */
+
   /** [PhysicalParameters] */
   class PhysicalParameters
   {
   public:
+    double nu;
+    double f0;
+
     PhysicalParameters() = default;
     /** [PhysicalParameters] */
     /** [Declare parameters] */
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
-      dealii::LogStream::Prefix pre1("Startup", saplog);
-      dealii::LogStream::Prefix pre2("Physical parameters", saplog);
-      saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
       prm.declare_entry("nu",
@@ -76,9 +83,6 @@ namespace Sapphire
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
-      dealii::LogStream::Prefix pre1("Startup", saplog);
-      dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
-      saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
       nu = prm.get_double("nu");
@@ -86,17 +90,14 @@ namespace Sapphire
 
       prm.leave_subsection();
     }
-    /** [Parse parameters] */
-
-    /** [Define parameters] */
-    double nu;
-    double f0;
   };
-  /** [Define parameters] */
+  /** [Parse parameters] */
+
   /** [Namespace VFP] */
   namespace VFP
   {
     /** [Namespace VFP] */
+
     /** [Dimension] */
     static constexpr int dimension = 1;
     /** [Dimension] */
@@ -136,6 +137,7 @@ namespace Sapphire
           }
       }
 
+    private:
       const double                             f0;
       const double                             nu;
       std::vector<std::array<unsigned int, 3>> lms_indices;
@@ -169,6 +171,7 @@ namespace Sapphire
                   nu);
       }
 
+    private:
       const double nu;
     };
     /** [ScatteringFrequency] */
@@ -213,7 +216,7 @@ namespace Sapphire
       {
         static_cast<void>(point); // suppress compiler warning
 
-        // constant magnetic field
+        // zero magnetic field
         magnetic_field[0] = 0.;
         magnetic_field[1] = 0.;
         magnetic_field[2] = 0.;

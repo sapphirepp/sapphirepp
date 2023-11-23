@@ -5,16 +5,12 @@
 
 ## Introduction {#introduction-scattering-only}
 
-In this example, we want to give an introduction to @sapphire and show the basic
-usage. All examples are structured in the following way: First, we give an
-introduction, showing which parts of the VFP equation we want to solve, giving a
-physical motivation and show how @sapphire translates this problem to finite
-elements. Next, we show how to implement the example in @sapphire. We start with
-a detailed description of the `config.h`, going through the file line by line
-giving some explanatory comments. Similarly, we present the
-`scattering-only.cpp` which implements the `main` function. In the results
-section, we show the expected output of the program and explain how to interpret
-it.
+In this example, we want to give an introduction to @sapphire and show its basic
+usage. To this end, we structure the example in three parts. First, we give an
+introduction and physical motivation. Next, we show how to implement the example
+in @sapphire, by going through the respective files line by line giving some
+explanatory comments. In the results section, we show the expected
+output of the program and explain how to interpret it.
 
 As an introductory example, we want to study the simple case with only a
 scattering term in the VFP equation,
@@ -48,7 +44,7 @@ dimension of $\mathbf{x}$ and (reduced) phase space $\mathrm{ps}$ for
 $(\mathbf{x}, p)$.
 
 Collecting all expansion coefficients into a vector $\boldsymbol{f} = (f_{000},
-f_{110}, f_{100}, f_{111}, f_{220}, f_{210}, f_{200}, f_{211}, f_{221} \dots)^
+f_{110}, f_{100}, f_{111}, f_{220}, f_{210}, f_{200}, f_{211}, f_{221}, \dots)^
 {\top}$ the VFP equation now becomes
 
 $$
@@ -82,70 +78,72 @@ correctness of the numerical solution.
 
 ## Implementation {#implementation-scattering-only}
 
-The implementation of the example in @sapphire is split in two files. The first
-one is the header file `config.h` which implements compile time flags and the
-physical setup. The later one consist of the definition of the initial condition
-$f_{lms, 0}$ (@vfpref{InitialValueFunction}), the scattering frequency $\nu$
-(@vfpref{ScatteringFrequency}), the source $S$ (@vfpref{Source}), the magnetic
-field $\mathbf{B}$ (@vfpref{MagneticField}) and the background velocity field
-$\mathbf{u}$ (@vfpref{BackgroundVelocityField}). The second file is the
-`scattering-only.cpp` file that implements the `main` function. The since the
-physical setup is defined in the `config.h` file, the `main` will be nearly
-identical for most use-cases of @sapphire. Runtime parameter will be defined in
-a parameter file `parameter.prm`.
+To implement an example like this in @sapphire, we need two different files. The
+first one is the header file `config.h` which implements the physical setup,
+i.e. the initial condition, scattering frequency, magnetic field, etc. The
+second file is a `.cpp` file that implements the `main` function. In our
+example, we will call this file `scattering-only.cpp`.
+
+@note The `config.h` file will be included in the @sapphire library. Therefore,
+ it must not be renamed and has to define certain variables and functions used
+ by @sapphire.
+
+Furthermore, we need to adapt the `CMakeLists.txt` file to compile the example,
+and provide a parameter file that specifies the runtime parameters.
 
 
 ### config.h {#config-scattering-only}
 
-We start by going line by line through the `config.h` file. First, we have to
+We start by investigating the `config.h` file line by line. Notice that the
+complete file is given at the bottom of the page and in the
+[examples/scattering-only](https://github.com/sapphirepp/sapphirepp/tree/main/examples/scattering-only)
+folder.
+
+First, we have to
 make sure that the file is only included once, and then import some
 dependencies:
 
 @snippet{lineno} examples/scattering-only/config.h Includes
 
-Everything implemented in @sapphire is part of the namespace @ref Sapphire.
+To avoid confusion of variable and class names, we collect everything related to
+@sapphire in the @ref Sapphire namespace:
 
 @snippet{lineno} examples/scattering-only/config.h Namespace Sapphire
 
 Often we parametrize the physical setup with some runtime parameter. Since it is
 set up dependent what these parameters are, they have to be specified by the
-user. The @vfpref{PhysicalParameters} class allows for this. It uses the @dealii
-concept of a @dealref{ParameterHandler}.
+user. The @ref Sapphire::PhysicalParameters "PhysicalParameters" class allows
+for this. It uses the @dealii @dealref{ParameterHandler} to read parameters from
+a parameter file.
 
-The @vfpref{PhysicalParameters} class consists of **public** variables for the
-user defined runtime parameter, a default constructor and two functions to
-**declare** and **parse** the parameter from the parameter file. In this
-example, we have two parameters that we want to specify, the scattering
-frequency $\nu$ and the initial value of the expansion coefficients,
-$f_{lms,0}$. We will call these parameters `nu` and `f0` respectively, assuming
-all expansion coefficients have the same initial value.
+The @ref Sapphire::PhysicalParameters "PhysicalParameters" class consists of
+**public** variables for the user defined runtime parameter, a default
+constructor and two functions to **declare** and **parse** the parameter from
+the parameter file. In this example, we have two parameters that we want to
+specify, the scattering frequency $\nu$ (`nu`) and the initial value of the
+expansion coefficients, $f_{lms,0}$ (`f0`).
 
 @snippet{lineno} examples/scattering-only/config.h PhysicalParameters
 
 The @ref Sapphire::PhysicalParameters::declare_parameters "declare_parameters()"
 function is using the @dealref{ParameterHandler} class to declare parameter in
-the parameter file. We sort all parameter in a subsection "Physical parameters".
-In addition, we write a message to the custom @ref
-Sapphire::Utils::SapphireLogStream "SapphireLogStream" `saplog`. The
-@dealref{LogStream::Prefix,classLogStream_1_1Prefix} ensures, that the message
-is prefixed and only shown, if detailed output is requested. The declaration of
-the parameter is straight forward, using the
+the parameter file. We collect all parameter in a subsection "Physical
+parameters" (`prm.enter_subsection()`). The declaration of the parameter is
+straight forward, using the
 @dealref{ParameterHandler.declare_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
-function. It takes the name of the parameter, a default value and its
-type/pattern. Additionally, one can give a description of the parameter.
+function. It needs the name of the parameter, a default value and its
+type/pattern as input. Additionally, one can give a description of the
+parameter. After all parameters are declared, we have to close the subsection
+again (`prm.leave_subsection()`).
 
 @snippet{lineno} examples/scattering-only/config.h Declare parameters
 
 The parsing of the parameter is equally simple. We use the
 @dealref{ParameterHandler.get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
-function to get the value for a previously declared parameter.
+function to get the value for a previously declared parameter. Again, we first
+have to enter the subsection at the start and leave it at the end.
 
 @snippet{lineno} examples/scattering-only/config.h Parse parameters
-
-At the end, we define the runtime parameter as **public** variables of the
-class, so that subsequent functions have easy access to them.
-
-@snippet{lineno} examples/scattering-only/config.h Define parameters
 
 Next, we define static variables and functions related to the VFP equation. We
 therefore use the namespace @ref Sapphire::VFP "VFP" to collect them in one
@@ -154,25 +152,26 @@ place.
 @snippet{lineno} examples/scattering-only/config.h Namespace VFP
 
 First, we define the dimensionality of the problem. Since the solution does not
-depend on either $\mathbf{x}$ nor $p$, we just use one space dimension.
+depend on either $\mathbf{x}$ nor $p$, we just use one space dimension. We have
+to define this variable as a `static constexpr`, so it is known at compile time.
 
 @snippet{lineno} examples/scattering-only/config.h Dimension
 
-Next, we define which terms of the VFP equation we use. To this end, we define a
-`static constexpr` which the **compiler** can use to determine which terms are
-activated. Selecting only the relevant terms here results in big performance
-gains, even though setting the respective terms to 0 at runtime would produce
-the same results. In this example, we only have a scattering term, and no $p$
-dependence. We therefore only activate the `collision` term, while all other
-terms (and the $p$ dependence are turned off by default.)
+Next, we define which terms of the VFP equation we use. Again, we define a
+`static constexpr` which the **compiler** can use to determine the active terms
+of the VFP equation. Selecting only the relevant terms results in big
+performance gains, even though setting the respective terms to 0 at runtime
+would produce the same results. In this example, we only have a scattering term,
+and no $p$ dependence. We therefore only activate the `collision` term, while
+all other terms (and the $p$ dependence) are turned off by default.
 
 @snippet{lineno} examples/scattering-only/config.h VFP flags
 
-To define the initial values, we use the class @dealref{Function} provided by
-@dealii. We define our own class @vfpref{InitialValueFunction} that inherits all
-properties of the parent class @dealref{Function}. Keeping the style of @dealii,
-we keep the dimension as a template parameter (even though it is at the moment
-defined by the compile time variable `dimension`).
+We define initial values as a @dealref{Function} class provided by @dealii. We
+define our own class @vfpref{InitialValueFunction} that inherits all properties
+of the parent class @dealref{Function}. Keeping the style of @dealii, we keep
+the dimension as a template parameter (even though it is at the moment defined
+by the compile time variable `dimension`).
 
 As we have seen before, the initial condition depends on only one parameter,
 `f0`. But in this example, we will extend the scope of this function, by using
@@ -225,62 +224,84 @@ Last, we have to close the namespaces and the include guard.
 
 ### scattering-only.cpp {#main-scattering-only}
 
-In this file, we will define the `main` function for the scattering
-example. First, we include the header files we need:
+In the second file, we will define the `main` function for the scattering
+example. Since the setup is already implemented in the `config.h` file, this
+file will not change much for different examples. We will explain the file in
+detail once. More advanced examples will only point out differences to this
+example.
+
+First, we include a list of header files:
+
+- `deal.II/base/mpi.h` and `mpi.h` allow MPI parallelization
+- `deal.II/base/parameter_handler.h` to read parameters from a parameter
+  file
+- `config.h` is the configuration file we just implemented
+- `vfp-solver.h` implements the VFP equation solver. This class solves the VFP
+  equation and is the main interface to @sapphire
+- `vfp-parameters.h` declares the parameters related to VFP equation
+  solver, like the time step size and final time
+- `output-parameters.h` declares the parameters related to output, like the
+  output directory and the output frequency
+- `sapphirepp-logstream.h` allows output to the console using different levels of
+  verbosity
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Includes
 
-Then we define the `main` function:
+Then we define the `main` function, allowing for command line arguments:
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Main function
 
 We will run the program inside a try-catch block to catch any exceptions and
-output them.
+output them. Furthermore, we will use the namespace @ref Sapphire and @ref
+Sapphire::VFP, so we don't have to prefix the respective classes.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch begin
 
-First, we need to initialize MPI for parallel runs:
+Before we start anything else, we need to initialize MPI for parallel runs. We
+use the @dealref{MPI_InitFinalize,classUtilities_1_1MPI_1_1MPI__InitFinalize}
+utility that initializes MPI, PETSc and p4est at the start and shuts them down
+at the end of the program. The last argument of the constructor specifies how
+many threads should be used per MPI process. We will avoid TBB parallelization
+and only use one thread per process.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp MPI initialization
 
-We will use the @ref Sapphire::Utils::SapphireLogStream "SapphireLogStream"
-class to output information to the console. The
-@dealref{depth_console(),classLogStream,a8028e970ad8388596d625ed463894e98}
-function allows specifying how detailed the output should be. We will set it to
-2, which results in one line of output per time-step. For parallel runs, we will
-turn of the output of all but the first process.
+In order to output status and debug information to the console, we will use the
+custom log stream @ref Sapphire::saplog "saplog". We can specify the verbosity
+via the argument of the @ref Sapphire::Utils::SapphireppLogStream::init "init()"
+function. A verbosity of `2` correspond to progress information.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Saplog
 
-The program allows to specify the parameter file as a command line argument. In
-case no argument is given, it will default to the file `parameter.prm`. When
-starting the program, we output the configuration specified by command line
-arguments.
+We want to specify the parameter file as a command line argument. Therefore, we
+need to process the command line arguments but default to the file
+`parameter.prm` in case no argument is given. Furthermore, we want to confirm
+the parameter file by outputting it to the console (using the `saplog` stream).
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Command line argument
 
-Next, we create all objects that declare runtime parameter. We prefix these
-lines with `main` in the log stream, to silence the initialization process in a
-run with low verbosity.
+Next, we create all objects that declare runtime parameter. Namely, the
+@vfpref{VFPParameters}, @ref Sapphire::Utils::OutputParameters
+"OutputParameters" and @ref Sapphire::PhysicalParameters "PhysicalParameters"
+class. We will use the @dealref{ParameterHandler} handle the parameter file.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Run time parameters
 
-We now declare all parameters that the ParameterHandler should expect.
-
-@note All parameters have to be declared before we can parse the parameter file.
+Before reading the parameter file, we have to declare all parameters that the
+ParameterHandler should expect.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Declare parameters
 
 After declaring the parameters, we can parse the parameter file and the
-parameters of the objects
+parameters of the objects.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Parse parameters
 
-Finally, we can create the VFP equation solver and run it.
+Finally, we can create the VFP equation solver @vfpref{VFPSolver} and run it.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp VFP Solver
 
-After the simulation ended, we can compute the error by comparing to the
+After the simulation ends, we can compute the error by comparing to the
 analytic solution (implemented in @vfpref{InitialValueFunction}).
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp L2 error
@@ -291,95 +312,181 @@ return with an error code.
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch end
 
 
-@todo Add section "Compiling the example" including the "CMakeLists.txt"
+### Compiling {#compiling-scattering-only}
 
+In order to compile the example, we need to create a `CMakeLists.txt` file. This
+file is used by the [CMake](https://cmake.org) build system to create makefiles
+that will compile the program. Since the `config.h` file is included in the main
+library, we have to link against it. As a consequence, @sapphire can not be
+understood as an independent library. This is reflected in the fact, that all
+examples or applications of sapphire have to be included alongside the main
+library.
 
-## Results {#results-scattering-only}
+To simplify things a little, we define a bunch of variables in the root
+`CMakeLists.txt`. As long as applications are located in the examples folder,
+there are only two things to do:
 
-After compiling the example program, we can run it with
+1. Add the application as a subfolder to the `examples/CMakeLists.txt` file:
 
-```bash
-./scattering parameter.prm
+    ```cmake
+    add_subdirectory(scattering-only)
+    ```
+
+2. Add the following `CMakeLists.txt` in the application folder:
+  
+@include{lineno} examples/scattering-only/CMakeLists.txt
+
+Now calling `cmake` inside the root folder (see [Compiling
+Sapphire++](#compilation)) will result in creating a
+`build/examples/scattering-only` folder. To build the example executing the
+following commands (staring in the `build` folder):
+
+```shell
+cmake .
+cd examples/scattering-only
+make -j
 ```
-
-With the [parameter file](@ref parameter) given below, we expect the following
-output:
-
-```bash
-Sapphire::Start example scattering with parameter file "parameter.prm" on 1 processor(s) [2023/10/30 13:17:39]
-WARNING: spatial advection is deactivated, but dim_cs > 0
-  If the spatial advection term is deactivated,
-  the distribution function is assumed to be homogeneous
-  i.e. the dimension of the configuration space should be zero.
-Sapphire:VFP::Run VFP equation solver.          [13:17:39]
-Sapphire:VFP::Time step    1 at t = 0.00000     [13:17:39]
-Sapphire:VFP::Time step    2 at t = 0.100000    [13:17:39]
-Sapphire:VFP::Time step    3 at t = 0.200000    [13:17:39]
-Sapphire:VFP::Time step    4 at t = 0.300000    [13:17:39]
-Sapphire:VFP::Time step    5 at t = 0.400000    [13:17:39]
-Sapphire:VFP::Time step    6 at t = 0.500000    [13:17:39]
-Sapphire:VFP::Time step    7 at t = 0.600000    [13:17:39]
-Sapphire:VFP::Time step    8 at t = 0.700000    [13:17:39]
-Sapphire:VFP::Time step    9 at t = 0.800000    [13:17:39]
-Sapphire:VFP::Time step   10 at t = 0.900000    [13:17:39]
-Sapphire:VFP::Time step   11 at t = 1.00000     [13:17:39]
-Sapphire:VFP::Time step   12 at t = 1.10000     [13:17:39]
-Sapphire:VFP::Time step   13 at t = 1.20000     [13:17:39]
-Sapphire:VFP::Time step   14 at t = 1.30000     [13:17:39]
-Sapphire:VFP::Time step   15 at t = 1.40000     [13:17:39]
-Sapphire:VFP::Time step   16 at t = 1.50000     [13:17:39]
-Sapphire:VFP::Time step   17 at t = 1.60000     [13:17:39]
-Sapphire:VFP::Time step   18 at t = 1.70000     [13:17:39]
-Sapphire:VFP::Time step   19 at t = 1.80000     [13:17:39]
-Sapphire:VFP::Time step   20 at t = 1.90000     [13:17:39]
-Sapphire:VFP::The simulation ended.             [13:17:39]
-
-+------------------------------------------+------------------+------------+------------------+
-| Total wallclock time elapsed             |    0.1548s     0 |    0.1548s |    0.1548s     0 |
-|                                          |                  |                               |
-| Section                      | no. calls |   min time  rank |   avg time |   max time  rank |
-+------------------------------------------+------------------+------------+------------------+
-| DG matrix                    |        21 |   0.07757s     0 |   0.07757s |   0.07757s     0 |
-| FE system                    |         1 |   0.01056s     0 |   0.01056s |   0.01056s     0 |
-| Grid setup                   |         1 |  0.001882s     0 |  0.001882s |  0.001882s     0 |
-| Mass matrix                  |         1 |  0.002406s     0 |  0.002406s |  0.002406s     0 |
-| Output                       |        21 |    0.0196s     0 |    0.0196s |    0.0196s     0 |
-| Project f onto the FEM space |         1 |  0.004495s     0 |  0.004495s |  0.004495s     0 |
-| Setup                        |         1 |   0.02981s     0 |   0.02981s |   0.02981s     0 |
-| Theta method                 |        20 |    0.1114s     0 |    0.1114s |    0.1114s     0 |
-+------------------------------------------+------------------+------------+------------------+
-Sapphire:VFP::Compute the global error
-Sapphire::L2 error: 0.000654138
-```
-
-@todo Explain console output
-
-The results of the run will be saved in the `results/scattering` folder. In the
-folder are two different kinds of files. First, the `log.prm` is a log of the
-parameter file used for the run. This allows to reproduce/identify the results
-of a simulation at a later stage. Second, the `solution_*.vtu` files with the
-solution at the different time steps. These files can be visualized using
-visualization software like [ParaView](https://www.paraview.org) or
-[VisIt](https://visit-dav.github.io/visit-website/).
-
-In our example the result is not very interesting. The values for $f_{lms}(x,t)$
-are calculated for $x$ between $-1$ and $1$. As expected, the solution decays
-with time as $f_{lms}(t) = \exp\left(- \frac{l(l + 1)}{2} t \right)$.
-
-The following image shows the results at $t=2$ for $l = 0,1,2,3$:
-
-![Results at t=2](/path/to/image)
-
-@todo Use relative picture path, or path to git.
 
 
 ### Parameter file {#parameter-scattering-only}
 
-The parameter file can either be a `.prm`, `.json` or `.xml` file. Here, we use
-a `.prm` for easy readability. For more information on the different input
-formats, we refer to the @dealref{ParameterHandler} documentation.
+
+The last file we need is the parameter file. This can be either a `.prm`,
+`.json` or `.xml` file. More information on the different input formats can be
+found in the @dealref{ParameterHandler} documentation.
+
+The parameter file is split into three sections. First, the `Physical
+parameters` section with all user defined parameters from the @ref
+Sapphire::PhysicalParameters "PhysicalParameters" class. Next, the `Output`
+section, containing the parameters from the @ref
+Sapphire::Utils::OutputParameters "OutputParameters" class. Third, the `VFP`
+section with all parameters related to @vfpref{VFPParameters}.  
+These sections can contain a number of parameters and subsections using the
+following syntax:
+
+```param
+subsection Section Name
+  set Parameter Name = value
+  ...
+
+  subsection Subsection Name
+    set Parameter Name = value
+    ...
+  end
+end
+```
+
+Notice that section and parameter names are case-sensitive and  can contain
+spaces.
 
 @include{lineno} examples/scattering-only/parameter.prm
+
+
+## Results {#results-scattering-only}
+
+After compiling the example program, we can run it with:
+
+```shell
+./scattering-only parameter.prm
+```
+
+This results in console output similar to:
+
+```output
+Sapphire::Start Sapphire++ v1.1.0-dev with 1 MPI process(es) [2023/11/23 18:43:53]
+Sapphire::Start example scattering-only with parameter file "parameter.prm"
+WARNING: spatial advection is deactivated, but dim_cs > 0
+  If the spatial advection term is deactivated,
+  the distribution function is assumed to be homogeneous
+  i.e. the dimension of the configuration space should be zero.
+Sapphire:VFP::Run VFP equation solver.          [18:43:53]
+Sapphire:VFP::Time step    0 at t = 0.00000     [18:43:53]
+Sapphire:VFP::Time step    1 at t = 0.100000    [18:43:54]
+Sapphire:VFP::Time step    2 at t = 0.200000    [18:43:54]
+Sapphire:VFP::Time step    3 at t = 0.300000    [18:43:54]
+Sapphire:VFP::Time step    4 at t = 0.400000    [18:43:55]
+Sapphire:VFP::Time step    5 at t = 0.500000    [18:43:55]
+Sapphire:VFP::Time step    6 at t = 0.600000    [18:43:55]
+Sapphire:VFP::Time step    7 at t = 0.700000    [18:43:56]
+Sapphire:VFP::Time step    8 at t = 0.800000    [18:43:56]
+Sapphire:VFP::Time step    9 at t = 0.900000    [18:43:56]
+Sapphire:VFP::Simulation ended at t = 1.00000   [18:43:57]
+
++------------------------------------------+------------------+------------+------------------+
+| Total wallclock time elapsed             |     3.584s     0 |     3.584s |     3.584s     0 |
+|                                          |                  |                               |
+| Section                      | no. calls |   min time  rank |   avg time |   max time  rank |
++------------------------------------------+------------------+------------+------------------+
+| DG matrix                    |        21 |     3.233s     0 |     3.233s |     3.233s     0 |
+| ERK4                         |        10 |     3.113s     0 |     3.113s |     3.113s     0 |
+| FE system                    |         1 |    0.1036s     0 |    0.1036s |    0.1036s     0 |
+| Grid setup                   |         1 |  0.002364s     0 |  0.002364s |  0.002364s     0 |
+| Mass matrix                  |         1 |   0.07479s     0 |   0.07479s |   0.07479s     0 |
+| Output                       |        11 |    0.1217s     0 |    0.1217s |    0.1217s     0 |
+| Project f onto the FEM space |         1 |    0.0128s     0 |    0.0128s |    0.0128s     0 |
+| Setup                        |         1 |    0.3662s     0 |    0.3662s |    0.3662s     0 |
++------------------------------------------+------------------+------------+------------------+
+Sapphire:VFP::Compute the global error
+Sapphire::L2 error: 0.000199350
+```
+
+We first see two star-up messages, followed by a warning. This is related to the
+problem that we have no spatial dependence in this simple scattering-only
+example, but still use `dimension = 1` in the code. Since this is only a toy
+problem, we can ignore this warning, in real applications it would indicate that
+we might have made a mistake in the setup.  
+Next, we see that the @vfpref{VFPSolver} starts, and evolves the solution in 10
+time steps. Last we get detailed timing information. We see that most time is
+spent in the DG matrix assembly, followed by the ERK4 time stepping. This of
+course will change depending on the machine and build options (Debug vs.
+Release).  
+Last, we see that the L2 error is $\sim 10^{-4}$. Using a 4th order Runge-Kutta
+scheme and a time step size of $0.1$, this is expected.
+
+Let's now have a look at the output files saved in `results/scattering-only/`.
+We see, this folder contains a `log.prm` file and a number of `solution_*.vtu`
+files. The `log.prm` file is a copy of the parameter file used for the run,
+allowing to reproduce/identify the results at a later stage. The
+`solution_*.vtu` files contain the solution $f_{lms}(t)$ at the respective time
+steps. These files can be visualized using visualization software like
+[ParaView](https://www.paraview.org) or
+[VisIt](https://visit-dav.github.io/visit-website/).
+
+After opening the files as a time series, we can see that it contains all
+coefficients `f_lms` and the `subdomain` for each domain (in this case we only
+have one domain with id `0`). Showing only the `f_l00` solution in a 2d plot, we
+get something like:
+
+![Results GIF](https://sapphirepp.org/img/examples/scattering-only.gif)
+
+Let's compare this with our expectation. The analytic solution is given by
+$f_{lms}(t) = f_{lms, 0} \, e^{-\nu \frac{l(l + 1)}{2} t}$. As we can see, the
+higher $l$ modes in deed decay faster, while $f_{000}$ is constant. We can also
+check, that the solution is independent of $m$ and $s$. With
+$f_{lms, 0} = 1$, $\nu = 0.1$ and $t = 1$ we expect the following values:
+
+$$
+  f_{lms}(t) = \exp\left(-0.1 \frac{l(l + 1)}{2} \right)
+$$
+
+
+We can use the solution at $t=1$ for a more quantitative comparison. The
+expected values are:
+
+```text
+f_0ms = 1.0000
+f_1ms = 0.9048
+f_2ms = 0.7408
+f_3ms = 0.5488
+f_4ms = 0.3679
+f_5ms = 0.2231
+f_6ms = 0.1225
+f_7ms = 0.0608
+f_8ms = 0.0273
+f_9ms = 0.0111
+```
+
+![Results at t=1](https://sapphirepp.org/img/examples/scattering-only-t1.png)
 
 
 ## The plain program {#plain-scattering-only}
@@ -397,4 +504,4 @@ formats, we refer to the @dealref{ParameterHandler} documentation.
 ---
 
 @author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
-@date 2023-10-31
+@date 2023-11-23
