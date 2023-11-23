@@ -14,16 +14,57 @@ margin: 0 auto; width:40%">
 <strong>r</strong>elativistic <strong>e</strong>nergies in
 C<strong>++</strong>\".
 
-It is made to simulate the interaction of particles with a background plasma. To
-this end it solves a Vlasov-Fokker-Planck equation in mixed coordinates, namely
+It is a code to simulate the interaction of charged particles with a background
+plasma, a typical example is the propagation and acceleration of cosmic rays. To
+this end it solves a Vlasov-Fokker-Planck (VFP) equation in mixed coordinates,
+namely
 
 $$
   \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f -
   \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p}f -
   \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f +
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
-  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S(\mathbf{x}, \mathbf{p}, t)\, .
+  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S\, .
 $$
+
+$f$ is the distribution function of the particles, i.e. their number density in
+phase space. $\mathbf{U}$ is the velocity of the background plasma, e.g. the
+velocities of a plasma around a collisionless shock as observed after supernova
+explosions. $\mathbf{B}$ is mean magnetic field of this plasma. $S$ is a source
+term representing the injection of the charged particles. They interact with the
+background plasma via isotropic and elastic scattering off fluctuations of the
+plasma's mean electromagnetic fields. $\nu$ is the corresponding scattering
+frequency. $\mathbf{U}$, $\mathbf{B}$, $S$ and $\nu$ are the input of the
+simulation and can be analytical functions of $t, \mathbf{x}$ and $p$. The
+distribution function $f$ is its output.
+
+@sapphire tries to exploit that the distributions of energetic and charged
+particles are in many physical environments almost isotropic. It, thus,
+expresses $f$ as a series of spherical harmonics, i.e.
+
+$$
+	f(t, \mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l = 0} \sum^{l}_{m = 0}
+	\sum^{1}_{s = 0} f_{lms}(t, \mathbf{x}, p) Y_{lms}(\theta,\varphi) \, ,
+$$
+
+whose zeroth order term is the isotropic part and higher order terms represent
+the anisotropies of the distribution function. @sapphire computes the expansion
+coefficients $f_{lms}$, hence it solves a system of partial differential equations
+(PDEs), which is derived from the above VFP equation.
+
+A distinguishing feature of @sapphire is that it solves this system of PDEs by
+applying the discontinuous Galerkin (dG) method. The dG method is a finite
+element method which is particularly suited for the shown VFP equation.
+
+Even though primarily developed in the context of cosmic-ray physics, @sapphire
+can be applied in the context of inertial confinement fusion, or for example to
+compute the transport of radiation (interpreting $f$ as the intensity).
+
+@sapphire is developed by the [Astrophysical Plasma
+Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
+group located at the [Max Planck Institute for Nuclear
+Physics](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
+
 
 
 # Installation {#installation}
