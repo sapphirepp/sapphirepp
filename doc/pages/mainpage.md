@@ -44,6 +44,7 @@ following programs installed:
 - [Open-MPI](https://www.open-mpi.org)
 - [Threading Building Blocks (TBB)](https://github.com/oneapi-src/oneTBB)
 - [boost](https://www.boost.org)
+- [zlib](https://zlib.net)
 - [HDF5](https://www.hdfgroup.org/solutions/hdf5/) with MPI support
 - [LAPACK](https://www.netlib.org/lapack/)
 - [p4est](https://www.p4est.org)
