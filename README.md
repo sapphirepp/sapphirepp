@@ -34,6 +34,7 @@ Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-group
 group located at the [Max-Planck-Institut für
 Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
 
+
 ## Installation
 
 Sapphire++ builds on top of the [deal.II](https://www.dealii.org) finite element

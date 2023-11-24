@@ -6,9 +6,11 @@
 ## Introduction {#introduction-gyro-motion-f0}
 
 In this example, we want to give an overview on how magnetic fields work in
-@sapphire. Here, we will focus on only the isotropic part of the distribution,
-$f_0$. We have a second example focusing on the anisotropies $f_1$:
-@todo Link to gyro-motion-f1 example.
+@sapphire. We will consider a simple set-up of an isotropic particle
+distribution in a constant magnetic filed. Therefore, our focus lies on the
+isotropic part of the distribution function, $f_0$. This is example is
+accompanied by a second example, which focus on a non-isotropic parts $f_{l>0}$
+but with a homogenous distribution, @todo Link to gyro-motion-f1 example.
 
 Let us consider a set-up, with particles in a constant external magnetic field,
 
@@ -16,8 +18,8 @@ $$
   \mathbf{B} = B_0 \hat{\mathbf{e}}_z \,.
 $$
 
-Since we don't consider scattering, background velocity field nor a source term,
-we arrive at the following VFP equation:
+Since we don't consider scattering, a background velocity field nor a source
+term, we arrive at the following VFP equation:
 
 $$
   \frac{\partial f}{\partial t} + \mathbf{v} \cdot \nabla_{x} f -
@@ -41,17 +43,16 @@ $$
 
 With the $B$-field orientated in $z$-direction, the motion will only take place
 in the $x$-$y$-plane. This allows us to reduce the dimensionality of the problem
-to 2D. As initial condition, we choose an isotropic distribution of particles
-concentrated at the origin:
+to 2D. As initial condition, we choose a Gaussian isotropic distribution of
+particles concentrated at the origin:
 
 \begin{align*}
-  %Gaussian
   f_0(\mathbf{r}, t=0) &= e^{- \frac{r^2}{2 \sigma^2}} \,, \\
   f_{l>0}(\mathbf{r}, t=0) &= 0 \,.
 \end{align*}
 
-Here $\sigma$ is the spread of the initial Gaussian, and $r = \sqrt{x^2 + y^2}$
-is the radial distance from the origin. After one gyroperiod,
+Here $\sigma$ is the spread of the Gaussian, and $r = \sqrt{x^2 + y^2}$ is the
+radial distance from the origin. After one gyroperiod,
 
 $$
   T_g = \frac{2 \pi}{\omega_g} = \frac{2 \pi \gamma m c}{q B_0} \,,
@@ -73,6 +74,14 @@ even though the initial condition is isotropic.
 
 ## Implementation {#implementation-gyro-motion-f0}
 
+Again the implementation is split into two files, the `config.h` implements the
+physical set-up, and the `gyro-motion-f0.cpp` implements the main function. We
+will discuss both files in detail, but refer to the [introduction
+example](#scattering-only) for information on compiling the example. You will
+notice that also most of the `gyro-motion-f0.cpp` and `config.h` file will be
+similar to the [introduction example](#scattering-only). There are only very few
+changes to describe a very different scenario in @sapphire.
+
 
 ### config.h {#config-gyro-motion-f0}
 
@@ -84,16 +93,21 @@ Next, we define the runtime parameters in the @ref Sapphire::PhysicalParameters
 "PhysicalParameters" class. We need the magnetic field strength $B_0$, and the
 initial spread of the distribution function $\sigma$. The mass $m$, charge $q$
 and velocity/gamma factor $\gamma$ of the particles are already implemented as
-runtime parameters in the class @vfpref{VFPParameters}. Notice, that instead
-of $B_0$ we use $\frac{B_0}{2 \pi}$ as an input parameter. This is, so that
-`Final time = gamma` corresponds to one full gyroperiod $T_g$ (for $m = q = c
-=1$).
-
+runtime parameters in the class @vfpref{VFPParameters}.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h PhysicalParameters
 
-The rest of the set-up is again collected in the namespace @ref Sapphire::VFP
-"VFP".
+The declaration and parsing of the parameters is done using the @ref
+Sapphire::PhysicalParameters::declare_parameters "declare_parameters()" and @ref
+Sapphire::PhysicalParameters::parse_parameters "parse_parameters()" function
+respectively. Notice, that we use $\frac{B_0}{2 \pi}$ instead of $B_0$ as an
+input parameter. This is, so that `Final time = gamma` corresponds to one full
+gyroperiod $T_g$ (for $m = q = c =1$).
+
+@snippet{lineno} examples/gyro-motion-f0/config.h Declare and Parse parameters
+
+The rest of the set-up is directly related to the @vfpref{VFPSolver} and
+therefore collected in the namespace @ref Sapphire::VFP "VFP".
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Namespace VFP
 
@@ -102,9 +116,24 @@ $x$-$y$-plane.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Dimension
 
-In this example, we only have the magnetic and spatial advection terms in the
-VFP equation. Furthermore, the magnetic field is constant, so we can use the
-@vfpref{VFPFlags::time_independent_fields} flag:
+Next, we have to set which terms of the VFP equation we want to use. Recalling
+the VFP equation,
+
+$$
+  \frac{\partial f}{\partial t} + \mathbf{v} \cdot \nabla_{x} f -
+  q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,,
+$$
+
+we can see that we have at least a part of the @ref
+Sapphire::VFP::VFPFlags::spatial_advection "spatial advection" term $\mathbf{v}
+\cdot \nabla_{x} f$, and the @ref Sapphire::VFP::VFPFlags::magnetic "magnetic"
+term $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$.
+Therefore, we have to set both flags in the @ref Sapphire::VFP::VFPFlags
+"vfp_flags" variable. Furthermore, all our fields are time independent, so we
+can set the @ref Sapphire::VFP::VFPFlags::time_independent_fields
+"time independent fields" flag. Notice that if we wouldn't set this flag,
+@sapphire would still produce the correct result, but it would be less
+efficient.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h VFP flags
 

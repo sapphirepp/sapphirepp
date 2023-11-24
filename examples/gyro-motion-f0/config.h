@@ -18,9 +18,12 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-/// @file examples/gyro-motion-f0/config.h
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief Implement physical setup for gyro-motion-f0 example
+
+/**
+ * @file examples/gyro-motion-f0/config.h
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement physical setup for the gyro-motion-f0 example.
+ */
 
 /** [Includes] */
 #ifndef CONFIG_H
@@ -44,12 +47,18 @@
 namespace Sapphire
 {
   /** [Includes] */
+
   /** [PhysicalParameters] */
   class PhysicalParameters
   {
   public:
-    PhysicalParameters() = default;
+    double B0;
+    double sigma;
 
+    PhysicalParameters() = default;
+    /** [PhysicalParameters] */
+
+    /** [Declare and Parse parameters] */
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
@@ -82,15 +91,14 @@ namespace Sapphire
 
       prm.leave_subsection();
     }
-
-    double B0;
-    double sigma;
   };
-  /** [PhysicalParameters] */
+  /** [Declare and Parse parameters] */
+
   /** [Namespace VFP] */
   namespace VFP
   {
     /** [Namespace VFP] */
+
     /** [Dimension] */
     static constexpr int dimension = 2;
     /** [Dimension] */
@@ -120,12 +128,12 @@ namespace Sapphire
       {
         AssertDimension(f.size(), this->n_components);
 
-        std::fill(f.begin(), f.end(), 0.);
         f = 0.;
 
         f[0] = std::exp(-point.norm_square() / (2. * sigma * sigma));
       }
 
+    private:
       const double sigma;
     };
     /** [InitialValueFunction value] */
@@ -155,6 +163,7 @@ namespace Sapphire
         magnetic_field[2] = B0;
       }
 
+    private:
       const double B0;
     };
     /** [MagneticField value] */
