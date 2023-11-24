@@ -2,26 +2,31 @@
 [![clang-format Check](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml)
 [![Monthly tests](https://github.com/sapphirepp/sapphirepp/actions/workflows/monthly-tests.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/monthly-tests.yml)
 
+
 <p align="center">
-<img src="logo/sapphire-logo-text.png" width=563 height=300>
+<img src="logo/sapphire-logo-text.png" alt="Sapphire++ logo" width=394>
 </p>
 
 
-# About Sapphire++
+# About
 
-Sapphire++ (<strong>S</strong>imulating
+Sapphire++ is an acronym and stands for \"<strong>S</strong>imulating
 <strong>a</strong>strophysical <strong>p</strong>lasmas and
 <strong>p</strong>articles with <strong>hi</strong>ghly
 <strong>r</strong>elativistic <strong>e</strong>nergies in
-C<strong>++</strong>) is a code to solve that solves the Vlasov-Fokker-Planck
-equation for particle transport in plasma:
+C<strong>++</strong>\".
+
+It is a code to simulate the interaction of charged particles with a background
+plasma, a typical example is the propagation and acceleration of cosmic rays. To
+this end it solves a Vlasov-Fokker-Planck (VFP) equation in mixed coordinates,
+namely
 
 $$
   \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f -
   \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p}f -
   \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f +
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
-  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S(\mathbf{x}, \mathbf{p}, t)\, .
+  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S .
 $$
 
 
