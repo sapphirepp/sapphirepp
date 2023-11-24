@@ -49,8 +49,8 @@ $$
 
 whose zeroth order term is the isotropic part and higher order terms represent
 the anisotropies of the distribution function. @sapphire computes the expansion
-coefficients $f_{lms}$, hence it solves a system of partial differential equations
-(PDEs), which is derived from the above VFP equation.
+coefficients $f_{lms}$, hence it solves a system of partial differential
+equations (PDEs), which is derived from the above VFP equation.
 
 A distinguishing feature of @sapphire is that it solves this system of PDEs by
 applying the discontinuous Galerkin (dG) method. The dG method is a finite
