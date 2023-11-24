@@ -28,13 +28,13 @@ $$
 $$
 
 $f$ is the distribution function of the particles, i.e. their number density in
-phase space. $\mathbf{U}$ is the velocity of the background plasma, e.g. the
+phase space. $\mathbf{u}$ is the velocity of the background plasma, e.g. the
 velocities of a plasma around a collisionless shock as observed after supernova
 explosions. $\mathbf{B}$ is mean magnetic field of this plasma. $S$ is a source
 term representing the injection of the charged particles. They interact with the
 background plasma via isotropic and elastic scattering off fluctuations of the
 plasma's mean electromagnetic fields. $\nu$ is the corresponding scattering
-frequency. $\mathbf{U}$, $\mathbf{B}$, $S$ and $\nu$ are the input of the
+frequency. $\mathbf{u}$, $\mathbf{B}$, $S$ and $\nu$ are the input of the
 simulation and can be analytical functions of $t, \mathbf{x}$ and $p$. The
 distribution function $f$ is its output.
 
