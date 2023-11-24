@@ -30,12 +30,12 @@
 #include "sapphirepp-logstream.h"
 
 template <unsigned int dim>
-Sapphire::VFP::VFPParameters<dim>::VFPParameters() = default;
+sapphirepp::VFP::VFPParameters<dim>::VFPParameters() = default;
 
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
+sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
   LogStream::Prefix pre2("VFPParameters", saplog);
@@ -185,7 +185,7 @@ Sapphire::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
+sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
   LogStream::Prefix pre2("VFPParameters", saplog);
@@ -368,6 +368,6 @@ Sapphire::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 }
 
 // Explicit instantiation
-template class Sapphire::VFP::VFPParameters<1>;
-template class Sapphire::VFP::VFPParameters<2>;
-template class Sapphire::VFP::VFPParameters<3>;
+template class sapphirepp::VFP::VFPParameters<1>;
+template class sapphirepp::VFP::VFPParameters<2>;
+template class sapphirepp::VFP::VFPParameters<3>;

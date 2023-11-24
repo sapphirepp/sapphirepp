@@ -38,7 +38,7 @@
 
 #include <filesystem>
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace Utils
   {
@@ -145,5 +145,5 @@ namespace Sapphire
     };
 
   } // namespace Utils
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

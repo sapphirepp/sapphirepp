@@ -35,7 +35,7 @@ main(int argc, char *argv[])
 {
   try
     {
-      using namespace Sapphire;
+      using namespace sapphirepp;
       using namespace VFP;
 
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,

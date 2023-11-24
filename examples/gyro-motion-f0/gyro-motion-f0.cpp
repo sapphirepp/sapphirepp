@@ -38,7 +38,7 @@ main(int argc, char *argv[])
 {
   try
     {
-      using namespace Sapphire;
+      using namespace sapphirepp;
       using namespace VFP;
       /** [Main function] */
       /** [MPI initialization] */

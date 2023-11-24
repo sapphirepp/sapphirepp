@@ -37,7 +37,7 @@
 #include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
 
-namespace Sapphire
+namespace sapphirepp
 {
   class PhysicalParameters
   {
@@ -521,5 +521,5 @@ namespace Sapphire
       double pi = 2 * std::acos(0.);
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

@@ -36,7 +36,7 @@
 #include "config.h"
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   const PDESystem          &system,
   const VFPParameters<dim> &solver_control,
   const PhysicalParameters &physical_parameters)
@@ -105,7 +105,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
   double time)
 {
   background_velocity_field.set_time(time);
@@ -113,7 +113,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   compute_upwind_fluxes(
     const std::vector<dealii::Point<dim>>     &q_points,
     const std::vector<dealii::Tensor<1, dim>> &normals,
@@ -208,7 +208,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   prepare_work_arrays_for_lapack()
 {
   // Preparations for the eigenvalue and eigenvector computations
@@ -295,7 +295,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   prepare_upwind_fluxes()
 {
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
@@ -409,7 +409,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 {
   std::cout << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
@@ -516,7 +516,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_space_directions(
     const unsigned int          component,
     const double                n_component,
@@ -580,12 +580,12 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
-  const double                               n_p,
-  const double                               momentum,
-  const double                               gamma,
-  const dealii::Vector<double>              &material_derivative,
-  const std::vector<dealii::Vector<double>> &jacobian)
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  compute_matrix_sum(const double                  n_p,
+                     const double                  momentum,
+                     const double                  gamma,
+                     const dealii::Vector<double> &material_derivative,
+                     const std::vector<dealii::Vector<double>> &jacobian)
 {
   if (logarithmic_p)
     {
@@ -621,7 +621,7 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::compute_matrix_sum(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_p_direction(
     const double                               n_p,
     const double                               momentum,
@@ -701,15 +701,15 @@ Sapphire::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 }
 
 // explicit instantiation
-template class Sapphire::VFP::UpwindFlux<1, true, true>;
-template class Sapphire::VFP::UpwindFlux<1, true, false>;
-template class Sapphire::VFP::UpwindFlux<1, false, true>;
-template class Sapphire::VFP::UpwindFlux<1, false, false>;
-template class Sapphire::VFP::UpwindFlux<2, true, true>;
-template class Sapphire::VFP::UpwindFlux<2, true, false>;
-template class Sapphire::VFP::UpwindFlux<2, false, true>;
-template class Sapphire::VFP::UpwindFlux<2, false, false>;
-template class Sapphire::VFP::UpwindFlux<3, true, true>;
-template class Sapphire::VFP::UpwindFlux<3, true, false>;
-template class Sapphire::VFP::UpwindFlux<3, false, true>;
-template class Sapphire::VFP::UpwindFlux<3, false, false>;
+template class sapphirepp::VFP::UpwindFlux<1, true, true>;
+template class sapphirepp::VFP::UpwindFlux<1, true, false>;
+template class sapphirepp::VFP::UpwindFlux<1, false, true>;
+template class sapphirepp::VFP::UpwindFlux<1, false, false>;
+template class sapphirepp::VFP::UpwindFlux<2, true, true>;
+template class sapphirepp::VFP::UpwindFlux<2, true, false>;
+template class sapphirepp::VFP::UpwindFlux<2, false, true>;
+template class sapphirepp::VFP::UpwindFlux<2, false, false>;
+template class sapphirepp::VFP::UpwindFlux<3, true, true>;
+template class sapphirepp::VFP::UpwindFlux<3, true, false>;
+template class sapphirepp::VFP::UpwindFlux<3, false, true>;
+template class sapphirepp::VFP::UpwindFlux<3, false, false>;

@@ -16,7 +16,7 @@
 #ifndef VFP_VFPFLAGS_H
 #define VFP_VFPFLAGS_H
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -132,5 +132,5 @@ namespace Sapphire
       file
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

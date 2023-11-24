@@ -37,14 +37,14 @@
 
 
 
-Sapphire::Utils::OutputParameters::OutputParameters()
+sapphirepp::Utils::OutputParameters::OutputParameters()
   : mpi_communicator(MPI_COMM_WORLD)
 {}
 
 
 
 void
-Sapphire::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
+sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
   LogStream::Prefix pre2("OutputParameters", saplog);
@@ -90,7 +90,7 @@ Sapphire::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
 
 
 void
-Sapphire::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
+sapphirepp::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
 {
   LogStream::Prefix pre1("Startup", saplog);
   LogStream::Prefix pre2("OutputParameters", saplog);
@@ -107,11 +107,11 @@ Sapphire::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
 
   s = prm.get("Format");
   if (s == "vtu")
-    format = Sapphire::Utils::OutputFormat::vtu;
+    format = sapphirepp::Utils::OutputFormat::vtu;
   else if (s == "pvtu")
-    format = Sapphire::Utils::OutputFormat::pvtu;
+    format = sapphirepp::Utils::OutputFormat::pvtu;
   else if (s == "hdf5")
-    format = Sapphire::Utils::OutputFormat::hdf5;
+    format = sapphirepp::Utils::OutputFormat::hdf5;
   else
     AssertThrow(false, ExcNotImplemented());
 
@@ -126,7 +126,7 @@ Sapphire::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
 
 
 void
-Sapphire::Utils::OutputParameters::parse_parameters_callback(
+sapphirepp::Utils::OutputParameters::parse_parameters_callback(
   ParameterHandler &prm) const
 {
   // create output directory
@@ -145,7 +145,7 @@ Sapphire::Utils::OutputParameters::parse_parameters_callback(
 
 template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters::write_results(
+sapphirepp::Utils::OutputParameters::write_results(
   DataOut<dim>      &data_out,
   const unsigned int time_step_number)
 {
@@ -252,20 +252,20 @@ Sapphire::Utils::OutputParameters::write_results(
 
 // Explicit instantiation
 template void
-Sapphire::Utils::OutputParameters::write_results<1>(DataOut<1> &,
-                                                    const unsigned int);
+sapphirepp::Utils::OutputParameters::write_results<1>(DataOut<1> &,
+                                                      const unsigned int);
 template void
-Sapphire::Utils::OutputParameters::write_results<2>(DataOut<2> &,
-                                                    const unsigned int);
+sapphirepp::Utils::OutputParameters::write_results<2>(DataOut<2> &,
+                                                      const unsigned int);
 template void
-Sapphire::Utils::OutputParameters::write_results<3>(DataOut<3> &,
-                                                    const unsigned int);
+sapphirepp::Utils::OutputParameters::write_results<3>(DataOut<3> &,
+                                                      const unsigned int);
 
 
 
 template <unsigned int dim>
 void
-Sapphire::Utils::OutputParameters::write_grid(
+sapphirepp::Utils::OutputParameters::write_grid(
   const Triangulation<dim> &triangulation,
   const std::string        &filename) const
 {
@@ -284,11 +284,11 @@ Sapphire::Utils::OutputParameters::write_grid(
 
 // Explicit
 template void
-Sapphire::Utils::OutputParameters::write_grid<1>(const Triangulation<1> &,
-                                                 const std::string &) const;
+sapphirepp::Utils::OutputParameters::write_grid<1>(const Triangulation<1> &,
+                                                   const std::string &) const;
 template void
-Sapphire::Utils::OutputParameters::write_grid<2>(const Triangulation<2> &,
-                                                 const std::string &) const;
+sapphirepp::Utils::OutputParameters::write_grid<2>(const Triangulation<2> &,
+                                                   const std::string &) const;
 template void
-Sapphire::Utils::OutputParameters::write_grid<3>(const Triangulation<3> &,
-                                                 const std::string &) const;
+sapphirepp::Utils::OutputParameters::write_grid<3>(const Triangulation<3> &,
+                                                   const std::string &) const;

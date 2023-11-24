@@ -37,7 +37,7 @@
 #include "pde-system.h"
 #include "vfp-parameters.h"
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -162,5 +162,5 @@ namespace Sapphire
       const double                         double_dummy;
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

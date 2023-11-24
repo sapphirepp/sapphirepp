@@ -30,7 +30,7 @@
 
 // Functions to compute the velocity and the gamma of a particle at the point
 // x,(y,z) of p in phase space
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -62,5 +62,5 @@ namespace Sapphire
       const double mass;
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

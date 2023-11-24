@@ -34,7 +34,7 @@ int
 convergence_with_expansion_order(const std::string         &parameter_filename,
                                  const std::vector<double> &values)
 {
-  using namespace Sapphire;
+  using namespace sapphirepp;
   using namespace VFP;
 
   saplog.push("Tests");
@@ -111,7 +111,7 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
 int
 test_run(const std::string &parameter_filename, const double max_L2_error)
 {
-  using namespace Sapphire;
+  using namespace sapphirepp;
   using namespace VFP;
 
   saplog.push("Tests");
@@ -167,7 +167,7 @@ main(int argc, char *argv[])
 {
   try
     {
-      using namespace Sapphire;
+      using namespace sapphirepp;
       using namespace VFP;
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,

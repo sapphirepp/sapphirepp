@@ -31,7 +31,7 @@
 #include "config.h"
 #include "vfp-flags.h"
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -83,5 +83,5 @@ namespace Sapphire
       double velocity;
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

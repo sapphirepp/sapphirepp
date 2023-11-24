@@ -25,7 +25,7 @@
 
 #include <deal.II/grid/grid_in.h>
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -138,10 +138,10 @@ namespace Sapphire
       }
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 
 template <unsigned int dim>
-Sapphire::VFP::VFPSolver<dim>::VFPSolver(
+sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   const VFPParameters<dim_ps>   &vfp_parameters,
   const PhysicalParameters      &physical_parameters,
   const Utils::OutputParameters &output_parameters)
@@ -193,7 +193,7 @@ Sapphire::VFP::VFPSolver<dim>::VFPSolver(
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::run()
+sapphirepp::VFP::VFPSolver<dim>::run()
 {
   LogStream::Prefix p("VFP", saplog);
   saplog << "Run VFP equation solver. \t\t[" << Utilities::System::get_time()
@@ -266,7 +266,7 @@ Sapphire::VFP::VFPSolver<dim>::run()
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::make_grid()
+sapphirepp::VFP::VFPSolver<dim>::make_grid()
 {
   TimerOutput::Scope timer_section(timer, "Grid setup");
   saplog << "Create the grid" << std::endl;
@@ -339,7 +339,7 @@ Sapphire::VFP::VFPSolver<dim>::make_grid()
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::setup_system()
+sapphirepp::VFP::VFPSolver<dim>::setup_system()
 {
   TimerOutput::Scope timer_section(timer, "FE system");
   saplog << "Setup the finite element system" << std::endl;
@@ -399,7 +399,7 @@ Sapphire::VFP::VFPSolver<dim>::setup_system()
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::assemble_mass_matrix()
+sapphirepp::VFP::VFPSolver<dim>::assemble_mass_matrix()
 {
   TimerOutput::Scope timer_section(timer, "Mass matrix");
 
@@ -460,7 +460,7 @@ Sapphire::VFP::VFPSolver<dim>::assemble_mass_matrix()
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
+sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 {
   TimerOutput::Scope timer_section(timer, "DG matrix");
   /*
@@ -1198,7 +1198,7 @@ Sapphire::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::project(
+sapphirepp::VFP::VFPSolver<dim>::project(
   const Function<dim>        &f,
   PETScWrappers::MPI::Vector &projected_function)
 {
@@ -1269,7 +1269,7 @@ Sapphire::VFP::VFPSolver<dim>::project(
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::compute_source_term(
+sapphirepp::VFP::VFPSolver<dim>::compute_source_term(
   const Function<dim> &source_function)
 {
   FEValues<dim_ps> fe_v(mapping,
@@ -1324,8 +1324,8 @@ Sapphire::VFP::VFPSolver<dim>::compute_source_term(
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::theta_method(const double time,
-                                            const double time_step)
+sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
+                                              const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "Theta method");
   LogStream::Prefix  p("theta_method", saplog);
@@ -1401,8 +1401,8 @@ Sapphire::VFP::VFPSolver<dim>::theta_method(const double time,
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
-                                                    const double time_step)
+sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
+                                                      const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "ERK4");
   LogStream::Prefix  p("ERK4", saplog);
@@ -1551,7 +1551,7 @@ Sapphire::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
+sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
 {
@@ -1641,7 +1641,7 @@ Sapphire::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
 
 template <unsigned int dim>
 void
-Sapphire::VFP::VFPSolver<dim>::output_results(
+sapphirepp::VFP::VFPSolver<dim>::output_results(
   const unsigned int time_step_number)
 {
   TimerOutput::Scope timer_section(timer, "Output");
@@ -1675,7 +1675,7 @@ Sapphire::VFP::VFPSolver<dim>::output_results(
 
 template <unsigned int dim>
 double
-Sapphire::VFP::VFPSolver<dim>::compute_global_error(
+sapphirepp::VFP::VFPSolver<dim>::compute_global_error(
   const Function<dim_ps>         &exact_solution,
   const VectorTools::NormType    &cell_norm,
   const VectorTools::NormType    &global_norm,
@@ -1706,12 +1706,12 @@ Sapphire::VFP::VFPSolver<dim>::compute_global_error(
 
 template <unsigned int dim>
 unsigned int
-Sapphire::VFP::VFPSolver<dim>::get_n_dofs() const
+sapphirepp::VFP::VFPSolver<dim>::get_n_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
 // Explicit instantiations
-template class Sapphire::VFP::VFPSolver<1>;
-template class Sapphire::VFP::VFPSolver<2>;
-template class Sapphire::VFP::VFPSolver<3>;
+template class sapphirepp::VFP::VFPSolver<1>;
+template class sapphirepp::VFP::VFPSolver<2>;
+template class sapphirepp::VFP::VFPSolver<3>;

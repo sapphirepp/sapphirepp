@@ -28,7 +28,7 @@
 #include <ostream>
 #include <vector>
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -118,5 +118,5 @@ namespace Sapphire
       std::vector<std::array<unsigned int, 3>> lms_indices;
     };
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

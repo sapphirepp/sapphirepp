@@ -47,9 +47,9 @@
 /** [Includes] */
 
 /** [Namespace Sapphire] */
-namespace Sapphire
+namespace sapphirepp
 {
-  /** [Namespace Sapphire] */
+  /** [Namespace sapphirepp] */
 
   /** [PhysicalParameters] */
   class PhysicalParameters
@@ -313,6 +313,6 @@ namespace Sapphire
     /** [BackgroundVelocityField] */
     /** [Close namespaces] */
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif
 /** [Close namespaces] */

@@ -22,7 +22,7 @@
 /**
  * @file sapphirepp-logstream.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref Sapphire::saplog
+ * @brief Define @ref sapphirepp::saplog
  */
 
 #ifndef UTILS_SAPPHIREPPLOGSTREAM_H
@@ -30,7 +30,7 @@
 
 #include <deal.II/base/logstream.h>
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace Utils
   {
@@ -38,7 +38,7 @@ namespace Sapphire
     /**
      * @brief LogStream for @sapphire
      *
-     * The Stream is prefixed with `Sapphire`.
+     * The Stream is prefixed with `sapphirepp`.
      * In case of parallel execution, all but the first process are prefixed
      * with `mpi<rank>`.
      *
@@ -70,6 +70,6 @@ namespace Sapphire
   } // namespace Utils
 
   /** @brief The standard log stream for @sapphire */
-  extern Sapphire::Utils::SapphireppLogStream saplog;
-} // namespace Sapphire
+  extern sapphirepp::Utils::SapphireppLogStream saplog;
+} // namespace sapphirepp
 #endif

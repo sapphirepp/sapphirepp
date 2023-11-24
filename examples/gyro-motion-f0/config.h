@@ -44,7 +44,7 @@
 #  include "sapphirepp-logstream.h"
 #  include "vfp-flags.h"
 
-namespace Sapphire
+namespace sapphirepp
 {
   /** [Includes] */
 
@@ -300,6 +300,6 @@ namespace Sapphire
     /** [Source] */
     /** [Close namespaces] */
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif
 /** [Close namespaces] */

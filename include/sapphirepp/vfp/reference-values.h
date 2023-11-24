@@ -22,7 +22,7 @@
 #ifndef VFP_REFERENCEVALUES_H
 #define VFP_REFERENCEVALUES_H
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -39,6 +39,6 @@ namespace Sapphire
     StreamType &
     operator<<(StreamType &os, const ReferenceValues &reference_values);
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 
 #endif

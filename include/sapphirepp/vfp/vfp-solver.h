@@ -102,7 +102,7 @@
 
 
 
-namespace Sapphire
+namespace sapphirepp
 {
   namespace VFP
   {
@@ -232,5 +232,5 @@ namespace Sapphire
     };
 
   } // namespace VFP
-} // namespace Sapphire
+} // namespace sapphirepp
 #endif

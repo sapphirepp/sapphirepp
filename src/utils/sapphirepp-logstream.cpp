@@ -35,11 +35,11 @@
 
 
 
-Sapphire::Utils::SapphireppLogStream Sapphire::saplog;
+sapphirepp::Utils::SapphireppLogStream sapphirepp::saplog;
 
 
 
-Sapphire::Utils::SapphireppLogStream::SapphireppLogStream()
+sapphirepp::Utils::SapphireppLogStream::SapphireppLogStream()
   : dealii::LogStream()
 {
   this->pop();
@@ -49,7 +49,7 @@ Sapphire::Utils::SapphireppLogStream::SapphireppLogStream()
 
 
 void
-Sapphire::Utils::SapphireppLogStream::init(const unsigned int depth_console)
+sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console)
 {
   int is_initialized;
   MPI_Initialized(&is_initialized);
