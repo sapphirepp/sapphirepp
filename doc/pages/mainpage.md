@@ -62,8 +62,8 @@ compute the transport of radiation (interpreting $f$ as the intensity).
 
 @sapphire is developed by the [Astrophysical Plasma
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
-group located at the [Max Planck Institute for Nuclear
-Physics](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
+group located at the [Max-Planck-Institut für
+Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
 
 
 # Installation {#installation}

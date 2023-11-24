@@ -29,6 +29,10 @@ $$
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S .
 $$
 
+Sapphire++ is developed by the [Astrophysical Plasma
+Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
+group located at the [Max-Planck-Institut für
+Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
 
 ## Installation
 
