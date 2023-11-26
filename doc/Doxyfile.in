@@ -1059,7 +1059,7 @@ RECURSIVE              = YES
 EXCLUDE                = @PROJECT_SOURCE_DIR@/examples \
 		       	         @PROJECT_SOURCE_DIR@/tests \
 		       	         @PROJECT_SOURCE_DIR@/build \
-		       	         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css \
+		       	         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome \
 			             @PROJECT_SOURCE_DIR@/CONTRIBUTING.md \
 			             @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md \
 		                 @PROJECT_SOURCE_DIR@/README.md
@@ -1374,10 +1374,10 @@ HTML_STYLESHEET        =
 # documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-awesome.css \
+HTML_EXTRA_STYLESHEET  = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome.css \
                          @PROJECT_SOURCE_DIR@/doc/doxygen-custom/custom.css \
-                         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
-                         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-awesome-sidebar-only-darkmode-toggle.css
+                         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome-sidebar-only.css \
+                         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome-sidebar-only-darkmode-toggle.css
 			 
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
@@ -1388,8 +1388,9 @@ HTML_EXTRA_STYLESHEET  = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-aw
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome-css/doxygen-awesome-darkmode-toggle.js \
-		         @PROJECT_SOURCE_DIR@/logo/sapphire-logo-text.png
+HTML_EXTRA_FILES       = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome-darkmode-toggle.js \
+		         @PROJECT_SOURCE_DIR@/logo/sapphire-logo-text.png \
+                         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome-fragment-copy-button.js
 
 # The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
 # should be rendered with a dark or light theme.
