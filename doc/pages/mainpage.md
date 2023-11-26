@@ -134,11 +134,6 @@ cloning the `git` repository:
 git clone https://github.com/sapphirepp/sapphirepp
 ```
 
-@note Since the repository is still private, you need to use the following link:
-  ```shell
-  git clone https://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@github.com/sapphirepp/sapphirepp
-  ```
-
 Afterwards you can compile @sapphire, with `cmake` and `make`:
 
 ```shell
@@ -147,12 +142,6 @@ export DEAL_II_DIR="path/to/deal.II"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
 cd build && make
 ```
-
-@note On the MPIK cluster you need to load the following modules:
-  ```shell
-  module load python/3.11.6 cmake gcc/13.1.0 ucx/1.15.x-zen4 openmpi/4.1.5-zen4 boost/1.83.0 hdf5/1.14.1-2-zen4 intel-oneapi-mkl/2023.1.0-zen4 
-  export DEAL_II_DIR="/lfs/l8/tap/tapshared/lib/dealii"
-  ```
 
 Developers are advised to use the following options:
 
