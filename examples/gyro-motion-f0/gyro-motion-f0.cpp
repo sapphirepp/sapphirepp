@@ -18,9 +18,12 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-/// @file examples/gyro-motion-f0/gyro-motion-f0.cpp
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief Implement the main function for the gyro-motion-f0 example
+
+/**
+ * @file examples/gyro-motion-f0/gyro-motion-f0.cpp
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement main function for gyro-motion-f0 example
+ */
 
 /** [Includes] */
 #include <deal.II/base/mpi.h>

@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file vfp-solver.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define @ref sapphirepp::VFP::VFPSolver
+ */
+
 #ifndef VFP_VFPSOLVER_H
 #define VFP_VFPSOLVER_H
 

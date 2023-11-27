@@ -18,9 +18,12 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-/// @file test/gyro-motion-f0/test-gyro-motion-f0.cpp
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief Implement test for gyro-motion-f0 example
+
+/**
+ * @file tests/gyro-motion-f0/test-gyro-motion-f0.cpp
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement tests for gyro-motion-f0 example
+ */
 
 #include <deal.II/base/mpi.h>
 

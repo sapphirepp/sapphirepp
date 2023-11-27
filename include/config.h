@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file config.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define and implement user defined physical setup
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 

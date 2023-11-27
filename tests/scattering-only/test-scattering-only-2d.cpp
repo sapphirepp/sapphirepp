@@ -19,6 +19,12 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file tests/scattering-only/test-scattering-only-2d.cpp
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement 2d tests for scattering-only example
+ */
+
 #include <deal.II/base/mpi.h>
 
 #include <mpi.h>

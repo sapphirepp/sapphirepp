@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file reference-values.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define @ref sapphirepp::VFP::ReferenceValues
+ */
+
 #ifndef VFP_REFERENCEVALUES_H
 #define VFP_REFERENCEVALUES_H
 

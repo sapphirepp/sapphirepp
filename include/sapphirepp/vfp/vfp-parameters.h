@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file vfp-parameters.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define @ref sapphirepp::VFP::VFPParameters
+ */
+
 #ifndef VFP_PARAMETERS_H
 #define VFP_PARAMETERS_H
 

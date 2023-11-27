@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file vfp-solver.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de),
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement @ref sapphirepp::VFP::VFPSolver
+ */
+
 #include "vfp-solver.h"
 
 #include <deal.II/base/discrete_time.h>

@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file reference-values.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement @ref sapphirepp::VFP::ReferenceValues
+ */
+
 #include "reference-values.h"
 
 #include <deal.II/base/conditional_ostream.h>

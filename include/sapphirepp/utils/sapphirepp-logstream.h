@@ -22,7 +22,8 @@
 /**
  * @file sapphirepp-logstream.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref sapphirepp::saplog
+ * @brief Define  @ref sapphirepp::Utils::SapphireppLogStream and
+ *        @ref sapphirepp::saplog
  */
 
 #ifndef UTILS_SAPPHIREPPLOGSTREAM_H
@@ -30,13 +31,25 @@
 
 #include <deal.II/base/logstream.h>
 
+/**
+ * @namespace sapphirepp
+ * @brief Namespace for @sapphire
+ */
 namespace sapphirepp
 {
+
+  /**
+   * @namespace sapphirepp::Utils
+   * @brief Namespace for utility functions
+   *
+   * This namespace contains utility functions for @sapphire, that are not
+   * directly related to the VFP module.
+   */
   namespace Utils
   {
 
     /**
-     * @brief LogStream for @sapphire
+     * @brief @dealref{LogStream} for @sapphire
      *
      * The Stream is prefixed with `sapphirepp`.
      * In case of parallel execution, all but the first process are prefixed

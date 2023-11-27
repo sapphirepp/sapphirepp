@@ -19,6 +19,14 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file particle-functions.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define @ref sapphirepp::VFP::ParticleVelocity and
+ *        @ref sapphirepp::VFP::ParticleGamma
+ */
+
 #ifndef VFP_PARTICLEFUNCTIONS_H
 #define VFP_PARTICLEFUNCTIONS_H
 

@@ -22,7 +22,7 @@
 /**
  * @file examples/scattering-only/scattering-only.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement the main function for the scattering-only example.
+ * @brief Implement main function for scattering-only example
  */
 
 /** [Includes] */

@@ -22,7 +22,7 @@
 /**
  * @file sapphirepp-logstream.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement @ref Sapphire::Utils::SapphireppLogStream
+ * @brief Implement @ref sapphirepp::Utils::SapphireppLogStream
  */
 
 #include "sapphirepp-logstream.h"

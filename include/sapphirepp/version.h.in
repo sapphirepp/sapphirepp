@@ -18,9 +18,12 @@
 // along with Sapphire++. If not, see <https://www.gnu.org/licenses/>.
 //
 // -----------------------------------------------------------------------------
-/// @file version.h
-/// @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
-/// @brief Define SAPPHIREPP_VERSION
+
+/**
+ * @file version.h.in
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define SAPPHIREPP_VERSION
+ */
 
 #ifndef SAPPHIREPP_VERSION_H
 #define SAPPHIREPP_VERSION_H

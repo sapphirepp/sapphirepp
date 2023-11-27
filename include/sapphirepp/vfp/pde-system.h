@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file pde-system.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Define @ref sapphirepp::VFP::PDESystem
+ */
+
 #ifndef VFP_PDESYSTEM_H
 #define VFP_PDESYSTEM_H
 

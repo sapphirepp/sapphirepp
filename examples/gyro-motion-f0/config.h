@@ -22,7 +22,7 @@
 /**
  * @file examples/gyro-motion-f0/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for the gyro-motion-f0 example.
+ * @brief Implement physical setup for gyro-motion-f0 example
  */
 
 /** [Includes] */

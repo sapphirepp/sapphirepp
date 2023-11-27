@@ -22,7 +22,7 @@
 /**
  * @file examples/scattering-only/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief `config.h` file for the scattering-only example.
+ * @brief Implement physical setup for scattering-only example
  */
 
 /** [Includes] */

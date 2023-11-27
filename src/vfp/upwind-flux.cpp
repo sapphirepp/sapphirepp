@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file upwind-flux.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement @ref sapphirepp::VFP::UpwindFlux
+ */
+
 #include "upwind-flux.h"
 
 #include <deal.II/base/exceptions.h>

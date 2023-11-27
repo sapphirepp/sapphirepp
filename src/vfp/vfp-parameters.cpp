@@ -19,6 +19,13 @@
 //
 // -----------------------------------------------------------------------------
 
+/**
+ * @file vfp-parameters.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement @ref sapphirepp::VFP::VFPParameters
+ */
+
 #include "vfp-parameters.h"
 
 #include <deal.II/base/patterns.h>

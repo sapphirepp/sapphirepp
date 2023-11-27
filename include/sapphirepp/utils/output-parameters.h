@@ -23,7 +23,7 @@
  * @file output-parameters.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref Sapphire::Utils::OutputParameters
+ * @brief Define @ref sapphirepp::Utils::OutputParameters
  */
 
 #ifndef UTILS_OUTPUTPARAMETERS_H
