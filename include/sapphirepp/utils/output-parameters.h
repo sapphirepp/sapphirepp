@@ -29,14 +29,17 @@
 #ifndef UTILS_OUTPUTPARAMETERS_H
 #define UTILS_OUTPUTPARAMETERS_H
 
-#include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
+
+#include <deal.II/grid/tria.h>
 
 #include <deal.II/numerics/data_out.h>
 
 #include <mpi.h>
 
 #include <filesystem>
+#include <string>
+#include <vector>
 
 namespace sapphirepp
 {
@@ -47,11 +50,11 @@ namespace sapphirepp
     /** @brief Enum for output formats */
     enum class OutputFormat
     {
-      /** VTU format */
+      /** VTU output, recommended for short runs */
       vtu,
-      /** VTU format with `.pvtu` record for parallel runs */
+      /** VTU output with `.pvtu` record for parallel runs */
       pvtu,
-      /** HDF5 format with XDMF record */
+      /** HDF5 output with XDMF record, recommended for large simulations */
       hdf5
     };
 

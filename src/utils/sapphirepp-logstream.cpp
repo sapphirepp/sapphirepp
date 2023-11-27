@@ -28,8 +28,11 @@
 #include "sapphirepp-logstream.h"
 
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/utilities.h>
 
 #include <mpi.h>
+
+#include <string>
 
 #include "version.h"
 
