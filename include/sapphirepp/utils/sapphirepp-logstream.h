@@ -78,6 +78,14 @@ namespace sapphirepp
        */
       void
       init(const unsigned int depth_console = 2);
+
+      /**
+       * @brief Get the verbosity of the console output
+       *
+       * @return unsigned int verbosity
+       */
+      unsigned int
+      get_verbosity();
     };
 
   } // namespace Utils

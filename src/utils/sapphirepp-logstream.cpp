@@ -69,3 +69,13 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console)
         << " MPI process(es) [" << dealii::Utilities::System::get_date() << " "
         << dealii::Utilities::System::get_time() << "]" << std::endl;
 }
+
+
+
+unsigned int
+sapphirepp::Utils::SapphireppLogStream::get_verbosity()
+{
+  unsigned int n = this->depth_console(0);
+  this->depth_console(n);
+  return n;
+}

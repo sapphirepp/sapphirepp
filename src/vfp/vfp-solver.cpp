@@ -267,7 +267,8 @@ sapphirepp::VFP::VFPSolver<dim>::run()
   saplog << "Simulation ended at t = " << discrete_time.get_current_time()
          << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
-  timer.print_wall_time_statistics(mpi_communicator);
+  if (saplog.get_verbosity() > 3)
+    timer.print_wall_time_statistics(mpi_communicator);
   timer.reset();
 }
 
