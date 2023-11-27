@@ -114,11 +114,10 @@ namespace sapphirepp
       InitialValueFunction(const PhysicalParameters &physical_parameters,
                            unsigned int              exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        , lms_indices(PDESystem::create_lms_indices(exp_order))
         , f0(physical_parameters.f0)
         , nu(physical_parameters.nu)
-      {
-        PDESystem::create_lms_indices(exp_order, lms_indices);
-      }
+      {}
       /** [InitialValueFunction constructor] */
 
       /** [InitialValueFunction value] */
@@ -138,9 +137,9 @@ namespace sapphirepp
       }
 
     private:
-      const double                             f0;
-      const double                             nu;
-      std::vector<std::array<unsigned int, 3>> lms_indices;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+      const double                                   f0;
+      const double                                   nu;
     };
     /** [InitialValueFunction value] */
 

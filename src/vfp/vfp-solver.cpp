@@ -485,7 +485,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
     pde_system.get_advection_matrices();
   const std::vector<LAPACKFullMatrix<double>> &generator_rotation_matrices =
-    pde_system.get_generator_matrices();
+    pde_system.get_generator_rotation_matrices();
   const std::vector<LAPACKFullMatrix<double>> &adv_mat_products =
     pde_system.get_adv_mat_products();
   const std::vector<LAPACKFullMatrix<double>> &adv_x_gen_matrices =

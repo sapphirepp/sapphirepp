@@ -28,23 +28,18 @@
 
 #include "pde-system.h"
 
-#include <deal.II/base/conditional_ostream.h>
 
-#include <deal.II/lac/lapack_full_matrix.h>
 
 sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
   : expansion_order{expansion_order}
-  , system_sz{(expansion_order + 1) * (expansion_order + 1)}
+  , system_size{(expansion_order + 1) * (expansion_order + 1)}
+  , lms_indices{create_lms_indices(expansion_order)}
   , advection_matrices(3)
   , generator_rotation_matrices(3)
   , adv_mat_products(6)
   , adv_x_gen_matrices(3)
   , t_matrices(9)
-  , lms_indices(system_sz)
 {
-  // Create the map between i and the the lms indices
-  create_lms_indices(expansion_order, lms_indices);
-
   create_advection_matrices();
   create_generator_rotation_matrices();
   create_collision_matrix();
@@ -54,50 +49,15 @@ sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
   shrink_matrices();
 }
 
-const std::vector<dealii::LAPACKFullMatrix<double>> &
-sapphirepp::VFP::PDESystem::get_advection_matrices() const
-{
-  return advection_matrices;
-}
-const std::vector<dealii::LAPACKFullMatrix<double>> &
-sapphirepp::VFP::PDESystem::get_generator_matrices() const
-{
-  return generator_rotation_matrices;
-}
-const dealii::Vector<double> &
-sapphirepp::VFP::PDESystem::get_collision_matrix() const
-{
-  return collision_matrix;
-}
-const std::vector<dealii::LAPACKFullMatrix<double>> &
-sapphirepp::VFP::PDESystem::get_adv_mat_products() const
-{
-  return adv_mat_products;
-}
-const std::vector<dealii::LAPACKFullMatrix<double>> &
-sapphirepp::VFP::PDESystem::get_adv_cross_gen() const
-{
-  return adv_x_gen_matrices;
-}
-const std::vector<dealii::LAPACKFullMatrix<double>> &
-sapphirepp::VFP::PDESystem::get_t_matrices() const
-{
-  return t_matrices;
-}
 
-const std::vector<std::array<unsigned int, 3>> &
-sapphirepp::VFP::PDESystem::get_lms_indices() const
-{
-  return lms_indices;
-}
 
-void
+std::vector<std::array<unsigned int, 3>>
 sapphirepp::VFP::PDESystem::create_lms_indices(
-  unsigned int                              expansion_order,
-  std::vector<std::array<unsigned int, 3>> &lms_indices)
+  const unsigned int expansion_order)
 {
-  const unsigned int system_sz = (expansion_order + 1) * (expansion_order + 1);
-  lms_indices.resize(system_sz);
+  const unsigned int system_size =
+    (expansion_order + 1) * (expansion_order + 1);
+  std::vector<std::array<unsigned int, 3>> lms_indices(system_size);
   for (long s = 0; s <= 1; ++s)
     {
       for (long l = 0; l <= static_cast<long>(expansion_order); ++l)
@@ -105,7 +65,7 @@ sapphirepp::VFP::PDESystem::create_lms_indices(
           for (long m = s; m <= l; ++m)
             {
               const long index = l * (l + 1) - (s ? -1 : 1) * m;
-              AssertIndexRange(index, system_sz);
+              AssertIndexRange(index, system_size);
               lms_indices[static_cast<unsigned int>(index)][0] =
                 static_cast<unsigned int>(l);
               lms_indices[static_cast<unsigned int>(index)][1] =
@@ -115,13 +75,74 @@ sapphirepp::VFP::PDESystem::create_lms_indices(
             }
         }
     }
+  return lms_indices;
 }
 
+
+
 unsigned int
-sapphirepp::VFP::PDESystem::system_size() const
+sapphirepp::VFP::PDESystem::get_system_size() const
 {
-  return system_sz;
+  return system_size;
 }
+
+
+
+const std::vector<std::array<unsigned int, 3>> &
+sapphirepp::VFP::PDESystem::get_lms_indices() const
+{
+  return lms_indices;
+}
+
+
+
+const std::vector<dealii::LAPACKFullMatrix<double>> &
+sapphirepp::VFP::PDESystem::get_advection_matrices() const
+{
+  return advection_matrices;
+}
+
+
+
+const std::vector<dealii::LAPACKFullMatrix<double>> &
+sapphirepp::VFP::PDESystem::get_generator_rotation_matrices() const
+{
+  return generator_rotation_matrices;
+}
+
+
+
+const dealii::Vector<double> &
+sapphirepp::VFP::PDESystem::get_collision_matrix() const
+{
+  return collision_matrix;
+}
+
+
+
+const std::vector<dealii::LAPACKFullMatrix<double>> &
+sapphirepp::VFP::PDESystem::get_adv_mat_products() const
+{
+  return adv_mat_products;
+}
+
+
+
+const std::vector<dealii::LAPACKFullMatrix<double>> &
+sapphirepp::VFP::PDESystem::get_adv_cross_gen() const
+{
+  return adv_x_gen_matrices;
+}
+
+
+
+const std::vector<dealii::LAPACKFullMatrix<double>> &
+sapphirepp::VFP::PDESystem::get_t_matrices() const
+{
+  return t_matrices;
+}
+
+
 
 void
 sapphirepp::VFP::PDESystem::print_advection_matrices(std::ostream &os) const
@@ -135,8 +156,11 @@ sapphirepp::VFP::PDESystem::print_advection_matrices(std::ostream &os) const
     }
 }
 
+
+
 void
-sapphirepp::VFP::PDESystem::print_generator_matrices(std::ostream &os) const
+sapphirepp::VFP::PDESystem::print_generator_rotation_matrices(
+  std::ostream &os) const
 {
   char subscript = 'x';
   for (const auto &generator_matrix : generator_rotation_matrices)
@@ -147,12 +171,16 @@ sapphirepp::VFP::PDESystem::print_generator_matrices(std::ostream &os) const
     }
 }
 
+
+
 void
 sapphirepp::VFP::PDESystem::print_collision_matrix(std::ostream &os) const
 {
   os << "Collision matrix: \n";
   collision_matrix.print(os);
 }
+
+
 
 void
 sapphirepp::VFP::PDESystem::print_adv_mat_products(std::ostream &os) const
@@ -172,6 +200,8 @@ sapphirepp::VFP::PDESystem::print_adv_mat_products(std::ostream &os) const
     }
 }
 
+
+
 void
 sapphirepp::VFP::PDESystem::print_adv_cross_gen(std::ostream &os) const
 {
@@ -183,6 +213,8 @@ sapphirepp::VFP::PDESystem::print_adv_cross_gen(std::ostream &os) const
       subscript++;
     }
 }
+
+
 
 void
 sapphirepp::VFP::PDESystem::print_t_matrices(std::ostream &os) const
@@ -202,37 +234,21 @@ sapphirepp::VFP::PDESystem::print_t_matrices(std::ostream &os) const
     }
 }
 
-template <typename StreamType>
-void
-sapphirepp::VFP::PDESystem::print_index_map(StreamType &os) const
-{
-  os << "Ordering of the lms indices: " << std::endl;
-  unsigned int i = 0;
-  for (const std::array<unsigned int, 3> &lms : lms_indices)
-    {
-      os << i << ": " << lms[0] << lms[1] << lms[2] << "\n";
-      ++i;
-    }
-  os << std::endl;
-}
 
-// explicit instantiation
-template void
-sapphirepp::VFP::PDESystem::print_index_map(std::ostream &os) const;
-template void
-sapphirepp::VFP::PDESystem::print_index_map(
-  dealii::ConditionalOStream &os) const;
 
 void
 sapphirepp::VFP::PDESystem::print_pde_system(std::ostream &os) const
 {
+  print_lms_indices(os);
   print_advection_matrices(os);
-  print_generator_matrices(os);
+  print_generator_rotation_matrices(os);
   print_collision_matrix(os);
   print_adv_mat_products(os);
   print_adv_cross_gen(os);
   print_t_matrices(os);
 }
+
+
 
 void
 sapphirepp::VFP::PDESystem::create_advection_matrices()
@@ -244,12 +260,12 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
   for (auto &advection_matrix : advection_matrices)
     advection_matrix.reinit(matrix_size);
 
-  for (unsigned int i = 0; i < system_sz; ++i)
+  for (unsigned int i = 0; i < system_size; ++i)
     {
       const unsigned int l = lms_indices[i][0];
       const unsigned int m = lms_indices[i][1];
       const unsigned int s = lms_indices[i][2];
-      for (unsigned int j = 0; j < system_sz; ++j)
+      for (unsigned int j = 0; j < system_size; ++j)
         {
           const unsigned int l_prime = lms_indices[j][0];
           const unsigned int m_prime = lms_indices[j][1];
@@ -435,6 +451,8 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
     }
 }
 
+
+
 void
 sapphirepp::VFP::PDESystem::create_generator_rotation_matrices()
 {
@@ -442,12 +460,12 @@ sapphirepp::VFP::PDESystem::create_generator_rotation_matrices()
   for (auto &generator_matrix : generator_rotation_matrices)
     generator_matrix.reinit(matrix_size);
 
-  for (unsigned int i = 0; i < system_sz; ++i)
+  for (unsigned int i = 0; i < system_size; ++i)
     {
       const unsigned int l = lms_indices[i][0];
       const unsigned int m = lms_indices[i][1];
       const unsigned int s = lms_indices[i][2];
-      for (unsigned int j = 0; j < system_sz; ++j)
+      for (unsigned int j = 0; j < system_size; ++j)
         {
           const unsigned int l_prime = lms_indices[j][0];
           const unsigned int m_prime = lms_indices[j][1];
@@ -523,19 +541,23 @@ sapphirepp::VFP::PDESystem::create_generator_rotation_matrices()
     }
 }
 
+
+
 void
 sapphirepp::VFP::PDESystem::create_collision_matrix()
 {
   unsigned int matrix_size = (expansion_order + 1) * (expansion_order + 1);
   collision_matrix.reinit(matrix_size);
 
-  for (unsigned int i = 0; i < system_sz; ++i)
+  for (unsigned int i = 0; i < system_size; ++i)
     {
       const unsigned int l = lms_indices[i][0];
 
       collision_matrix[i] = 0.5 * l * (l + 1.);
     }
 }
+
+
 
 void
 sapphirepp::VFP::PDESystem::compute_adv_mat_products()
@@ -549,6 +571,8 @@ sapphirepp::VFP::PDESystem::compute_adv_mat_products()
       advection_matrices[i].mmult(adv_mat_products[3 * i - i * (i + 1) / 2 + j],
                                   advection_matrices[j]);
 }
+
+
 
 void
 sapphirepp::VFP::PDESystem::compute_adv_cross_generators()
@@ -581,6 +605,8 @@ sapphirepp::VFP::PDESystem::compute_adv_cross_generators()
   adv_x_gen_matrices[2].add(-1., temp_matrix);
 }
 
+
+
 void ::sapphirepp::VFP::PDESystem::compute_t_matrices()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
@@ -591,6 +617,8 @@ void ::sapphirepp::VFP::PDESystem::compute_t_matrices()
     for (unsigned int j = 0; j < 3; ++j)
       advection_matrices[j].mmult(t_matrices[3 * i + j], adv_x_gen_matrices[i]);
 }
+
+
 
 void ::sapphirepp::VFP::PDESystem::shrink_matrices()
 {
