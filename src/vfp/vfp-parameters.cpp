@@ -231,7 +231,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             if (i < dim)
               p1[i] = std::stod(coordinate);
           }
-        AssertThrow(i < dim,
+        AssertThrow(i >= dim,
                     ExcMessage(
                       "Point 1 specification does not match dimension. "
                       "Please enter the coordinates of the lower left corner "
@@ -255,7 +255,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             if (i < dim)
               p2[i] = std::stod(coordinate);
           }
-        AssertThrow(i < dim,
+        AssertThrow(i >= dim,
                     ExcMessage(
                       "Point 2 specification does not match dimension. "
                       "Please enter the coordinates of the lower left corner "
@@ -275,7 +275,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
         std::stringstream n_cells_string(s);
         for (std::string n; std::getline(n_cells_string, n, ',');)
           n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
-        AssertThrow(n_cells.size() < dim,
+        AssertThrow(n_cells.size() >= dim,
                     ExcMessage(
                       "Number of cells specification does not match dimension. "
                       "Please enter the number of cells in each coordinate: \n"
