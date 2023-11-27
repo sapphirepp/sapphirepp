@@ -85,29 +85,31 @@ changes to describe a very different scenario in @sapphire.
 
 ### config.h {#config-gyro-motion-f0}
 
-We again start with some includes and open the namespace @ref Sapphire.
+We again start with some includes and open the namespace @ref sapphirepp.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Includes
 
-Next, we define the runtime parameters in the @ref Sapphire::PhysicalParameters
-"PhysicalParameters" class. We need the magnetic field strength $B_0$, and the
-initial spread of the distribution function $\sigma$. The mass $m$, charge $q$
-and velocity/gamma factor $\gamma$ of the particles are already implemented as
-runtime parameters in the class @vfpref{VFPParameters}.
+Next, we define the runtime parameters in the @ref
+sapphirepp::PhysicalParameters "PhysicalParameters" class. We need the magnetic
+field strength $B_0$, and the initial spread of the distribution function
+$\sigma$. The mass $m$, charge $q$ and velocity/gamma factor $\gamma$ of the
+particles are already implemented as runtime parameters in the class
+@ref sapphirepp::VFP::VFPParameters "VFPParameters".
 
 @snippet{lineno} examples/gyro-motion-f0/config.h PhysicalParameters
 
 The declaration and parsing of the parameters is done using the @ref
-Sapphire::PhysicalParameters::declare_parameters "declare_parameters()" and @ref
-Sapphire::PhysicalParameters::parse_parameters "parse_parameters()" function
-respectively. Notice, that we use $\frac{B_0}{2 \pi}$ instead of $B_0$ as an
-input parameter. This is, so that `Final time = gamma` corresponds to one full
-gyroperiod $T_g$ (for $m = q = c =1$).
+sapphirepp::PhysicalParameters::declare_parameters "declare_parameters()" and
+@ref sapphirepp::PhysicalParameters::parse_parameters "parse_parameters()"
+function respectively. Notice, that we use $\frac{B_0}{2 \pi}$ instead of $B_0$
+as an input parameter. This is, so that `Final time = gamma` corresponds to one
+full gyroperiod $T_g$ (for $m = q = c =1$).
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Declare and Parse parameters
 
-The rest of the set-up is directly related to the @vfpref{VFPSolver} and
-therefore collected in the namespace @ref Sapphire::VFP "VFP".
+The rest of the set-up is directly related to the @ref
+sapphirepp::VFP::VFPSolver "VFPSolver" and therefore collected in the namespace
+@ref sapphirepp::VFP "VFP".
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Namespace VFP
 
@@ -125,61 +127,67 @@ $$
 $$
 
 we can see that we have at least a part of the @ref
-Sapphire::VFP::VFPFlags::spatial_advection "spatial advection" term $\mathbf{v}
-\cdot \nabla_{x} f$, and the @ref Sapphire::VFP::VFPFlags::magnetic "magnetic"
-term $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$.
-Therefore, we have to set both flags in the @ref Sapphire::VFP::VFPFlags
-"vfp_flags" variable. Furthermore, all our fields are time independent, so we
-can set the @ref Sapphire::VFP::VFPFlags::time_independent_fields
-"time independent fields" flag. Notice that if we wouldn't set this flag,
-@sapphire would still produce the correct result, but it would be less
-efficient.
+sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection" term
+$\mathbf{v} \cdot \nabla_{x} f$, and the @ref
+sapphirepp::VFP::VFPFlags::magnetic "magnetic" term $q \mathbf{v} \cdot \left(
+\mathbf{B} \times \nabla_{p} f \right)$. Therefore, we have to set both flags in
+the @ref sapphirepp::VFP::VFPFlags "vfp_flags" variable. Furthermore, all our
+fields are time independent, so we can set the @ref
+sapphirepp::VFP::VFPFlags::time_independent_fields "time independent fields"
+flag. Notice that if we wouldn't set this flag, @sapphire would still produce
+the correct result, but it would be less efficient.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h VFP flags
 
 The initial condition is an isotropic Gaussian distribution as described above.
-In @sapphire, this is implemented in the @vfpref{InitialValueFunction} function.
-We first set the system size to $(l+1)^2$ and the value of $\sigma$ in the
-constructor.
+In @sapphire, this is implemented in the @ref
+sapphirepp::VFP::InitialValueFunction "InitialValueFunction" function. We first
+set the system size to $(l+1)^2$ and the value of $\sigma$ in the constructor.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h InitialValueFunction constructor
 
-Then we calculate the value for each component $f_{i(l,m,s)}$ in the
-@vfpref{InitialValueFunction::vector_value()} function. We first check if the
-provided output vector `f` has the correct size using the
+Then we calculate the value for each component $f_{i(l,m,s)}$ in the @ref
+sapphirepp::VFP::InitialValueFunction::vector_value() "vector_value()" function.
+We first check if the provided output vector `f` has the correct size using the
 @dealref{AssertDimension(),group__Exceptions,ga9442b63275c9ef3fab29bc222831c49c}
 macro provided by @dealii. Next, we set all entries in the vector to zero,
 before we set only the isotropic component $f_0$ to a Gaussian distribution.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h InitialValueFunction value
 
-The $B$-field is defined in the @vfpref{MagneticField} function. It has three
-components, $x$, $y$, $z$, even if the dimension of the problem is only 2D.
-Again, the run time parameter `B0` is provided by the @ref
-Sapphire::PhysicalParameters "PhysicalParameters" class and set in the
-constructor.
+The $B$-field is defined in the @ref sapphirepp::VFP::MagneticField
+"MagneticField" function. It has three components, $x$, $y$, $z$, even if the
+dimension of the problem is only 2D. Again, the run time parameter `B0` is
+provided by the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class
+and set in the constructor.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h MagneticField constructor
 
-The value of the magnetic field is set in the @vfpref{MagneticField::value()}
-function. We again first check if the provided output vector `magnetic_field`
-has the correct size, before setting the components according to
-$B(\mathbf{r},t) = B_0 \hat{\mathbf{e}}_z$.
+The value of the magnetic field is set in the @ref
+sapphirepp::VFP::MagneticField::value() "value()" function. We again first check
+if the provided output vector `magnetic_field` has the correct size, before
+setting the components according to $B(\mathbf{r},t) = B_0 \hat{\mathbf{e}}_z$.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h MagneticField value
 
 The last term that @sapphire will use in the computation is the background
 velocity field $\mathbf{u}$. Even though the background velocity field is zero
-in our case, using the @vfpref{VFPFlags::spatial_advection} flag will activate
-the full $(\mathbf{u} + \mathbf{v}) \cdot \nabla_x f$ term. We can however just
-set $\mathbf{u} = 0$ explicitly. This is what we do in the
-@vfpref{BackgroundVelocityField} function, we set its value $\mathbf{u}$
-@vfpref{BackgroundVelocityField::vector_value()}, divergence $\nabla \cdot
-\mathbf{u}$ @vfpref{BackgroundVelocityField::divergence_list()}, material
-derivative $\frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}$
-@vfpref{BackgroundVelocityField::material_derivative_list()} and Jacobi matrix
-$\frac{\partial u_i}{\partial x_j}$
-@vfpref{BackgroundVelocityField::jacobian_list()} to zero.
+in our case, using the @ref sapphirepp::VFP::VFPFlags::spatial_advection
+"VFPFlags::spatial_advection" flag will activate the full $(\mathbf{u} +
+\mathbf{v}) \cdot \nabla_x f$ term. We can however just set $\mathbf{u} = 0$
+explicitly. This is what we do in the @ref
+sapphirepp::VFP::BackgroundVelocityField "BackgroundVelocityField" function, we
+set its value $\mathbf{u}$ @ref
+sapphirepp::VFP::BackgroundVelocityField::vector_value()
+"BackgroundVelocityField::vector_value()", divergence $\nabla \cdot \mathbf{u}$
+@ref sapphirepp::VFP::BackgroundVelocityField::divergence_list()
+"BackgroundVelocityField::divergence_list()", material derivative
+$\frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}$ @ref
+sapphirepp::VFP::BackgroundVelocityField::material_derivative_list()
+"BackgroundVelocityField::material_derivative_list()" and Jacobi matrix
+$\frac{\partial u_i}{\partial x_j}$ @ref
+sapphirepp::VFP::BackgroundVelocityField::jacobian_list()
+"BackgroundVelocityField::jacobian_list()" to zero.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h BackgroundVelocityField
 
@@ -208,8 +216,8 @@ program on exceptions with a meaningful error message.
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Main function
 
 We initialize MPI using the @dealii wrapper
-@dealref{MPI_InitFinalize,classUtilities_1_1MPI_1_1MPI__InitFinalize}
-to initialize the MPI and PETSc and p4est. We use one thread per process, so all
+@dealref{MPI_InitFinalize,classUtilities_1_1MPI_1_1MPI__InitFinalize} to
+initialize the MPI and PETSc and p4est. We use one thread per process, so all
 parallelisation is done via MPI.
 
 @note It is also possible, to use MPI for the communication between nodes, and
@@ -217,8 +225,8 @@ parallelisation is done via MPI.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp MPI initialization
 
-Next, we create set the @ref Sapphire::Utils:SapphireLogStream "saplog" to only
-show the progress of the simulation, and not the debug messages.
+Next, we create set the @ref sapphirepp::Utils:SapphireLogStream "saplog" to
+only show the progress of the simulation, and not the debug messages.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Saplog
 
@@ -239,7 +247,8 @@ and parse them from the parameter file.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Parse parameters
 
-Now we can create the @vfpref{VFPSolver} and run the simulation.
+Now we can create the @ref sapphirepp::VFP::VFPSolver "VFPSolver" and run the
+simulation.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp VFP solver
 

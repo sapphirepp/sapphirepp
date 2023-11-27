@@ -168,10 +168,11 @@ all other terms (and the $p$ dependence) are turned off by default.
 @snippet{lineno} examples/scattering-only/config.h VFP flags
 
 We define initial values as a @dealref{Function} class provided by @dealii. We
-define our own class @vfpref{InitialValueFunction} that inherits all properties
-of the parent class @dealref{Function}. Keeping the style of @dealii, we keep
-the dimension as a template parameter (even though it is at the moment defined
-by the compile time variable `dimension`).
+define our own class @ref sapphirepp::VFP::InitialValueFunction
+"InitialValueFunction" that inherits all properties of the parent class
+@dealref{Function}. Keeping the style of @dealii, we keep the dimension as a
+template parameter (even though it is at the moment defined by the compile time
+variable `dimension`).
 
 As we have seen before, the initial condition depends on only one parameter,
 `f0`. But in this example, we will extend the scope of this function, by using
@@ -202,10 +203,12 @@ to get the scattering frequency at multiple points in one function call.
 
 @snippet{lineno} examples/scattering-only/config.h ScatteringFrequency
 
-Since @sapphire expects a definition of the function @vfpref{Source},
-@vfpref{MagneticField} and @vfpref{BackgroundVelocityField} in `config.h`,
-we have to implement them here. We can however leave the implementation empty,
-since the functions won't be used in this example.
+Since @sapphire expects a definition of the function @ref
+sapphirepp::VFP::Source "Source", @ref sapphirepp::VFP::MagneticField
+"MagneticField" and @ref sapphirepp::VFP::BackgroundVelocityField
+"BackgroundVelocityField" in `config.h`, we have to implement them here. We can
+however leave the implementation empty, since the functions won't be used in
+this example.
 
 @snippet{lineno} examples/scattering-only/config.h Source
 
@@ -242,8 +245,8 @@ First, we include a list of header files:
   solver, like the time step size and final time
 - `output-parameters.h` declares the parameters related to output, like the
   output directory and the output frequency
-- `sapphirepp-logstream.h` allows output to the console using different levels of
-  verbosity
+- `sapphirepp-logstream.h` allows output to the console using different levels
+  of verbosity
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Includes
 
@@ -280,10 +283,11 @@ the parameter file by outputting it to the console (using the `saplog` stream).
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Command line argument
 
-Next, we create all objects that declare runtime parameter. Namely, the
-@vfpref{VFPParameters}, @ref Sapphire::Utils::OutputParameters
-"OutputParameters" and @ref Sapphire::PhysicalParameters "PhysicalParameters"
-class. We will use the @dealref{ParameterHandler} handle the parameter file.
+Next, we create all objects that declare runtime parameter. Namely, the @ref
+sapphirepp::VFP::VFPParameters "VFPParameters", @ref
+Sapphire::Utils::OutputParameters "OutputParameters" and @ref
+Sapphire::PhysicalParameters "PhysicalParameters" class. We will use the
+@dealref{ParameterHandler} handle the parameter file.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Run time parameters
 
@@ -297,12 +301,14 @@ parameters of the objects.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Parse parameters
 
-Finally, we can create the VFP equation solver @vfpref{VFPSolver} and run it.
+Finally, we can create the VFP equation solver @ref sapphirepp::VFP::VFPSolver
+"VFPSolver" and run it.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp VFP Solver
 
-After the simulation ends, we can compute the error by comparing to the
-analytic solution (implemented in @vfpref{InitialValueFunction}).
+After the simulation ends, we can compute the error by comparing to the analytic
+solution (implemented in @ref sapphirepp::VFP::InitialValueFunction
+"InitialValueFunction").
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp L2 error
 
@@ -360,7 +366,8 @@ parameters` section with all user defined parameters from the @ref
 Sapphire::PhysicalParameters "PhysicalParameters" class. Next, the `Output`
 section, containing the parameters from the @ref
 Sapphire::Utils::OutputParameters "OutputParameters" class. Third, the `VFP`
-section with all parameters related to @vfpref{VFPParameters}.  
+section with all parameters related to @ref sapphirepp::VFP::VFPParameters
+"VFPParameters".  
 These sections can contain a number of parameters and subsections using the
 following syntax:
 
@@ -435,11 +442,11 @@ problem that we have no spatial dependence in this simple scattering-only
 example, but still use `dimension = 1` in the code. Since this is only a toy
 problem, we can ignore this warning, in real applications it would indicate that
 we might have made a mistake in the setup.  
-Next, we see that the @vfpref{VFPSolver} starts, and evolves the solution in 10
-time steps. Last we get detailed timing information. We see that most time is
-spent in the DG matrix assembly, followed by the ERK4 time stepping. This of
-course will change depending on the machine and build options (Debug vs.
-Release).  
+Next, we see that the @ref sapphirepp::VFP::VFPSolver "VFPSolver" starts, and
+evolves the solution in 10 time steps. Last we get detailed timing information.
+We see that most time is spent in the DG matrix assembly, followed by the ERK4
+time stepping. This of course will change depending on the machine and build
+options (Debug vs. Release).  
 Last, we see that the L2 error is $\sim 10^{-4}$. Using a 4th order Runge-Kutta
 scheme and a time step size of $0.1$, this is expected.
 

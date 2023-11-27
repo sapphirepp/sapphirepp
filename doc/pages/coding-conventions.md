@@ -99,12 +99,12 @@ formatting in your IDE.
     ```
 
 9. Runtime parameters are always to be handled in `*Parameters` classes. The run
-   time variables are to be declared as **non-constant** `public` member variables
-   (non-constant because they are set at run time and `public` for easy access).
-   They are declared in `declare_parameters()` and parsed in
+   time variables are to be declared as **non-constant** `public` member
+   variables (non-constant because they are set at run time and `public` for
+   easy access). They are declared in `declare_parameters()` and parsed in
    `parse_parameters()`. All other functions and classes should only ever get
-   `const` access to the `Parameters` classes. Example:
-   @vfpref{VFPParameters}.
+   `const` access to the `Parameters` classes. Example: @ref
+   sapphirepp::VFP::VFPParameters "VFPParameters".
 
 10. If a function has both input and output parameters, usually the input
     parameters shall precede the output parameters, unless there are good
