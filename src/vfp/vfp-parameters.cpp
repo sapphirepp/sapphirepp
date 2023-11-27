@@ -30,14 +30,16 @@
 
 #include <deal.II/base/patterns.h>
 
-#include <cctype>
 #include <filesystem>
 #include <sstream>
 
 #include "sapphirepp-logstream.h"
 
+
+
 template <unsigned int dim>
 sapphirepp::VFP::VFPParameters<dim>::VFPParameters() = default;
+
 
 
 template <unsigned int dim>
@@ -49,25 +51,26 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("VFP");
 
+
   prm.enter_subsection("Mesh");
   {
-    prm.declare_entry(
-      "Grid type",
-      "Hypercube",
-      Patterns::Selection("Hypercube|File"),
-      "The type of the grid. Either a hypercube or a grid read from a file.");
+    prm.declare_entry("Grid type",
+                      "Hypercube",
+                      Patterns::Selection("Hypercube|File"),
+                      "The type of the grid. Can either be created by the "
+                      "program or read from a file");
     prm.enter_subsection("Hypercube");
     {
-      prm.declare_entry(
-        "Point 1",
-        "0., 0., 0.",
-        Patterns::Anything(),
-        "Two diagonally opposite corner points, Point 1 and  Point 2");
-      prm.declare_entry(
-        "Point 2",
-        "1., 1., 1.",
-        Patterns::Anything(),
-        "Two diagonally opposite corner points Point 1 and  Point 2");
+      prm.declare_entry("Point 1",
+                        "0., 0., 0.",
+                        Patterns::Anything(),
+                        "Two diagonally opposite corner points, "
+                        "Point 1 and  Point 2");
+      prm.declare_entry("Point 2",
+                        "1., 1., 1.",
+                        Patterns::Anything(),
+                        "Two diagonally opposite corner points, "
+                        "Point 1 and  Point 2");
       prm.declare_entry("Number of cells",
                         "4, 4, 4",
                         Patterns::Anything(),
@@ -79,7 +82,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
       prm.declare_entry("File name",
                         "",
                         Patterns::Anything(),
-                        "The name of the file containing the grid.");
+                        "The file containing the grid.");
     } // File
     prm.leave_subsection();
     prm.enter_subsection("Boundary conditions");
@@ -123,71 +126,80 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   } // Mesh
   prm.leave_subsection();
 
+
   prm.enter_subsection("Time stepping");
   {
-    prm.declare_entry(
-      "Method",
-      "Crank-Nicolson",
-      /// @todo "LSERK" is not working, so we exclude it for now
-      // Patterns::Selection(
-      //   "Forward Euler|Backward Euler|Crank-Nicolson|ERK4|LSERK"),
-      Patterns::Selection("Forward Euler|Backward Euler|Crank-Nicolson|ERK4"),
-      "The time stepping method.");
+    prm.declare_entry("Method",
+                      "Crank-Nicolson",
+                      /** @todo "LSERK" is not working, so we exclude it */
+                      // Patterns::Selection("Forward Euler|Backward Euler|"
+                      //                     "Crank-Nicolson|ERK4|LSERK"),
+                      Patterns::Selection("Forward Euler|Backward Euler|"
+                                          "Crank-Nicolson|ERK4"),
+                      "The time stepping method.");
     prm.declare_entry("Time step size",
-                      "7.8125e-3",
-                      Patterns::Double(),
-                      "Duration of the simulation.");
+                      "0.1",
+                      Patterns::Double(0),
+                      "Time step for the simulation in dimensionless units.");
     prm.declare_entry("Final time",
-                      "0.4",
-                      Patterns::Double(),
-                      "Duration of the simulation.");
+                      "1.0",
+                      Patterns::Double(0),
+                      "End time for the simulation in dimensionless units.");
   } // Time stepping
   prm.leave_subsection();
 
+
   prm.enter_subsection("Expansion");
   {
-    prm.declare_entry(
-      "Expansion order",
-      "0",
-      Patterns::Integer(0),
-      "The order of the expansion of the particle distribution function.");
+    prm.declare_entry("Expansion order",
+                      "0",
+                      Patterns::Integer(0),
+                      "The maximum order of the expansion of the particle "
+                      "distribution function.");
   } // Expansion
   prm.leave_subsection();
+
 
   prm.enter_subsection("Finite element");
   {
     prm.declare_entry("Polynomial degree",
                       "1",
                       Patterns::Integer(0),
-                      "The degree of the shape functions (i.e. "
-                      "the polynomials) of the finite element.");
+                      "The degree of the shape functions (i.e. the "
+                      "polynomials) of the finite element.");
   } // Finite element
   prm.leave_subsection();
+
 
   prm.enter_subsection("Particle properties");
   {
     prm.declare_entry("Mass",
                       "1.",
-                      Patterns::Double(),
-                      "The mass of the particles.");
+                      Patterns::Double(0),
+                      "Mass of the particles in dimensionless units.");
     prm.declare_entry("Charge",
                       "1.",
                       Patterns::Double(),
-                      "The charge of the particles.");
+                      "The charge of the particles in dimensionless units.");
   } // Particle properties
   prm.leave_subsection();
+
 
   prm.enter_subsection("TransportOnly");
   {
     prm.declare_entry("Gamma",
                       "3.",
-                      Patterns::Double(),
-                      "The Lorentz factor of the particles.");
+                      Patterns::Double(1.),
+                      "The Lorentz factor of the particles. "
+                      "Only has to be specified in the transport-only (i.e. "
+                      "p-independent) case.");
   } // TransportOnly
   prm.leave_subsection();
 
+
   prm.leave_subsection();
 }
+
 
 
 template <unsigned int dim>
@@ -200,6 +212,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   std::string s;
   prm.enter_subsection("VFP");
 
+
   prm.enter_subsection("Mesh");
   {
     s = prm.get("Grid type");
@@ -207,6 +220,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
       {
         grid_type = GridType::hypercube;
         prm.enter_subsection("Hypercube");
+
         // Two diagonally opposite corner points of the grid
         unsigned int i = 0;
         s              = prm.get("Point 1");
@@ -217,7 +231,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             if (i < dim)
               p1[i] = std::stod(coordinate);
           }
-        AssertThrow(i == dim,
+        AssertThrow(i < dim,
                     ExcMessage(
                       "Point 1 specification does not match dimension. "
                       "Please enter the coordinates of the lower left corner "
@@ -225,6 +239,13 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
                       "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
                       "You entered: " +
                       s));
+        if (i != dim)
+          saplog << "WARNING: Point 1 specification does not match dimension."
+                 << "Please enter the coordinates of the lower left corner "
+                 << "of the grid: \n"
+                 << "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
+                 << "You entered: " << s << std::endl;
+
         i = 0;
         s = prm.get("Point 2");
         std::stringstream p2_string(s);
@@ -234,7 +255,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             if (i < dim)
               p2[i] = std::stod(coordinate);
           }
-        AssertThrow(i == dim,
+        AssertThrow(i < dim,
                     ExcMessage(
                       "Point 2 specification does not match dimension. "
                       "Please enter the coordinates of the lower left corner "
@@ -242,19 +263,31 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
                       "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
                       "You entered: " +
                       s));
+        if (i != dim)
+          saplog << "WARNING: Point 2 specification does not match dimension."
+                 << "Please enter the coordinates of the lower left corner "
+                 << "of the grid: \n"
+                 << "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
+                 << "You entered: " << s << std::endl;
 
         // Number of cells
         s = prm.get("Number of cells");
         std::stringstream n_cells_string(s);
         for (std::string n; std::getline(n_cells_string, n, ',');)
           n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
-        AssertThrow(n_cells.size() == dim,
+        AssertThrow(n_cells.size() < dim,
                     ExcMessage(
                       "Number of cells specification does not match dimension. "
                       "Please enter the number of cells in each coordinate: \n"
                       "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
                       "You entered: " +
                       s));
+        if (n_cells.size() != dim)
+          saplog << "WARNING: Number of cells specification does not match "
+                 << "dimension. Please enter the number of cells in each "
+                 << "coordinate: \n"
+                 << "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
+                 << "You entered: " << s << std::endl;
         n_cells.resize(dim);
 
         prm.leave_subsection();
@@ -313,6 +346,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   } // Mesh
   prm.leave_subsection();
 
+
   prm.enter_subsection("Time stepping");
   {
     s = prm.get("Method");
@@ -328,7 +362,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
       }
     else if (s == "Crank-Nicolson")
       {
-        theta                = 1. / 2.;
+        theta                = 0.5;
         time_stepping_method = TimeSteppingMethod::crank_nicolson;
       }
     else if (s == "ERK4")
@@ -343,12 +377,14 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   } // Time stepping
   prm.leave_subsection();
 
+
   prm.enter_subsection("Expansion");
   {
     expansion_order =
       static_cast<unsigned int>(prm.get_integer("Expansion order"));
   } // Expansion
   prm.leave_subsection();
+
 
   prm.enter_subsection("Finite element");
   {
@@ -357,12 +393,14 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   } // Finite element
   prm.leave_subsection();
 
+
   prm.enter_subsection("Particle properties");
   {
     mass   = prm.get_double("Mass");
     charge = prm.get_double("Charge");
   } // Particle properties
   prm.leave_subsection();
+
 
   prm.enter_subsection("TransportOnly");
   {
@@ -371,8 +409,11 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   } // TransportOnly
   prm.leave_subsection();
 
+
   prm.leave_subsection();
 }
+
+
 
 // Explicit instantiation
 template class sapphirepp::VFP::VFPParameters<1>;

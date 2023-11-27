@@ -31,7 +31,6 @@
 
 #include <deal.II/base/parameter_handler.h>
 
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -44,50 +43,138 @@ namespace sapphirepp
   {
     using namespace dealii;
 
+    /**
+     * @brief Parameters class for the VFP module
+     *
+     * Defines and reads all parameters that are needed for the VFP module.
+     *
+     * @tparam dim Dimension of the physical space
+     */
     template <unsigned int dim>
     class VFPParameters
     {
     private:
+      /** Is the momentum term activated? */
       static constexpr bool momentum =
         (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+      /** Dimension of the physical space */
       static constexpr int dim_ps = dim;
+      /** Dimension of the configuration space */
       static constexpr int dim_cs = dim - momentum;
 
+
+
     public:
+      /** @{ */
+      /** The @ref GridType for the grid generation */
+      GridType grid_type;
+      /** File for grid creation (only for @ref GridType::file) */
+      std::string grid_file;
+
+      /**
+       * First corner point for
+       * @dealref{subdivided_hyper_rectangle(),namespaceGridGenerator,
+       * ac76417d7404b75cf53c732f456e6e971}
+       * (only for @ref GridType::hypercube)
+       */
+      dealii::Point<dim> p1;
+
+      /**
+       * Second corner point opposite to p1 for
+       * @dealref{subdivided_hyper_rectangle(),namespaceGridGenerator,
+       * ac76417d7404b75cf53c732f456e6e971}
+       * (only for @ref GridType::hypercube)
+       */
+      dealii::Point<dim> p2;
+
+      /**
+       * A vector of dim positive values denoting the number of cells to
+       * generate in that direction for
+       * @dealref{subdivided_hyper_rectangle(),namespaceGridGenerator,
+       * ac76417d7404b75cf53c732f456e6e971}
+       * (only for @ref GridType::hypercube)
+       */
+      std::vector<unsigned int> n_cells;
+
+      /**
+       * A vector of dimension `dim*2` containing the boundary indicators
+       * @ref BoundaryConditions for each boundary of the hypercube
+       */
+      std::vector<BoundaryConditions> boundary_conditions;
+      /** @} */
+
+
+      /**  @{ */
+      /** Time stepping method */
+      TimeSteppingMethod time_stepping_method;
+      /** Time step size for the simulation in dimensionless units */
+      double time_step;
+      /** End time for the simulation in dimensionless units */
+      double final_time;
+      /** Crank-Nicolson parameter \f$ \theta \f$ */
+      double theta;
+      /** @} */
+
+
+      /** @{ */
+      /** Expansion order \f$ l_{\rm max} \f$ */
+      unsigned int expansion_order;
+      /** @} */
+
+
+      /** @{ */
+      /** Polynomial degree of the DG shape functions */
+      unsigned int polynomial_degree;
+      /** @} */
+
+
+      /** @{ */
+      /**
+       * Mass of the particles in dimensionless units. The reference values are
+       * defined in @ref VFP::ReferenceValues.
+       */
+      double mass;
+      /**
+       * Charge of the particles in dimensionless units. The reference values
+       * are defined in @ref VFP::ReferenceValues.
+       */
+      double charge;
+      /** @} */
+
+
+      /** @{ */
+      /**
+       * Lorentz factor of the particles.
+       * Only specified in the transport-only (i.e. p-independent) case.
+       */
+      double gamma;
+      /**
+       * Velocity of the particles in dimensionless units.
+       * Only specified in the transport-only (i.e. p-independent) case.
+       */
+      double velocity;
+      /** @} */
+
+
+
+      /** @brief Constructor */
       VFPParameters();
 
+      /**
+       * @brief Delcare parameters in parameter file
+       *
+       * @param prm @dealref{ParameterHandler}
+       */
       void
       declare_parameters(ParameterHandler &prm);
+
+      /**
+       * @brief Parse parameters from parameter file
+       *
+       * @param prm @dealref{ParameterHandler}
+       */
       void
       parse_parameters(ParameterHandler &prm);
-
-      // Runtime settings
-      // These settings are read from a parameter file
-      unsigned int expansion_order;
-      // Mesh
-      GridType                        grid_type;
-      std::string                     grid_file;
-      dealii::Point<dim>              p1;
-      dealii::Point<dim>              p2;
-      std::vector<unsigned int>       n_cells;
-      std::vector<BoundaryConditions> boundary_conditions;
-      // Finite element
-      unsigned int polynomial_degree;
-      // Time stepping
-      TimeSteppingMethod time_stepping_method;
-      double             theta;
-      double             time_step;
-      double             final_time;
-      // Particle properties
-      //  NOTE: All physical quantities are dimensionless. The reference values
-      //  are defined in the reference-values.h header.
-      double mass;
-      double charge;
-      // TransportOnly
-      //  In the transport-only case (i.e. no dependence on p) the energy of the
-      //  particles has to be given.
-      double gamma;
-      double velocity;
     };
   } // namespace VFP
 } // namespace sapphirepp
