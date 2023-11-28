@@ -67,9 +67,20 @@ namespace sapphirepp
       const double charge = 1.602176634e-19;
     };
 
+
+
     template <typename StreamType>
     StreamType &
-    operator<<(StreamType &os, const ReferenceValues &reference_values);
+    operator<<(StreamType &os, const ReferenceValues &reference_values)
+    {
+      os << "Reference Values: \n"
+         << "	Mass: " << reference_values.mass << " kg \n"
+         << "	Velocity: " << reference_values.velocity << " m/s \n"
+         << "	Magnetic field strength: "
+         << reference_values.magnetic_field_strength << "T \n"
+         << "	Charge: " << reference_values.charge << "C \n";
+      return os;
+    }
   } // namespace VFP
 } // namespace sapphirepp
 
