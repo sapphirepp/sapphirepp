@@ -30,79 +30,39 @@
 #define VFP_VFPSOLVER_H
 
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/data_out_base.h>
-#include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/mpi.h>
-#include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/patterns.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/types.h>
-#include <deal.II/base/utilities.h>
-#include <deal.II/base/vectorization.h>
 
 #include <deal.II/distributed/shared_tria.h>
-
-#include <deal.II/fe/fe_update_flags.h>
-
-#include <deal.II/grid/filtered_iterator.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/grid_tools.h> // neeed for periodic boundary conditions
-                                     // (collect_periodic_faces) and
-                                     // partitioning of the distributed mesh
-// #include <deal.II/grid/grid_refinement.h>
-// #include <deal.II/grid/tria.h>
 #include <deal.II/distributed/tria.h>
-// #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/lapack_full_matrix.h>
-// PetscWrappers
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
 
-#include <deal.II/lac/petsc_precondition.h>
-#include <deal.II/lac/petsc_solver.h>
-#include <deal.II/lac/petsc_sparse_matrix.h>
-#include <deal.II/lac/petsc_vector.h>
-#include <deal.II/lac/sparsity_tools.h> // need for distribute_sparsity_pattern
-                                        // to fit into a global numbering
+#include <deal.II/dofs/dof_handler.h>
+
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q1.h>
 
-#include <deal.II/lac/vector_operation.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/lapack_full_matrix.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
+#include <deal.II/lac/petsc_vector.h>
+#include <deal.II/lac/sparsity_pattern.h>
 
-#include <deal.II/meshworker/assemble_flags.h>
-#include <deal.II/meshworker/mesh_loop.h>
-
-#include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/vector_tools_project.h>
 
 #include <mpi.h>
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <numeric>
-#include <string>
-#include <vector>
+#include <type_traits>
 
 #include "config.h"
 #include "output-parameters.h"
-#include "particle-functions.h"
 #include "pde-system.h"
-#include "sapphirepp-logstream.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
@@ -115,23 +75,71 @@ namespace sapphirepp
   {
     using namespace dealii;
 
+
+    /**
+     * @brief This class solves the Vlasov-Fokker-Planck equation
+     *
+     * Solve the Vlasov-Fokker-Planck equation specified with by the @ref
+     * VFPFlags. We distinguish between two different dimensions of the problem:
+     *
+     *  - The dimension of the \f$ (\mathbf{x}) \f$-space, called configuration
+     *    space (`dim_cs`). Depending on the setup, this can be 1, 2 or 3.
+     *  - The total dimension of the problem in the reduced phase space \f$
+     *    (\mathbf{x}, p) \f$, `dim_ps`. In the momentum depended case this
+     *    equals `dim_ps = dim_cs + 1`, in the momentum independent
+     *    (transport-only) case `dim_ps = dim_cs`.
+     *
+     * Since we decompose the \f$ \mathbf{p} \f$ momentum part into spherical
+     * harmonics, we always solve for the full 3 dimensions in momentum space.
+     *
+     *
+     * @note Due to limitations of @dealii, the total dimension of the problem
+     *       must be smaller or equal to 3, `dim_ps <= 3`.
+     *
+     *
+     * @tparam dim Total dimension of the problem in reduced phase space \f$
+     *         (\mathbf{x}, p) \f$ (`dim_ps`)
+     */
     template <unsigned int dim>
     class VFPSolver
     {
     private:
-      static constexpr bool logarithmic_p =
-        (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
+      /** Is the momentum term activated? */
       static constexpr bool momentum =
         (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+      /** Dimension in reduced phase space */
       static constexpr int dim_ps = dim;
+      /** Dimension of the configuration space */
       static constexpr int dim_cs = dim - momentum;
+      /** Do we use a logarithmic momentum variable? */
+      static constexpr bool logarithmic_p =
+        (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
+
+      /**
+       * Type of triangulation.
+       *
+       * @note `parallel::distributed:Triangulation` does not allow 1D. To
+       *       maintain the possibility to compute 1D scenarios, we replace it
+       *       with `parallel::shared::Triangulation`.
+       */
+      using Triangulation = typename std::conditional<
+        dim_ps != 1,
+        parallel::distributed::Triangulation<dim_ps>,
+        parallel::shared::Triangulation<dim_ps>>::type;
+
+
 
     public:
       VFPSolver(const VFPParameters<dim_ps>   &vfp_parameters,
                 const PhysicalParameters      &physical_parameters,
                 const Utils::OutputParameters &output_parameters);
+
+
+
       void
       run();
+
+
 
       double
       compute_global_error(
@@ -140,43 +148,16 @@ namespace sapphirepp
         const VectorTools::NormType    &global_norm,
         const Function<dim_ps, double> *weight = nullptr) const;
 
+
+
       unsigned int
       get_n_dofs() const;
+
+
 
     private:
       const VFPParameters<dim_ps> vfp_parameters;
       const PhysicalParameters    physical_parameters;
-
-      // Triangulation
-      void
-      make_grid();
-      // Setup data structures for the linear system
-      void
-      setup_system();
-      // Matrix assembly
-      void
-      assemble_mass_matrix();
-      void
-      assemble_dg_matrix(const double time);
-      // Time stepping methods
-      void
-      theta_method(const double time, const double time_step);
-      void
-      explicit_runge_kutta(const double time, const double time_step);
-      void
-      low_storage_explicit_runge_kutta(const double time,
-                                       const double time_step);
-      // Output
-      void
-      output_results(const unsigned int time_step_number);
-
-      // auxiliary functions
-      void
-      project(const Function<dim>        &f,
-              PETScWrappers::MPI::Vector &projected_function);
-      // compute the source term
-      void
-      compute_source_term(const Function<dim> &source_function);
 
       MPI_Comm           mpi_communicator;
       const unsigned int n_mpi_procs;
@@ -185,18 +166,7 @@ namespace sapphirepp
       ConditionalOStream      pcout;
       Utils::OutputParameters output_parameters;
 
-      // NOTE: parallel::distributed:Triangulation does not allow 1D. This
-      // excludes the 1D transport (i.e. no momentum terms) only case. But I
-      // would like to maintain the possibility to compute 1D scenarios. In
-      // Step-17, Step-18 it is explained how to deal with copys of the
-      // triangulation and the dof handler on every mpi process: It is enough to
-      // replace parallel::distributed:Triangulation with
-      // parallel::shared::Triangulation. We use a bit of C++ metaprogramming
-      // tricky to decide which triangulation to use.
-      typename std::conditional<dim_ps != 1,
-                                parallel::distributed::Triangulation<dim_ps>,
-                                parallel::shared::Triangulation<dim_ps>>::type
-        triangulation;
+      Triangulation triangulation;
 
       DoFHandler<dim_ps> dof_handler;
 
@@ -236,6 +206,39 @@ namespace sapphirepp
       const unsigned int num_exp_coefficients;
 
       TimerOutput timer;
+
+
+
+      // Triangulation
+      void
+      make_grid();
+      // Setup data structures for the linear system
+      void
+      setup_system();
+      // Matrix assembly
+      void
+      assemble_mass_matrix();
+      void
+      assemble_dg_matrix(const double time);
+      // Time stepping methods
+      void
+      theta_method(const double time, const double time_step);
+      void
+      explicit_runge_kutta(const double time, const double time_step);
+      void
+      low_storage_explicit_runge_kutta(const double time,
+                                       const double time_step);
+      // Output
+      void
+      output_results(const unsigned int time_step_number);
+
+      // auxiliary functions
+      void
+      project(const Function<dim>        &f,
+              PETScWrappers::MPI::Vector &projected_function);
+      // compute the source term
+      void
+      compute_source_term(const Function<dim> &source_function);
     };
 
   } // namespace VFP

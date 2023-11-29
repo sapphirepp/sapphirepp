@@ -29,6 +29,8 @@
 
 #include <mpi.h>
 
+#include <fstream>
+
 #include "config.h"
 #include "output-parameters.h"
 #include "vfp-solver.h"

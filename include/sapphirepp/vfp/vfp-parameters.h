@@ -48,7 +48,8 @@ namespace sapphirepp
      *
      * Defines and reads all parameters that are needed for the VFP module.
      *
-     * @tparam dim Dimension of the physical space
+     * @tparam dim Total dimension of the problem in reduced phase space \f$
+     *         (\mathbf{x}, p) \f$ (`dim_ps`)
      */
     template <unsigned int dim>
     class VFPParameters
@@ -57,7 +58,7 @@ namespace sapphirepp
       /** Is the momentum term activated? */
       static constexpr bool momentum =
         (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
-      /** Dimension of the physical space */
+      /** Dimension in reduced phase space */
       static constexpr int dim_ps = dim;
       /** Dimension of the configuration space */
       static constexpr int dim_cs = dim - momentum;
