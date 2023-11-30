@@ -29,7 +29,6 @@
 #ifndef CONFIG_H
 #  define CONFIG_H
 
-#  include <deal.II/base/conditional_ostream.h>
 #  include <deal.II/base/exceptions.h>
 #  include <deal.II/base/function.h>
 #  include <deal.II/base/parameter_handler.h>
@@ -38,9 +37,9 @@
 #  include <deal.II/lac/vector.h>
 
 #  include <cmath>
-#  include <ostream>
 #  include <vector>
 
+#  include "pde-system.h"
 #  include "sapphirepp-logstream.h"
 #  include "vfp-flags.h"
 
@@ -115,7 +114,7 @@ namespace sapphirepp
     {
     public:
       InitialValueFunction(const PhysicalParameters &physical_parameters,
-                           unsigned int              exp_order)
+                           const unsigned int        exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
         , sigma(physical_parameters.sigma)
       {}

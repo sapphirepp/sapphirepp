@@ -29,7 +29,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/parameter_handler.h>
@@ -38,19 +37,38 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
-#include <ostream>
 #include <vector>
 
+#include "pde-system.h"
 #include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
 
+
+
 namespace sapphirepp
 {
+  /**
+   * @brief Class to implement user defined parameters
+   */
   class PhysicalParameters
   {
   public:
+    /** [Define runtime parameter] */
+    /** !!!EDIT HERE!!! */
+    /** [Define runtime parameter] */
+
+
+
+    /** Constructor */
     PhysicalParameters() = default;
 
+
+
+    /**
+     * @brief Declare parameters in parameter file
+     *
+     * @param prm @dealref{ParameterHandler}
+     */
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
@@ -59,9 +77,20 @@ namespace sapphirepp
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
+      /** [Declare runtime parameter] */
+      /** !!!EDIT HERE!!! */
+      /** [Declare runtime parameter] */
+
       prm.leave_subsection();
     }
 
+
+
+    /**
+     * @brief Parse parameters from parameter file
+     *
+     * @param prm @dealref{ParameterHandler}
+     */
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
@@ -70,376 +99,466 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
+      /** [Parse runtime parameter] */
+      /** !!!EDIT HERE!!! */
+      /** [Parse runtime parameter] */
+
       prm.leave_subsection();
     }
   };
 
 
+
   namespace VFP
   {
-    // Physical setup
+    /** [Dimension] */
+    /** !!!EDIT HERE!!! */
+    /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
+    static constexpr unsigned int dimension = 2;
+    /** [Dimension] */
 
-    // NOTE: A member variable needs be constexpr to be used as template
-    // arguments. But it can only be constexpr if it is static ,i.e. if it is
-    // the same for all class instances. If it was not static, it would be
-    // determined when constructing an instance, which happens at runtime.
 
-    // Specify which terms of the VFP equation should be active.
+
+    /** [VFP Flags] */
+    /** !!!EDIT HERE!!!  */
+    /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
                                           VFPFlags::time_independent_fields |
                                           VFPFlags::source;
+    /** [VFP Flags] */
 
-    // Initial values
+
+
+    /**
+     * @brief Initial condition
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     */
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
     public:
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       * @param exp_order Maximum expansion order \f$ l_{\rm max} \f$
+       */
       InitialValueFunction(const PhysicalParameters &physical_parameters,
-                           unsigned int              exp_order)
-        : // set the number of components with the constructor of the base class
-        dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+                           const unsigned int        exp_order)
+        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        , lms_indices{PDESystem::create_lms_indices(exp_order)}
       {
-        (void)physical_parameters;
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
+
+
+      /**
+       * @brief Evaluate the initial condition at point `p`
+       *
+       * Return a vector of values corresponding to the initial condition of the
+       * coefficients \f$ f_{i(l,m,s)}(t=0, \mathbf{x}, p) \f$ of the expansion
+       * of the distribution function in spherical harmonics.
+       *
+       * The zeroth component of values corresponds to \f$ f_{000} \f$, the
+       * first component to \f$ f_{110} \f$ etc. The mapping between the system
+       * index \f$ i \f$ and the spherical harmonic indices \f$ (l,m,s) \f$ is
+       * given by `lms_indices`:
+       *
+       * ```cpp
+       *  const unsigned int l = lms_indices[i][0];
+       *  const unsigned int m = lms_indices[i][1];
+       *  const unsigned int s = lms_indices[i][2];
+       * ```
+       *
+       * The point in reduced phase space is given by `p`. The first `dim_cs`
+       * components correspond to the spatial coordinates \f$ \mathbf{x} \f$ and
+       * if momentum term is activated the last component to the momentum
+       * coordinate \f$ p \f$:
+       *
+       * ```cpp
+       *  const double x = p[0];
+       *  const double y = p[1];
+       *  ...
+       *  const double p = p[dim-1];
+       * ```
+       *
+       * @param p Point in reduced phase space
+       * @param f Return vector \f$ f_{i(l,m,s)}(t=0, \mathbf{x}, p) \f$
+       * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
+       */
       void
       vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &f) const override
       {
-        Assert(dim <= 3, dealii::ExcNotImplemented());
-        Assert(f.size() == InitialValueFunction<dim>::n_components,
-               dealii::ExcDimensionMismatch(
-                 f.size(), InitialValueFunction<dim>::n_components));
-        // NOTE: The zeroth component of values corresponds to f_000, the first
-        // component to f_110 etc.
-        //
-        // NOTE: If the momentum term is activated the last component
-        // of point, i.e. p[dim] is the p coordinate.
-        //
-        // EXAMPLES
-        // DIM = 1
-        // constant function
-        static_cast<void>(p);
-        f[0] = 0.;
-        // Gaussian
-        // f[0] = 1. * std::exp(-(std::pow(p[0], 2)));
+        AssertDimension(f.size(), this->n_components);
+        static_cast<void>(p); // suppress compiler warning
 
-        // Constant disc
-        // if (std::abs(p[0]) < 1.) f[0] = 1.;
-
-        // space/momentum dependent distribution
-        // f[0] = 1. + 0.2 * p[0];
-
-        // sinusoidal distribution
-        // f[0] = std::sin((1. * 3.14159265359) / 2 * p[0]) + 1.;
-
-        // DIM = 2
-        // constant
-        // static_cast<void>(p);
-        // f[0] = 0.;
-        // Gaussian
-        // f[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2))));
-
-        // Constant disc
-        // if (p.norm() <= 1.) f[0] = 1.;
-
-        // Constant cross (e.g. for a rigid rotator)
-        // if (std::abs(p[0]) <= 3 && std::abs(p[1]) <= 0.5) f[0] = 1.;
-        // if (std::abs(p[0]) <= 0.5 && std::abs(p[1]) <= 3) f[0] = 1.;
-
-        // Initialise f_000, f_110, f_100, f111, ... with a Gaussian
-        // std::fill(
-        //     f.begin(), f.end(),
-        //     1. * std::exp(-((std::pow(p[0] - 0.5, 2) + std::pow(p[1] - 0.5,
-        //     2)) /
-        //                     0.01)));
-
-        // DIM 3
-        // f[0] = 1. * std::exp(-((std::pow(p[0], 2) + std::pow(p[1], 2) +
-        //                                std::pow(p[2], 2))));
+        for (unsigned int i = 0; i < f.size(); ++i)
+          {
+            /** [Initial value] */
+            /** !!!EDIT HERE!!! */
+            f[i] = 0.;
+            /** [Initial value] */
+          }
       }
+
+
+
+    private:
+      /**
+       * Map between system index \f$ i \f$ and spherical harmonic indices
+       * \f$ (l,m,n) \f$
+       */
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
 
-    // Scattering frequency
+
+
+    /**
+     * @brief Scattering frequency
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     */
     template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
-      // Set the variable  n_components of the base class
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       */
       ScatteringFrequency(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(1)
       {
-        (void)physical_parameters;
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
+
+
+      /**
+       * @brief Evaluate the scattering frequency
+       *
+       * Return a vector of values corresponding to the scattering frequency
+       * \f$ \nu(\mathbf{x}, p) \f$ at all `points` in reduced phase
+       * space. `points` is a vector of points in reduced phase space:
+       *
+       * ```cpp
+       * for (unsigned int i = 0; i < points.size(); ++i)
+       *  {
+       *    const double x = points[i][0];
+       *    const double y = points[i][1];
+       *    ...
+       *    const double p = points[i][dim-1];
+       *  }
+       * ```
+       *
+       * @param points List of points in reduced phase space
+       * @param scattering_frequencies List of scattering frequencies
+       * @param component Unused parameter
+       * @see @dealref{Function::value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
+       */
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
                  std::vector<double>                   &scattering_frequencies,
                  const unsigned int component = 0) const override
       {
-        Assert(scattering_frequencies.size() == points.size(),
-               dealii::ExcDimensionMismatch(scattering_frequencies.size(),
-                                            points.size()));
-        static_cast<void>(component);
-        static_cast<void>(points);
-        // EXAMPLES:
-        // Constant scattering frequency
-        std::fill(scattering_frequencies.begin(),
-                  scattering_frequencies.end(),
-                  0.5);
+        AssertDimension(scattering_frequencies.size(), points.size());
+        static_cast<void>(component); // suppress compiler warning
+
+        for (unsigned int i = 0; i < points.size(); ++i)
+          {
+            /** [Scattering frequency] */
+            /** !!!EDIT HERE!!! */
+            scattering_frequencies[i] = 0.;
+            /** [Scattering frequency] */
+          }
       }
     };
 
-    // Source term
+
+
+    /**
+     * @brief Source term
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     */
     template <unsigned int dim>
     class Source : public dealii::Function<dim>
     {
     public:
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       * @param exp_order Maximum expansion order \f$ l_{\rm max} \f$
+       */
       Source(const PhysicalParameters &physical_parameters,
              unsigned int              exp_order)
-        : // set n_components
-        dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        , lms_indices{PDESystem::create_lms_indices(exp_order)}
       {
-        (void)physical_parameters;
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
+
+      /**
+       * @brief Evaluate the source term
+       *
+       * Return a vector of values corresponding to the spherical harmonics
+       * decomposition of the source term \f$ S_{i(l,m,s)}(t, \mathbf{x}, p)
+       * \f$.
+       *
+       * @param p Point in reduced phase space
+       * @param values Return vector \f$ S_{i(l,m,s)}(t, \mathbf{x}, p) \f$
+       * @see InitialValueFunction::vector_value()
+       * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
+       */
       void
       vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &values) const override
       {
-        Assert(values.size() == Source<dim>::n_components,
-               dealii::ExcDimensionMismatch(values.size(),
-                                            Source<dim>::n_components));
-        // The zeroth component of values corresponds to isotropic part of the
-        // distribution
+        AssertDimension(values.size(), this->n_components);
+        static_cast<void>(p); // suppress compiler warning
 
-        // EXAMPLES:
-        // Transport only
-        // 1D Gaussian (isotropic)
-        // values[0] = 0.01 * std::exp(-(std::pow(p[0], 2)));
-        // 2D Gaussian (isotropic)
-        // values[0] = .01 * std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
-        // 2D pulsating Gaussian (isotropic, time dependent)
-        values[0] = 0.01 * (std::sin(this->get_time()) + 1.) *
-                    std::exp(-(std::pow(p[0], 2) + std::pow(p[1], 2)));
+        for (unsigned int i = 0; i < values.size(); ++i)
+          {
+            /** [Source] */
+            /** !!!EDIT HERE!!! */
+            values[i] = 0.;
+            /** [Source] */
+          }
       }
+
+
+
+    private:
+      /**
+       * Map between system index \f$ i \f$ and spherical harmonic indices
+       * \f$ (l,m,n) \f$
+       */
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
 
-    // Magnetic field
+
+
+    /**
+     * @brief Magnetic field
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     */
     template <unsigned int dim>
     class MagneticField : public dealii::Function<dim>
     {
     public:
-      // set n_components
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       */
       MagneticField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
       {
-        (void)physical_parameters;
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
+
+      /**
+       * @brief Evaluate the magnetic field at a point `p`
+       *
+       * Return a vector of values corresponding to the magnetic field
+       * \f$ \mathbf{B}(t, \mathbf{x}) \f$ at point in space.
+       *
+       * Be aware that `point` is a point in reduced phase space \f$
+       * (\mathbf{x}, p) \f$ and **not** in configuration space \f$ (\mathbf{x})
+       * \f$. Therefore, the first `dim_cs` components correspond to the spatial
+       * coordinates \f$ \mathbf{x} \f$, while the last component corresponds to
+       * the momentum coordinate \f$ p \f$ and should not be used here (if the
+       * momentum term is activated).
+       *
+       * ```cpp
+       * const double x = point[0];
+       * const double y = point[1]; // only if dim_cs > 1
+       * const double z = point[2]; // only if dim_cs > 2
+       * ```
+       *
+       * The magnetic field has always three components, independent of the
+       * dimension of the configuration space. This allows to describe a
+       * magnetic field that is points out of the simulation plane.
+       *
+       * ```cpp
+       * magnetic_field[0] = B_x;
+       * magnetic_field[1] = B_y;
+       * magnetic_field[2] = B_z;
+       * ```
+       *
+       * @param p Point in reduced phase space
+       * @param magnetic_field Return vector \f$ \mathbf{B}(t, \mathbf{x}) \f$
+       * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
+       */
       void
-      vector_value(const dealii::Point<dim> &point,
+      vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &magnetic_field) const override
       {
-        Assert(magnetic_field.size() == MagneticField<dim>::n_components,
-               dealii::ExcDimensionMismatch(magnetic_field.size(),
-                                            MagneticField<dim>::n_components));
+        AssertDimension(magnetic_field.size(), this->n_components);
+        static_cast<void>(p); // suppress compiler warning
 
-        // EXAMPLES:
-        // constant magnetic field
-        static_cast<void>(point); // suppress compiler warning
+        /** [Magnetic field] */
+        /** !!!EDIT HERE!!! */
         magnetic_field[0] = 0.;
         magnetic_field[1] = 0.;
-        magnetic_field[2] = 3.;
+        magnetic_field[2] = 0.;
+        /** [Magnetic field] */
       }
     };
 
-    // Background velocity field
+
+
+    /**
+     * @brief Background velocity field
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     */
     template <unsigned int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
     public:
-      // set n_components
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       */
       BackgroundVelocityField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
       {
-        (void)physical_parameters;
+        static_cast<void>(physical_parameters); // suppress compiler warning
       }
 
-      // Velocity field
+
+
+      /**
+       * @brief Evaluate the velocity field at a point `p`
+       *
+       * Return a vector of values corresponding to the velocity field
+       * \f$ \mathbf{u}(t, \mathbf{x}) \f$ at point in space.
+       *
+       * @param p Point in reduced phase space
+       * @param velocity Return vector \f$ \mathbf{u}(t, \mathbf{x}) \f$
+       * @see MagneticField::vector_value()
+       * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
+       */
       void
-      vector_value(const dealii::Point<dim> &point,
+      vector_value(const dealii::Point<dim> &p,
                    dealii::Vector<double>   &velocity) const override
       {
-        Assert(velocity.size() == BackgroundVelocityField<dim>::n_components,
-               dealii::ExcDimensionMismatch(
-                 velocity.size(), BackgroundVelocityField<dim>::n_components));
-        // EXAMPLES:
-        // constant velocity field
-        static_cast<void>(point); // suppress compiler warning
-        velocity[0] = .0;         // u_x
-        velocity[1] = .0;         // u_y
-        velocity[2] = .0;         // u_z
+        AssertDimension(velocity.size(), this->n_components);
+        static_cast<void>(p); // suppress compiler warning
 
-        // space dependent velocity
-        // u_x = 1/5 * x
-        // velocity[0] = 1. / 5 * point[0];
-        // velocity[1] = .0;
-        // velocity[2] = .0;
-
-        // u_x = 0.1 * cos(pi/2 * x)
-        // velocity[0] = 0.1 * std::cos(pi / 2 * point[0]);
-        // velocity[1] = .0;
-        // velocity[2] = .0;
-
-        // time-dependent velocity-field
-        // u_x = 1/10 * t
-        // velocity[0] = 1. / 10 * this->get_time();
-        // velocity[1] = .0;
-        // velocity[2] = .0;
-
-        // u_x = 1/2 * sin(t)
-        // velocity[0] = 1. / 2 * std::sin(this->get_time());
-        // velocity[1] = .0;
-        // velocity[2] = .0;
-
-        // time- and space dependent velocity
-        // u_x = -1/10 * sin(t) * cos(pi/2 * x)
-        // velocity[0] = -0.1 * std::sin(this->get_time()) * std::cos(pi / 2 *
-        // point[0]); velocity[1] = .0; velocity[2] = .0;
-
-        // u_x = 1/10 * x * (1 - e^(-t))
-        // velocity[0] = 0.1 * point[0] * (1 - std::exp(-this->get_time()));
-        // velocity[1] = .0;
-        // velocity[2] = .0;
-
-        // rigid rotator
-        // velocity[0] = -point[1];
-        // velocity[1] = point[0];
-        // velocity[2] = 0.;
+        /** [Background velocity value] */
+        /** !!!EDIT HERE!!! */
+        velocity[0] = 0.;
+        velocity[1] = 0.;
+        velocity[2] = 0.;
+        /** [Background velocity value] */
       }
 
-      // Divergence
+
+      /**
+       * @brief Evaluate the divergence of the velocity field
+       *
+       * Return a vector of values corresponding to the divergence of the
+       * velocity field \f$ \nabla \cdot \mathbf{u}(t, \mathbf{x}) \f$ at all
+       * `points` in space.
+       *
+       * @param points List of points in reduced phase space
+       * @param divergence List of divergence values
+       * @see ScatteringFrequency::value_list()
+       * @see MagneticField::vector_value()
+       * @see @dealref{Function::value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
+       */
       void
       divergence_list(const std::vector<dealii::Point<dim>> &points,
                       std::vector<double>                   &divergence)
       {
-        Assert(divergence.size() == points.size(),
-               dealii::ExcDimensionMismatch(divergence.size(), points.size()));
+        AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
-        // EXAMPLES:
-        // constant velocity
-        std::fill(divergence.begin(), divergence.end(), 0.);
 
-        // space-dependent velocity field
-        // u_x = 1/5 * x => div u = 1/5
-        // std::fill(divergence.begin(), divergence.end(), 1. / 5);
-
-        // u_x = 0.1 * cos(pi/2 * x) => div u = -0.1 * pi/2 * sin(pi/2 * x)
-        // for (unsigned int i = 0; i < points.size(); ++i)
-        //   divergence[i] = -0.1 * pi / 2 * std::sin(pi / 2 * points[i][0]);
-
-        // time-dependent velocity field
-        // u_x = 1/10 * t => div u = 0
-        // std::fill(divergence.begin(), divergence.end(), 0.);
-
-        // u_x = 1/2 * sin(t) => div u = 0
-        // std::fill(divergence.begin(), divergence.end(), 0.);
-
-        // time- and space-dependent velocity field
-        // u_x = -1/10 * sin(t) * cos(pi/2 * x) =>
-        // div u = 0.1 * pi/2 * sin(t) * sin(pi/2 * x)
-        // for (unsigned int i = 0; i < points.size(); ++i)
-        //   divergence[i] = 0.1 * pi / 2 * std::sin(this->get_time()) *
-        //                   std::sin(pi / 2 * points[i][0]);
-
-        // u_x = 1/10 * x * (1 - e^(-t))  => div u = 0.1 (1  - e^(-t))
-        // std::fill(divergence.begin(), divergence.end(),
-        //           0.1 * (1 - std::exp(-this->get_time())));
+        for (unsigned int i = 0; i < divergence.size(); ++i)
+          {
+            /** [Background velocity divergence] */
+            /** !!!EDIT HERE!!! */
+            divergence[i] = 0.;
+            /** [Background velocity divergence] */
+          }
       }
 
-      // Material derivative
+
+
+      /**
+       * @brief Evaluate the material derivative of the velocity field
+       *
+       * Return a vector of values corresponding to the material derivative of
+       * the velocity field \f$ \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}
+       * \f$ at all `points` in space.
+       *
+       * @param points List of points in reduced phase space
+       * @param material_derivatives List of material derivative values
+       * @see ScatteringFrequency::value_list()
+       * @see MagneticField::vector_value()
+       * @see @dealref{Function::value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
+       *
+       */
       void
       material_derivative_list(
         const std::vector<dealii::Point<dim>> &points,
         std::vector<dealii::Vector<double>>   &material_derivatives)
       {
-        Assert(material_derivatives[0].size() == 3,
-               dealii::ExcDimensionMismatch(material_derivatives[0].size(), 3));
-        Assert(material_derivatives.size() == points.size(),
-               dealii::ExcDimensionMismatch(material_derivatives.size(),
-                                            points.size()));
+        AssertDimension(material_derivatives.size(), points.size());
+        AssertDimension(material_derivatives[0].size(), this->n_components);
+
         for (unsigned int i = 0; i < points.size(); ++i)
           {
-            // EXAMPLES:
-            // constant velocity
+            /** [Background velocity material derivative] */
+            /** !!!EDIT HERE!!! */
             material_derivatives[i][0] = 0.; // D/Dt u_x
             material_derivatives[i][1] = 0.; // D/Dt u_y
             material_derivatives[i][2] = 0.; // D/Dt u_z
-
-            // space dependent velocity field
-            // u_x = 1/5 * x => D/Dt u_x = 1/25 * x
-            // material_derivatives[i][0] = 1. / 25 * points[i][0];
-            // material_derivatives[i][1] = 0.;
-            // material_derivatives[i][2] = 0.;
-
-            // u_x = 0.1 * cos(pi/2 * x)
-            // => D/Dt u_x = 1/100 * pi/2 * cos(pi/2*x) * sin(pi/2 * x)
-            // material_derivatives[i][0] = 1. / 100 * pi / 2 *
-            //                              std::sin(pi / 2 * points[i][0]) *
-            //                              std::cos(pi / 2 * points[i][0]);
-            // material_derivatives[i][1] = 0.;
-            // material_derivatives[i][2] = 0.;
-
-            // time-dependent velocity field
-            // u_x = 1/10 * t => D/Dt u_x = 1/10
-            // material_derivatives[i][0] = 1. / 10;
-            // material_derivatives[i][1] = 0.;
-            // material_derivatives[i][2] = 0.;
-
-            // u_x = 1/2 * sin(t) => D/Dt u_x = 1/2 * cos(t)
-            // material_derivatives[i][0] = 1. / 2 * std::cos(this->get_time());
-            // material_derivatives[i][1] = 0.;
-            // material_derivatives[i][2] = 0.;
-
-            // time- and space-dependent velocity field
-            // u_x = -1/10 * sin(t) * cos(pi/2 * x)
-            // => D/Dt u_x = -0.1 * cos(pi/2 * x) * (cos(t) + 0.1 * pi/2 *
-            // sin(t) * sin(pi/2 * x)) material_derivatives[i][0] =
-            //     -0.1 * std::cos((pi / 2 * points[i][0])) *
-            //     (std::cos(this->get_time()) +
-            //      0.1 * pi / 2 * std::sin(this->get_time()) *
-            //          std::sin(this->get_time()) * std::sin(pi / 2 *
-            //          points[i][0]));
-            // material_derivatives[i][1] = 0.;
-            // material_derivatives[i][2] = 0.;
-
-            // u_x = 1/10 * x * (1 - e^(-t))  => D/Dt u_x = 0.1 * x * (e^(-t)  +
-            // (1 - e^(-t))^2) material_derivatives[i][0] = 0.1 * points[i][0] *
-            //                              (std::exp(-this->get_time()) +
-            //                               0.1 * (1 -
-            //                               std::exp(-this->get_time())) *
-            //                                   (1 -
-            //                                   std::exp(-this->get_time())));
-            // material_derivatives[i][1] = 0.;
-            // material_derivatives[i][2] = 0.;
+            /** [Background velocity material derivative] */
           }
       }
 
-      // Jacobian matrix
+
+
+      /**
+       * @brief Evaluate the Jacobian matrix of the velocity field
+       *
+       * Return a vector of matrices corresponding to the Jacobian matrix of
+       * the velocity field \f$ \nabla \mathbf{u}(t, \mathbf{x}) \f$ at all
+       * `points` in space.
+       *
+       * @todo Add more documentation, maybe change to vector of FullMatrix?
+       *
+       * @param points List of points in reduced phase space
+       * @param jacobians List of Jacobian matrices
+       * @see ScatteringFrequency::value_list()
+       * @see MagneticField::vector_value()
+       * @see @dealref{Function::value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
+       */
       void
       jacobian_list(
         const std::vector<dealii::Point<dim>>            &points,
         std::vector<std::vector<dealii::Vector<double>>> &jacobians) const
       {
-        Assert(jacobians.size() == points.size(),
-               dealii::ExcDimensionMismatch(jacobians.size(), points.size()));
-        Assert(jacobians[0].size() == 3,
-               dealii::ExcDimensionMismatch(jacobians[0].size(), 3));
+        AssertDimension(jacobians.size(), points.size());
+        AssertDimension(jacobians[0].size(), this->n_components);
+        AssertDimension(jacobians[0][0].size(), this->n_components);
+
         for (unsigned int i = 0; i < points.size(); ++i)
           {
-            // EXAMPLES:
-            // constant velocity field
+            /** [Background velocity Jacobian] */
+            /** !!!EDIT HERE!!! */
             jacobians[i][0][0] = 0.; // \partial u_x / \partial x
             jacobians[i][0][1] = 0.; // \partial u_x / \partial y
             jacobians[i][0][2] = 0.; // \partial u_x / \partial z
@@ -451,81 +570,9 @@ namespace sapphirepp
             jacobians[i][2][0] = 0.; // \partial u_z / \partial x
             jacobians[i][2][1] = 0.; // \partial u_z / \partial y
             jacobians[i][2][2] = 0.; // \partial u_z / \partial z
-
-            // space dependent velocity field
-            // u_x = 1/5 * x
-            // jacobians[i][0][0] = 1. / 5;
-            // jacobians[i][0][1] = 0.;
-            // jacobians[i][0][2] = 0.;
-
-            // jacobians[i][1][0] = 0.;
-            // jacobians[i][1][1] = 0.;
-            // jacobians[i][1][2] = 0.;
-
-            // jacobians[i][2][0] = 0.;
-            // jacobians[i][2][1] = 0.;
-            // jacobians[i][2][2] = 0.;
-
-            // u_x = 0.1 * cos(pi/2 * x)
-            // jacobians[i][0][0] = 0.1 * pi/2 * std::sin(pi/2 * points[i][0]);
-            // jacobians[i][0][1] = 0.;
-            // jacobians[i][0][2] = 0.;
-
-            // jacobians[i][1][0] = 0.;
-            // jacobians[i][1][1] = 0.;
-            // jacobians[i][1][2] = 0.;
-
-            // jacobians[i][2][0] = 0.;
-            // jacobians[i][2][1] = 0.;
-            // jacobians[i][2][2] = 0.;
-
-            // time-dependent velocity field
-            // u_x = 1/10 * t and u_x = 1/2 * sin(t)
-            // jacobians[i][0][0] = 0.;
-            // jacobians[i][0][1] = 0.;
-            // jacobians[i][0][2] = 0.;
-
-            // jacobians[i][1][0] = 0.;
-            // jacobians[i][1][1] = 0.;
-            // jacobians[i][1][2] = 0.;
-
-            // jacobians[i][2][0] = 0.;
-            // jacobians[i][2][1] = 0.;
-            // jacobians[i][2][2] = 0.;
-
-            // time- and space dependent velocity field
-            // u_x = -1/10 * sin(t) * cos(pi/2 * x)
-            // jacobians[i][0][0] = 0.1 * pi / 2 * std::sin(this->get_time()) *
-            //                      std::sin(pi / 2 * points[i][0]);
-            // jacobians[i][0][1] = 0.;
-            // jacobians[i][0][2] = 0.;
-
-            // jacobians[i][1][0] = 0.;
-            // jacobians[i][1][1] = 0.;
-            // jacobians[i][1][2] = 0.;
-
-            // jacobians[i][2][0] = 0.;
-            // jacobians[i][2][1] = 0.;
-            // jacobians[i][2][2] = 0.;
-
-            // u_x = 1/10 * x * (1 - e^(-t))
-            // jacobians[i][0][0] = 0.1 * (1 - std::exp(-this->get_time()));x
-            // jacobians[i][0][1] = 0.;
-            // jacobians[i][0][2] = 0.;
-
-            // jacobians[i][1][0] = 0.;
-            // jacobians[i][1][1] = 0.;
-            // jacobians[i][1][2] = 0.;
-
-            // jacobians[i][2][0] = 0.;
-            // jacobians[i][2][1] = 0.;
-            // jacobians[i][2][2] = 0.;
+            /** [Background velocity Jacobian] */
           }
       }
-
-    private:
-      // Numerical constants
-      double pi = 2 * std::acos(0.);
     };
   } // namespace VFP
 } // namespace sapphirepp
