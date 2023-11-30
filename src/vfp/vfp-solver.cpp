@@ -199,26 +199,23 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   const VFPParameters<dim_ps>   &vfp_parameters,
   const PhysicalParameters      &physical_parameters,
   const Utils::OutputParameters &output_parameters)
-  : vfp_parameters(vfp_parameters)
-  , physical_parameters(physical_parameters)
-  , mpi_communicator(MPI_COMM_WORLD)
-  , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
-  , rank(Utilities::MPI::this_mpi_process(mpi_communicator))
-  , pcout(std::cout, ((rank == 0) && (saplog.get_verbosity() >= 3)))
-  , output_parameters(output_parameters)
+  : vfp_parameters{vfp_parameters}
+  , physical_parameters{physical_parameters}
+  , output_parameters{output_parameters}
+  , pde_system(vfp_parameters.expansion_order)
+  , expansion_order{pde_system.expansion_order}
+  , num_exp_coefficients{pde_system.system_size}
+  , upwind_flux(pde_system, vfp_parameters, physical_parameters)
+  , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
-  , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree),
-       (vfp_parameters.expansion_order + 1) *
-         (vfp_parameters.expansion_order + 1))
+  , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , pde_system(vfp_parameters.expansion_order)
-  , upwind_flux(pde_system, vfp_parameters, physical_parameters)
-  , expansion_order(vfp_parameters.expansion_order)
-  , num_exp_coefficients((vfp_parameters.expansion_order + 1) *
-                         (vfp_parameters.expansion_order + 1))
+  , pcout(std::cout,
+          ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
+           (saplog.get_verbosity() >= 3)))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
@@ -242,6 +239,22 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
         << std::endl
         << "  i.e. the dimension of the configuration space should be zero."
         << std::endl;
+    }
+  if ((vfp_flags & VFPFlags::time_independent_fields) != VFPFlags::none)
+    {
+      AssertThrow(((vfp_flags & VFPFlags::spatial_advection) !=
+                   VFPFlags::none) ||
+                    ((vfp_flags & VFPFlags::magnetic) != VFPFlags::none),
+                  ExcMessage("Either the spatial advection term or the "
+                             "magnetic field must be activated if the fields "
+                             "are time independent."));
+    }
+  if ((vfp_flags & VFPFlags::time_independent_source) != VFPFlags::none)
+    {
+      AssertThrow((vfp_flags & VFPFlags::source) != VFPFlags::none,
+                  ExcMessage(
+                    "The source term must be activated if the source is time "
+                    "independent."));
     }
 }
 
@@ -295,22 +308,27 @@ sapphirepp::VFP::VFPSolver<dim>::run()
              << discrete_time.get_step_number()
              << " at t = " << discrete_time.get_current_time() << " \t["
              << Utilities::System::get_time() << "]" << std::endl;
-      // saplog << discrete_time << std::endl;
-      // Time stepping method
-      if (vfp_parameters.time_stepping_method ==
-            TimeSteppingMethod::forward_euler ||
-          vfp_parameters.time_stepping_method ==
-            TimeSteppingMethod::backward_euler ||
-          vfp_parameters.time_stepping_method ==
-            TimeSteppingMethod::crank_nicolson)
-        theta_method(discrete_time.get_current_time(),
-                     discrete_time.get_next_step_size());
-      else if (vfp_parameters.time_stepping_method == TimeSteppingMethod::erk4)
-        explicit_runge_kutta(discrete_time.get_current_time(),
-                             discrete_time.get_next_step_size());
-      else if (vfp_parameters.time_stepping_method == TimeSteppingMethod::lserk)
-        low_storage_explicit_runge_kutta(discrete_time.get_current_time(),
-                                         discrete_time.get_next_step_size());
+
+      switch (vfp_parameters.time_stepping_method)
+        {
+          case TimeSteppingMethod::forward_euler:
+          case TimeSteppingMethod::backward_euler:
+          case TimeSteppingMethod::crank_nicolson:
+            theta_method(discrete_time.get_current_time(),
+                         discrete_time.get_next_step_size());
+            break;
+          case TimeSteppingMethod::erk4:
+            explicit_runge_kutta(discrete_time.get_current_time(),
+                                 discrete_time.get_next_step_size());
+            break;
+          case TimeSteppingMethod::lserk:
+            low_storage_explicit_runge_kutta(
+              discrete_time.get_current_time(),
+              discrete_time.get_next_step_size());
+            break;
+          default:
+            AssertThrow(false, ExcNotImplemented());
+        }
 
       output_results(discrete_time.get_step_number() + 1);
     }
@@ -519,6 +537,79 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_mass_matrix()
                         MeshWorker::assemble_own_cells);
   mass_matrix.compress(VectorOperation::add);
   saplog << "The mass matrix was assembled." << std::endl;
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::project(
+  const Function<dim>        &f,
+  PETScWrappers::MPI::Vector &projected_function)
+{
+  TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
+  saplog << "Project a function onto the finite element space" << std::endl;
+  LogStream::Prefix p("project", saplog);
+  // Create right hand side
+  FEValues<dim_ps> fe_v(mapping,
+                        fe,
+                        quadrature,
+                        update_values | update_quadrature_points |
+                          update_JxW_values);
+
+  const unsigned int n_dofs = fe.n_dofs_per_cell();
+  Vector<double>     cell_rhs(n_dofs);
+
+  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
+
+  PETScWrappers::MPI::Vector rhs(locally_owned_dofs, mpi_communicator);
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+      if (cell->is_locally_owned())
+        {
+          cell_rhs = 0;
+          fe_v.reinit(cell);
+
+          const std::vector<Point<dim_ps>> &q_points =
+            fe_v.get_quadrature_points();
+          const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+          std::vector<Vector<double>> function_values(
+            q_points.size(), Vector<double>(f.n_components));
+          f.vector_value_list(q_points, function_values);
+
+          for (const unsigned int q_index : fe_v.quadrature_point_indices())
+            {
+              for (unsigned int i : fe_v.dof_indices())
+                {
+                  const unsigned int component_i =
+                    fe.system_to_component_index(i).first;
+                  cell_rhs(i) += fe_v.shape_value(i, q_index) *
+                                 function_values[q_index][component_i] *
+                                 JxW[q_index];
+                }
+            }
+          cell->get_dof_indices(local_dof_indices);
+
+          constraints.distribute_local_to_global(cell_rhs,
+                                                 local_dof_indices,
+                                                 rhs);
+        }
+    }
+  rhs.compress(VectorOperation::add);
+
+  // Solve the system
+  PETScWrappers::PreconditionNone preconditioner;
+  preconditioner.initialize(mass_matrix);
+
+  SolverControl           solver_control(1000, 1e-12);
+  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  cg.solve(mass_matrix, projected_function, rhs, preconditioner);
+  saplog << "Solved in " << solver_control.last_step() << " iterations."
+         << std::endl;
+  // At the moment I am assuming, that I do not have constraints. Hence, I
+  // do not need the following line.
+  // constraints.distribute(projected_function);
 }
 
 
@@ -1266,79 +1357,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::project(
-  const Function<dim>        &f,
-  PETScWrappers::MPI::Vector &projected_function)
-{
-  TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
-  saplog << "Project a function onto the finite element space" << std::endl;
-  LogStream::Prefix p("project", saplog);
-  // Create right hand side
-  FEValues<dim_ps> fe_v(mapping,
-                        fe,
-                        quadrature,
-                        update_values | update_quadrature_points |
-                          update_JxW_values);
-
-  const unsigned int n_dofs = fe.n_dofs_per_cell();
-  Vector<double>     cell_rhs(n_dofs);
-
-  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
-
-  PETScWrappers::MPI::Vector rhs(locally_owned_dofs, mpi_communicator);
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      if (cell->is_locally_owned())
-        {
-          cell_rhs = 0;
-          fe_v.reinit(cell);
-
-          const std::vector<Point<dim_ps>> &q_points =
-            fe_v.get_quadrature_points();
-          const std::vector<double> &JxW = fe_v.get_JxW_values();
-
-          std::vector<Vector<double>> function_values(
-            q_points.size(), Vector<double>(f.n_components));
-          f.vector_value_list(q_points, function_values);
-
-          for (const unsigned int q_index : fe_v.quadrature_point_indices())
-            {
-              for (unsigned int i : fe_v.dof_indices())
-                {
-                  const unsigned int component_i =
-                    fe.system_to_component_index(i).first;
-                  cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                                 function_values[q_index][component_i] *
-                                 JxW[q_index];
-                }
-            }
-          cell->get_dof_indices(local_dof_indices);
-
-          constraints.distribute_local_to_global(cell_rhs,
-                                                 local_dof_indices,
-                                                 rhs);
-        }
-    }
-  rhs.compress(VectorOperation::add);
-
-  // Solve the system
-  PETScWrappers::PreconditionNone preconditioner;
-  preconditioner.initialize(mass_matrix);
-
-  SolverControl           solver_control(1000, 1e-12);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
-  cg.solve(mass_matrix, projected_function, rhs, preconditioner);
-  saplog << "Solved in " << solver_control.last_step() << " iterations."
-         << std::endl;
-  // At the moment I am assuming, that I do not have constraints. Hence, I
-  // do not need the following line.
-  // constraints.distribute(projected_function);
-}
-
-
-
-template <unsigned int dim>
-void
 sapphirepp::VFP::VFPSolver<dim>::compute_source_term(
   const Function<dim> &source_function)
 {
@@ -1722,6 +1740,9 @@ void
 sapphirepp::VFP::VFPSolver<dim>::output_results(
   const unsigned int time_step_number)
 {
+  if (time_step_number % output_parameters.output_frequency != 0)
+    return;
+
   TimerOutput::Scope timer_section(timer, "Output");
   DataOut<dim_ps>    data_out;
   data_out.attach_dof_handler(dof_handler);
@@ -1729,7 +1750,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // solution
   std::vector<std::string> component_names(num_exp_coefficients);
   const std::vector<std::array<unsigned int, 3>> &lms_indices =
-    pde_system.get_lms_indices();
+    pde_system.lms_indices;
 
   for (unsigned int i = 0; i < num_exp_coefficients; ++i)
     {

@@ -266,89 +266,222 @@ namespace sapphirepp
 
 
     private:
+      /** @{ */
+      /** VFP parameter */
       const VFPParameters<dim_ps> vfp_parameters;
-      const PhysicalParameters    physical_parameters;
-
-      MPI_Comm           mpi_communicator;
-      const unsigned int n_mpi_procs;
-      const unsigned int rank;
-
-      ConditionalOStream      pcout;
+      /** User defined parameter */
+      const PhysicalParameters physical_parameters;
+      /**
+       * Output parameter
+       *
+       * @note The object should be constant, but HDF5 output requires non-const
+       */
       Utils::OutputParameters output_parameters;
+      /** @} */
 
-      Triangulation triangulation;
+      /** @{ */
+      /** @ref PDESystem */
+      PDESystem pde_system;
+      /** Maximum expansion order \f$ l_{\rm max} \f$ */
+      const unsigned int expansion_order;
+      /** Number of expansion coefficients, same as `pde_system.size`*/
+      const unsigned int num_exp_coefficients;
+      /** @} */
 
-      DoFHandler<dim_ps> dof_handler;
-
-      IndexSet locally_owned_dofs;
-      IndexSet locally_relevant_dofs;
-
-      // NOTE: The explicit use of a mapping is most likely related to the usage
-      // of mesh_loop as well
-      const MappingQ1<dim_ps> mapping;
-      const FESystem<dim_ps>  fe; // TODO: const is probably wrong
-
-      // NOTE: Quadratures are members of this class (and not e.g. part of the
-      // assemble_system method), because I am using the mesh_loop function
-      const QGauss<dim_ps>     quadrature;
-      const QGauss<dim_ps - 1> quadrature_face;
-
-      // The constraints object is used for the distribute_local_to_global()
-      // function
-      const AffineConstraints<double> constraints;
-
-      // PDE System
-      PDESystem                                   pde_system;
+      /** @ref UpwindFlux */
       UpwindFlux<dim_ps, momentum, logarithmic_p> upwind_flux;
 
-      SparsityPattern                  sparsity_pattern;
+      /** MPI communicator */
+      const MPI_Comm mpi_communicator;
+
+      /** @dealref{Triangulation}, i.e. Grid for the problem */
+      Triangulation triangulation;
+
+      /** @{ */
+      /** @dealref{DoFHandler} */
+      DoFHandler<dim_ps> dof_handler;
+
+      /** Set of locally owned dofs */
+      IndexSet locally_owned_dofs;
+      /** Set of locally relevant  dofs */
+      IndexSet locally_relevant_dofs;
+      /** @}  */
+
+      /**
+       * @dealref{Mapping}
+       *
+       * @note The explicit use of a mapping is most likely related to the usage
+       *       of mesh_loop as well
+       */
+      const MappingQ1<dim_ps> mapping;
+
+      /** @dealref{FESystem} */
+      const FESystem<dim_ps> fe;
+
+      /** @{ */
+      /**
+       * Cell quadrature
+       *
+       * @note Quadratures are members of this class (and not e.g. part of the
+       *       assemble_system method), because I am using the mesh_loop
+       * function
+       */
+      const QGauss<dim_ps> quadrature;
+      /** Face quadrature */
+      const QGauss<dim_ps - 1> quadrature_face;
+      /** @} */
+
+      /**
+       * @brief @dealref{AffineConstraints}
+       *
+       * The constraints object is used for the @ref
+       * distribute_local_to_global() function
+       */
+      const AffineConstraints<double> constraints;
+
+
+      /** @{ */
+      /** @dealref{SparsityPattern} */
+      SparsityPattern sparsity_pattern;
+      /** Mass matrix */
       PETScWrappers::MPI::SparseMatrix mass_matrix;
+      /** DG matrix */
       PETScWrappers::MPI::SparseMatrix dg_matrix;
+      /** System matrix, depends on time stepping method */
       PETScWrappers::MPI::SparseMatrix system_matrix;
-
-      PETScWrappers::MPI::Vector system_rhs;
-      PETScWrappers::MPI::Vector locally_owned_previous_solution;
-      PETScWrappers::MPI::Vector locally_relevant_current_solution;
-
+      /** Source */
       PETScWrappers::MPI::Vector locally_owned_current_source;
+      /** System right hand side, depends on time stepping method */
+      PETScWrappers::MPI::Vector system_rhs;
+      /** @} */
 
-      const unsigned int expansion_order;
-      const unsigned int num_exp_coefficients;
+      /** @{ */
+      /** Previous solution */
+      PETScWrappers::MPI::Vector locally_owned_previous_solution;
+      /** Current solution */
+      PETScWrappers::MPI::Vector locally_relevant_current_solution;
+      /** @} */
 
+      /** @{ */
+      /**
+       * Output stream for timer output
+       *
+       * @note Should only be used for TimerOutput
+       */
+      ConditionalOStream pcout;
+      /** @dealref{TimerOutput} */
       TimerOutput timer;
+      /** @} */
 
 
 
-      // Triangulation
+      /** @{ */
+      /**
+       * @brief Creates the grid
+       *
+       * Setup @ref triangulation
+       */
       void
       make_grid();
-      // Setup data structures for the linear system
+
+      /**
+       * @brief Setup data structure for the linear system
+       *
+       * Setup the @ref dof_handler
+       */
       void
       setup_system();
-      // Matrix assembly
+
+      /**
+       * @brief Assemble the mass matrix
+       *
+       * Setup and compute the @ref mass_matrix
+       */
       void
       assemble_mass_matrix();
-      void
-      assemble_dg_matrix(const double time);
-      // Time stepping methods
-      void
-      theta_method(const double time, const double time_step);
-      void
-      explicit_runge_kutta(const double time, const double time_step);
-      void
-      low_storage_explicit_runge_kutta(const double time,
-                                       const double time_step);
-      // Output
-      void
-      output_results(const unsigned int time_step_number);
 
-      // auxiliary functions
+      /**
+       * @brief Project a function onto the finite element space
+       *
+       * @param f Function to project
+       * @param projected_function Vector returning the projected functions
+       */
       void
       project(const Function<dim>        &f,
               PETScWrappers::MPI::Vector &projected_function);
-      // compute the source term
+      /** @} */
+
+
+
+      /** @{ */
+      /**
+       * @brief Assemble the DG matrix
+       *
+       * Compute the @ref dg_matrix
+       *
+       * @param time Time of the current time step
+       */
+      void
+      assemble_dg_matrix(const double time);
+
+      /**
+       * @brief Compute the source term
+       *
+       * Compute the @ref locally_owned_current_source
+       *
+       * @param source_function Source function
+       */
       void
       compute_source_term(const Function<dim> &source_function);
+      /** @} */
+
+
+
+      /** @{ */
+      /**
+       * @brief Calculate one time step with the theta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       */
+      void
+      theta_method(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the fourth order explicit
+       *        Runge-Kutta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       */
+      void
+      explicit_runge_kutta(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the low-storage explicit
+       *        Runge-Kutta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       *
+       * @todo The method is not forth order yet
+       */
+      void
+      low_storage_explicit_runge_kutta(const double time,
+                                       const double time_step);
+      /** @} */
+
+
+      /**
+       * @brief Output the results
+       *
+       * @param time_step_number time step number
+       *
+       * @note This function should be a const member, but HDF5 output requires
+       *       non-const
+       */
+      void
+      output_results(const unsigned int time_step_number);
     };
 
   } // namespace VFP

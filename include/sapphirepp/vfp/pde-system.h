@@ -50,6 +50,29 @@ namespace sapphirepp
     class PDESystem
     {
     public:
+      /** @{ */
+      /** Order of the spherical harmonic expansion */
+      const unsigned int expansion_order;
+
+      /**
+       * @brief Size of the system
+       *
+       * Size of system, i.e. the number of expansion coefficients and the size
+       * the quadratic matrices
+       * */
+      const unsigned int system_size;
+
+      /**
+       * @brief Map between system index \f$ i \f$ and spherical harmonic
+       *        indices \f$ (l,m,s) \f$
+       *
+       * The mapping is given by `lms_indices[i] = {l,m,s}`.
+       */
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+      /** @} */
+
+
+
       /** Constructor */
       PDESystem(const unsigned int expansion_order);
 
@@ -69,10 +92,6 @@ namespace sapphirepp
 
 
       /** @{ */
-      unsigned int
-      get_system_size() const;
-      const std::vector<std::array<unsigned int, 3>> &
-      get_lms_indices() const;
       const std::vector<dealii::LAPACKFullMatrix<double>> &
       get_advection_matrices() const;
       const std::vector<dealii::LAPACKFullMatrix<double>> &
@@ -123,19 +142,6 @@ namespace sapphirepp
 
 
     private:
-      /** @{ */
-      /** Order of the spherical harmonic expansion */
-      const unsigned int expansion_order;
-
-      /** size of system , i.e. of the quadratic matrices */
-      const unsigned int system_size;
-
-      /** Map between i and l,m,s (implemented in constructor) */
-      const std::vector<std::array<unsigned int, 3>> lms_indices;
-      /** @} */
-
-
-
       /** @{ */
       /** Advection matrices */
       std::vector<dealii::LAPACKFullMatrix<double>> advection_matrices;

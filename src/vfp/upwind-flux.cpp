@@ -48,7 +48,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   const VFPParameters<dim> &solver_control,
   const PhysicalParameters &physical_parameters)
   : pde_system{system}
-  , matrix_size{pde_system.get_system_size()}
+  , matrix_size{pde_system.system_size}
   , matrix_size_blas{static_cast<dealii::types::blas_int>(matrix_size)}
   // NOLINTBEGIN(google-readability-casting)
   , advection_matrices(3, std::vector<double>(matrix_size * matrix_size))

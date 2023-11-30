@@ -80,22 +80,6 @@ sapphirepp::VFP::PDESystem::create_lms_indices(
 
 
 
-unsigned int
-sapphirepp::VFP::PDESystem::get_system_size() const
-{
-  return system_size;
-}
-
-
-
-const std::vector<std::array<unsigned int, 3>> &
-sapphirepp::VFP::PDESystem::get_lms_indices() const
-{
-  return lms_indices;
-}
-
-
-
 const std::vector<dealii::LAPACKFullMatrix<double>> &
 sapphirepp::VFP::PDESystem::get_advection_matrices() const
 {
