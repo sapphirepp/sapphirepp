@@ -105,7 +105,7 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
       saplog.pop();
       saplog << value << "\t" << L2_error << "\t" << Linfty_error << "\t"
              << timer.cpu_time() << "\t" << timer.wall_time() << "\t"
-             << vfp_solver.get_n_dofs() << std::endl;
+             << vfp_solver.get_dof_handler().n_dofs() << std::endl;
       saplog.push("Tests");
     }
 

@@ -92,13 +92,15 @@ namespace sapphirepp
      * Since we decompose the \f$ \mathbf{p} \f$ momentum part into spherical
      * harmonics, we always solve for the full 3 dimensions in momentum space.
      *
+     * Note that `dim_ps` equals the dimension of the numerical problem, i.e.
+     * the grid and solution are of dimension `dim_ps`.
      *
      * @note Due to limitations of @dealii, the total dimension of the problem
      *       must be smaller or equal to 3, `dim_ps <= 3`.
      *
      *
-     * @tparam dim Total dimension of the problem in reduced phase space \f$
-     *         (\mathbf{x}, p) \f$ (`dim_ps`)
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$,
+     *         `dim_ps`
      */
     template <unsigned int dim>
     class VFPSolver
@@ -130,17 +132,69 @@ namespace sapphirepp
 
 
     public:
+      /**
+       * @brief Constructor
+       *
+       * Constructs the VFP solver with the given parameters. It does not setup
+       * the system yet. This is done in the @ref run() method.
+       *
+       * @param vfp_parameters Parameters for the VFP equation
+       * @param physical_parameters User defined parameters of the problem
+       * @param output_parameters Parameters for the output
+       */
       VFPSolver(const VFPParameters<dim_ps>   &vfp_parameters,
                 const PhysicalParameters      &physical_parameters,
                 const Utils::OutputParameters &output_parameters);
 
 
 
+      /**
+       * @brief Solve the VFP equation
+       *
+       * This method solves the VFP equation with the parameters given in the
+       * constructor. It is the main method of this class.
+       */
       void
       run();
 
 
 
+      /** @{ */
+      /**
+       * @brief Compute the total global error of the solution with respect to
+       *        the exact solution
+       *
+       * The total global error is computed as
+       *
+       * \f[
+       *    d = \lVert \mathbf{d}_K \rVert_X
+       * \f]
+       *
+       * with the global norm \f$ X \f$ and the cell-wise error
+       *
+       * \f[
+       *    \mathbf{d}_K = \lVert \mathbf{u} - \mathbf{u_h} \rVert_Y
+       * \f]
+       *
+       * where \f$ Y \f$ is the cell-wise norm, \f$ u \f$ denotes the exact
+       * solution and \f$ u_h \f$ numerical approximation.
+       *
+       * Note that this function can only be called **after** @ref run().
+       *
+       * For more details see
+       * @dealref{VectorTools::integrate_difference,namespaceVectorTools,aec4da3324bbce54d7c12dd54c59dd915}
+       * and
+       * @dealref{VectorTools::compute_global_error,namespaceVectorTools,a21eb62d70953182dcc2b15c4e14dd533}.
+       *
+       * @param exact_solution Exact/comparison solution of the VFP equation
+       *        \f$ u \f$
+       * @param cell_norm Cell-wise norm \f$ Y \f$
+       * @param global_norm Global norm \f$ X \f$
+       * @param weight The additional argument weight allows to evaluate
+       *        weighted norms. For details see
+       *        @dealref{VectorTools::integrate_difference,namespaceVectorTools,aec4da3324bbce54d7c12dd54c59dd915}.
+       * @return The total global error \f$ d \f$
+       */
       double
       compute_global_error(
         const Function<dim_ps>         &exact_solution,
@@ -148,10 +202,66 @@ namespace sapphirepp
         const VectorTools::NormType    &global_norm,
         const Function<dim_ps, double> *weight = nullptr) const;
 
+      /**
+       * @brief Compute the (weighted) norm of the solution
+       *
+       * Note that this function can only be called **after** @ref run().
+       *
+       * For more details see
+       * @ref compute_global_error(),
+       * @dealref{VectorTools::integrate_difference,namespaceVectorTools,aec4da3324bbce54d7c12dd54c59dd915}
+       * and
+       * @dealref{VectorTools::compute_global_error,namespaceVectorTools,a21eb62d70953182dcc2b15c4e14dd533}.
+       *
+       * @param cell_norm Cell-wise norm
+       * @param global_norm Global norm
+       * @param weight The additional argument weight allows to evaluate
+       *        weighted norms. For details see
+       *        @dealref{VectorTools::integrate_difference,namespaceVectorTools,aec4da3324bbce54d7c12dd54c59dd915}.
+       * @return The weighted norm of the solution
+       */
+      double
+      compute_weighted_norm(
+        const VectorTools::NormType    &cell_norm,
+        const VectorTools::NormType    &global_norm,
+        const Function<dim_ps, double> *weight = nullptr) const;
+      /** @} */
 
 
-      unsigned int
-      get_n_dofs() const;
+
+      /** @{ */
+      /**
+       * @brief Get the triangulation object
+       *
+       * @return const Triangulation&
+       */
+      const Triangulation &
+      get_triangulation() const;
+
+      /**
+       * @brief Get the dof handler object
+       *
+       * @return const DoFHandler<dim>&
+       */
+      const DoFHandler<dim> &
+      get_dof_handler() const;
+
+      /**
+       * @brief Get the current (locally relevant) solution
+       *
+       * @return const PETScWrappers::MPI::Vector&
+       */
+      const PETScWrappers::MPI::Vector &
+      get_current_solution() const;
+
+      /**
+       * @brief Get the timer object
+       *
+       * @return const TimerOutput&
+       */
+      const TimerOutput &
+      get_timer() const;
+      /** @} */
 
 
 

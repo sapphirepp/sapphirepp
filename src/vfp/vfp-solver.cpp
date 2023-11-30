@@ -55,6 +55,8 @@
 #include <deal.II/meshworker/mesh_loop.h>
 
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/vector_tools_integrate_difference.h>
 #include <deal.II/numerics/vector_tools_project.h>
 
 #include <algorithm>
@@ -202,7 +204,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , mpi_communicator(MPI_COMM_WORLD)
   , n_mpi_procs(Utilities::MPI::n_mpi_processes(mpi_communicator))
   , rank(Utilities::MPI::this_mpi_process(mpi_communicator))
-  , pcout(std::cout, (rank == 0))
+  , pcout(std::cout, ((rank == 0) && (saplog.get_verbosity() >= 3)))
   , output_parameters(output_parameters)
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
@@ -250,6 +252,7 @@ void
 sapphirepp::VFP::VFPSolver<dim>::run()
 {
   LogStream::Prefix p("VFP", saplog);
+  timer.reset();
   saplog << "Run VFP equation solver. \t\t[" << Utilities::System::get_time()
          << "]" << std::endl;
   {
@@ -314,9 +317,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
   saplog << "Simulation ended at t = " << discrete_time.get_current_time()
          << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
-  if (saplog.get_verbosity() > 3)
-    timer.print_wall_time_statistics(mpi_communicator);
-  timer.reset();
+  timer.print_wall_time_statistics(mpi_communicator);
 }
 
 
@@ -1786,10 +1787,71 @@ sapphirepp::VFP::VFPSolver<dim>::compute_global_error(
 
 
 template <unsigned int dim>
-unsigned int
-sapphirepp::VFP::VFPSolver<dim>::get_n_dofs() const
+double
+sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
+  const VectorTools::NormType    &cell_norm,
+  const VectorTools::NormType    &global_norm,
+  const Function<dim_ps, double> *weight) const
 {
-  return dof_handler.n_dofs();
+  LogStream::Prefix p("VFP", saplog);
+  saplog << "Compute the weighted norm" << std::endl;
+  LogStream::Prefix p2("Norm", saplog);
+
+  Vector<float> cell_norms(triangulation.n_locally_owned_active_cells());
+
+  const Functions::ZeroFunction<dim_ps> zero_function(num_exp_coefficients);
+
+  VectorTools::integrate_difference(mapping,
+                                    dof_handler,
+                                    locally_relevant_current_solution,
+                                    zero_function,
+                                    cell_norms,
+                                    quadrature,
+                                    cell_norm,
+                                    weight);
+
+  double global_weighted_norm =
+    VectorTools::compute_global_error(triangulation, cell_norms, global_norm);
+
+  saplog << "Global weighted norm: " << global_weighted_norm << std::endl;
+
+  return global_weighted_norm;
+}
+
+
+
+template <unsigned int dim>
+const typename sapphirepp::VFP::VFPSolver<dim>::Triangulation &
+sapphirepp::VFP::VFPSolver<dim>::get_triangulation() const
+{
+  return triangulation;
+}
+
+
+
+template <unsigned int dim>
+const dealii::DoFHandler<dim> &
+sapphirepp::VFP::VFPSolver<dim>::get_dof_handler() const
+{
+  return dof_handler;
+}
+
+
+
+template <unsigned int dim>
+const dealii::PETScWrappers::MPI::Vector &
+sapphirepp::VFP::VFPSolver<dim>::get_current_solution() const
+{
+  return locally_relevant_current_solution;
+}
+
+
+
+template <unsigned int dim>
+const dealii::TimerOutput &
+sapphirepp::VFP::VFPSolver<dim>::get_timer() const
+{
+  return timer;
 }
 
 
