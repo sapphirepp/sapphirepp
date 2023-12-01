@@ -591,7 +591,8 @@ sapphirepp::VFP::PDESystem::compute_adv_cross_generators()
 
 
 
-void ::sapphirepp::VFP::PDESystem::compute_t_matrices()
+void
+sapphirepp::VFP::PDESystem::compute_t_matrices()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
   for (auto &t_mat : t_matrices)
@@ -604,7 +605,8 @@ void ::sapphirepp::VFP::PDESystem::compute_t_matrices()
 
 
 
-void ::sapphirepp::VFP::PDESystem::shrink_matrices()
+void
+sapphirepp::VFP::PDESystem::shrink_matrices()
 {
   // Shrink the matrices such that they agree with order of the expansion
   unsigned int num_exp_coefficients =

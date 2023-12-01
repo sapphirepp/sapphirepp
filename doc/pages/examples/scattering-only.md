@@ -106,17 +106,17 @@ dependencies:
 @snippet{lineno} examples/scattering-only/config.h Includes
 
 To avoid confusion of variable and class names, we collect everything related to
-@sapphire in the @ref Sapphire namespace:
+@sapphire in the @ref sapphirepp namespace:
 
-@snippet{lineno} examples/scattering-only/config.h Namespace Sapphire
+@snippet{lineno} examples/scattering-only/config.h Namespace sapphirepp
 
 Often we parametrize the physical setup with some runtime parameter. Since it is
 set up dependent what these parameters are, they have to be specified by the
-user. The @ref Sapphire::PhysicalParameters "PhysicalParameters" class allows
+user. The @ref sapphirepp::PhysicalParameters "PhysicalParameters" class allows
 for this. It uses the @dealii @dealref{ParameterHandler} to read parameters from
 a parameter file.
 
-The @ref Sapphire::PhysicalParameters "PhysicalParameters" class consists of
+The @ref sapphirepp::PhysicalParameters "PhysicalParameters" class consists of
 **public** variables for the user defined runtime parameter, a default
 constructor and two functions to **declare** and **parse** the parameter from
 the parameter file. In this example, we have two parameters that we want to
@@ -125,11 +125,11 @@ expansion coefficients, $f_{lms,0}$ (`f0`).
 
 @snippet{lineno} examples/scattering-only/config.h PhysicalParameters
 
-The @ref Sapphire::PhysicalParameters::declare_parameters "declare_parameters()"
-function is using the @dealref{ParameterHandler} class to declare parameter in
-the parameter file. We collect all parameter in a subsection "Physical
-parameters" (`prm.enter_subsection()`). The declaration of the parameter is
-straight forward, using the
+The @ref sapphirepp::PhysicalParameters::declare_parameters
+"declare_parameters()" function is using the @dealref{ParameterHandler} class to
+declare parameter in the parameter file. We collect all parameter in a
+subsection "Physical parameters" (`prm.enter_subsection()`). The declaration of
+the parameter is straight forward, using the
 @dealref{ParameterHandler.declare_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
 function. It needs the name of the parameter, a default value and its
 type/pattern as input. Additionally, one can give a description of the
@@ -146,7 +146,7 @@ have to enter the subsection at the start and leave it at the end.
 @snippet{lineno} examples/scattering-only/config.h Parse parameters
 
 Next, we define static variables and functions related to the VFP equation. We
-therefore use the namespace @ref Sapphire::VFP "VFP" to collect them in one
+therefore use the namespace @ref sapphirepp::VFP "VFP" to collect them in one
 place.
 
 @snippet{lineno} examples/scattering-only/config.h Namespace VFP
@@ -255,8 +255,8 @@ Then we define the `main` function, allowing for command line arguments:
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Main function
 
 We will run the program inside a try-catch block to catch any exceptions and
-output them. Furthermore, we will use the namespace @ref Sapphire and @ref
-Sapphire::VFP, so we don't have to prefix the respective classes.
+output them. Furthermore, we will use the namespace @ref sapphirepp and @ref
+sapphirepp::VFP, so we don't have to prefix the respective classes.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch begin
 
@@ -270,9 +270,9 @@ and only use one thread per process.
 @snippet{lineno} examples/scattering-only/scattering-only.cpp MPI initialization
 
 In order to output status and debug information to the console, we will use the
-custom log stream @ref Sapphire::saplog "saplog". We can specify the verbosity
-via the argument of the @ref Sapphire::Utils::SapphireppLogStream::init "init()"
-function. A verbosity of `2` correspond to progress information.
+custom log stream @ref sapphirepp::saplog "saplog". We can specify the verbosity
+via the argument of the @ref sapphirepp::Utils::SapphireppLogStream::init
+"init()" function. A verbosity of `2` correspond to progress information.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Saplog
 
@@ -285,8 +285,8 @@ the parameter file by outputting it to the console (using the `saplog` stream).
 
 Next, we create all objects that declare runtime parameter. Namely, the @ref
 sapphirepp::VFP::VFPParameters "VFPParameters", @ref
-Sapphire::Utils::OutputParameters "OutputParameters" and @ref
-Sapphire::PhysicalParameters "PhysicalParameters" class. We will use the
+sapphirepp::Utils::OutputParameters "OutputParameters" and @ref
+sapphirepp::PhysicalParameters "PhysicalParameters" class. We will use the
 @dealref{ParameterHandler} handle the parameter file.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Run time parameters
@@ -363,9 +363,9 @@ found in the @dealref{ParameterHandler} documentation.
 
 The parameter file is split into three sections. First, the `Physical
 parameters` section with all user defined parameters from the @ref
-Sapphire::PhysicalParameters "PhysicalParameters" class. Next, the `Output`
+sapphirepp::PhysicalParameters "PhysicalParameters" class. Next, the `Output`
 section, containing the parameters from the @ref
-Sapphire::Utils::OutputParameters "OutputParameters" class. Third, the `VFP`
+sapphirepp::Utils::OutputParameters "OutputParameters" class. Third, the `VFP`
 section with all parameters related to @ref sapphirepp::VFP::VFPParameters
 "VFPParameters".  
 These sections can contain a number of parameters and subsections using the

@@ -7,3 +7,12 @@
  2. @subpage gyro-motion-f0  
     In this example, we demonstrate how an isotropic distribution of particles
     gyrate in a B-field.
+
+
+<div class="section_buttons">
+
+| Previous                    |                                Next |
+|:----------------------------|------------------------------------:|
+| [Quick-start](#quick-start) | [Scattering only](#scattering-only) |
+
+</div>

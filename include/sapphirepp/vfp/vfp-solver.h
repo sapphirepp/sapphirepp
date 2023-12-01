@@ -105,7 +105,19 @@ namespace sapphirepp
     template <unsigned int dim>
     class VFPSolver
     {
-    private:
+    public:
+      /**
+       * Type of triangulation.
+       *
+       * @note `parallel::distributed:Triangulation` does not allow 1D. To
+       *       maintain the possibility to compute 1D scenarios, we replace it
+       *       with `parallel::shared::Triangulation`.
+       */
+      using Triangulation =
+        typename std::conditional<dim != 1,
+                                  parallel::distributed::Triangulation<dim>,
+                                  parallel::shared::Triangulation<dim>>::type;
+
       /** Is the momentum term activated? */
       static constexpr bool momentum =
         (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
@@ -117,21 +129,8 @@ namespace sapphirepp
       static constexpr bool logarithmic_p =
         (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
 
-      /**
-       * Type of triangulation.
-       *
-       * @note `parallel::distributed:Triangulation` does not allow 1D. To
-       *       maintain the possibility to compute 1D scenarios, we replace it
-       *       with `parallel::shared::Triangulation`.
-       */
-      using Triangulation = typename std::conditional<
-        dim_ps != 1,
-        parallel::distributed::Triangulation<dim_ps>,
-        parallel::shared::Triangulation<dim_ps>>::type;
 
 
-
-    public:
       /**
        * @brief Constructor
        *

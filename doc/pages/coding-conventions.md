@@ -529,3 +529,12 @@ with one of the following type: `feat`, `fix`, `docs`, `style`, `refactor`,
 Don't think of these conventions as a hurdle to contribute! Feel free to
 contribute in any way you like. We will help you to get your contribution into
 the right shape. We are happy to help you to get started!
+
+
+<div class="section_buttons">
+
+| Previous                                                |                                  Next |
+|:--------------------------------------------------------|--------------------------------------:|
+| [Code of Conduct](#md_doc_2pages_2code-of-conduct-page) | [Acknowledgements](#acknowledgements) |
+
+</div>

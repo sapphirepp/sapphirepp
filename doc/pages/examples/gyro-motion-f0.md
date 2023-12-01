@@ -164,9 +164,10 @@ and set in the constructor.
 @snippet{lineno} examples/gyro-motion-f0/config.h MagneticField constructor
 
 The value of the magnetic field is set in the @ref
-sapphirepp::VFP::MagneticField::value() "value()" function. We again first check
-if the provided output vector `magnetic_field` has the correct size, before
-setting the components according to $B(\mathbf{r},t) = B_0 \hat{\mathbf{e}}_z$.
+sapphirepp::VFP::MagneticField::vector_value() "vector_value()" function. We
+again first check if the provided output vector `magnetic_field` has the correct
+size, before setting the components according to $B(\mathbf{r},t) = B_0
+\hat{\mathbf{e}}_z$.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h MagneticField value
 
@@ -225,7 +226,7 @@ parallelisation is done via MPI.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp MPI initialization
 
-Next, we create set the @ref sapphirepp::Utils:SapphireLogStream "saplog" to
+Next, we create set the @ref sapphirepp::Utils::SapphireppLogStream "saplog" to
 only show the progress of the simulation, and not the debug messages.
 
 @snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Saplog
@@ -250,7 +251,7 @@ and parse them from the parameter file.
 Now we can create the @ref sapphirepp::VFP::VFPSolver "VFPSolver" and run the
 simulation.
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp VFP solver
+@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp VFP Solver
 
 After the simulation finished, we can compare the result with our expectation.
 Assuming the end time of the `Final time` of the simulation corresponds to

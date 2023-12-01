@@ -952,9 +952,11 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @PROJECT_SOURCE_DIR@/doc/pages/mainpage.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/quick-start.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/examples.md \
-                         @PROJECT_SOURCE_DIR@/doc/pages/contributing.md \
-                         @PROJECT_SOURCE_DIR@/doc/pages/acknowledgements.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/contributing-page.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/acknowledgements-page.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/licence-page.md \
                          @PROJECT_SOURCE_DIR@
 
 # This tag can be used to specify the character encoding of the source files
@@ -1150,8 +1152,8 @@ INPUT_FILTER           =
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
 
-FILTER_PATTERNS        = */doc/pages/contributing.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CONTRIBUTING.md" \
-                         */doc/pages/code-of-conduct.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md" \
+FILTER_PATTERNS        = */doc/pages/contributing-page.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CONTRIBUTING.md" \
+                         */doc/pages/code-of-conduct-page.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md" \
 		                 *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using

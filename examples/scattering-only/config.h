@@ -44,7 +44,7 @@
 #  include "vfp-flags.h"
 /** [Includes] */
 
-/** [Namespace Sapphire] */
+/** [Namespace sapphirepp] */
 namespace sapphirepp
 {
   /** [Namespace sapphirepp] */

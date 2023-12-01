@@ -9,3 +9,12 @@ To build the documentation, we use [Doxygen](https://www.doxygen.nl) and the
 
 Special thanks to all the
 [contributors](https://github.com/sapphirepp/sapphirepp/graphs/contributors)!
+
+
+<div class="section_buttons">
+
+| Previous                                  |                Next |
+|:------------------------------------------|--------------------:|
+| [Coding Conventions](#coding-conventions) | [Licence](#licence) |
+
+</div>
