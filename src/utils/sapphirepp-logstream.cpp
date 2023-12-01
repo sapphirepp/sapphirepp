@@ -52,7 +52,8 @@ sapphirepp::Utils::SapphireppLogStream::SapphireppLogStream()
 
 
 void
-sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console)
+sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console,
+                                             const bool enable_mpi_output)
 {
   int is_initialized;
   MPI_Initialized(&is_initialized);
@@ -64,7 +65,11 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console)
   const unsigned int mpi_rank =
     dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
   if (mpi_rank > 0)
-    this->push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
+    {
+      this->push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
+      if (enable_mpi_output == false)
+        this->depth_console(0);
+    }
   this->push("Sapphire");
 
   *this << "Start Sapphire++ v" << SAPPHIREPP_VERSION << " with "

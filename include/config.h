@@ -54,7 +54,7 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    /** !!!EDIT HERE!!! */
+    // !!!EDIT HERE!!!
     /** [Define runtime parameter] */
 
 
@@ -78,7 +78,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      /** !!!EDIT HERE!!! */
+      // !!!EDIT HERE!!!
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -100,7 +100,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      /** !!!EDIT HERE!!! */
+      // !!!EDIT HERE!!!
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -112,7 +112,7 @@ namespace sapphirepp
   namespace VFP
   {
     /** [Dimension] */
-    /** !!!EDIT HERE!!! */
+    // !!!EDIT HERE!!!
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
     static constexpr unsigned int dimension = 2;
     /** [Dimension] */
@@ -120,7 +120,7 @@ namespace sapphirepp
 
 
     /** [VFP Flags] */
-    /** !!!EDIT HERE!!!  */
+    // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
                                           VFPFlags::time_independent_fields |
@@ -147,24 +147,23 @@ namespace sapphirepp
       InitialValueFunction(const PhysicalParameters &physical_parameters,
                            const unsigned int        exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        , prm{physical_parameters}
         , lms_indices{PDESystem::create_lms_indices(exp_order)}
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
+      {}
 
 
 
       /**
        * @brief Evaluate the initial condition at point `p`
        *
-       * Return a vector of values corresponding to the initial condition of the
-       * coefficients \f$ f_{i(l,m,s)}(t=0, \mathbf{x}, p) \f$ of the expansion
-       * of the distribution function in spherical harmonics.
+       * Return a vector of values corresponding to the initial condition of
+       * the coefficients \f$ f_{i(l,m,s)}(t=0, \mathbf{x}, p) \f$ of the
+       * expansion of the distribution function in spherical harmonics.
        *
        * The zeroth component of values corresponds to \f$ f_{000} \f$, the
-       * first component to \f$ f_{110} \f$ etc. The mapping between the system
-       * index \f$ i \f$ and the spherical harmonic indices \f$ (l,m,s) \f$ is
-       * given by `lms_indices`:
+       * first component to \f$ f_{110} \f$ etc. The mapping between the
+       * system index \f$ i \f$ and the spherical harmonic indices \f$
+       * (l,m,s) \f$ is given by `lms_indices`:
        *
        * ```cpp
        *  const unsigned int l = lms_indices[i][0];
@@ -172,10 +171,10 @@ namespace sapphirepp
        *  const unsigned int s = lms_indices[i][2];
        * ```
        *
-       * The point in reduced phase space is given by `p`. The first `dim_cs`
-       * components correspond to the spatial coordinates \f$ \mathbf{x} \f$ and
-       * if momentum term is activated the last component to the momentum
-       * coordinate \f$ p \f$:
+       * The point in reduced phase space is given by `p`. The first
+       * `dim_cs` components correspond to the spatial coordinates \f$
+       * \mathbf{x} \f$ and if momentum term is activated the last component
+       * to the momentum coordinate \f$ p \f$:
        *
        * ```cpp
        *  const double x = p[0];
@@ -198,7 +197,7 @@ namespace sapphirepp
         for (unsigned int i = 0; i < f.size(); ++i)
           {
             /** [Initial value] */
-            /** !!!EDIT HERE!!! */
+            // !!!EDIT HERE!!!
             f[i] = 0.;
             /** [Initial value] */
           }
@@ -207,6 +206,8 @@ namespace sapphirepp
 
 
     private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
       /**
        * Map between system index \f$ i \f$ and spherical harmonic indices
        * \f$ (l,m,n) \f$
@@ -232,9 +233,8 @@ namespace sapphirepp
        */
       ScatteringFrequency(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(1)
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
+        , prm{physical_parameters}
+      {}
 
 
 
@@ -271,11 +271,17 @@ namespace sapphirepp
         for (unsigned int i = 0; i < points.size(); ++i)
           {
             /** [Scattering frequency] */
-            /** !!!EDIT HERE!!! */
+            // !!!EDIT HERE!!!
             scattering_frequencies[i] = 0.;
             /** [Scattering frequency] */
           }
       }
+
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
     };
 
 
@@ -298,10 +304,9 @@ namespace sapphirepp
       Source(const PhysicalParameters &physical_parameters,
              unsigned int              exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        , prm{physical_parameters}
         , lms_indices{PDESystem::create_lms_indices(exp_order)}
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
+      {}
 
 
       /**
@@ -326,7 +331,7 @@ namespace sapphirepp
         for (unsigned int i = 0; i < values.size(); ++i)
           {
             /** [Source] */
-            /** !!!EDIT HERE!!! */
+            // !!!EDIT HERE!!!
             values[i] = 0.;
             /** [Source] */
           }
@@ -335,6 +340,8 @@ namespace sapphirepp
 
 
     private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
       /**
        * Map between system index \f$ i \f$ and spherical harmonic indices
        * \f$ (l,m,n) \f$
@@ -360,9 +367,8 @@ namespace sapphirepp
        */
       MagneticField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
+        , prm{physical_parameters}
+      {}
 
 
       /**
@@ -406,12 +412,18 @@ namespace sapphirepp
         static_cast<void>(p); // suppress compiler warning
 
         /** [Magnetic field] */
-        /** !!!EDIT HERE!!! */
+        // !!!EDIT HERE!!!
         magnetic_field[0] = 0.;
         magnetic_field[1] = 0.;
         magnetic_field[2] = 0.;
         /** [Magnetic field] */
       }
+
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
     };
 
 
@@ -432,9 +444,8 @@ namespace sapphirepp
        */
       BackgroundVelocityField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
+        , prm{physical_parameters}
+      {}
 
 
 
@@ -457,7 +468,7 @@ namespace sapphirepp
         static_cast<void>(p); // suppress compiler warning
 
         /** [Background velocity value] */
-        /** !!!EDIT HERE!!! */
+        // !!!EDIT HERE!!!
         velocity[0] = 0.;
         velocity[1] = 0.;
         velocity[2] = 0.;
@@ -488,7 +499,7 @@ namespace sapphirepp
         for (unsigned int i = 0; i < divergence.size(); ++i)
           {
             /** [Background velocity divergence] */
-            /** !!!EDIT HERE!!! */
+            // !!!EDIT HERE!!!
             divergence[i] = 0.;
             /** [Background velocity divergence] */
           }
@@ -521,7 +532,7 @@ namespace sapphirepp
         for (unsigned int i = 0; i < points.size(); ++i)
           {
             /** [Background velocity material derivative] */
-            /** !!!EDIT HERE!!! */
+            // !!!EDIT HERE!!!
             material_derivatives[i][0] = 0.; // D/Dt u_x
             material_derivatives[i][1] = 0.; // D/Dt u_y
             material_derivatives[i][2] = 0.; // D/Dt u_z
@@ -558,7 +569,7 @@ namespace sapphirepp
         for (unsigned int i = 0; i < points.size(); ++i)
           {
             /** [Background velocity Jacobian] */
-            /** !!!EDIT HERE!!! */
+            // !!!EDIT HERE!!!
             jacobians[i][0][0] = 0.; // \partial u_x / \partial x
             jacobians[i][0][1] = 0.; // \partial u_x / \partial y
             jacobians[i][0][2] = 0.; // \partial u_x / \partial z
@@ -573,6 +584,12 @@ namespace sapphirepp
             /** [Background velocity Jacobian] */
           }
       }
+
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
     };
   } // namespace VFP
 } // namespace sapphirepp

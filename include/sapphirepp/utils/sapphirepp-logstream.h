@@ -75,9 +75,12 @@ namespace sapphirepp
        *        - `1` shows only the start-up message
        *        - `2` show progress
        *        - `>2` show different levels of debug messages
+       * @param enable_mpi_output If `true`, all mpi processes will output to
+       *        the console, otherwise only the first process will show messages
        */
       void
-      init(const unsigned int depth_console = 2);
+      init(const unsigned int depth_console     = 2,
+           const bool         enable_mpi_output = false);
 
       /**
        * @brief Get the verbosity of the console output

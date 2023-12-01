@@ -66,16 +66,16 @@ main(int argc, char *argv[])
       /** [Command line argument] */
 
       /** [Run time parameters] */
-      ParameterHandler         prm;
+      dealii::ParameterHandler prm;
       PhysicalParameters       physical_parameters;
       Utils::OutputParameters  output_parameters;
       VFPParameters<dimension> vfp_parameters;
       /** [Run time parameters] */
 
       /** [Declare parameters] */
-      vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
       /** [Declare parameters] */
       /** [Parse parameters] */
       prm.parse_input(parameter_filename);
