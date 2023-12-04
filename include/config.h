@@ -177,22 +177,22 @@ namespace sapphirepp
        * to the momentum coordinate \f$ p \f$:
        *
        * ```cpp
-       *  const double x = p[0];
-       *  const double y = p[1];
+       *  const double x = point[0];
+       *  const double y = point[1];
        *  ...
-       *  const double p = p[dim-1];
+       *  const double p = point[dim-1];
        * ```
        *
-       * @param p Point in reduced phase space
+       * @param point Point in reduced phase space
        * @param f Return vector \f$ f_{i(l,m,s)}(t=0, \mathbf{x}, p) \f$
        * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
        */
       void
-      vector_value(const dealii::Point<dim> &p,
+      vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &f) const override
       {
         AssertDimension(f.size(), this->n_components);
-        static_cast<void>(p); // suppress compiler warning
+        static_cast<void>(point); // suppress compiler warning
 
         for (unsigned int i = 0; i < f.size(); ++i)
           {
@@ -316,23 +316,24 @@ namespace sapphirepp
        * decomposition of the source term \f$ S_{i(l,m,s)}(t, \mathbf{x}, p)
        * \f$.
        *
-       * @param p Point in reduced phase space
-       * @param values Return vector \f$ S_{i(l,m,s)}(t, \mathbf{x}, p) \f$
+       * @param point Point in reduced phase space
+       * @param source_values Return vector
+       *        \f$ S_{i(l,m,s)}(t, \mathbf{x}, p) \f$
        * @see InitialValueFunction::vector_value()
        * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
        */
       void
-      vector_value(const dealii::Point<dim> &p,
-                   dealii::Vector<double>   &values) const override
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &source_values) const override
       {
-        AssertDimension(values.size(), this->n_components);
-        static_cast<void>(p); // suppress compiler warning
+        AssertDimension(source_values.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
 
-        for (unsigned int i = 0; i < values.size(); ++i)
+        for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             /** [Source] */
             // !!!EDIT HERE!!!
-            values[i] = 0.;
+            source_values[i] = 0.;
             /** [Source] */
           }
       }
@@ -400,22 +401,22 @@ namespace sapphirepp
        * magnetic_field[2] = B_z;
        * ```
        *
-       * @param p Point in reduced phase space
+       * @param point Point in reduced phase space
        * @param magnetic_field Return vector \f$ \mathbf{B}(t, \mathbf{x}) \f$
        * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
        */
       void
-      vector_value(const dealii::Point<dim> &p,
+      vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &magnetic_field) const override
       {
         AssertDimension(magnetic_field.size(), this->n_components);
-        static_cast<void>(p); // suppress compiler warning
+        static_cast<void>(point); // suppress compiler warning
 
         /** [Magnetic field] */
         // !!!EDIT HERE!!!
-        magnetic_field[0] = 0.;
-        magnetic_field[1] = 0.;
-        magnetic_field[2] = 0.;
+        magnetic_field[0] = 0.; // B_x
+        magnetic_field[1] = 0.; // B_y
+        magnetic_field[2] = 0.; // B_z
         /** [Magnetic field] */
       }
 
@@ -455,23 +456,23 @@ namespace sapphirepp
        * Return a vector of values corresponding to the velocity field
        * \f$ \mathbf{u}(t, \mathbf{x}) \f$ at point in space.
        *
-       * @param p Point in reduced phase space
+       * @param point Point in reduced phase space
        * @param velocity Return vector \f$ \mathbf{u}(t, \mathbf{x}) \f$
        * @see MagneticField::vector_value()
        * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
        */
       void
-      vector_value(const dealii::Point<dim> &p,
+      vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &velocity) const override
       {
         AssertDimension(velocity.size(), this->n_components);
-        static_cast<void>(p); // suppress compiler warning
+        static_cast<void>(point); // suppress compiler warning
 
         /** [Background velocity value] */
         // !!!EDIT HERE!!!
-        velocity[0] = 0.;
-        velocity[1] = 0.;
-        velocity[2] = 0.;
+        velocity[0] = 0.1; // u_x
+        velocity[1] = 0.;  // u_y
+        velocity[2] = 0.;  // u_z
         /** [Background velocity value] */
       }
 
@@ -500,7 +501,7 @@ namespace sapphirepp
           {
             /** [Background velocity divergence] */
             // !!!EDIT HERE!!!
-            divergence[i] = 0.;
+            divergence[i] = 0.; // div u
             /** [Background velocity divergence] */
           }
       }
