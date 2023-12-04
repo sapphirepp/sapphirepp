@@ -1,18 +1,23 @@
 # Examples {#examples}
 
- 1. @subpage scattering-only  
-    This example acts as an introduction to @sapphire. It uses the scattering
-    term in the VFP equation to arrive at a simple test showing the usage of
+ 1. @subpage parallel-shock  
+    This example showcases the capabilities of @sapphire in the context of a
+    parallel shock scenario. It provides a simple 1D simulation of a shock wave
+    moving through a plasma, and introduces the use of runtime parameters in
     @sapphire.
  2. @subpage gyro-motion-f0  
-    In this example, we demonstrate how an isotropic distribution of particles
-    gyrate in a B-field.
+    This example illustrates how an isotropic distribution of particles behaves
+    in a magnetic field, demonstrating their gyration.
+ 3. @subpage scattering-only  
+    Serving as a comprehensive guide to @sapphire, this example is highly
+    recommended for new developers. It focuses on using scattering to reach a
+    solution with diminishing multipoles.
 
 
 <div class="section_buttons">
 
-| Previous                    |                                Next |
-|:----------------------------|------------------------------------:|
-| [Quick-start](#quick-start) | [Scattering only](#scattering-only) |
+| Previous                    |                                              Next |
+|:----------------------------|--------------------------------------------------:|
+| [Quick-start](#quick-start) | [Contributing](#md_doc_2pages_2contributing-page) |
 
 </div>

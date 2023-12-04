@@ -1,4 +1,4 @@
-# Introduction and Basic Usage: Scattering only {#scattering-only}
+# Advanced example: Scattering only {#scattering-only}
 
 @tableofcontents
 
@@ -507,6 +507,16 @@ f_9ms = 0.0111
 ### scattering-only.cpp {#plain-main-scattering-only}
 
 @include{lineno} examples/scattering-only/scattering-only.cpp
+
+
+<div class="section_buttons">
+
+| Previous              |
+|:----------------------|
+| [Examples](#examples) |
+
+</div>
+
 
 ---
 

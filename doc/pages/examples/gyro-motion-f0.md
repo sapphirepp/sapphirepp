@@ -1,4 +1,4 @@
-# Gyro motion part 1: Isotropic distribution {#gyro-motion-f0}
+# Gyro motion of an isotropic distribution {#gyro-motion-f0}
 
 @tableofcontents
 
@@ -288,6 +288,16 @@ Finally, we end the `try-catch` block and terminate the program.
 ### gyro-motion-f0.cpp {#plain-main-gyro-motion-f0}
 
 @include{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp
+
+
+<div class="section_buttons">
+
+| Previous              |
+|:----------------------|
+| [Examples](#examples) |
+
+</div>
+
 
 ---
 
