@@ -112,7 +112,7 @@ sapphirepp::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
   else if (s == "hdf5")
     format = sapphirepp::Utils::OutputFormat::hdf5;
   else
-    AssertThrow(false, ExcNotImplemented());
+    Assert(false, ExcNotImplemented());
 
   output_frequency =
     static_cast<unsigned int>(prm.get_integer("Output frequency"));

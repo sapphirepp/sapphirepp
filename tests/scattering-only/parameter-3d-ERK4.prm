@@ -20,11 +20,9 @@ subsection VFP
 
   subsection Mesh
     set Grid type = Hypercube
-    subsection Hypercube
-      set Number of cells = 2, 2, 2
-      set Point 1         = -1, -1, -1
-      set Point 2         = 1, 1, 1
-    end
+    set Number of cells = 2, 2, 2
+    set Point 1         = -1, -1, -1
+    set Point 2         = 1, 1, 1
     subsection Boundary conditions
       set lower x = periodic
       set upper x = periodic

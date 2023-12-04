@@ -59,32 +59,28 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       Patterns::Selection("Hypercube|File"),
                       "The type of the grid. Can either be created by the "
                       "program or read from a file");
-    prm.enter_subsection("Hypercube");
-    {
-      prm.declare_entry("Point 1",
-                        "0., 0., 0.",
-                        Patterns::Anything(),
-                        "Two diagonally opposite corner points, "
-                        "Point 1 and  Point 2");
-      prm.declare_entry("Point 2",
-                        "1., 1., 1.",
-                        Patterns::Anything(),
-                        "Two diagonally opposite corner points, "
-                        "Point 1 and  Point 2");
-      prm.declare_entry("Number of cells",
-                        "4, 4, 4",
-                        Patterns::Anything(),
-                        "Number of cells in each coordinate direction");
-    } // Hypercube
-    prm.leave_subsection();
-    prm.enter_subsection("File");
-    {
-      prm.declare_entry("File name",
-                        "",
-                        Patterns::Anything(),
-                        "The file containing the grid.");
-    } // File
-    prm.leave_subsection();
+
+    prm.declare_entry("Point 1",
+                      "0., 0., 0.",
+                      Patterns::Anything(),
+                      "Two diagonally opposite corner points, "
+                      "Point 1 and  Point 2");
+    prm.declare_entry("Point 2",
+                      "1., 1., 1.",
+                      Patterns::Anything(),
+                      "Two diagonally opposite corner points, "
+                      "Point 1 and  Point 2");
+    prm.declare_entry("Number of cells",
+                      "4, 4, 4",
+                      Patterns::Anything(),
+                      "Number of cells in each coordinate direction");
+
+    prm.declare_entry("File name",
+                      "",
+                      Patterns::Anything(),
+                      "The file containing the grid (only for "
+                      "Grid type = File)");
+
     prm.enter_subsection("Boundary conditions");
     {
       const auto boundary_pattern =
@@ -217,93 +213,72 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   {
     s = prm.get("Grid type");
     if (s == "Hypercube")
-      {
-        grid_type = GridType::hypercube;
-        prm.enter_subsection("Hypercube");
-
-        // Two diagonally opposite corner points of the grid
-        unsigned int i = 0;
-        s              = prm.get("Point 1");
-        std::stringstream p1_string(s);
-        for (std::string coordinate; std::getline(p1_string, coordinate, ',');
-             ++i)
-          {
-            if (i < dim)
-              p1[i] = std::stod(coordinate);
-          }
-        AssertThrow(i >= dim,
-                    ExcMessage(
-                      "Point 1 specification does not match dimension. "
-                      "Please enter the coordinates of the lower left corner "
-                      "of the grid: \n"
-                      "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
-                      "You entered: " +
-                      s));
-        if (i != dim)
-          saplog << "WARNING: Point 1 specification does not match dimension."
-                 << "Please enter the coordinates of the lower left corner "
-                 << "of the grid: \n"
-                 << "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
-                 << "You entered: " << s << std::endl;
-
-        i = 0;
-        s = prm.get("Point 2");
-        std::stringstream p2_string(s);
-        for (std::string coordinate; std::getline(p2_string, coordinate, ',');
-             ++i)
-          {
-            if (i < dim)
-              p2[i] = std::stod(coordinate);
-          }
-        AssertThrow(i >= dim,
-                    ExcMessage(
-                      "Point 2 specification does not match dimension. "
-                      "Please enter the coordinates of the lower left corner "
-                      "of the grid: \n"
-                      "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
-                      "You entered: " +
-                      s));
-        if (i != dim)
-          saplog << "WARNING: Point 2 specification does not match dimension."
-                 << "Please enter the coordinates of the lower left corner "
-                 << "of the grid: \n"
-                 << "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
-                 << "You entered: " << s << std::endl;
-
-        // Number of cells
-        s = prm.get("Number of cells");
-        std::stringstream n_cells_string(s);
-        for (std::string n; std::getline(n_cells_string, n, ',');)
-          n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
-        AssertThrow(n_cells.size() >= dim,
-                    ExcMessage(
-                      "Number of cells specification does not match dimension. "
-                      "Please enter the number of cells in each coordinate: \n"
-                      "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
-                      "You entered: " +
-                      s));
-        if (n_cells.size() != dim)
-          saplog << "WARNING: Number of cells specification does not match "
-                 << "dimension. Please enter the number of cells in each "
-                 << "coordinate: \n"
-                 << "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
-                 << "You entered: " << s << std::endl;
-        n_cells.resize(dim);
-
-        prm.leave_subsection();
-      }
+      grid_type = GridType::hypercube;
     else if (s == "File")
-      {
-        grid_type = GridType::file;
-        prm.enter_subsection("File");
-        grid_file = prm.get("File name");
-        AssertThrow(std::filesystem::exists(grid_file),
-                    ExcMessage("Grid file \"" + grid_file +
-                               "\" does not exist!"));
-        prm.leave_subsection();
-      }
+      grid_type = GridType::file;
     else
-      AssertThrow(false, ExcNotImplemented());
+      Assert(false, ExcNotImplemented());
+
+    // Two diagonally opposite corner points of the grid
+    unsigned int i = 0;
+    s              = prm.get("Point 1");
+    std::stringstream p1_string(s);
+    for (std::string coordinate; std::getline(p1_string, coordinate, ','); ++i)
+      {
+        if (i < dim)
+          p1[i] = std::stod(coordinate);
+      }
+    AssertThrow(dim <= i,
+                ExcMessage(
+                  "Point 1 does not specify coordinate in each dimension. "
+                  "Please enter the coordinates of the lower left corner "
+                  "of the grid: \n"
+                  "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
+                  "You entered: " +
+                  s));
+    if (i != dim)
+      saplog << "WARNING: Point 1 specification does not match dimension!"
+             << std::endl;
+
+    i = 0;
+    s = prm.get("Point 2");
+    std::stringstream p2_string(s);
+    for (std::string coordinate; std::getline(p2_string, coordinate, ','); ++i)
+      {
+        if (i < dim)
+          p2[i] = std::stod(coordinate);
+      }
+    AssertThrow(dim <= i,
+                ExcMessage(
+                  "Point 2 does not specify coordinate in each dimension. "
+                  "Please enter the coordinates of the lower left corner "
+                  "of the grid: \n"
+                  "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
+                  "You entered: " +
+                  s));
+    if (i != dim)
+      saplog << "WARNING: Point 2 specification does not match dimension!"
+             << std::endl;
+
+    // Number of cells
+    s = prm.get("Number of cells");
+    std::stringstream n_cells_string(s);
+    for (std::string n; std::getline(n_cells_string, n, ',');)
+      n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
+    AssertThrow(dim <= n_cells.size(),
+                ExcMessage(
+                  "Number of cells does not specify value in each dimension."
+                  "Please enter the number of cells in each coordinate: \n"
+                  "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
+                  "You entered: " +
+                  s));
+    if (n_cells.size() != dim)
+      saplog
+        << "WARNING: Number of cells specification does not match dimension!"
+        << std::endl;
+    n_cells.resize(dim);
+
+    grid_file = prm.get("File name");
 
     prm.enter_subsection("Boundary conditions");
     {
@@ -326,7 +301,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
           else if (boundary_id / 2 == 2)
             entry += "z";
           else
-            AssertThrow(false, ExcNotImplemented());
+            Assert(false, ExcNotImplemented());
 
           s = prm.get(entry);
           if (s == "continuous gradients")
@@ -339,7 +314,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::periodic;
           else
-            AssertThrow(false, ExcNotImplemented());
+            Assert(false, ExcNotImplemented());
         }
     }
     prm.leave_subsection();
@@ -370,7 +345,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     else if (s == "LSERK")
       time_stepping_method = TimeSteppingMethod::lserk;
     else
-      AssertThrow(false, ExcNotImplemented());
+      Assert(false, ExcNotImplemented());
 
     time_step  = prm.get_double("Time step size");
     final_time = prm.get_double("Final time");

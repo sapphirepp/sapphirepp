@@ -39,11 +39,9 @@ subsection VFP
   # Since the values are constants in x, we use periodic boundary conditions.
   subsection Mesh
     set Grid type = Hypercube
-    subsection Hypercube
-      set Number of cells = 8
-      set Point 1         = -1
-      set Point 2         = 1
-    end
+    set Number of cells = 8
+    set Point 1         = -1
+    set Point 2         = 1
     subsection Boundary conditions
       set lower x = periodic
       set upper x = periodic
