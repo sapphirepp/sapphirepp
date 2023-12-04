@@ -69,8 +69,6 @@ namespace sapphirepp
       /** @{ */
       /** The @ref GridType for the grid generation */
       GridType grid_type;
-      /** File for grid creation (only for @ref GridType::file) */
-      std::string grid_file;
 
       /**
        * First corner point for
@@ -79,7 +77,6 @@ namespace sapphirepp
        * (only for @ref GridType::hypercube)
        */
       dealii::Point<dim> p1;
-
       /**
        * Second corner point opposite to p1 for
        * @dealref{subdivided_hyper_rectangle(),namespaceGridGenerator,
@@ -87,7 +84,6 @@ namespace sapphirepp
        * (only for @ref GridType::hypercube)
        */
       dealii::Point<dim> p2;
-
       /**
        * A vector of dim positive values denoting the number of cells to
        * generate in that direction for
@@ -96,6 +92,23 @@ namespace sapphirepp
        * (only for @ref GridType::hypercube)
        */
       std::vector<unsigned int> n_cells;
+
+      /**
+       * Number of cells in the shock region (only for @ref GridType::shock)
+       */
+      unsigned int n_cells_shock;
+      /**
+       * Width of the shock region (only for @ref GridType::shock)
+       */
+      double shock_width;
+      /**
+       * Scaling factor for the cell width in x-direction outside the shock
+       * region (only for @ref GridType::shock)
+       */
+      double scaling_factor_shock;
+
+      /** File for grid creation (only for @ref GridType::file) */
+      std::string grid_file;
 
       /**
        * A vector of dimension `dim*2` containing the boundary indicators

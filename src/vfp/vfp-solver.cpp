@@ -359,6 +359,12 @@ sapphirepp::VFP::VFPSolver<dim>::make_grid()
                                                     true);
           break;
         }
+      case GridType::shock:
+        {
+          make_shock_grid();
+          break;
+        }
+
       case GridType::file:
         {
           saplog << "Read grid from file \"" << vfp_parameters.grid_file << "\""
@@ -411,6 +417,94 @@ sapphirepp::VFP::VFPSolver<dim>::make_grid()
         }
     }
   triangulation.add_periodicity(matched_pairs);
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::make_shock_grid()
+{
+  saplog << "Create shock grid" << std::endl;
+  LogStream::Prefix("GridGeneration");
+  Assert(dim_cs >= 1,
+         ExcMessage("The shock grid is only implemented in x-direction, "
+                    "but your don't have a x-coordinate."));
+  AssertThrow(vfp_parameters.p1[0] < 0.,
+              ExcMessage("x_min must be smaller than zero for the "
+                         "shock grid."));
+  AssertThrow(vfp_parameters.p2[0] > 0.,
+              ExcMessage("x_max must be greater than zero for the "
+                         "shock grid."));
+
+  unsigned int       n_cells_upstream   = 0; // Negative x values
+  unsigned int       n_cells_downstream = 0; // Positive x values
+  const unsigned int n_cells_shock      = vfp_parameters.n_cells_shock;
+  const double       shock_width        = vfp_parameters.shock_width;
+  const double       scaling_factor     = vfp_parameters.scaling_factor_shock;
+
+  const double step_size_shock = shock_width / n_cells_shock;
+  saplog << "The shock has " << n_cells_shock << " cells with width "
+         << step_size_shock << std::endl;
+
+  std::vector<double> step_size_upstream;
+  double              length_upstream = shock_width / 2.;
+  for (unsigned int i = 1; length_upstream < -vfp_parameters.p1[0];
+       ++i, ++n_cells_upstream)
+    {
+      const double step_size = std::pow(scaling_factor, i) * step_size_shock;
+      step_size_upstream.push_back(step_size);
+      length_upstream += step_size;
+    }
+  saplog << "Upstream has " << n_cells_upstream
+         << " cells reaching x_min=" << std::to_string(-length_upstream)
+         << " <= " << vfp_parameters.p1[0] << std::endl;
+
+  std::vector<double> step_size_downstream;
+  double              length_downstream = shock_width / 2.;
+  for (unsigned int i = 1; length_downstream < vfp_parameters.p2[0];
+       ++i, ++n_cells_downstream)
+    {
+      const double step_size = std::pow(scaling_factor, i) * step_size_shock;
+      step_size_downstream.push_back(step_size);
+      length_downstream += step_size;
+    }
+  saplog << "Downstream has " << n_cells_downstream
+         << " cells reaching x_max=" << std::to_string(length_downstream)
+         << " >= " << vfp_parameters.p2[0] << std::endl;
+
+  std::vector<std::vector<double>> step_sizes;
+
+  std::vector<double> step_sizes_x(n_cells_downstream + n_cells_upstream +
+                                   n_cells_shock);
+  for (unsigned int i = 0; i < n_cells_upstream; ++i)
+    step_sizes_x[n_cells_upstream - 1 - i] = step_size_upstream[i];
+  for (unsigned int i = 0; i < n_cells_shock; ++i)
+    step_sizes_x[n_cells_upstream + i] = step_size_shock;
+  for (unsigned int i = 0; i < n_cells_downstream; ++i)
+    step_sizes_x[n_cells_upstream + n_cells_shock + i] =
+      step_size_downstream[i];
+  step_sizes.push_back(step_sizes_x);
+
+  for (unsigned int i = 1; i < dim; ++i)
+    {
+      const double step_size = (vfp_parameters.p2[i] - vfp_parameters.p1[i]) /
+                               vfp_parameters.n_cells[i];
+      step_sizes.push_back(
+        std::vector<double>(vfp_parameters.n_cells[i], step_size));
+    }
+
+  Point<dim> p1 = vfp_parameters.p1;
+  Point<dim> p2 = vfp_parameters.p2;
+
+  p1[0] = -length_upstream;
+  p2[0] = +length_downstream;
+
+  GridGenerator::subdivided_hyper_rectangle(
+    triangulation, step_sizes, p1, p2, true);
+
+  saplog << "Created shock grid from (" << p1 << ") to (" << p2 << ") with "
+         << step_sizes[0].size() << " cells in x-direction." << std::endl;
 }
 
 

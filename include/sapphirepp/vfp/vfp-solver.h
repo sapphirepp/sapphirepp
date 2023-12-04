@@ -384,6 +384,25 @@ namespace sapphirepp
       make_grid();
 
       /**
+       * @brief Creates a mesh resolving a shock in x-direction
+       *
+       * Create a mesh with a shock at x = 0. Around the shock the mesh is
+       * equidistant with a constant step size \f$ \Delta x_s \f$ . Outside the
+       * shock region the step size increases with a scaling \f$ r \f$ of the
+       * step size:
+       *
+       * \f[
+       *    \Delta x_i = r^i \cdot \Delta x_s
+       * \f]
+       *
+       * The grid in all other directions is equidistant. The corner points are
+       * given by `p1` and `p2`. The number of cells in x-direction is
+       * determined, so that the gird at includes `p1[0]` and `p2[0]`.
+       */
+      void
+      make_shock_grid();
+
+      /**
        * @brief Setup data structure for the linear system
        *
        * Setup the @ref dof_handler

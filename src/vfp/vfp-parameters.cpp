@@ -56,7 +56,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   {
     prm.declare_entry("Grid type",
                       "Hypercube",
-                      Patterns::Selection("Hypercube|File"),
+                      Patterns::Selection("Hypercube|Shock grid|File"),
                       "The type of the grid. Can either be created by the "
                       "program or read from a file");
 
@@ -74,6 +74,21 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "4, 4, 4",
                       Patterns::Anything(),
                       "Number of cells in each coordinate direction");
+
+    prm.declare_entry("Number of shock cells",
+                      "8",
+                      Patterns::Integer(1),
+                      "Number of cells along x-direction in the shock (for "
+                      "Shock grid)");
+    prm.declare_entry("Shock width",
+                      "0.1",
+                      Patterns::Double(0),
+                      "Width of the shock in x-direction (for Shock grid)");
+    prm.declare_entry("Scaling factor shock",
+                      "1.1",
+                      Patterns::Double(1),
+                      "Scaling factor for the cell width in x-direction "
+                      "(for Shock grid)");
 
     prm.declare_entry("File name",
                       "",
@@ -214,6 +229,8 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     s = prm.get("Grid type");
     if (s == "Hypercube")
       grid_type = GridType::hypercube;
+    else if (s == "Shock grid")
+      grid_type = GridType::shock;
     else if (s == "File")
       grid_type = GridType::file;
     else
@@ -277,6 +294,11 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
         << "WARNING: Number of cells specification does not match dimension!"
         << std::endl;
     n_cells.resize(dim);
+
+    n_cells_shock =
+      static_cast<unsigned int>(prm.get_integer("Number of shock cells"));
+    shock_width          = prm.get_double("Shock width");
+    scaling_factor_shock = prm.get_double("Scaling factor shock");
 
     grid_file = prm.get("File name");
 

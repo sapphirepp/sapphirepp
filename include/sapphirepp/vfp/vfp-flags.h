@@ -227,6 +227,11 @@ namespace sapphirepp
       hypercube,
 
       /**
+       * Create a grid for a shock problem in x-direction.
+       */
+      shock,
+
+      /**
        * Use a grid that is read from a file.
        */
       file
