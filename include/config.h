@@ -122,9 +122,10 @@ namespace sapphirepp
     /** [VFP Flags] */
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
-    static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
-                                          VFPFlags::time_independent_fields |
-                                          VFPFlags::source;
+    static constexpr VFPFlags vfp_flags =
+      VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
+      VFPFlags::source | VFPFlags::time_independent_fields |
+      VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
 
@@ -272,7 +273,7 @@ namespace sapphirepp
           {
             /** [Scattering frequency] */
             // !!!EDIT HERE!!!
-            scattering_frequencies[i] = 0.;
+            scattering_frequencies[i] = 100.;
             /** [Scattering frequency] */
           }
       }
@@ -333,7 +334,22 @@ namespace sapphirepp
           {
             /** [Source] */
             // !!!EDIT HERE!!!
-            source_values[i] = 0.;
+            if (i == 0)
+              {
+                // shifted Gaussian in x and p
+                const double p     = std::exp(point[1]) - 1.0;
+                const double x     = point[0];
+                const double Q     = 0.1;
+                const double sig_p = 0.1;
+                const double sig_x = 0.001;
+
+                // s_000 = sqrt(4 pi) * s
+                source_values[0] = Q / (std::sqrt(M_PI) * sig_p * sig_x) *
+                                   std::exp(-p * p / (2. * sig_p * sig_p)) *
+                                   std::exp(-x * x / (2. * sig_x * sig_x));
+              }
+            else
+              source_values[i] = 0.;
             /** [Source] */
           }
       }
@@ -470,9 +486,18 @@ namespace sapphirepp
 
         /** [Background velocity value] */
         // !!!EDIT HERE!!!
-        velocity[0] = 0.1; // u_x
-        velocity[1] = 0.;  // u_y
-        velocity[2] = 0.;  // u_z
+        // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+        const double compression_ratio = 4.;
+        const double shock_width       = 0.001;
+        const double u_sh              = 0.1;
+
+        // u_x
+        velocity[0] =
+          u_sh / (2 * compression_ratio) *
+          ((1 - compression_ratio) * std::tanh(point[0] / shock_width) +
+           (1 + compression_ratio));
+        velocity[1] = 0.; // u_y
+        velocity[2] = 0.; // u_z
         /** [Background velocity value] */
       }
 
@@ -501,7 +526,17 @@ namespace sapphirepp
           {
             /** [Background velocity divergence] */
             // !!!EDIT HERE!!!
-            divergence[i] = 0.; // div u
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => d/dx u(x) = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+            const double compression_ratio = 4.;
+            const double shock_width       = 0.001;
+            const double u_sh              = 0.1;
+
+            // div u
+            divergence[i] = u_sh / (2 * compression_ratio) *
+                            (1 - compression_ratio) / shock_width *
+                            (1 - std::tanh(points[i][0] / shock_width) *
+                                   std::tanh(points[i][0] / shock_width));
             /** [Background velocity divergence] */
           }
       }
@@ -534,7 +569,22 @@ namespace sapphirepp
           {
             /** [Background velocity material derivative] */
             // !!!EDIT HERE!!!
-            material_derivatives[i][0] = 0.; // D/Dt u_x
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => D/Dt u(x) = d/dt u(x) + u d/dx u(x)
+            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/x_s) + (1+r)) *
+            //        1/x_s (1-r) (1-tanh(x/x_s)^2)
+            const double compression_ratio = 4.;
+            const double shock_width       = 0.001;
+            const double u_sh              = 0.1;
+
+            // D/Dt u_x
+            material_derivatives[i][0] =
+              u_sh * u_sh / (4 * compression_ratio * compression_ratio) /
+              shock_width * (1 - compression_ratio) *
+              ((1 - compression_ratio) * std::tanh(points[i][0] / shock_width) +
+               (1 + compression_ratio)) *
+              (1 - std::tanh(points[i][0] / shock_width) *
+                     std::tanh(points[i][0] / shock_width));
             material_derivatives[i][1] = 0.; // D/Dt u_y
             material_derivatives[i][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
@@ -571,7 +621,17 @@ namespace sapphirepp
           {
             /** [Background velocity Jacobian] */
             // !!!EDIT HERE!!!
-            jacobians[i][0][0] = 0.; // \partial u_x / \partial x
+            //  u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            //  => u_00 = du/dx = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+            const double compression_ratio = 4.;
+            const double shock_width       = 0.001;
+            const double u_sh              = 0.1;
+
+            // \partial u_x / \partial x
+            jacobians[i][0][0] = u_sh / (2 * compression_ratio) *
+                                 (1 - compression_ratio) / shock_width *
+                                 (1 - std::tanh(points[i][0] / shock_width) *
+                                        std::tanh(points[i][0] / shock_width));
             jacobians[i][0][1] = 0.; // \partial u_x / \partial y
             jacobians[i][0][2] = 0.; // \partial u_x / \partial z
 
