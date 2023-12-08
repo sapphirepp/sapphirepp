@@ -55,23 +55,23 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.enter_subsection("Mesh");
   {
     prm.declare_entry("Grid type",
-                      "Hypercube",
+                      "Shock grid",
                       Patterns::Selection("Hypercube|Shock grid|File"),
                       "The type of the grid. Can either be created by the "
                       "program or read from a file");
 
     prm.declare_entry("Point 1",
-                      "0., 0., 0.",
+                      "-2., -2., -2.",
                       Patterns::Anything(),
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Point 2",
-                      "1., 1., 1.",
+                      "2., 2., 2.",
                       Patterns::Anything(),
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Number of cells",
-                      "4, 4, 4",
+                      "32, 32, 32",
                       Patterns::Anything(),
                       "Number of cells in each coordinate direction");
 
@@ -81,11 +81,11 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "Number of cells along x-direction in the shock (for "
                       "Shock grid)");
     prm.declare_entry("Shock width",
-                      "0.1",
+                      "0.01",
                       Patterns::Double(0),
                       "Width of the shock in x-direction (for Shock grid)");
     prm.declare_entry("Scaling factor shock",
-                      "1.1",
+                      "1.5",
                       Patterns::Double(1),
                       "Scaling factor for the cell width in x-direction "
                       "(for Shock grid)");
@@ -149,11 +149,11 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                                           "Crank-Nicolson|ERK4"),
                       "The time stepping method.");
     prm.declare_entry("Time step size",
-                      "0.1",
+                      "1.0",
                       Patterns::Double(0),
                       "Time step for the simulation in dimensionless units.");
     prm.declare_entry("Final time",
-                      "1.0",
+                      "200",
                       Patterns::Double(0),
                       "End time for the simulation in dimensionless units.");
   } // Time stepping
@@ -163,7 +163,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.enter_subsection("Expansion");
   {
     prm.declare_entry("Expansion order",
-                      "0",
+                      "1",
                       Patterns::Integer(0),
                       "The maximum order of the expansion of the particle "
                       "distribution function.");
