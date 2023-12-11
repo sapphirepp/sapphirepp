@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.5.0", "master"]
+        dealii_version: ["v9.5.0", "latest"]
     
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal
@@ -44,6 +44,7 @@ jobs:
         env:
           OMPI_ALLOW_RUN_AS_ROOT: 1
           OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+          MPI_NPROC: 2
           TEST_LABEL: monthly-${{ matrix.build_type }}
         run: |
           cd build

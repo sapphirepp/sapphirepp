@@ -47,6 +47,7 @@ jobs:
         env:
           OMPI_ALLOW_RUN_AS_ROOT: 1
           OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+          MPI_NPROC: 2
           TEST_LABEL: commit-${{ matrix.build_type }}
         run: |
           cd build
