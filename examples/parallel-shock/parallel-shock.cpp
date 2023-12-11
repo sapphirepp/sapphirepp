@@ -28,17 +28,10 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
 
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/grid_tools.h>
-
-#include <deal.II/numerics/vector_tools.h>
-
 #include <mpi.h>
 
 #include "config.h"
 #include "output-parameters.h"
-#include "particle-functions.h"
 #include "sapphirepp-logstream.h"
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
@@ -56,8 +49,7 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      // saplog.init(2);
-      saplog.init(4);
+      saplog.init(2);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
