@@ -1,6 +1,8 @@
-name: Monthly tests
+name: Full test suite
 
 on:
+  release:
+    types: [created]
   schedule:
   - cron:  '0 0 1 * *'
   workflow_dispatch:
@@ -8,17 +10,18 @@ on:
 env:
   COMPILE_JOBS: 2
   CXX_FLAGS: "-Werror -Wall -Wextra"
+  MPI_NPROC: 2
 
 jobs:
-  montly-tests:
-    name: Monthly test ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+  full-test-suite:
+    name: Full test suite ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.5.0", "latest"]
+        dealii_version: ["v9.5.0", "master"]
     
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-focal
@@ -44,8 +47,7 @@ jobs:
         env:
           OMPI_ALLOW_RUN_AS_ROOT: 1
           OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-          MPI_NPROC: 2
-          TEST_LABEL: monthly-${{ matrix.build_type }}
+          TEST_LABEL: full-suite-${{ matrix.build_type }}
         run: |
           cd build
           echo "Running tests with label ${{ env.TEST_LABEL }}"

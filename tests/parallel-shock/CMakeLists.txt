@@ -16,7 +16,7 @@ set_property(TEST parallel-shock PROPERTY
                     "2d" "momentum" "spatial_advection" "source" "scattering"
                     "shock" "Crank-Nicholson" "mpi"
                     "commit-Release"
-                    "monthly-Release" "monthly-Debug")
+                    "full-suite-Release" "full-suite-Debug")
 
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES

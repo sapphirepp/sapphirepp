@@ -16,7 +16,7 @@ set_property(TEST gyro-motion-f0 PROPERTY
                     "2d" "spatial_advection" "magnetic"
                     "Crank-Nicholson" "continuos gradients"
                     "commit-Release" "commit-Debug"
-                    "monthly-Release" "monthly-Debug")
+                    "full-suite-Release" "full-suite-Debug")
 
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES

@@ -1,6 +1,6 @@
 [![GitHub CI](https://github.com/sapphirepp/sapphirepp/actions/workflows/tests.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/tests.yml)
 [![clang-format Check](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml)
-[![Monthly tests](https://github.com/sapphirepp/sapphirepp/actions/workflows/monthly-tests.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/monthly-tests.yml)
+[![Full test suite](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml)
 
 
 <p align="center">

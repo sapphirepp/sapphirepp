@@ -11,6 +11,7 @@ on:
 env:
   COMPILE_JOBS: 2
   CXX_FLAGS: "-Werror -Wall -Wextra"
+  MPI_NPROC: 2
 
 jobs:
   tests:
@@ -47,7 +48,6 @@ jobs:
         env:
           OMPI_ALLOW_RUN_AS_ROOT: 1
           OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-          MPI_NPROC: 2
           TEST_LABEL: commit-${{ matrix.build_type }}
         run: |
           cd build
