@@ -65,7 +65,8 @@ main(int argc, char *argv[])
       output_parameters.declare_parameters(prm);
       vfp_parameters.declare_parameters(prm);
 
-      if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      if ((dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) &&
+          (argc == 1))
         prm.print_parameters("parameter-template.prm", ParameterHandler::PRM);
 
       prm.parse_input(parameter_filename);
