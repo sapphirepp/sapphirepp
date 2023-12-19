@@ -10,7 +10,7 @@ subsection Output
   # The number of digits used for the counter in the output file names.
   set Number of digits for counter = 4
 
-  # The frequence at which output files will be written. (In units of time
+  # The frequency at which output files will be written. (In units of time
   # steps)
   set Output frequency             = 1
 
@@ -30,8 +30,9 @@ end
 
 subsection VFP
   subsection Expansion
-    # The order of the expansion of the particle distribution function.
-    set Expansion order = 0
+    # The maximum order of the expansion of the particle distribution
+    # function.
+    set Expansion order = 1
   end
 
   subsection Finite element
@@ -41,57 +42,83 @@ subsection VFP
   end
 
   subsection Mesh
-    # The type of the grid. Either a hypercube or a grid read from a file.
-    set Grid type = Hypercube
+    # The file containing the grid (only for Grid type = File)
+    set File name             = 
+
+    # The type of the grid. Can either be created by the program or read from
+    # a file
+    set Grid type             = Shock grid
+
+    # Number of cells in each coordinate direction
+    set Number of cells       = 32, 32, 32
+
+    # Number of cells along x-direction in the shock (for Shock grid)
+    set Number of shock cells = 8
+
+    # Two diagonally opposite corner points, Point 1 and  Point 2
+    set Point 1               = -2., -2., -2.
+
+    # Two diagonally opposite corner points, Point 1 and  Point 2
+    set Point 2               = 2., 2., 2.
+
+    # Scaling factor for the cell width in x-direction (for Shock grid)
+    set Scaling factor shock  = 1.5
+
+    # Width of the shock in x-direction (for Shock grid)
+    set Shock width           = 0.01
 
 
     subsection Boundary conditions
       # Boundary condition at the lower p boundary.
-      set lower p = continous gradients
+      set lower p = continuous gradients
 
       # Boundary condition at the lower x boundary.
-      set lower x = continous gradients
+      set lower x = continuous gradients
 
       # Boundary condition at the lower y boundary.
-      set lower y = continous gradients
+      set lower y = continuous gradients
+
+      # Boundary condition at the lower z boundary.
+      set lower z = continuous gradients
 
       # Boundary condition at the upper p boundary.
-      set upper p = continous gradients
+      set upper p = continuous gradients
 
       # Boundary condition at the upper x boundary.
-      set upper x = continous gradients
+      set upper x = continuous gradients
 
       # Boundary condition at the upper y boundary.
-      set upper y = continous gradients
-    end
+      set upper y = continuous gradients
 
-    subsection File
-      # The name of the file containing the grid.
-      set File name = 
-    end
-
-    subsection Hypercube
-      # Number of cells in each coordinate direction
-      set Number of cells = 4, 4, 4
-
-      # Two diagonally opposite corner points, Point 1 and  Point 2
-      set Point 1         = 0., 0., 0.
-
-      # Two diagonally opposite corner points Point 1 and  Point 2
-      set Point 2         = 1., 1., 1.
+      # Boundary condition at the upper z boundary.
+      set upper z = continuous gradients
     end
 
   end
 
+  subsection Particle properties
+    # The charge of the particles in dimensionless units.
+    set Charge = 1.
+
+    # Mass of the particles in dimensionless units.
+    set Mass   = 1.
+  end
+
   subsection Time stepping
-    # Duration of the simulation.
-    set Final time     = 0.4
+    # End time for the simulation in dimensionless units.
+    set Final time     = 200
 
     # The time stepping method.
     set Method         = Crank-Nicolson
 
-    # Duration of the simulation.
-    set Time step size = 7.8125e-3
+    # Time step for the simulation in dimensionless units.
+    set Time step size = 1.0
+  end
+
+  subsection TransportOnly
+    # The Lorentz factor of the particles. Only has to be specified in the
+    # transport-only (i.e. p-independent) case.
+    set Gamma = 3.
   end
 
 end
