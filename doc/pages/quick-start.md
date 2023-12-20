@@ -18,10 +18,10 @@ the particles will cross, to gain energy by the first order Fermi mechanism
 resulting in a stationary velocity field $\mathbf{u}(\mathbf{x})$ with the shock
 of compression ratio $r$ at $0$:
 
-$$
-  \mathbf{u}(\mathbf{x}) = u_1 \mathbf{e}_x \text{, for } x < 0 \enspace \\
-  \mathbf{u}(\mathbf{x}) = r \cdot u_1 \mathbf{e}_x \text{, for } x > 0
-$$
+\begin{align}
+  \mathbf{u}(\mathbf{x}) = u_1 \hat{\mathbf{e}}_x \text{, for } x < 0 \\
+  \mathbf{u}(\mathbf{x}) = r \cdot u_1 \hat{\mathbf{e}}_x \text{, for } x > 0
+\end{align}
 
 The transport of energetic charged (test-)particles in this plasma is described
 by the Vlasov-Fokker-Planck (VFP) equation:
@@ -189,7 +189,7 @@ in the shock region:
 
 $$
   \mathbf{u}(x) = \frac{u_s}{2r} \left( (1-r) \tanh\left(\frac{x}{d_s}\right)
-  + (1+r)\right) \mathbf{e}_x\,.
+  + (1+r)\right) \hat{\mathbf{e}}_x\,.
 $$
 
 Here, $r = 4$ is the compression ratio, $u_s = 0.1$ the shock velocity and $d_s
