@@ -19,7 +19,7 @@ resulting in a stationary velocity field $\mathbf{u}(\mathbf{x})$ with the shock
 of compression ratio $r$ at $0$:
 
 $$
-  \mathbf{u}(\mathbf{x}) = u_1 \mathbf{e}_x \text{, for } x < 0 \\
+  \mathbf{u}(\mathbf{x}) = u_1 \mathbf{e}_x \text{, for } x < 0 \enspace \\
   \mathbf{u}(\mathbf{x}) = r \cdot u_1 \mathbf{e}_x \text{, for } x > 0
 $$
 
