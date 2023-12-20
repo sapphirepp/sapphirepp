@@ -83,6 +83,7 @@ public:
     if (x < 0.)
       {
         f[0] *= std::exp(3 * u * nu / (v * v) * x);
+        f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
       }
   }
 
@@ -125,6 +126,7 @@ public:
     if (std::exp(log_p) > p0)
       {
         weight[0] = std::exp(4 * log_p);
+        weight[2] = std::exp(4 * log_p);
       }
   }
 
