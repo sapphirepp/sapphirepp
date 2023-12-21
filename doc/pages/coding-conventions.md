@@ -120,10 +120,10 @@ formatting in your IDE.
 12. Sometimes it makes sense to implement a class by using several non-member
     functions that are not part of the public interface and are only meant to be
     called in the current source file. Such free functions should be put in an
-    internal namespace structured in the following way:
+    internal namespace `sapinternal` structured in the following way:
 
     ```cpp
-    namespace internal
+    namespace sapinternal
     {
       namespace ClassNameImplementation
       {

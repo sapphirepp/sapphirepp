@@ -94,23 +94,23 @@ main(int argc, char *argv[])
                     dealii::Utilities::to_string(vfp_parameters.final_time) +
                     " != n * " + dealii::Utilities::to_string(gyroperiod)));
 
-
       InitialValueFunction<dimension> analytic_solution(
         physical_parameters, vfp_parameters.expansion_order);
 
-      const ComponentSelectFunction<dimension> weight(
+      const dealii::ComponentSelectFunction<dimension> weight(
         0,
         (vfp_parameters.expansion_order + 1) *
           (vfp_parameters.expansion_order + 1));
 
-
-      const double L2_error = vfp_solver.compute_global_error(
-        analytic_solution, VectorTools::L2_norm, VectorTools::L2_norm, &weight);
+      const double L2_error =
+        vfp_solver.compute_global_error(analytic_solution,
+                                        dealii::VectorTools::L2_norm,
+                                        dealii::VectorTools::L2_norm,
+                                        &weight);
       const double L2_norm =
-        vfp_solver.compute_weighted_norm(VectorTools::L2_norm,
-                                         VectorTools::L2_norm,
+        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                         dealii::VectorTools::L2_norm,
                                          &weight);
-
 
       saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
              << ", rel error = " << L2_error / L2_norm

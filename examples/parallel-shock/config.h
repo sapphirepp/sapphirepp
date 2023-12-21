@@ -324,7 +324,7 @@ namespace sapphirepp
         /** [Magnetic field] */
         magnetic_field[0] = prm.B0; // B_x
         magnetic_field[1] = 0.;     // B_y
-        magnetic_field[2] = 0;      // B_z
+        magnetic_field[2] = 0.;     // B_z
         /** [Magnetic field] */
       }
 

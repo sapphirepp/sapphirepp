@@ -37,105 +37,112 @@
 #include "vfp-solver.h"
 
 
-
-template <unsigned int dim>
-class AnalyticSolution : public dealii::Function<dim>
+namespace sapinternal
 {
-public:
-  AnalyticSolution(const sapphirepp::PhysicalParameters &physical_parameters,
-                   const unsigned int                    exp_order,
-                   const double                         &mass)
-    : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-    , prm{physical_parameters}
-    , lms_indices{sapphirepp::VFP::PDESystem::create_lms_indices(exp_order)}
-    , particle_velocity(mass)
-    , scattering_frequency(prm)
-  {}
-
-
-
-  void
-  vector_value(const dealii::Point<dim> &point,
-               dealii::Vector<double>   &f) const override
+  namespace AnalyticSolutionImplementation
   {
-    AssertDimension(f.size(), this->n_components);
-    static_cast<void>(point); // suppress compiler warning
+    using namespace dealii;
+    using namespace sapphirepp;
 
-    const double u  = prm.u_sh;
-    const double r  = prm.compression_ratio;
-    const double p0 = prm.p_inj;
+    template <unsigned int dim>
+    class AnalyticSolution : public dealii::Function<dim>
+    {
+    public:
+      AnalyticSolution(const PhysicalParameters &physical_parameters,
+                       const unsigned int        exp_order,
+                       const double             &mass)
+        : Function<dim>((exp_order + 1) * (exp_order + 1))
+        , prm{physical_parameters}
+        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+        , particle_velocity(mass)
+        , scattering_frequency(prm)
+      {}
 
-    const double log_p = point[1];
-    const double x     = point[0];
 
-    std::vector<double>             values(1);
-    std::vector<dealii::Point<dim>> points = {point};
-    particle_velocity.value_list(points, values);
-    const double v = values[0];
-    scattering_frequency.value_list(points, values);
-    const double nu = values[0];
 
-    f = 0;
-
-    f[0] = std::sqrt(4 * M_PI) * prm.Q / (p0 * u) * 3. * r / (r - 1.) *
-           std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0)));
-
-    if (x < 0.)
+      void
+      vector_value(const Point<dim> &point, Vector<double> &f) const override
       {
-        f[0] *= std::exp(3 * u * nu / (v * v) * x);
-        f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
+        AssertDimension(f.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        const double u  = prm.u_sh;
+        const double r  = prm.compression_ratio;
+        const double p0 = prm.p_inj;
+
+        const double log_p = point[1];
+        const double x     = point[0];
+
+        std::vector<double>     values(1);
+        std::vector<Point<dim>> points = {point};
+        particle_velocity.value_list(points, values);
+        const double v = values[0];
+        scattering_frequency.value_list(points, values);
+        const double nu = values[0];
+
+        f = 0;
+
+        f[0] = std::sqrt(4 * M_PI) * prm.Q / (p0 * u) * 3. * r / (r - 1.) *
+               std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0)));
+
+        if (x < 0.)
+          {
+            f[0] *= std::exp(3 * u * nu / (v * v) * x);
+            f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
+          }
       }
-  }
 
 
 
-private:
-  const sapphirepp::PhysicalParameters               prm;
-  const std::vector<std::array<unsigned int, 3>>     lms_indices;
-  const sapphirepp::VFP::ParticleVelocity<dim, true> particle_velocity;
-  const sapphirepp::VFP::ScatteringFrequency<dim>    scattering_frequency;
-};
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+      const VFP::ParticleVelocity<dim, true>         particle_velocity;
+      const VFP::ScatteringFrequency<dim>            scattering_frequency;
+    };
 
 
 
-template <unsigned int dim>
-class WeightFunction : public dealii::Function<dim>
-{
-public:
-  WeightFunction(const sapphirepp::PhysicalParameters &physical_parameters,
-                 const unsigned int                    exp_order)
-    : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-    , prm{physical_parameters}
-    , lms_indices{sapphirepp::VFP::PDESystem::create_lms_indices(exp_order)}
-  {}
+    template <unsigned int dim>
+    class WeightFunction : public Function<dim>
+    {
+    public:
+      WeightFunction(const PhysicalParameters &physical_parameters,
+                     const unsigned int        exp_order)
+        : Function<dim>((exp_order + 1) * (exp_order + 1))
+        , prm{physical_parameters}
+        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+      {}
 
 
 
-  void
-  vector_value(const dealii::Point<dim> &point,
-               dealii::Vector<double>   &weight) const override
-  {
-    AssertDimension(weight.size(), this->n_components);
-    static_cast<void>(point); // suppress compiler warning
-
-    const double p0    = prm.p_inj;
-    const double log_p = point[1];
-
-    weight = 0;
-
-    if (std::exp(log_p) > p0)
+      void
+      vector_value(const Point<dim> &point,
+                   Vector<double>   &weight) const override
       {
-        weight[0] = std::exp(4 * log_p);
-        weight[2] = std::exp(4 * log_p);
+        AssertDimension(weight.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        const double p0    = prm.p_inj;
+        const double log_p = point[1];
+
+        weight = 0;
+
+        if (std::exp(log_p) > p0)
+          {
+            weight[0] = std::exp(4 * log_p);
+            weight[2] = std::exp(4 * log_p);
+          }
       }
-  }
 
 
 
-private:
-  const sapphirepp::PhysicalParameters           prm;
-  const std::vector<std::array<unsigned int, 3>> lms_indices;
-};
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+  } // namespace AnalyticSolutionImplementation
+} // namespace sapinternal
 
 
 
@@ -186,6 +193,7 @@ main(int argc, char *argv[])
 
 
       saplog << "Calculate analytic solution" << std::endl;
+      using namespace sapinternal::AnalyticSolutionImplementation;
 
       AnalyticSolution<dimension> analytic_solution(
         physical_parameters,
@@ -195,25 +203,28 @@ main(int argc, char *argv[])
       WeightFunction<dimension> weight(physical_parameters,
                                        vfp_parameters.expansion_order);
 
-      const double L2_error = vfp_solver.compute_global_error(
-        analytic_solution, VectorTools::L2_norm, VectorTools::L2_norm, &weight);
+      const double L2_error =
+        vfp_solver.compute_global_error(analytic_solution,
+                                        dealii::VectorTools::L2_norm,
+                                        dealii::VectorTools::L2_norm,
+                                        &weight);
       const double L2_norm =
-        vfp_solver.compute_weighted_norm(VectorTools::L2_norm,
-                                         VectorTools::L2_norm,
+        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                         dealii::VectorTools::L2_norm,
                                          &weight);
 
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
         vfp_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
-      VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                               analytic_solution,
-                               analytic_solution_vector);
+      dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
+                                       analytic_solution,
+                                       analytic_solution_vector);
       PETScWrappers::MPI::Vector weight_vector;
       weight_vector.reinit(vfp_solver.get_dof_handler().locally_owned_dofs(),
                            MPI_COMM_WORLD);
-      VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                               weight,
-                               weight_vector);
+      dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
+                                       weight,
+                                       weight_vector);
 
       const unsigned int num_exp_coefficients =
         (vfp_parameters.expansion_order + 1) *

@@ -76,6 +76,7 @@ namespace sapphirepp
     using namespace dealii;
 
 
+
     /**
      * @brief This class solves the Vlasov-Fokker-Planck equation
      *

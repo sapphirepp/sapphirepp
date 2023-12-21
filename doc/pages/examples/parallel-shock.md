@@ -142,6 +142,9 @@ subsection VFP
 end
 ```
 
+@note Note that section and parameter names are case-sensitive and can contain
+  spaces.
+
 Users can also define their own parameters to describe the physical setup. An
 example of this can be found in the [implementation](#parameter-parallel-shock)
 section.
