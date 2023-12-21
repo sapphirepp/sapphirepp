@@ -89,6 +89,7 @@ following programs installed:
 - [LAPACK](https://www.netlib.org/lapack/)
 - [p4est](https://www.p4est.org)
 - [PETSc](https://petsc.org)
+- [assimp](https://www.assimp.org/)
 - @dealii version @dealii_min_version or later
 - For generating the documentation: [Doxygen](https://www.doxygen.nl) version
   @doxygen_min_version or later with `dot`

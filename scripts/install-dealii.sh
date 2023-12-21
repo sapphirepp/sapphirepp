@@ -4,9 +4,9 @@ set -e
 # Set default values
 INTERACTIVE=true
 SKIP_PREREQUISITE=false
-PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb"
-PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb"
-PREREQUISITES_APT="gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbb2 libtbb2-dev"
+PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb assimp"
+PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb assimp"
+PREREQUISITES_APT="gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbb2 libtbb2-dev libassimp-dev"
 if [[ $(uname) == "Darwin" ]]; then
     PACKAGE_INSTALLER="brew"
 else

@@ -37,14 +37,16 @@ if(SAPPHIREPP)
     " or set an environment variable \"DEAL_II_DIR\".")
   ENDIF()
 
-  IF(NOT DEAL_II_WITH_PETSC OR NOT DEAL_II_WITH_P4EST)
+  IF(NOT DEAL_II_WITH_PETSC OR NOT DEAL_II_WITH_P4EST OR NOT DEAL_II_WITH_ASSIMP)
   MESSAGE(FATAL_ERROR
     "*** deal.II dependencies not met ***\n"
     "Sapphire++ requires deal.II to be configured with the following options:
      DEAL_II_WITH_PETSC = ON
-     DEAL_II_WITH_P4EST = ON\n"
+     DEAL_II_WITH_P4EST = ON
+     DEAL_II_WITH_ASSIMP = ON\n"
     "However, the detected deal.II configuration found at ${DEAL_II_PATH} is:
      DEAL_II_WITH_PETSC = ${DEAL_II_WITH_PETSC}
+     DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}
      DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}")
   ENDIF()
 
