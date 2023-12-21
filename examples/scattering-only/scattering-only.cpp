@@ -38,6 +38,60 @@
 #include "vfp-solver.h"
 /** [Includes] */
 
+
+/** [AnalyticSolution namespace] */
+namespace sapinternal
+{
+  namespace AnalyticSolutionImplementation
+  {
+    using namespace sapphirepp;
+    /** [AnalyticSolution namespace] */
+
+    /** [AnalyticSolution constructor] */
+    template <unsigned int dim>
+    class AnalyticSolution : public dealii::Function<dim>
+    {
+    public:
+      AnalyticSolution(const PhysicalParameters &physical_parameters,
+                       const unsigned int        exp_order,
+                       const double              time)
+        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1), time)
+        , prm{physical_parameters}
+        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+      {}
+      /** [AnalyticSolution constructor] */
+
+
+
+      /** [AnalyticSolution value] */
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
+      {
+        AssertDimension(f.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        for (unsigned int i = 0; i < f.size(); ++i)
+          {
+            const unsigned int l = lms_indices[i][0];
+            const double       t = this->get_time();
+
+            f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+  } // namespace AnalyticSolutionImplementation
+} // namespace sapinternal
+/** [AnalyticSolution value] */
+
+
+
 /** [Main function] */
 int
 main(int argc, char *argv[])
@@ -55,14 +109,14 @@ main(int argc, char *argv[])
                                                                   1);
       /** [MPI initialization] */
       /** [Saplog] */
+
       saplog.init(2);
       /** [Saplog] */
+
       /** [Command line argument] */
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
-      saplog << "Start example scattering-only with parameter file \""
-             << parameter_filename << "\"" << std::endl;
       /** [Command line argument] */
 
       /** [Run time parameters] */
@@ -77,6 +131,7 @@ main(int argc, char *argv[])
       output_parameters.declare_parameters(prm);
       vfp_parameters.declare_parameters(prm);
       /** [Declare parameters] */
+
       /** [Parse parameters] */
       prm.parse_input(parameter_filename);
 
@@ -92,20 +147,62 @@ main(int argc, char *argv[])
       vfp_solver.run();
       /** [VFP Solver] */
 
-      /** [L2 error] */
-      InitialValueFunction<dimension> analytic_solution(
-        physical_parameters, vfp_parameters.expansion_order);
-      analytic_solution.set_time(vfp_parameters.final_time);
+      /** [Create AnalyticSolution] */
+      using namespace sapinternal::AnalyticSolutionImplementation;
 
+      AnalyticSolution<dimension> analytic_solution(
+        physical_parameters,
+        vfp_parameters.expansion_order,
+        vfp_parameters.final_time);
+      /** [Create AnalyticSolution] */
+
+      /** [Calculate L2-error] */
       const double L2_error =
         vfp_solver.compute_global_error(analytic_solution,
-                                        VectorTools::L2_norm,
-                                        VectorTools::L2_norm);
+                                        dealii::VectorTools::L2_norm,
+                                        dealii::VectorTools::L2_norm);
+      const double L2_norm =
+        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                         dealii::VectorTools::L2_norm);
 
-      saplog << "L2 error: " << L2_error << std::endl;
+      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+             << ", rel error = " << L2_error / L2_norm << std::endl;
+      /** [Calculate L2-error] */
+
+      /** [Calculate analytic solution] */
+      PETScWrappers::MPI::Vector analytic_solution_vector;
+      analytic_solution_vector.reinit(
+        vfp_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
+      dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
+                                       analytic_solution,
+                                       analytic_solution_vector);
+      /** [Calculate analytic solution] */
+
+      /** [Component names] */
+      const unsigned int num_exp_coefficients =
+        (vfp_parameters.expansion_order + 1) *
+        (vfp_parameters.expansion_order + 1);
+      std::vector<std::string> component_names(num_exp_coefficients);
+      const std::vector<std::array<unsigned int, 3>> lms_indices =
+        PDESystem::create_lms_indices(num_exp_coefficients);
+      for (unsigned int i = 0; i < num_exp_coefficients; ++i)
+        {
+          const std::array<unsigned int, 3> &lms = lms_indices[i];
+          component_names[i] = "analytic_f_" + std::to_string(lms[0]) +
+                               std::to_string(lms[1]) + std::to_string(lms[2]);
+        }
+      /** [Component names] */
+
+      /** [Output analytic solution] */
+      dealii::DataOut<dimension> data_out;
+      data_out.attach_dof_handler(vfp_solver.get_dof_handler());
+      data_out.add_data_vector(analytic_solution_vector, component_names);
+      data_out.build_patches(vfp_parameters.polynomial_degree);
+      output_parameters.base_file_name = "analytic_solution";
+      output_parameters.write_results<dimension>(data_out, 0);
+      /** [Output analytic solution] */
+      /** [Try-Catch end] */
     }
-  /** [L2 error] */
-  /** [Try-Catch end] */
   catch (std::exception &exc)
     {
       std::cerr << std::endl
