@@ -26,12 +26,17 @@
  */
 
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/parameter_handler.h>
 
 #include <mpi.h>
 
 #include "config.h"
 #include "output-parameters.h"
+#include "sapphirepp-logstream.h"
+#include "vfp-parameters.h"
 #include "vfp-solver.h"
+
+
 
 int
 main(int argc, char *argv[])
@@ -45,8 +50,7 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      saplog.depth_console(2);
-      saplog.init();
+      saplog.init(2);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
@@ -55,10 +59,6 @@ main(int argc, char *argv[])
       double max_L2_error = 1e-10;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
-
-      saplog << "Start test-gyro-motion-f0 with parameter file \""
-             << parameter_filename << "\" and maximal L2 error of "
-             << max_L2_error << std::endl;
 
       dealii::Timer            timer;
       ParameterHandler         prm;
@@ -83,7 +83,8 @@ main(int argc, char *argv[])
       vfp_solver.run();
       timer.stop();
 
-      // Assume that the final time is a multiple of the gyroperiod
+
+      saplog << "Calculate analytic solution" << std::endl;
       const double gyroperiod =
         2. * M_PI * vfp_parameters.gamma * vfp_parameters.mass /
         (physical_parameters.B0 * vfp_parameters.charge);
@@ -94,27 +95,32 @@ main(int argc, char *argv[])
                     " != n * " + dealii::Utilities::to_string(gyroperiod)));
 
 
-      InitialValueFunction<dimension> initial_condition(
+      InitialValueFunction<dimension> analytic_solution(
         physical_parameters, vfp_parameters.expansion_order);
 
-      const ComponentSelectFunction<dimension> mask(
+      const ComponentSelectFunction<dimension> weight(
         0,
         (vfp_parameters.expansion_order + 1) *
           (vfp_parameters.expansion_order + 1));
 
-      const double L2_error =
-        vfp_solver.compute_global_error(initial_condition,
-                                        VectorTools::L2_norm,
-                                        VectorTools::L2_norm);
 
-      saplog << "L2_error = " << L2_error
+      const double L2_error = vfp_solver.compute_global_error(
+        analytic_solution, VectorTools::L2_norm, VectorTools::L2_norm, &weight);
+      const double L2_norm =
+        vfp_solver.compute_weighted_norm(VectorTools::L2_norm,
+                                         VectorTools::L2_norm,
+                                         &weight);
+
+
+      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+             << ", rel error = " << L2_error / L2_norm
              << ", CPU/wall time = " << timer.cpu_time() << "/"
              << timer.wall_time() << " s" << std::endl;
 
-      AssertThrow(L2_error < max_L2_error,
+      AssertThrow((L2_error / L2_norm) < max_L2_error,
                   dealii::ExcMessage(
                     "L2 error is too large! (" +
-                    dealii::Utilities::to_string(L2_error) + " > " +
+                    dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
                     dealii::Utilities::to_string(max_L2_error) + ")"));
     }
   catch (std::exception &exc)

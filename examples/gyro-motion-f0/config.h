@@ -20,44 +20,44 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/gyro-motion-f0/config.h
+ * @file examples/parallel-shock/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for gyro-motion-f0 example
+ * @brief Implement physical setup for parallel-shock example
  */
 
-/** [Includes] */
 #ifndef CONFIG_H
-#  define CONFIG_H
+#define CONFIG_H
 
-#  include <deal.II/base/exceptions.h>
-#  include <deal.II/base/function.h>
-#  include <deal.II/base/parameter_handler.h>
-#  include <deal.II/base/point.h>
+#include <deal.II/base/exceptions.h>
+#include <deal.II/base/function.h>
+#include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/point.h>
 
-#  include <deal.II/lac/vector.h>
+#include <deal.II/lac/vector.h>
 
-#  include <cmath>
-#  include <vector>
+#include <cmath>
+#include <vector>
 
-#  include "pde-system.h"
-#  include "sapphirepp-logstream.h"
-#  include "vfp-flags.h"
+#include "pde-system.h"
+#include "sapphirepp-logstream.h"
+#include "vfp-flags.h"
+
+
 
 namespace sapphirepp
 {
-  /** [Includes] */
-
-  /** [PhysicalParameters] */
   class PhysicalParameters
   {
   public:
+    /** [Define runtime parameter] */
     double B0;
     double sigma;
+    /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
-    /** [PhysicalParameters] */
 
-    /** [Declare and Parse parameters] */
+
+
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
@@ -66,6 +66,7 @@ namespace sapphirepp
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
+      /** [Declare runtime parameter] */
       prm.declare_entry("B0/2pi",
                         "1.",
                         dealii::Patterns::Double(),
@@ -74,9 +75,12 @@ namespace sapphirepp
                         "1.",
                         dealii::Patterns::Double(0),
                         "Spread of the initial distribution");
+      /** [Declare runtime parameter] */
 
       prm.leave_subsection();
     }
+
+
 
     void
     parse_parameters(dealii::ParameterHandler &prm)
@@ -85,30 +89,36 @@ namespace sapphirepp
       dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
+
+      /** [Parse runtime parameter]  */
       B0    = prm.get_double("B0/2pi") * 2. * M_PI;
       sigma = prm.get_double("sigma");
+      /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
     }
   };
-  /** [Declare and Parse parameters] */
 
-  /** [Namespace VFP] */
+
+
   namespace VFP
   {
-    /** [Namespace VFP] */
-
     /** [Dimension] */
-    static constexpr int dimension = 2;
+    /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
+    static constexpr unsigned int dimension = 2;
     /** [Dimension] */
 
-    /** [VFP flags] */
+
+
+    /** [VFP Flags] */
+    /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
                                           VFPFlags::magnetic |
                                           VFPFlags::time_independent_fields;
-    /** [VFP flags] */
+    /** [VFP Flags] */
 
-    /** [InitialValueFunction constructor] */
+
+
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
@@ -116,39 +126,125 @@ namespace sapphirepp
       InitialValueFunction(const PhysicalParameters &physical_parameters,
                            const unsigned int        exp_order)
         : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-        , sigma(physical_parameters.sigma)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(exp_order)}
       {}
-      /** [InitialValueFunction constructor] */
 
-      /** [InitialValueFunction value] */
+
+
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &f) const override
       {
         AssertDimension(f.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
 
-        f = 0.;
-
-        f[0] = std::exp(-point.norm_square() / (2. * sigma * sigma));
+        for (unsigned int i = 0; i < f.size(); ++i)
+          {
+            /** [Initial value] */
+            if (i == 0)
+              f[0] =
+                std::exp(-point.norm_square() / (2. * prm.sigma * prm.sigma));
+            else
+              f[i] = 0.;
+            /** [Initial value] */
+          }
       }
 
-    private:
-      const double sigma;
-    };
-    /** [InitialValueFunction value] */
 
-    /** [MagneticField constructor] */
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
+    template <unsigned int dim>
+    class ScatteringFrequency : public dealii::Function<dim>
+    {
+    public:
+      ScatteringFrequency(const PhysicalParameters &physical_parameters)
+        : dealii::Function<dim>(1)
+        , prm{physical_parameters}
+      {}
+
+
+
+      void
+      value_list(const std::vector<dealii::Point<dim>> &points,
+                 std::vector<double>                   &scattering_frequencies,
+                 const unsigned int component = 0) const override
+      {
+        AssertDimension(scattering_frequencies.size(), points.size());
+        static_cast<void>(component); // suppress compiler warning
+
+        for (unsigned int i = 0; i < points.size(); ++i)
+          {
+            /** [Scattering frequency] */
+            // No scattering frequency
+            scattering_frequencies[i] = 0;
+            /** [Scattering frequency] */
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters prm;
+    };
+
+
+
+    template <unsigned int dim>
+    class Source : public dealii::Function<dim>
+    {
+    public:
+      Source(const PhysicalParameters &physical_parameters,
+             unsigned int              exp_order)
+        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(exp_order)}
+      {}
+
+
+
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &source_values) const override
+      {
+        AssertDimension(source_values.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        for (unsigned int i = 0; i < source_values.size(); ++i)
+          {
+            /** [Source] */
+            // No Source
+            source_values[i] = 0.;
+            /** [Source] */
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
     template <unsigned int dim>
     class MagneticField : public dealii::Function<dim>
     {
     public:
       MagneticField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
-        , B0(physical_parameters.B0)
+        , prm{physical_parameters}
       {}
-      /** [MagneticField constructor] */
 
-      /** [MagneticField value] */
+
+
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &magnetic_field) const override
@@ -156,27 +252,31 @@ namespace sapphirepp
         AssertDimension(magnetic_field.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
-        // constant magnetic field
-        magnetic_field[0] = 0.;
-        magnetic_field[1] = 0.;
-        magnetic_field[2] = B0;
+        /** [Magnetic field] */
+        magnetic_field[0] = 0.;     // B_x
+        magnetic_field[1] = 0.;     // B_y
+        magnetic_field[2] = prm.B0; // B_z
+        /** [Magnetic field] */
       }
 
-    private:
-      const double B0;
-    };
-    /** [MagneticField value] */
 
-    /** [BackgroundVelocityField] */
+
+    private:
+      const PhysicalParameters prm;
+    };
+
+
+
     template <unsigned int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
     public:
       BackgroundVelocityField(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(3)
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
+        , prm{physical_parameters}
+      {}
+
+
 
       void
       vector_value(const dealii::Point<dim> &point,
@@ -185,13 +285,16 @@ namespace sapphirepp
         AssertDimension(velocity.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
+        /** [Background velocity value] */
         // zero velocity field
         velocity[0] = 0.; // u_x
         velocity[1] = 0.; // u_y
         velocity[2] = 0.; // u_z
+        /** [Background velocity value] */
       }
 
-      // Divergence
+
+
       void
       divergence_list(const std::vector<dealii::Point<dim>> &points,
                       std::vector<double>                   &divergence)
@@ -199,41 +302,50 @@ namespace sapphirepp
         AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
 
-        // zero velocity
-        std::fill(divergence.begin(), divergence.end(), 0.);
+        for (unsigned int i = 0; i < divergence.size(); ++i)
+          {
+            /** [Background velocity divergence] */
+            // div u
+            divergence[i] = 0.;
+            /** [Background velocity divergence] */
+          }
       }
 
-      // Material derivative
+
+
       void
       material_derivative_list(
         const std::vector<dealii::Point<dim>> &points,
         std::vector<dealii::Vector<double>>   &material_derivatives)
       {
-        AssertDimension(material_derivatives[0].size(), this->n_components);
         AssertDimension(material_derivatives.size(), points.size());
-        static_cast<void>(points); // suppress compiler warning
+        AssertDimension(material_derivatives[0].size(), this->n_components);
 
         for (unsigned int i = 0; i < points.size(); ++i)
           {
-            // zero velocity
+            /** [Background velocity material derivative] */
+            // zero velocity field
             material_derivatives[i][0] = 0.; // D/Dt u_x
             material_derivatives[i][1] = 0.; // D/Dt u_y
             material_derivatives[i][2] = 0.; // D/Dt u_z
+            /** [Background velocity material derivative] */
           }
       }
 
-      // Jacobian matrix
+
+
       void
       jacobian_list(
         const std::vector<dealii::Point<dim>>            &points,
         std::vector<std::vector<dealii::Vector<double>>> &jacobians) const
       {
-        AssertDimension(jacobians[0].size(), this->n_components);
         AssertDimension(jacobians.size(), points.size());
-        static_cast<void>(points); // suppress compiler warning
+        AssertDimension(jacobians[0].size(), this->n_components);
+        AssertDimension(jacobians[0][0].size(), this->n_components);
 
         for (unsigned int i = 0; i < points.size(); ++i)
           {
+            /** [Background velocity Jacobian] */
             // zero velocity field
             jacobians[i][0][0] = 0.; // \partial u_x / \partial x
             jacobians[i][0][1] = 0.; // \partial u_x / \partial y
@@ -246,59 +358,15 @@ namespace sapphirepp
             jacobians[i][2][0] = 0.; // \partial u_z / \partial x
             jacobians[i][2][1] = 0.; // \partial u_z / \partial y
             jacobians[i][2][2] = 0.; // \partial u_z / \partial z
+            /** [Background velocity Jacobian] */
           }
       }
+
+
+
+    private:
+      const PhysicalParameters prm;
     };
-    /** [BackgroundVelocityField] */
-
-    /** [ScatteringFrequency] */
-    template <unsigned int dim>
-    class ScatteringFrequency : public dealii::Function<dim>
-    {
-    public:
-      ScatteringFrequency(const PhysicalParameters &physical_parameters)
-        : dealii::Function<dim>(1)
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
-
-      void
-      value_list(const std::vector<dealii::Point<dim>> &points,
-                 std::vector<double>                   &scattering_frequencies,
-                 const unsigned int component = 0) const override
-      {
-        // suppress compiler warning
-        static_cast<void>(points);
-        static_cast<void>(scattering_frequencies);
-        static_cast<void>(component);
-      }
-    };
-    /** [ScatteringFrequency] */
-
-    /** [Source] */
-    template <unsigned int dim>
-    class Source : public dealii::Function<dim>
-    {
-    public:
-      Source(const PhysicalParameters &physical_parameters,
-             unsigned int              exp_order)
-        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
-      {
-        static_cast<void>(physical_parameters); // suppress compiler warning
-      }
-
-      void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &values) const override
-      {
-        // suppress compiler warning
-        static_cast<void>(point);
-        static_cast<void>(values);
-      }
-    };
-    /** [Source] */
-    /** [Close namespaces] */
   } // namespace VFP
 } // namespace sapphirepp
 #endif
-/** [Close namespaces] */

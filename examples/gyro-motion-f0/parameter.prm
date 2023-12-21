@@ -1,11 +1,10 @@
 subsection Output
   set Base file name               = solution
-  # set Format                       = hdf5
   set Format                       = vtu
   set Number of digits for counter = 4
   set Output frequency             = 1
   set Results folder               = results
-  set Simulation identifier        = gyro_test
+  set Simulation identifier        = gyro-motion-f0
 end
 subsection Physical parameters
 end
@@ -29,7 +28,7 @@ subsection VFP
     end
   end
   subsection Time stepping
-    set Final time     = 2.
+    set Final time     = 20.
     set Method         = Crank-Nicolson
     set Time step size = 0.1
   end

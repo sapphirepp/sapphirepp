@@ -5,7 +5,7 @@ subsection Output
   set Number of digits for counter = 4
   set Output frequency             = 1
   set Results folder               = results
-  set Simulation identifier        = gyro_test
+  set Simulation identifier        = gyro-motion-f0
 end
 subsection Physical parameters
 end
