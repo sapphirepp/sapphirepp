@@ -5,34 +5,31 @@
 
 ## Introduction {#introduction-gyro-motion-f0}
 
-In this example, we want to give an overview on how magnetic fields work in
-@sapphire. We will consider a simple set-up of an isotropic particle
-distribution in a constant magnetic filed. Therefore, our focus lies on the
-isotropic part of the distribution function, $f_0$. This is example is
-accompanied by a second example, which focus on a non-isotropic parts $f_{l>0}$
-but with a homogenous distribution, @todo Link to gyro-motion-f1 example.
+This example provides an overview of how magnetic fields function within
+@sapphire. We will explore a simple scenario of an isotropic particle
+distribution in a constant magnetic field, focusing primarily on the isotropic
+part of the distribution function, $f_0$.
 
-Let us consider a set-up, with particles in a constant external magnetic field,
+Consider a scenario with particles in a constant external magnetic field,
 
 $$
   \mathbf{B} = B_0 \hat{\mathbf{e}}_z \,.
 $$
 
-Since we don't consider scattering, a background velocity field nor a source
-term, we arrive at the following VFP equation:
+In this example, we will not take into account scattering, a background velocity
+field, or a source term. This leads us to the following VFP equation:
 
 $$
   \frac{\partial f}{\partial t} + \mathbf{v} \cdot \nabla_{x} f -
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,.
 $$
 
-It can be seen, that different momenta decouple, so we will have a look at a
-discrete momentum $\mathbf{p} = \gamma m \mathbf{v}$.  
-Considering a single particle, it will gyrate in the magnetic field with a
-gyroradius
+It's evident that different momenta decouple, so we will examine a discrete
+momentum $\mathbf{p} = \gamma m \mathbf{v}$. A single particle in this scenario
+will gyrate in the magnetic field with a gyroradius
 
 $$
-  r_g = \frac{p_{\perp} c}{q B} = \frac{\gamma m c v_{\perp}}{q B}
+  r_g = \frac{p_{\perp} c}{q B} = \frac{\gamma m c v_{\perp}}{q B} \,,
 $$
 
 and a gyrofrequency
@@ -41,253 +38,175 @@ $$
   \omega_g = \frac{q B}{\gamma m c} \,.
 $$
 
-With the $B$-field orientated in $z$-direction, the motion will only take place
-in the $x$-$y$-plane. This allows us to reduce the dimensionality of the problem
-to 2D. As initial condition, we choose a Gaussian isotropic distribution of
-particles concentrated at the origin:
+Given that the $B$-field is oriented in the $z$-direction, the motion will occur
+solely in the $x$-$y$-plane. This allows us to reduce the problem's
+dimensionality to 2D. As initial condition, we use a Gaussian isotropic
+distribution of particles concentrated at the origin:
 
 \begin{align*}
-  f_0(\mathbf{r}, t=0) &= e^{- \frac{r^2}{2 \sigma^2}} \,, \\
+  f_{l=0}(\mathbf{r}, t=0) &= e^{- \frac{r^2}{2 \sigma^2}} \,, \\
   f_{l>0}(\mathbf{r}, t=0) &= 0 \,.
 \end{align*}
 
-Here $\sigma$ is the spread of the Gaussian, and $r = \sqrt{x^2 + y^2}$ is the
-radial distance from the origin. After one gyroperiod,
+Here, $\sigma$ represents the spread of the Gaussian, and $r = \sqrt{x^2 + y^2}$
+is the radial distance from the origin. After one gyroperiod,
 
 $$
   T_g = \frac{2 \pi}{\omega_g} = \frac{2 \pi \gamma m c}{q B_0} \,,
 $$
 
-every particle performed a full gyro cycle and returned to the initial position.
-Therefore, after $n \times T_g$ with $n \in \mathbb{N}$ the particle
-distribution returns to its initial condition:
+each particle completes a full gyro cycle and returns to its initial position.
+Therefore, after $n \times T_g$ with $n \in \mathbb{N}$, the particle
+distribution reverts to its initial condition:
 
 $$
-  f_0(\mathbf{r}, t = n \times T_g) = f_0(\mathbf{r}, t = 0)
+  f_{l=0}(\mathbf{r}, t = n \times T_g) = f_{l=0}(\mathbf{r}, t = 0)
   = e^{- \frac{r^2}{2 \sigma^2}} \,.
 $$
 
-Note that truncating the expansion of the distribution function at $l_{\rm max}$
-leads to deviations. Therefore, $f_{l>0}(\mathbf{r}, t = n \times T_g) \neq 0$
-even though the initial condition is isotropic.
+It's important to note that truncating the expansion of the distribution
+function at $l_{\rm max}$ results in deviations. Therefore, $f_{l>0}(\mathbf{r},
+t = n \times T_g) \neq 0$ even though the initial condition is isotropic.
 
 
 ## Implementation {#implementation-gyro-motion-f0}
 
-Again the implementation is split into two files, the `config.h` implements the
-physical set-up, and the `gyro-motion-f0.cpp` implements the main function. We
-will discuss both files in detail, but refer to the [introduction
-example](#scattering-only) for information on compiling the example. You will
-notice that also most of the `gyro-motion-f0.cpp` and `config.h` file will be
-similar to the [introduction example](#scattering-only). There are only very few
-changes to describe a very different scenario in @sapphire.
+You can find the implementation of this example in the `examples/gyro-motion-f0`
+directory. The subsequent sections provide a concise guide on how to implement
+this example in @sapphire. This guide assumes that you have already gone through
+the [quick start](#quick-start) and [parallel-shock](#parallel-shock) examples,
+and are familiar with the basic concepts of @sapphire.
 
 
-### config.h {#config-gyro-motion-f0}
+### VFP equation {#dimension-gyro-motion-f0}
 
-We again start with some includes and open the namespace @ref sapphirepp.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h Includes
-
-Next, we define the runtime parameters in the @ref
-sapphirepp::PhysicalParameters "PhysicalParameters" class. We need the magnetic
-field strength $B_0$, and the initial spread of the distribution function
-$\sigma$. The mass $m$, charge $q$ and velocity/gamma factor $\gamma$ of the
-particles are already implemented as runtime parameters in the class
-@ref sapphirepp::VFP::VFPParameters "VFPParameters".
-
-@snippet{lineno} examples/gyro-motion-f0/config.h PhysicalParameters
-
-The declaration and parsing of the parameters is done using the @ref
-sapphirepp::PhysicalParameters::declare_parameters "declare_parameters()" and
-@ref sapphirepp::PhysicalParameters::parse_parameters "parse_parameters()"
-function respectively. Notice, that we use $\frac{B_0}{2 \pi}$ instead of $B_0$
-as an input parameter. This is, so that `Final time = gamma` corresponds to one
-full gyroperiod $T_g$ (for $m = q = c =1$).
-
-@snippet{lineno} examples/gyro-motion-f0/config.h Declare and Parse parameters
-
-The rest of the set-up is directly related to the @ref
-sapphirepp::VFP::VFPSolver "VFPSolver" and therefore collected in the namespace
-@ref sapphirepp::VFP "VFP".
-
-@snippet{lineno} examples/gyro-motion-f0/config.h Namespace VFP
-
-We set the dimensionality of the problem to 2D, since the motion is only in the
-$x$-$y$-plane.
+As previously discussed, the motion is confined to the $x$-$y$-plane. Therefore,
+we use a 2d configuration space, $(x,y)$. Given that we're examining a
+discrete momentum $\mathbf{p} = \gamma m \mathbf{v}$, we can equate the reduced
+phase space to the configuration space, setting `dim = dim_ps = dim_cs = 2`.
 
 @snippet{lineno} examples/gyro-motion-f0/config.h Dimension
 
-Next, we have to set which terms of the VFP equation we want to use. Recalling
-the VFP equation,
+Revisiting the VFP equation,
 
 $$
   \frac{\partial f}{\partial t} + \mathbf{v} \cdot \nabla_{x} f -
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,,
 $$
 
-we can see that we have at least a part of the @ref
-sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection" term
-$\mathbf{v} \cdot \nabla_{x} f$, and the @ref
-sapphirepp::VFP::VFPFlags::magnetic "magnetic" term $q \mathbf{v} \cdot \left(
-\mathbf{B} \times \nabla_{p} f \right)$. Therefore, we have to set both flags in
-the @ref sapphirepp::VFP::VFPFlags "vfp_flags" variable. Furthermore, all our
-fields are time independent, so we can set the @ref
-sapphirepp::VFP::VFPFlags::time_independent_fields "time independent fields"
-flag. Notice that if we wouldn't set this flag, @sapphire would still produce
-the correct result, but it would be less efficient.
+we have the time derivative and two additional terms. The first term represents
+@ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
+$\mathbf{v} \cdot \nabla_{x} f$, while the second term denotes @ref
+sapphirepp::VFP::VFPFlags::magnetic "magnetic" interactions, $q \mathbf{v} \cdot
+\left( \mathbf{B} \times \nabla_{p} f \right)$. Moreover, the magnetic field is
+@ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent".
+Consequently, we activate these three @ref sapphirepp::VFP::VFPFlags
+"VFP flags":
 
-@snippet{lineno} examples/gyro-motion-f0/config.h VFP flags
-
-The initial condition is an isotropic Gaussian distribution as described above.
-In @sapphire, this is implemented in the @ref
-sapphirepp::VFP::InitialValueFunction "InitialValueFunction" function. We first
-set the system size to $(l+1)^2$ and the value of $\sigma$ in the constructor.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h InitialValueFunction constructor
-
-Then we calculate the value for each component $f_{i(l,m,s)}$ in the @ref
-sapphirepp::VFP::InitialValueFunction::vector_value() "vector_value()" function.
-We first check if the provided output vector `f` has the correct size using the
-@dealref{AssertDimension(),group__Exceptions,ga9442b63275c9ef3fab29bc222831c49c}
-macro provided by @dealii. Next, we set all entries in the vector to zero,
-before we set only the isotropic component $f_0$ to a Gaussian distribution.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h InitialValueFunction value
-
-The $B$-field is defined in the @ref sapphirepp::VFP::MagneticField
-"MagneticField" function. It has three components, $x$, $y$, $z$, even if the
-dimension of the problem is only 2D. Again, the run time parameter `B0` is
-provided by the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class
-and set in the constructor.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h MagneticField constructor
-
-The value of the magnetic field is set in the @ref
-sapphirepp::VFP::MagneticField::vector_value() "vector_value()" function. We
-again first check if the provided output vector `magnetic_field` has the correct
-size, before setting the components according to $B(\mathbf{r},t) = B_0
-\hat{\mathbf{e}}_z$.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h MagneticField value
-
-The last term that @sapphire will use in the computation is the background
-velocity field $\mathbf{u}$. Even though the background velocity field is zero
-in our case, using the @ref sapphirepp::VFP::VFPFlags::spatial_advection
-"VFPFlags::spatial_advection" flag will activate the full $(\mathbf{u} +
-\mathbf{v}) \cdot \nabla_x f$ term. We can however just set $\mathbf{u} = 0$
-explicitly. This is what we do in the @ref
-sapphirepp::VFP::BackgroundVelocityField "BackgroundVelocityField" function, we
-set its value $\mathbf{u}$ @ref
-sapphirepp::VFP::BackgroundVelocityField::vector_value()
-"BackgroundVelocityField::vector_value()", divergence $\nabla \cdot \mathbf{u}$
-@ref sapphirepp::VFP::BackgroundVelocityField::divergence_list()
-"BackgroundVelocityField::divergence_list()", material derivative
-$\frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}$ @ref
-sapphirepp::VFP::BackgroundVelocityField::material_derivative_list()
-"BackgroundVelocityField::material_derivative_list()" and Jacobi matrix
-$\frac{\partial u_i}{\partial x_j}$ @ref
-sapphirepp::VFP::BackgroundVelocityField::jacobian_list()
-"BackgroundVelocityField::jacobian_list()" to zero.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h BackgroundVelocityField
-
-For the scattering frequency and the source term we can provide empty
-implementations, since @sapphire will not use them in this example.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h ScatteringFrequency
-
-@snippet{lineno} examples/gyro-motion-f0/config.h Source
-
-Finally, we close the namespaces and terminate the include guard.
-
-@snippet{lineno} examples/gyro-motion-f0/config.h Close namespaces
+@snippet{lineno} examples/gyro-motion-f0/config.h VFP Flags
 
 
-### gyro-motion-f0.cpp {#main-gyro-motion-f0}
+### Runtime Parameters {#parameter-gyro-motion-f0}
 
-In the `gyro-motion-f0.cpp` we define the main function for the executable. We
-start by including the header files for MPI, @dealii and @sapphire.
+Our setup is characterized by two parameters: the magnetic field strength $B_0$
+and the initial spread of the distribution function $\sigma$. The additional
+parameters $m$, $q$, and $\gamma$ are already implemented in @sapphire. We will
+employ the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class to
+define, declare, and parse our custom runtime parameters, as demonstrated in the
+[parallel shock](#parallel-shock) example.
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Includes
+1. **Define**
 
-Next, we define the main function and open a `try-catch` block to abort the
-program on exceptions with a meaningful error message.
+   We start by defining our runtime parameters:
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Main function
+   @snippet{lineno} examples/gyro-motion-f0/config.h Define runtime parameter
 
-We initialize MPI using the @dealii wrapper
-@dealref{MPI_InitFinalize,classUtilities_1_1MPI_1_1MPI__InitFinalize} to
-initialize the MPI and PETSc and p4est. We use one thread per process, so all
-parallelisation is done via MPI.
+2. **Declare**
+  
+   Note that we use $\frac{B_0}{2 \pi}$ instead of $B_0$ as an input parameter.
+   This ensures that `Final time = gamma` corresponds to one full gyroperiod
+   $T_g$ (assuming $m = q = c =1$).
 
-@note It is also possible, to use MPI for the communication between nodes, and
-      use TBB to parallelise the computation on a single node.
+   @snippet{lineno} examples/gyro-motion-f0/config.h Declare runtime parameter
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp MPI initialization
+3. **Parse**
 
-Next, we create set the @ref sapphirepp::Utils::SapphireppLogStream "saplog" to
-only show the progress of the simulation, and not the debug messages.
+   Finally, we parse the runtime parameters:
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Saplog
+   @snippet{lineno} examples/gyro-motion-f0/config.h Parse runtime parameter
 
-The parameter file to be used is given via a command line argument.
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Command line argument
+### Initial Condition {#initial-condition-gyro-motion-f0}
 
-As it is @dealii convention, we first need to create all `Parameters` objects
-that handle runtime parameters.
+The initial condition is an isotropic Gaussian distribution, as previously
+described. Consequently, we set all expansion coefficients $f_{l>0}$ to zero,
+except for the isotropic component $f_{i(0,0,0)} = f_0$. To calculate $r^2 =
+x^2+×y^2$, we employ the
+@dealref{point.norm_square(),classTensor,ac9829e8f74544262c6b0ec1f39429029}
+function.
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Run time parameters
+@snippet{lineno} examples/gyro-motion-f0/config.h Initial value
 
-We then declare the parameters in the @dealref{ParameterHandler},
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Declare parameters
+### Magnetic field {#magnetic-field-gyro-motion-f0}
 
-and parse them from the parameter file.
+The implementation of the magnetic field is straightforward. We assign
+$\mathbf{B} = B_0 \hat{\mathbf{e}}_z$ within the @ref
+sapphirepp::VFP::MagneticField "MagneticField" class:
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Parse parameters
+@snippet{lineno} examples/gyro-motion-f0/config.h Magnetic field
 
-Now we can create the @ref sapphirepp::VFP::VFPSolver "VFPSolver" and run the
-simulation.
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp VFP Solver
+### Velocity field {#velocity-gyro-motion-f0}
 
-After the simulation finished, we can compare the result with our expectation.
-Assuming the end time of the `Final time` of the simulation corresponds to
-multiple of the gyroperiod, we expect the particle distribution $f_0$ to return
-to its initial condition. But we only want to compare the $f_0$ component of the
-solution with the initial condition, and neglect higher order components. To
-this end mask the solution with the @dealref{ComponentSelectFunction}.
+In our VFP equation, we don't have a velocity field $\mathbf{u} (\mathbf{x})$.
+However, the @ref sapphirepp::VFP::VFPFlags::spatial_advection
+"VFPFlags::spatial_advection" flag activates the full $(\mathbf{u} + \mathbf{v})
+\cdot \nabla_x f$ term. Therefore, we need to explicitly set $\mathbf{u} =
+\mathbf{0}$. As demonstrated in the [quick start](#quick-start) example, we need
+to define the value, divergence, material derivative, and Jacobian of the
+velocity field.
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp L2 error
+1. Background velocity field value $\mathbf{u}(\mathbf{x})$:
 
-Finally, we end the `try-catch` block and terminate the program.
+   @snippet{lineno} examples/gyro-motion-f0/config.h Background velocity value
 
-@snippet{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp Try-Catch end
+2. Background velocity divergence $\nabla \cdot \mathbf{u}(\mathbf{x})$:
+
+   @snippet{lineno} examples/gyro-motion-f0/config.h Background velocity divergence
+
+3. Background velocity material derivative $\frac{\mathrm{D}
+   \mathbf{u}}{\mathrm{D} t}$:
+
+   @snippet{lineno} examples/gyro-motion-f0/config.h Background velocity material derivative
+
+4. Background velocity Jacobian $\frac{\partial u_{x}}{\partial x}$:
+
+   @snippet{lineno} examples/gyro-motion-f0/config.h Background velocity Jacobian
 
 
 ## Results {#results-gyro-motion-f0}
 
-@todo Add results section
+We execute the simulation with parameters set to $B_0 = 2\pi$, $\gamma = 2$,
+$l_{\rm max} = 3$, and $T_{\rm final} = 20$, which corresponds to ten gyro
+periods. The comprehensive parameter file is provided below. The resulting
+figures from the simulation are displayed as follows:
+
+![2D time series](https://sapphirepp.org/img/examples/gyro-motion-f0-2d.gif)
+
+The distribution function exhibits a pulsation with a period of $T_g$. If we
+reduce the expansion order to $l_{\rm max} = 1$, a deviation from the initial
+condition is observed, as anticipated. The subsequent figure illustrates the
+results for $l_{\rm max} = 1$.
+
+![2D time series l_max=1](https://sapphirepp.org/img/examples/gyro-motion-f0-2d-lmax1.gif)
 
 
-### Parameter file {#parameter-gyro-motion-f0}
+### Example parameter file {#example-parameter-gyro-motion-f0}
+
+The parameter file below can be used to run the simulation:
 
 @include{lineno} examples/gyro-motion-f0/parameter.prm
-
-
-## The plain program {#plain-gyro-motion-f0}
-
-
-### config.h {#plain-config-gyro-motion-f0}
-
-@include{lineno} examples/gyro-motion-f0/config.h
-
-
-### gyro-motion-f0.cpp {#plain-main-gyro-motion-f0}
-
-@include{lineno} examples/gyro-motion-f0/gyro-motion-f0.cpp
 
 
 <div class="section_buttons">
@@ -302,4 +221,4 @@ Finally, we end the `try-catch` block and terminate the program.
 ---
 
 @author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
-@date 2023-11-09
+@date 2023-12-21
