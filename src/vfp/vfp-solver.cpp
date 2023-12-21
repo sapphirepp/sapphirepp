@@ -62,10 +62,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <fstream>
 #include <numeric>
 #include <string>
 #include <vector>
-#include <fstream>
 
 #include "particle-functions.h"
 #include "sapphirepp-logstream.h"
