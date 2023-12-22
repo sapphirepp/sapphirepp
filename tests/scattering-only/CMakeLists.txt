@@ -13,7 +13,7 @@ target_include_directories(test-scattering-only-1d PUBLIC ${CONFIG_HEADER_DIR})
 target_link_libraries(test-scattering-only-1d UtilsLib)
 
 add_test(NAME scattering-only-1d-CN
-         COMMAND ./test-scattering-only-1d parameter-1d-CN.prm test_run 2e-2)
+         COMMAND ./test-scattering-only-1d parameter-1d-CN.prm test_run 1e-2)
 set_property(TEST scattering-only-1d-CN PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
@@ -21,7 +21,7 @@ set_property(TEST scattering-only-1d-CN PROPERTY
                     "full-suite-Release" "full-suite-Debug")
 
 add_test(NAME scattering-only-1d-ERK4
-         COMMAND ./test-scattering-only-1d parameter-1d-ERK4.prm test_run 2e-4)
+         COMMAND ./test-scattering-only-1d parameter-1d-ERK4.prm test_run 1e-4)
 set_property(TEST scattering-only-1d-ERK4 PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
@@ -30,14 +30,14 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY
                     "full-suite-Release" "full-suite-Debug")
 
 # add_test(NAME scattering-only-1d-LSERK
-#          COMMAND ./test-scattering-only-1d parameter-1d-LSERK.prm test_run 2e-4)
+#          COMMAND ./test-scattering-only-1d parameter-1d-LSERK.prm test_run 1e-4)
 # set_property(TEST scattering-only-1d-LSERK PROPERTY
 #              LABELS "scattering-only"
 #                     "1d" "scattering"
 #                     "LSERK" "periodic BC")
 
 add_test(NAME scattering-only-1d-FE
-         COMMAND ./test-scattering-only-1d parameter-1d-FE.prm test_run 3e-1)
+         COMMAND ./test-scattering-only-1d parameter-1d-FE.prm test_run 1e-1)
 set_property(TEST scattering-only-1d-FE PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
@@ -45,7 +45,7 @@ set_property(TEST scattering-only-1d-FE PROPERTY
                     "full-suite-Debug" "full-suite-Release")
 
 add_test(NAME scattering-only-1d-BE
-         COMMAND ./test-scattering-only-1d parameter-1d-BE.prm test_run 3e-1)
+         COMMAND ./test-scattering-only-1d parameter-1d-BE.prm test_run 1e-1)
 set_property(TEST scattering-only-1d-BE PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
@@ -61,7 +61,7 @@ target_include_directories(test-scattering-only-2d PUBLIC ${CONFIG_HEADER_DIR})
 target_link_libraries(test-scattering-only-2d UtilsLib)
 
 add_test(NAME scattering-only-2d
-         COMMAND ./test-scattering-only-2d parameter-2d-ERK4.prm 3e-4)
+         COMMAND ./test-scattering-only-2d parameter-2d-ERK4.prm 1e-4)
 set_property(TEST scattering-only-2d PROPERTY
              LABELS "scattering-only"
                     "2d" "scattering"
@@ -77,7 +77,7 @@ target_include_directories(test-scattering-only-3d PUBLIC ${CONFIG_HEADER_DIR})
 target_link_libraries(test-scattering-only-3d UtilsLib)
 
 add_test(NAME scattering-only-3d
-         COMMAND ./test-scattering-only-3d parameter-3d-ERK4.prm 4e-4)
+         COMMAND ./test-scattering-only-3d parameter-3d-ERK4.prm 1e-4)
 set_property(TEST scattering-only-3d PROPERTY
              LABELS "scattering-only"
                     "3d" "scattering"

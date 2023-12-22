@@ -26,16 +26,65 @@
  */
 
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/parameter_handler.h>
 
 #include <mpi.h>
 
 #include "config.h"
 #include "output-parameters.h"
+#include "sapphirepp-logstream.h"
+#include "vfp-parameters.h"
 #include "vfp-solver.h"
 
+const unsigned int dim = 2;
 
-const unsigned int dim = 3;
 
+namespace sapinternal
+{
+  namespace AnalyticSolutionImplementation
+  {
+    using namespace sapphirepp;
+    /** [AnalyticSolution namespace] */
+
+    /** [AnalyticSolution constructor] */
+    template <unsigned int dim>
+    class AnalyticSolution : public dealii::Function<dim>
+    {
+    public:
+      AnalyticSolution(const PhysicalParameters &physical_parameters,
+                       const unsigned int        exp_order,
+                       const double              time)
+        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1), time)
+        , prm{physical_parameters}
+        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+      {}
+
+
+
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
+      {
+        AssertDimension(f.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        for (unsigned int i = 0; i < f.size(); ++i)
+          {
+            const unsigned int l = lms_indices[i][0];
+            const double       t = this->get_time();
+
+            f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+  } // namespace AnalyticSolutionImplementation
+} // namespace sapinternal
 
 
 int
@@ -86,23 +135,28 @@ main(int argc, char *argv[])
       vfp_solver.run();
       timer.stop();
 
-      InitialValueFunction<dim> analytic_solution(
-        physical_parameters, vfp_parameters.expansion_order);
-      analytic_solution.set_time(vfp_parameters.final_time);
+      using namespace sapinternal::AnalyticSolutionImplementation;
+      AnalyticSolution<dim> analytic_solution(physical_parameters,
+                                              vfp_parameters.expansion_order,
+                                              vfp_parameters.final_time);
 
       const double L2_error =
         vfp_solver.compute_global_error(analytic_solution,
-                                        VectorTools::L2_norm,
-                                        VectorTools::L2_norm);
+                                        dealii::VectorTools::L2_norm,
+                                        dealii::VectorTools::L2_norm);
+      const double L2_norm =
+        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                         dealii::VectorTools::L2_norm);
 
-      saplog << "L2_error = " << L2_error
+      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+             << ", rel error = " << L2_error / L2_norm
              << ", CPU/wall time = " << timer.cpu_time() << "/"
              << timer.wall_time() << " s" << std::endl;
 
-      AssertThrow(L2_error < max_L2_error,
+      AssertThrow(L2_error / L2_norm < max_L2_error,
                   dealii::ExcMessage(
                     "L2 error is too large! (" +
-                    dealii::Utilities::to_string(L2_error) + " > " +
+                    dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
                     dealii::Utilities::to_string(max_L2_error) + ")"));
     }
   catch (std::exception &exc)
