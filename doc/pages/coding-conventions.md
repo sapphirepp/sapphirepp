@@ -2,13 +2,13 @@
 
 @tableofcontents
 
-Throughout Sapphire++, we strive to keep our programming style and the kind of
+Throughout @sapphire, we strive to keep our programming style and the kind of
 interfaces we provide as consistent as possible. To this end, we have adopted a
 set of coding conventions that we attempt to follow wherever possible. They have
 two parts: style issues, and something we call "defensive programming", the
 latter being an attempt to let our code help us find bugs. When reading through
 them, it is important to remember that styles are not god given or better than
-any other set of conventions; their purpose is merely to keep Sapphire++ as
+any other set of conventions; their purpose is merely to keep @sapphire as
 uniform as possible. Uniformity reduces the number of bugs we produce because we
 can, for example, always assume that input arguments come before output
 arguments of a function call. They also simplify reading code because some
@@ -33,7 +33,8 @@ formatting in your IDE.
 ## Style issues {#coding-conventions-style}
 
 1. Traditional logical operators should be used instead of their English
-   equivalents (i.e., use &&, ||, and ! instead of and, or, and not).
+   equivalents (i.e., use `&&`, `||`, and `!` instead of `and`, `or`, and
+   `not`).
 
 2. In the implementation files, after each function, three empty lines are
    expected to enable better readability. One empty line occurs in functions to
@@ -107,45 +108,45 @@ formatting in your IDE.
    sapphirepp::VFP::VFPParameters "VFPParameters".
 
 10. If a function has both input and output parameters, usually the input
-    parameters shall precede the output parameters, unless there are good
-    reasons to change this order. (The most common reason is trailing input
-    parameters with default values.)
+   parameters shall precede the output parameters, unless there are good
+   reasons to change this order. (The most common reason is trailing input
+   parameters with default values.)
 
 11. Exceptions are used for internal parameter checking and for consistency
-    checks through the @dealii `Assert` macro. Exception handling like done by
-    the C++ language (`try/throw/catch`, and using the `AssertThrow` macro) are
-    used to handle run time errors (like I/O failures) which must be on in any
-    case, not only in debug mode.
+   checks through the @dealii `Assert` macro. Exception handling like done by
+   the C++ language (`try/throw/catch`, and using the `AssertThrow` macro) are
+   used to handle run time errors (like I/O failures) which must be on in any
+   case, not only in debug mode.
 
 12. Sometimes it makes sense to implement a class by using several non-member
-    functions that are not part of the public interface and are only meant to be
-    called in the current source file. Such free functions should be put in an
-    internal namespace `sapinternal` structured in the following way:
+   functions that are not part of the public interface and are only meant to be
+   called in the current source file. Such free functions should be put in an
+   internal namespace `sapinternal` structured in the following way:
 
-    ```cpp
-    namespace sapinternal
-    {
-      namespace ClassNameImplementation
-      {
-        // free functions go here
-      }
-    }
-    ```
+   ```cpp
+   namespace sapinternal
+   {
+     namespace ClassNameImplementation
+     {
+       // free functions go here
+     }
+   }
+   ```
 
-    where `ClassName` is the name of the calling class.
+  where `ClassName` is the name of the calling class.
 
 13. Classes, namespaces and types generally are named using uppercase letters to
-    denote word beginnings (e.g. `OutputParameters`) — sometimes called
-    *[camel case](https://en.wikipedia.org/wiki/Camel_case)* — while functions
-    and variables use lowercase letters and underscores to separate words.
+   denote word beginnings (e.g. `OutputParameters`) — sometimes called
+   *[camel case](https://en.wikipedia.org/wiki/Camel_case)* — while functions
+   and variables use lowercase letters and underscores to separate words.
 
 14. We may use forward declarations in header files to, hopefully, improve
-    compilation speeds by not using headers when we just need to mark a certain
-    type as an argument to a function. The convention is that, if all we need is
-    a type name, then the type may be forward declared in the header where we
-    need it; if a function (or member function) can return a value then a
-    declaration of that value's type should be available (by including the
-    necessary header).
+   compilation speeds by not using headers when we just need to mark a certain
+   type as an argument to a function. The convention is that, if all we need is
+   a type name, then the type may be forward declared in the header where we
+   need it; if a function (or member function) can return a value then a
+   declaration of that value's type should be available (by including the
+   necessary header).
 
 
 ## Instantiation of templated functions/classes {#coding-conventions-templates}
@@ -415,24 +416,22 @@ list here:
    constant. For example, the following function should take its argument as a
    constant value:
 
-   @todo Find better example, maybe `PDESystem::create_lms_matrix`?
-
     ```cpp
-    template <unsigned int dim>
-    typename Triangulation<dim>::cell_iterator
-    CellAccessor<dim>::child(const unsigned int child_no)
+    std::vector<std::array<unsigned int, 3>>
+    sapphirepp::VFP::PDESystem::create_lms_indices(
+      const unsigned int expansion_order)
     {
       ...
-      return something;
+      return lms_indices;
     }
     ```
 
-    Here, the user calls `cell->child(3)`, for example. There really is no
-    reason why the function would ever want to change the value of the
-    `child_no` argument — so mark it as constant: this both helps the reader of
-    the code understand that this is an input argument of the function for which
-    we need not search below whether it is ever changed, and it helps the
-    compiler help us find bugs if we ever accidentally change the value.
+    Here, the user calls `PDESystem::create_lms_indices(3)`, for example. There
+    really is no reason why the function would ever want to change the value of
+    the `expansion_order` argument — so mark it as constant: this both helps the
+    reader of the code understand that this is an input argument of the function
+    for which we need not search below whether it is ever changed, and it helps
+    the compiler help us find bugs if we ever accidentally change the value.
 
 
 ## Documentation style {#coding-conventions-documentation}
