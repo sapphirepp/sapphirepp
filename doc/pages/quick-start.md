@@ -14,9 +14,9 @@ implementation and advanced features of sapphire we refer to the
 
 Let's get started by considering the following setup: We have a plain shock that
 the particles will cross, to gain energy by the first order Fermi mechanism
-(@todo cite). We will prescribe the background plasma in the shock frame,
-resulting in a stationary velocity field $\mathbf{u}(\mathbf{x})$ with the shock
-of compression ratio $r$ at $0$:
+@cite Drury1983 @cite Kirk1994 @cite Schween2024. We will prescribe the
+background plasma in the shock frame, resulting in a stationary velocity field
+$\mathbf{u}(\mathbf{x})$ with the shock of compression ratio $r$ at $0$:
 
 \begin{align}
   \mathbf{u}(\mathbf{x}) = u_1 \hat{\mathbf{e}}_x \text{, for } x < 0 \\
@@ -37,7 +37,8 @@ Here, $f(\mathbf{x}, \mathbf{p})$ is the distribution function of the highly
 energetic particles with momentum $\mathbf{p} = \gamma m \mathbf{v}$.
 $\frac{\mathrm{D}}{\mathrm{D} t} = \frac{\partial}{\partial t} + \mathbf{u}
 \cdot \frac{\partial}{\partial \mathbf{x}}$ denotes the material derivative,
-$\nu(p)$ and $S(\mathbf{x}, \mathbf{p})$ the scattering frequency and source respectively.
+$\nu(p)$ and $S(\mathbf{x}, \mathbf{p})$ the scattering frequency and source
+respectively.
 
 @sapphire efficiently solves this equation by exploiting that the distribution
 function $f$ is in many physical environments almost isotropic. It, thus,

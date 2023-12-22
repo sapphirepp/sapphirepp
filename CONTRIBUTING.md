@@ -3,25 +3,28 @@
 Sapphire++ aims to become a community project with use cases and members from a
 wide range of research fields. It is our goal to build an inclusive and
 participatory community, so we are happy that you are interested in
-participating. To this end, we have adopted a
-[code of conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct.html)
-that we expect all participants to adhere to.
+participating. To this end, we have adopted a [code of
+conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct-page.html)
+that we expect all participants to adhere to.×
 
 
 ## Getting started with git and GitHub
 
 If you are new to using git or the GitHub platform you may find it helpful to
-review some resources available on the web.
-
-@todo Add our favourite git and GitHub intros here. Maybe also link
- [lecture 32.8](http://www.math.colostate.edu/~bangerth/videos.676.32.8.html).
+review some resources available on the web. For example, the [Pro Git
+Book](https://git-scm.com/book/en/v2) by Scott Chacon and Ben Straub or the
+[deal.II video lectures](https://www.math.colostate.edu/~bangerth/videos.html)
+[32.8](http://www.math.colostate.edu/~bangerth/videos.676.32.8.html) and
+[32.75](https://www.math.colostate.edu/~bangerth/videos.676.32.75.html) by
+Wolfgang Bangerth.
 
 
 ## Getting help
 
 There is a Sapphire++ mailing list to get in contact with the developers and our
-community. It is the perfect place for questions and discussions about the
-library on all levels. Feel free to
+community, [users@sapphirepp.org](mailto:users@sapphirepp.org). It is the
+perfect place for questions and discussions about the library on all levels.
+Feel free to
 [subscribe](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a).
 
 The mailing list is a public forum, which can be accessed under
@@ -40,8 +43,8 @@ provides, to hide sensible and irrelevant information. For example, your email
 address will be disguised.
 
 Please do not post any confidential information (e.g. email addresses of others)
-and follow our
-[code of conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct.html).
+and follow our [code of
+conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct-page.html).
 
 To unsubscribe follow this
 [link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
