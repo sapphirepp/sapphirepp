@@ -228,6 +228,7 @@ function install_deal_ii {
         "-DDEAL_II_WITH_MPI=ON"
         "-DDEAL_II_WITH_HDF5=ON"
         "-DDEAL_II_WITH_PETSC=ON"
+        "-DDEAL_II_WITH_ASSIMP=ON"
         "-DPETSC_DIR=$PETSC_DIR"
         "-DPETSC_ARCH=$PETSC_ARCH"
         "-DDEAL_II_WITH_P4EST=ON"
