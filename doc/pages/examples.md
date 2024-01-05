@@ -16,8 +16,8 @@
 
 <div class="section_buttons">
 
-| Previous                    |                                              Next |
-|:----------------------------|--------------------------------------------------:|
-| [Quick-start](#quick-start) | [Contributing](#md_doc_2pages_2contributing-page) |
+| Previous                    |                          Next |
+|:----------------------------|------------------------------:|
+| [Quick-start](#quick-start) | [Contributing](#contributing) |
 
 </div>

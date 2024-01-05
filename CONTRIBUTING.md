@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to Sapphire++
 
 Sapphire++ aims to become a community project with use cases and members from a
 wide range of research fields. It is our goal to build an inclusive and
@@ -44,7 +44,7 @@ address will be disguised.
 
 Please do not post any confidential information (e.g. email addresses of others)
 and follow our [code of
-conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct-page.html).
+conduct](https://sapphirepp.org/latest/code-of-conduct.html).
 
 To unsubscribe follow this
 [link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)

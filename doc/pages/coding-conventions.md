@@ -532,8 +532,8 @@ the right shape. We are happy to help you to get started!
 
 <div class="section_buttons">
 
-| Previous                                                |                                  Next |
-|:--------------------------------------------------------|--------------------------------------:|
-| [Code of Conduct](#md_doc_2pages_2code-of-conduct-page) | [Acknowledgements](#acknowledgements) |
+| Previous                            |                                  Next |
+|:------------------------------------|--------------------------------------:|
+| [Code of Conduct](#code-of-conduct) | [Acknowledgements](#acknowledgements) |
 
 </div>
