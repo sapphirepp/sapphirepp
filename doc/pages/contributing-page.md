@@ -1,4 +1,4 @@
-<!-- The add-contributions-md.sh script adds the CONTRIBUTING.md file here -->
+@include{doc} CONTRIBUTING.md
 
 @tableofcontents
 

@@ -1152,9 +1152,7 @@ INPUT_FILTER           =
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
 
-FILTER_PATTERNS        = */doc/pages/contributing-page.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CONTRIBUTING.md" \
-                         */doc/pages/code-of-conduct-page.md="@PROJECT_SOURCE_DIR@/doc/filters/add-contributing-md.sh @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md" \
-		                 *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
+FILTER_PATTERNS        = *.md="perl -0777 -p @PROJECT_SOURCE_DIR@/doc/filters/markdown-math-filter.pl"
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using
 # INPUT_FILTER) will also be used to filter the input files that are used for
