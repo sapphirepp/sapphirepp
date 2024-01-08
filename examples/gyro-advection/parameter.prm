@@ -1,0 +1,44 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = hdf5
+  set Number of digits for counter = 5
+  set Output frequency             = 20
+end
+subsection Physical parameters
+  set B0/2pi = 1.
+  set sigma  = 1.5
+  # set u0     = 0.0
+  set u0     = 0.1
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 3
+  end
+  subsection Finite element
+    set Polynomial degree = 3
+  end
+  subsection Mesh
+    set Grid type             = Hypercube
+    set Number of cells       = 64, 64
+    set Point 1               = -10., -10.
+    set Point 2               = 10., 10.
+    subsection Boundary conditions
+      set lower x = periodic
+      set lower y = periodic
+      set upper x = periodic
+      set upper y = periodic
+    end
+  end
+  subsection Particle properties
+    set Charge = 1.
+    set Mass   = 1.
+  end
+  subsection Time stepping
+    set Final time     = 200.
+    set Method         = ERK4
+    set Time step size = 0.02
+  end
+  subsection TransportOnly
+    set Gamma = 2.
+  end
+end
