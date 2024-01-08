@@ -47,8 +47,10 @@ if(SAPPHIREPP)
     "However, the detected deal.II configuration found at ${DEAL_II_PATH} is:
      DEAL_II_WITH_PETSC = ${DEAL_II_WITH_PETSC}
      DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}
-     DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}")
+     DEAL_II_WITH_ASSIMP = ${DEAL_II_WITH_ASSIMP}")
   ENDIF()
+
+  MESSAGE(STATUS "Preparing Sapphire++")
 
   deal_ii_initialize_cached_variables()
   file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
@@ -59,6 +61,7 @@ if(SAPPHIREPP)
   add_subdirectory(src/utils)
 
   if(VFP)
+    MESSAGE(STATUS "Preparing VFP module")
     # VFP source files have to be compiled together with the main/config file
     file(GLOB VFP_SOURCES src/vfp/*.cpp)
 
@@ -72,11 +75,13 @@ if(SAPPHIREPP)
   endif(VFP)
 
   if(EXAMPLES)
+    MESSAGE(STATUS "Preparing Examples")
     add_subdirectory(examples)
   endif(EXAMPLES)
 
   if(TESTS)
     include(CTest)
+    MESSAGE(STATUS "Preparing Tests")
     add_subdirectory(tests)
   endif(TESTS)
 endif(SAPPHIREPP)
@@ -85,24 +90,25 @@ endif(SAPPHIREPP)
 if(DOC)
   find_package(Doxygen ${DOXYGEN_MIN_VERSION})
   if(DOXYGEN_FOUND)
-      # An empty string implies the usage of a Content Delivery Network (CDN)
-      # for Mathjax. Doxygen defaults to https://cdn.jsdelivr.net/npm/mathjax@3
-      set(MATHJAX_PATH "" CACHE STRING "MathJax path")
+    MESSAGE(STATUS "Preparing Documentation")
+    # An empty string implies the usage of a Content Delivery Network (CDN)
+    # for Mathjax. Doxygen defaults to https://cdn.jsdelivr.net/npm/mathjax@3
+    set(MATHJAX_PATH "" CACHE STRING "MathJax path")
 
-      # Configuration file for Doxygen
-      set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/doc/Doxyfile.in)
-      set(DOXYGEN_OUT ${PROJECT_BINARY_DIR}/doc/Doxyfile)
+    # Configuration file for Doxygen
+    set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/doc/Doxyfile.in)
+    set(DOXYGEN_OUT ${PROJECT_BINARY_DIR}/doc/Doxyfile)
 
-      # Generate the Doxyfile from the template
-      configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    # Generate the Doxyfile from the template
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
-      # Add custom target for Doxygen documentation
-      add_custom_target(doc
-          COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMENT "Generating Doxygen documentation"
-          VERBATIM
-      )
+    # Add custom target for Doxygen documentation
+    add_custom_target(doc
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Generating Doxygen documentation"
+        VERBATIM
+    )
 
     set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
     "${CMAKE_CURRENT_BINARY_DIR}/doc/latest"
