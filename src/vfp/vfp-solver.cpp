@@ -522,11 +522,14 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
   dof_handler.distribute_dofs(fe);
 
   const unsigned int n_dofs = dof_handler.n_dofs();
-  saplog << "The degrees of freedom were distributed:"
-         << "	n_dofs=" << n_dofs << std::endl;
-
-  locally_owned_dofs    = dof_handler.locally_owned_dofs();
+  locally_owned_dofs        = dof_handler.locally_owned_dofs();
   locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
+
+  saplog << "The degrees of freedom were distributed:"
+         << "	n_dofs=" << n_dofs
+         << ", locally_owned_dofs=" << locally_owned_dofs.n_elements()
+         << ", locally_relevant_dofs=" << locally_relevant_dofs.n_elements()
+         << std::endl;
 
   // constraints.clear();
   // DoFTools::make_periodicity_constraints(matched_pairs, constraints);
@@ -551,6 +554,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                                              locally_owned_dofs,
                                              mpi_communicator,
                                              locally_relevant_dofs);
+  saplog << "Number of local nonzero matrix elements: "
+         << dsp.n_nonzero_elements() << std::endl;
   // PERIODIC
   // DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints,
   // false);
