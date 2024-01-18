@@ -495,12 +495,14 @@ namespace sapphirepp
        * @brief Output the results
        *
        * @param time_step_number time step number
+       * @param cur_time Simulation time
        *
        * @note This function should be a const member, but HDF5 output requires
        *       non-const
        */
       void
-      output_results(const unsigned int time_step_number);
+      output_results(const unsigned int time_step_number,
+                     const double       cur_time);
     };
 
   } // namespace VFP

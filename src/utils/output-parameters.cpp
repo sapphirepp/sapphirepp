@@ -147,35 +147,37 @@ template <unsigned int dim>
 void
 sapphirepp::Utils::OutputParameters::write_results(
   DataOut<dim>      &data_out,
-  const unsigned int time_step_number)
+  const unsigned int time_step_number,
+  const double       cur_time,
+  const std::string &filename)
 {
-  if (time_step_number % output_frequency != 0)
-    return;
-
   LogStream::Prefix p("OutputParameters", saplog);
   saplog << "Writing results at time_step " << time_step_number << std::endl;
-  const unsigned int counter = time_step_number / output_frequency;
+
+  const std::string tmp_base_file_name =
+    filename.empty() ? base_file_name : filename;
 
   switch (format)
     {
       case OutputFormat::vtu:
         {
-          DataOutBase::VtkFlags vtk_flags;
-          vtk_flags.compression_level =
-            DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
+          DataOutBase::VtkFlags vtk_flags(cur_time, time_step_number);
           data_out.set_flags(vtk_flags);
           const std::string filename_vtk =
-            base_file_name + "_" +
-            Utilities::int_to_string(counter, n_digits_for_counter) + ".vtu";
+            tmp_base_file_name + "_" +
+            Utilities::int_to_string(time_step_number, n_digits_for_counter) +
+            ".vtu";
           data_out.write_vtu_in_parallel(output_path / filename_vtk,
                                          mpi_communicator);
           break;
         }
       case OutputFormat::pvtu:
         {
+          DataOutBase::VtkFlags vtk_flags(cur_time, time_step_number);
+          data_out.set_flags(vtk_flags);
           data_out.write_vtu_with_pvtu_record(output_path / "",
-                                              base_file_name,
-                                              counter,
+                                              tmp_base_file_name,
+                                              time_step_number,
                                               mpi_communicator,
                                               n_digits_for_counter);
           break;
@@ -190,10 +192,11 @@ sapphirepp::Utils::OutputParameters::write_results(
           // I follow this pull request:
           // https://github.com/dealii/dealii/pull/14958
           const std::string filename_h5 =
-            base_file_name +
-            Utilities::int_to_string(counter, n_digits_for_counter) + ".h5";
+            tmp_base_file_name +
+            Utilities::int_to_string(time_step_number, n_digits_for_counter) +
+            ".h5";
           const std::string filename_mesh = "mesh.h5";
-          const std::string xdmf_file     = base_file_name + ".xdmf";
+          const std::string xdmf_file     = tmp_base_file_name + ".xdmf";
           // https://dealii.org/developer/doxygen/deal.II/structDataOutBase_1_1DataOutFilterFlags.html
           // Whether or not to filter out duplicate vertices and associated
           // values. Setting this value to true will drastically reduce the
@@ -218,7 +221,7 @@ sapphirepp::Utils::OutputParameters::write_results(
           // hdf5Flags.compression_level =
           // dealii::DataOutBase::CompressionLevel::best_compression;
           // dataOut.set_flags(dealii::DataOutBase::Hdf5Flags(hdf5Flags));
-          const bool write_mesh_hdf5 = counter == 0 ? true : false;
+          const bool write_mesh_hdf5 = time_step_number == 0 ? true : false;
 
           data_out.write_hdf5_parallel(data_filter,
                                        write_mesh_hdf5,
@@ -229,11 +232,12 @@ sapphirepp::Utils::OutputParameters::write_results(
           XDMFEntry new_xdmf_entry = data_out.create_xdmf_entry(
             data_filter,
             filename_mesh,
-            base_file_name +
-              Utilities::int_to_string(counter, n_digits_for_counter) + ".h5",
-            counter,
+            tmp_base_file_name +
+              Utilities::int_to_string(time_step_number, n_digits_for_counter) +
+              ".h5",
+            cur_time,
             mpi_communicator);
-          /** @todo Change this, append lines to xdmf file instead */
+          /** @todo Append lines to xdmf file instead of rewriting the file */
           xdmf_entries.push_back(new_xdmf_entry);
           // NOTE: For now I a writing the xdmf file in every time step.
           // That is unnecessary. There is missing a function add entry to
@@ -251,13 +255,19 @@ sapphirepp::Utils::OutputParameters::write_results(
 // Explicit instantiation
 template void
 sapphirepp::Utils::OutputParameters::write_results<1>(DataOut<1> &,
-                                                      const unsigned int);
+                                                      const unsigned int,
+                                                      const double,
+                                                      const std::string &);
 template void
 sapphirepp::Utils::OutputParameters::write_results<2>(DataOut<2> &,
-                                                      const unsigned int);
+                                                      const unsigned int,
+                                                      const double,
+                                                      const std::string &);
 template void
 sapphirepp::Utils::OutputParameters::write_results<3>(DataOut<3> &,
-                                                      const unsigned int);
+                                                      const unsigned int,
+                                                      const double,
+                                                      const std::string &);
 
 
 

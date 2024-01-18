@@ -107,13 +107,17 @@ namespace sapphirepp
        *        It must already contain all the data that should be written.
        *        This function only handles the last step of writing to the file.
        * @param time_step_number Number of the time step
+       * @param cur_time Simulation time associated with this time step
+       * @param filename Overwrite for the @ref base_file_name
        * @note This function should be a const member. The problem is, that in
        *       case of HDF5 output, the xdmf_entries are changed.
        */
       template <unsigned int dim>
       void
       write_results(DataOut<dim>      &data_out,
-                    const unsigned int time_step_number);
+                    const unsigned int time_step_number = 0,
+                    const double cur_time = std::numeric_limits<double>::min(),
+                    const std::string &filename = "");
 
       /**
        * @brief Write a grid to a file in ucd format

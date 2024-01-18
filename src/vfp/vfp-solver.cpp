@@ -288,7 +288,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     locally_relevant_current_solution = initial_condition;
     // Output t = 0
     std::vector<XDMFEntry> xdmf_entries;
-    output_results(0);
+    output_results(0, 0.);
 
     // Assemble the dg matrix for t = 0
     assemble_dg_matrix(0);
@@ -332,7 +332,8 @@ sapphirepp::VFP::VFPSolver<dim>::run()
             AssertThrow(false, ExcNotImplemented());
         }
 
-      output_results(discrete_time.get_step_number() + 1);
+      output_results(discrete_time.get_step_number() + 1,
+                     discrete_time.get_next_time());
     }
   saplog << "Simulation ended at t = " << discrete_time.get_current_time()
          << " \t[" << Utilities::System::get_time() << "]" << std::endl;
@@ -1839,7 +1840,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
 template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::output_results(
-  const unsigned int time_step_number)
+  const unsigned int time_step_number,
+  const double       cur_time)
 {
   if (time_step_number % output_parameters.output_frequency != 0)
     return;
@@ -1850,12 +1852,10 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // Create a vector of strings with names for the components of the
   // solution
   std::vector<std::string> component_names(num_exp_coefficients);
-  const std::vector<std::array<unsigned int, 3>> &lms_indices =
-    pde_system.lms_indices;
 
   for (unsigned int i = 0; i < num_exp_coefficients; ++i)
     {
-      const std::array<unsigned int, 3> &lms = lms_indices[i];
+      const std::array<unsigned int, 3> &lms = pde_system.lms_indices[i];
       component_names[i]                     = "f_" + std::to_string(lms[0]) +
                            std::to_string(lms[1]) + std::to_string(lms[2]);
     }
@@ -1870,7 +1870,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);
-  output_parameters.write_results<dim>(data_out, time_step_number);
+  output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 }
 
 
