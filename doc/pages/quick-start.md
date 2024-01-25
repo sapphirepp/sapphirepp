@@ -307,9 +307,9 @@ parameters, among other topics.
 
 <div class="section_buttons">
 
-| Previous       |                  Next |
-|:---------------|----------------------:|
-| [Home](#index) | [Examples](#examples) |
+| Previous       |                            Next |
+|:---------------|--------------------------------:|
+| [Home](#index) | [Visualization](#visualization) |
 
 </div>
 

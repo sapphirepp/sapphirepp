@@ -953,6 +953,7 @@ WARN_LOGFILE           =
 
 INPUT                  = @PROJECT_SOURCE_DIR@/doc/pages/mainpage.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/quick-start.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/visualization.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/examples.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/contributing-page.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/acknowledgements-page.md \
