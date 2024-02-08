@@ -161,6 +161,20 @@ namespace sapphirepp
 
       /** @{ */
       /**
+       * @brief Project a function onto the finite element space
+       *
+       * Note that this function can only be called **after** the setup in
+       * @ref run().
+       *
+       * @param f Function to project
+       * @param projected_function Vector returning the projected functions
+       */
+      void
+      project(const Function<dim>        &f,
+              PETScWrappers::MPI::Vector &projected_function) const;
+
+
+      /**
        * @brief Compute the total global error of the solution with respect to
        *        the exact solution
        *
@@ -418,16 +432,6 @@ namespace sapphirepp
        */
       void
       assemble_mass_matrix();
-
-      /**
-       * @brief Project a function onto the finite element space
-       *
-       * @param f Function to project
-       * @param projected_function Vector returning the projected functions
-       */
-      void
-      project(const Function<dim>        &f,
-              PETScWrappers::MPI::Vector &projected_function);
       /** @} */
 
 

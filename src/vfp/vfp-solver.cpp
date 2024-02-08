@@ -277,15 +277,18 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     setup_system();
     assemble_mass_matrix();
 
-    // Project the initial values
-    InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
-                                                        expansion_order);
-    PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
-                                                 mpi_communicator);
-    project(initial_value_function, initial_condition);
-    // Here a non ghosted vector, is copied into a ghosted vector. I think
-    // that is the moment where the ghost cells are filled.
-    locally_relevant_current_solution = initial_condition;
+    {
+      TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
+      InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
+                                                          expansion_order);
+      PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
+                                                   mpi_communicator);
+      project(initial_value_function, initial_condition);
+      // Here a non ghosted vector, is copied into a ghosted vector. I think
+      // that is the moment where the ghost cells are filled.
+      locally_relevant_current_solution = initial_condition;
+    }
+
     // Output t = 0
     std::vector<XDMFEntry> xdmf_entries;
     output_results(0, 0.);
@@ -647,9 +650,8 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::project(
   const Function<dim>        &f,
-  PETScWrappers::MPI::Vector &projected_function)
+  PETScWrappers::MPI::Vector &projected_function) const
 {
-  TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
   saplog << "Project a function onto the finite element space" << std::endl;
   LogStream::Prefix p("project", saplog);
   // Create right hand side
