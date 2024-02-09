@@ -169,6 +169,61 @@ namespace sapphirepp
       /** @} */
 
 
+
+      /**
+       * @name Time stepping methods
+       * @{
+       */
+      /**
+       * @brief Calculate one time step with the theta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       */
+      void
+      theta_method(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the fourth order explicit
+       *        Runge-Kutta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       */
+      void
+      explicit_runge_kutta(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the low-storage explicit
+       *        Runge-Kutta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       *
+       * @todo The method is not forth order yet
+       */
+      void
+      low_storage_explicit_runge_kutta(const double time,
+                                       const double time_step);
+      /** @} */
+
+
+
+      /**
+       * @brief Output the results
+       *
+       * @param time_step_number time step number
+       * @param cur_time Simulation time
+       *
+       * @note This function should be a const member, but HDF5 output requires
+       *       non-const
+       */
+      void
+      output_results(const unsigned int time_step_number,
+                     const double       cur_time);
+
+
+
       /** @{ */
       /**
        * @brief Project a function onto the finite element space
@@ -467,56 +522,6 @@ namespace sapphirepp
       void
       compute_source_term(const Function<dim> &source_function);
       /** @} */
-
-
-
-      /** @{ */
-      /**
-       * @brief Calculate one time step with the theta method
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       */
-      void
-      theta_method(const double time, const double time_step);
-
-      /**
-       * @brief Calculate one time step with the fourth order explicit
-       *        Runge-Kutta method
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       */
-      void
-      explicit_runge_kutta(const double time, const double time_step);
-
-      /**
-       * @brief Calculate one time step with the low-storage explicit
-       *        Runge-Kutta method
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       *
-       * @todo The method is not forth order yet
-       */
-      void
-      low_storage_explicit_runge_kutta(const double time,
-                                       const double time_step);
-      /** @} */
-
-
-      /**
-       * @brief Output the results
-       *
-       * @param time_step_number time step number
-       * @param cur_time Simulation time
-       *
-       * @note This function should be a const member, but HDF5 output requires
-       *       non-const
-       */
-      void
-      output_results(const unsigned int time_step_number,
-                     const double       cur_time);
     };
 
   } // namespace VFP
