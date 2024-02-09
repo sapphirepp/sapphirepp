@@ -264,45 +264,51 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::run()
+sapphirepp::VFP::VFPSolver<dim>::setup()
 {
   LogStream::Prefix p("VFP", saplog);
-  timer.reset();
-  saplog << "Run VFP equation solver. \t\t[" << Utilities::System::get_time()
+  saplog << "Setup VFP equation solver. \t\t[" << Utilities::System::get_time()
          << "]" << std::endl;
+  LogStream::Prefix p2("Setup", saplog);
+  timer.reset();
+  make_grid();
+  setup_system();
+  assemble_mass_matrix();
+
   {
-    TimerOutput::Scope timer_section(timer, "Setup");
-    LogStream::Prefix  p2("Setup", saplog);
-    make_grid();
-    setup_system();
-    assemble_mass_matrix();
-
-    {
-      TimerOutput::Scope timer_section(timer, "Project f onto the FEM space");
-      InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
-                                                          expansion_order);
-      PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
-                                                   mpi_communicator);
-      project(initial_value_function, initial_condition);
-      // Here a non ghosted vector, is copied into a ghosted vector. I think
-      // that is the moment where the ghost cells are filled.
-      locally_relevant_current_solution = initial_condition;
-    }
-
-    // Output t = 0
-    std::vector<XDMFEntry> xdmf_entries;
-    output_results(0, 0.);
-
-    // Assemble the dg matrix for t = 0
-    assemble_dg_matrix(0);
-    // Source term at t = 0;
-    if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
-      {
-        Source<dim_ps> source_function(physical_parameters, expansion_order);
-        source_function.set_time(0);
-        compute_source_term(source_function);
-      }
+    TimerOutput::Scope timer_section(timer, "Project initial condition");
+    InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
+                                                        expansion_order);
+    PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
+                                                 mpi_communicator);
+    project(initial_value_function, initial_condition);
+    // Here a non ghosted vector, is copied into a ghosted vector. I think
+    // that is the moment where the ghost cells are filled.
+    locally_relevant_current_solution = initial_condition;
   }
+
+  // Output t = 0
+  output_results(0, 0.);
+
+  // Assemble the dg matrix for t = 0
+  assemble_dg_matrix(0);
+  // Source term at t = 0;
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    {
+      Source<dim_ps> source_function(physical_parameters, expansion_order);
+      source_function.set_time(0);
+      compute_source_term(source_function);
+    }
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::run()
+{
+  setup();
+  LogStream::Prefix p("VFP", saplog);
 
   DiscreteTime discrete_time(0,
                              vfp_parameters.final_time,

@@ -148,6 +148,16 @@ namespace sapphirepp
 
 
 
+      /** @{ */
+      /**
+       * @brief Setup the VFP solver
+       *
+       * This methods must be called before any other function. It sets up the
+       * grid, the dof_handler, the linear system, and the inital conditions.
+       */
+      void
+      setup();
+
       /**
        * @brief Solve the VFP equation
        *
@@ -156,7 +166,7 @@ namespace sapphirepp
        */
       void
       run();
-
+      /** @} */
 
 
       /** @{ */
