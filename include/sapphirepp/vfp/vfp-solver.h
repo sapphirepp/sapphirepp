@@ -136,7 +136,7 @@ namespace sapphirepp
        * @brief Constructor
        *
        * Constructs the VFP solver with the given parameters. It does not setup
-       * the system yet. This is done in the @ref run() method.
+       * the system yet. This is done in the @ref setup() method.
        *
        * @param vfp_parameters Parameters for the VFP equation
        * @param physical_parameters User defined parameters of the problem
@@ -224,12 +224,15 @@ namespace sapphirepp
 
 
 
-      /** @{ */
+      /**
+       * @name Utility functions
+       * @{
+       */
       /**
        * @brief Project a function onto the finite element space
        *
        * Note that this function can only be called **after** the setup in
-       * @ref run().
+       * @ref setup().
        *
        * @param f Function to project
        * @param projected_function Vector returning the projected functions
@@ -258,7 +261,7 @@ namespace sapphirepp
        * where \f$ Y \f$ is the cell-wise norm, \f$ u \f$ denotes the exact
        * solution and \f$ u_h \f$ numerical approximation.
        *
-       * Note that this function can only be called **after** @ref run().
+       * Note that this function can only be called **after** @ref setup().
        *
        * For more details see
        * @dealref{VectorTools::integrate_difference,namespaceVectorTools,aec4da3324bbce54d7c12dd54c59dd915}
@@ -284,7 +287,7 @@ namespace sapphirepp
       /**
        * @brief Compute the (weighted) norm of the solution
        *
-       * Note that this function can only be called **after** @ref run().
+       * Note that this function can only be called **after** @ref setup().
        *
        * For more details see
        * @ref compute_global_error(),
@@ -308,7 +311,10 @@ namespace sapphirepp
 
 
 
-      /** @{ */
+      /**
+       * @name Accessors
+       * @{
+       */
       /**
        * @brief Get the triangulation object
        *

@@ -267,7 +267,7 @@ void
 sapphirepp::VFP::VFPSolver<dim>::setup()
 {
   LogStream::Prefix p("VFP", saplog);
-  saplog << "Setup VFP equation solver. \t\t[" << Utilities::System::get_time()
+  saplog << "Setup VFP equation solver. \t[" << Utilities::System::get_time()
          << "]" << std::endl;
   LogStream::Prefix p2("Setup", saplog);
   timer.reset();
@@ -315,7 +315,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
                              vfp_parameters.time_step);
   for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
     {
-      saplog << "Time step " << std::setw(4) << std::right
+      saplog << "Time step " << std::setw(6) << std::right
              << discrete_time.get_step_number()
              << " at t = " << discrete_time.get_current_time() << " \t["
              << Utilities::System::get_time() << "]" << std::endl;
