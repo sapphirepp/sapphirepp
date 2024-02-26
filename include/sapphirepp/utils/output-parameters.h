@@ -69,6 +69,8 @@ namespace sapphirepp
     public:
       /** Only put out every n-th step */
       unsigned int output_frequency;
+      /** Output folder = results_path + simulation_id */
+      std::filesystem::path output_path;
       /** Path to the results directory */
       std::filesystem::path results_path;
       /** Name of the simulation run, i.e. subfolder for the simulation */
@@ -147,8 +149,6 @@ namespace sapphirepp
       const MPI_Comm mpi_communicator;
       /** XDMF entries for the HDF5 record */
       std::vector<XDMFEntry> xdmf_entries;
-      /** Output folder = results_path + simulation_id */
-      std::filesystem::path output_path;
     };
 
   } // namespace Utils
