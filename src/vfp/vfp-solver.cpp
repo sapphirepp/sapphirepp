@@ -1897,12 +1897,16 @@ sapphirepp::VFP::VFPSolver<dim>::compute_global_error(
 
   Vector<float> cell_errors(triangulation.n_locally_owned_active_cells());
 
+  const QTrapezoid<1>  q_trapezoid;
+  const QIterated<dim> q_iterated(q_trapezoid,
+                                  vfp_parameters.polynomial_degree * 2 + 1);
+
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
                                     locally_relevant_current_solution,
                                     exact_solution,
                                     cell_errors,
-                                    quadrature,
+                                    q_iterated,
                                     cell_norm,
                                     weight);
 
@@ -1929,6 +1933,10 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
 
   Vector<float> cell_norms(triangulation.n_locally_owned_active_cells());
 
+  const QTrapezoid<1>  q_trapezoid;
+  const QIterated<dim> q_iterated(q_trapezoid,
+                                  vfp_parameters.polynomial_degree * 2 + 1);
+
   const Functions::ZeroFunction<dim_ps> zero_function(num_exp_coefficients);
 
   VectorTools::integrate_difference(mapping,
@@ -1936,7 +1944,7 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
                                     locally_relevant_current_solution,
                                     zero_function,
                                     cell_norms,
-                                    quadrature,
+                                    q_iterated,
                                     cell_norm,
                                     weight);
 
