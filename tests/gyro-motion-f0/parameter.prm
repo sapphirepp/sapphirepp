@@ -30,7 +30,7 @@ subsection VFP
   end
   subsection Time stepping
     set Final time     = 2.
-    set Method         = Crank-Nicolson
+    set Method         = CN
     set Time step size = 0.1
   end
   subsection Particle properties

@@ -141,12 +141,10 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.enter_subsection("Time stepping");
   {
     prm.declare_entry("Method",
-                      "Crank-Nicolson",
+                      "CN",
                       /** @todo "LSERK" is not working, so we exclude it */
-                      // Patterns::Selection("Forward Euler|Backward Euler|"
-                      //                     "Crank-Nicolson|ERK4|LSERK"),
-                      Patterns::Selection("Forward Euler|Backward Euler|"
-                                          "Crank-Nicolson|ERK4"),
+                      // Patterns::Selection("FE|BE|CN|ERK4|LSERK"),
+                      Patterns::Selection("FE|BE|CN|ERK4"),
                       "The time stepping method.");
     prm.declare_entry("Time step size",
                       "1.0",
@@ -347,17 +345,17 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   prm.enter_subsection("Time stepping");
   {
     s = prm.get("Method");
-    if (s == "Forward Euler")
+    if (s == "FE")
       {
         theta                = 0.;
         time_stepping_method = TimeSteppingMethod::forward_euler;
       }
-    else if (s == "Backward Euler")
+    else if (s == "BE")
       {
         theta                = 1.;
         time_stepping_method = TimeSteppingMethod::backward_euler;
       }
-    else if (s == "Crank-Nicolson")
+    else if (s == "CN")
       {
         theta                = 0.5;
         time_stepping_method = TimeSteppingMethod::crank_nicolson;

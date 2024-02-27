@@ -109,7 +109,7 @@ subsection VFP
     set Final time     = 200
 
     # The time stepping method.
-    set Method         = Crank-Nicolson
+    set Method         = CN
 
     # Time step for the simulation in dimensionless units.
     set Time step size = 1.0

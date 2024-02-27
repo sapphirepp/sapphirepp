@@ -30,7 +30,7 @@ subsection VFP
   end
   subsection Time stepping
     set Final time     = 5e4
-    set Method         = Crank-Nicolson
+    set Method         = CN
     set Time step size = 100
   end
 end

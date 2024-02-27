@@ -41,7 +41,7 @@ add_test(NAME scattering-only-1d-FE
 set_property(TEST scattering-only-1d-FE PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
-                    "Forward Euler" "periodic BC"
+                    "FE" "periodic BC"
                     "full-suite-Debug" "full-suite-Release")
 
 add_test(NAME scattering-only-1d-BE
@@ -49,7 +49,7 @@ add_test(NAME scattering-only-1d-BE
 set_property(TEST scattering-only-1d-BE PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
-                    "Backward Euler" "periodic BC"
+                    "BE" "periodic BC"
                     "full-suite-Debug" "full-suite-Release")
 
 
