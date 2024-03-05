@@ -10,7 +10,7 @@ target_include_directories(test-parallel-shock PUBLIC ${CONFIG_HEADER_DIR})
 target_link_libraries(test-parallel-shock UtilsLib)
 
 add_test(NAME parallel-shock
-         COMMAND mpirun -np ${MPI_NPROC} ./test-parallel-shock parameter.prm 0.21)
+         COMMAND mpirun -np ${MPI_NPROC} ./test-parallel-shock parameter.prm 0.33)
 set_property(TEST parallel-shock PROPERTY
              LABELS "parallel-shock"
                     "2d" "momentum" "spatial_advection" "source" "scattering"
