@@ -12,6 +12,10 @@
     Serving as a comprehensive guide to @sapphire, this example is highly
     recommended for new developers. It focuses on using scattering to reach a
     solution with diminishing multipoles.
+ 4. @subpage convergence-study  
+    In this advanced example, we derive an analytic solution for the system of
+    equations solved in @sapphire in a special scenario. This is used to verify
+    the accuracy of the numerical methods by performing a convergence study.
 
 
 <div class="section_buttons">
