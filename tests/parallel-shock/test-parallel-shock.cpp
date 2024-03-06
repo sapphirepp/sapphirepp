@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/gyro-motion-f0/test-gyro-motion-f0.cpp
+ * @file tests/parallel-shock/test-parallel-shock.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement tests for gyro-motion-f0 example
+ * @brief Implement tests for parallel-shock example
  */
 
 #include <deal.II/base/mpi.h>
