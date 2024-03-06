@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 4
   set Output frequency             = 1
   set Results folder               = results
-  set Simulation identifier        = gyro-motion-f0
+  set Simulation identifier        = gyro-advection
 end
 subsection Physical parameters
 end
@@ -13,22 +13,22 @@ subsection VFP
     set Expansion order = 3
   end
   subsection Finite element
-    set Polynomial degree = 1
+    set Polynomial degree = 2
   end
   subsection Mesh
     set Grid type = Hypercube
-    set Number of cells = 32, 32
-    set Point 1         = -3., -3.
-    set Point 2         = 3., 3.
+    set Number of cells = 4, 4
+    set Point 1         = -1.5, -1.5
+    set Point 2         = 1.5, 1.5
     subsection Boundary conditions
-      set lower x = continuous gradients
-      set lower y = continuous gradients
-      set upper x = continuous gradients
-      set upper y = continuous gradients
+      set lower x = periodic
+      set lower y = periodic
+      set upper x = periodic
+      set upper y = periodic
     end
   end
   subsection Time stepping
-    set Final time     = 20.
+    set Final time     = 30.
     set Method         = CN
     set Time step size = 0.1
   end
@@ -42,5 +42,6 @@ subsection VFP
 end
 subsection Physical parameters
   set B0/2pi = 1.
-  set sigma  = 1.
+  set u0     = 0.1
+  set sigma  = 0.5
 end

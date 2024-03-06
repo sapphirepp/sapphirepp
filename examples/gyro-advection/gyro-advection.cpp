@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/gyro-motion-f0/gyro-motion-f0.cpp
+ * @file examples/gyro-advection/gyro-advection.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for gyro-motion-f0 example
+ * @brief Implement main function for gyro-advection example
  */
 
 #include <deal.II/base/mpi.h>

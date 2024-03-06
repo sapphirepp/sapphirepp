@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/gyro-motion-f0/test-gyro-motion-f0.cpp
+ * @file tests/gyro-advection/test-advection.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement tests for gyro-motion-f0 example
+ * @brief Implement tests for gyro-advection example
  */
 
 #include <deal.II/base/mpi.h>
@@ -76,6 +76,35 @@ main(int argc, char *argv[])
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
 
+      const double gyroperiod =
+        vfp_parameters.gamma * vfp_parameters.mass /
+        (physical_parameters.B0 / (2 * M_PI) * vfp_parameters.charge);
+      const double gyroradius =
+        vfp_parameters.gamma * vfp_parameters.mass * vfp_parameters.velocity /
+        (vfp_parameters.charge * physical_parameters.B0);
+      const double box_length =
+        std::abs(vfp_parameters.p1[0] - vfp_parameters.p2[0]);
+      const double crossing_time = box_length / physical_parameters.u0;
+      saplog << "particle_velocity = " << vfp_parameters.velocity
+             << ", gyroperiod = " << gyroperiod
+             << ", gyroradius = " << gyroradius
+             << ", box_length = " << box_length
+             << ", crossing_time = " << crossing_time
+             << ", final_time = " << vfp_parameters.final_time << std::endl;
+
+      AssertThrow(std::fmod(vfp_parameters.final_time, gyroperiod) == 0.,
+                  dealii::ExcMessage(
+                    "Final time is not a multiple of the gyroperiod.\n\t" +
+                    dealii::Utilities::to_string(vfp_parameters.final_time) +
+                    " != n * " + dealii::Utilities::to_string(gyroperiod)));
+
+      AssertThrow((std::fmod(vfp_parameters.final_time, crossing_time) == 0.) ||
+                    (physical_parameters.u0 == 0.),
+                  dealii::ExcMessage(
+                    "Final time is not a multiple of the crossing time.\n\t" +
+                    dealii::Utilities::to_string(vfp_parameters.final_time) +
+                    " != n * " + dealii::Utilities::to_string(crossing_time)));
+
       timer.start();
       VFPSolver<dimension> vfp_solver(vfp_parameters,
                                       physical_parameters,
@@ -85,15 +114,6 @@ main(int argc, char *argv[])
 
 
       saplog << "Calculate analytic solution" << std::endl;
-      const double gyroperiod =
-        2. * M_PI * vfp_parameters.gamma * vfp_parameters.mass /
-        (physical_parameters.B0 * vfp_parameters.charge);
-      AssertThrow(std::fmod(vfp_parameters.final_time, gyroperiod) == 0.,
-                  dealii::ExcMessage(
-                    "Final time is not a multiple of the gyroperiod.\n\t" +
-                    dealii::Utilities::to_string(vfp_parameters.final_time) +
-                    " != n * " + dealii::Utilities::to_string(gyroperiod)));
-
       InitialValueFunction<dimension> analytic_solution(
         physical_parameters, vfp_parameters.expansion_order);
 

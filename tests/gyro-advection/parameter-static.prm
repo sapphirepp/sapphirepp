@@ -1,11 +1,10 @@
 subsection Output
   set Base file name               = solution
-  # set Format                       = hdf5
   set Format                       = vtu
   set Number of digits for counter = 4
   set Output frequency             = 1
   set Results folder               = results
-  set Simulation identifier        = gyro-motion-f0
+  set Simulation identifier        = gyro-static
 end
 subsection Physical parameters
 end
@@ -43,5 +42,6 @@ subsection VFP
 end
 subsection Physical parameters
   set B0/2pi = 1.
+  set u0     = 0.
   set sigma  = 1.
 end

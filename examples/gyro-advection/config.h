@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/parallel-shock/config.h
+ * @file examples/gyro-advection/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for parallel-shock example
+ * @brief Implement physical setup for gyro-advection example
  */
 
 #ifndef CONFIG_H
@@ -51,6 +51,7 @@ namespace sapphirepp
   public:
     /** [Define runtime parameter] */
     double B0;
+    double u0;
     double sigma;
     /** [Define runtime parameter] */
 
@@ -71,6 +72,10 @@ namespace sapphirepp
                         "1.",
                         dealii::Patterns::Double(),
                         "Magnetic field strength");
+      prm.declare_entry("u0",
+                        "0.",
+                        dealii::Patterns::Double(),
+                        "Velocity of the background plasma");
       prm.declare_entry("sigma",
                         "1.",
                         dealii::Patterns::Double(0),
@@ -92,6 +97,7 @@ namespace sapphirepp
 
       /** [Parse runtime parameter]  */
       B0    = prm.get_double("B0/2pi") * 2. * M_PI;
+      u0    = prm.get_double("u0");
       sigma = prm.get_double("sigma");
       /** [Parse runtime parameter]  */
 
@@ -287,9 +293,9 @@ namespace sapphirepp
 
         /** [Background velocity value] */
         // zero velocity field
-        velocity[0] = 0.; // u_x
-        velocity[1] = 0.; // u_y
-        velocity[2] = 0.; // u_z
+        velocity[0] = prm.u0; // u_x
+        velocity[1] = prm.u0; // u_y
+        velocity[2] = 0.;     // u_z
         /** [Background velocity value] */
       }
 
