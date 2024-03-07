@@ -204,8 +204,6 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
   , pde_system(vfp_parameters.expansion_order)
-  , expansion_order{pde_system.expansion_order}
-  , num_exp_coefficients{pde_system.system_size}
   , upwind_flux(pde_system, vfp_parameters, physical_parameters)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
@@ -1231,9 +1229,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
       fe_face_v.get_normal_vectors();
     // NOLINTBEGIN(google-readability-casting)
     std::vector<FullMatrix<double>> positive_flux_matrices(
-      q_points.size(), FullMatrix<double>(num_exp_coefficients));
+      q_points.size(), FullMatrix<double>(pde_system.system_size));
     std::vector<FullMatrix<double>> negative_flux_matrices(
-      q_points.size(), FullMatrix<double>(num_exp_coefficients));
+      q_points.size(), FullMatrix<double>(pde_system.system_size));
     // NOLINTEND(google-readability-casting)
 
     upwind_flux.compute_upwind_fluxes(q_points,
@@ -1342,9 +1340,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     // the corresponding flux matrices
     // NOLINTBEGIN(google-readability-casting)
     std::vector<FullMatrix<double>> positive_flux_matrices(
-      q_points.size(), FullMatrix<double>(num_exp_coefficients));
+      q_points.size(), FullMatrix<double>(pde_system.system_size));
     std::vector<FullMatrix<double>> negative_flux_matrices(
-      q_points.size(), FullMatrix<double>(num_exp_coefficients));
+      q_points.size(), FullMatrix<double>(pde_system.system_size));
     // NOLINTEND(google-readability-casting)
 
     upwind_flux.compute_upwind_fluxes(q_points,
@@ -1496,7 +1494,7 @@ sapphirepp::VFP::VFPSolver<dim>::compute_source_term(
 
           // NOLINTBEGIN(google-readability-casting)
           std::vector<Vector<double>> source_values(
-            q_points.size(), Vector<double>(num_exp_coefficients));
+            q_points.size(), Vector<double>(pde_system.system_size));
           // NOLINTEND(google-readability-casting)
           source_function.vector_value_list(q_points, source_values);
 
@@ -1864,9 +1862,9 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   data_out.attach_dof_handler(dof_handler);
   // Create a vector of strings with names for the components of the
   // solution
-  std::vector<std::string> component_names(num_exp_coefficients);
+  std::vector<std::string> component_names(pde_system.system_size);
 
-  for (unsigned int i = 0; i < num_exp_coefficients; ++i)
+  for (unsigned int i = 0; i < pde_system.system_size; ++i)
     {
       const std::array<unsigned int, 3> &lms = pde_system.lms_indices[i];
       component_names[i]                     = "f_" + std::to_string(lms[0]) +
@@ -1942,7 +1940,7 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
   const QIterated<dim> q_iterated(q_trapezoid,
                                   vfp_parameters.polynomial_degree * 2 + 1);
 
-  const Functions::ZeroFunction<dim_ps> zero_function(num_exp_coefficients);
+  const Functions::ZeroFunction<dim_ps> zero_function(pde_system.system_size);
 
   VectorTools::integrate_difference(mapping,
                                     dof_handler,

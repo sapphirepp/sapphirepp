@@ -605,21 +605,18 @@ void
 sapphirepp::VFP::PDESystem::shrink_matrices()
 {
   // Shrink the matrices such that they agree with order of the expansion
-  unsigned int num_exp_coefficients =
-    (expansion_order + 1) * (expansion_order + 1);
-
   for (auto &advection_matrix : advection_matrices)
-    advection_matrix.grow_or_shrink(num_exp_coefficients);
+    advection_matrix.grow_or_shrink(system_size);
 
   for (auto &generator_matrix : generator_rotation_matrices)
-    generator_matrix.grow_or_shrink(num_exp_coefficients);
+    generator_matrix.grow_or_shrink(system_size);
 
   for (auto &adv_mat_product : adv_mat_products)
-    adv_mat_product.grow_or_shrink(num_exp_coefficients);
+    adv_mat_product.grow_or_shrink(system_size);
 
   for (auto &adv_x_gen_mat : adv_x_gen_matrices)
-    adv_x_gen_mat.grow_or_shrink(num_exp_coefficients);
+    adv_x_gen_mat.grow_or_shrink(system_size);
 
   for (auto &t_mat : t_matrices)
-    t_mat.grow_or_shrink(num_exp_coefficients);
+    t_mat.grow_or_shrink(system_size);
 }

@@ -375,10 +375,6 @@ namespace sapphirepp
       /** @{ */
       /** @ref PDESystem */
       PDESystem pde_system;
-      /** Maximum expansion order \f$ l_{\rm max} \f$ */
-      const unsigned int expansion_order;
-      /** Number of expansion coefficients, same as `pde_system.size`*/
-      const unsigned int num_exp_coefficients;
       /** @} */
 
       /** @ref UpwindFlux */
