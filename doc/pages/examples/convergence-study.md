@@ -1,313 +1,338 @@
 # Advanced example: Convergence study {#convergence-study}
 
+@tableofcontents
 
-## Analytical solution
 
-These are only notes for internal use, we should remove them later.
+## Introduction {#introduction-convergence-study}
 
-We derive an analytic solution for the static `gyro` setup with a truncation at
-$l=1$ using a Fourier transform (FT).
+This example presents a convergence study for @sapphire, utilizing a
+one-dimensional test case with an analytical solution. It also provides an
+overview of advanced features in @sapphire. It is recommended to familiarize
+yourself with @sapphire through the previous examples before starting this one,
+particularly the [quick start](#quick-start) and [scattering
+only](#scattering-only) examples.
 
-The VFP equation is given by:
-
-$$
-  \frac{\partial f}{\partial t} + \mathbf{v} \cdot \nabla_{x} f -
-  q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,.
-$$
-
-$$
-  \mathbf{B} = B_0 \hat{\mathbf{e}}_z \,.
-$$
-
-We only work in 1D.
-
-We have two different notations, the @sapphire notation and Brian's.
-
-The expansion of the distribution function is given by:
+We consider a simple one one-dimensional test case with a static magnetic field
+$\mathbf{B} = B_0 \hat{\mathbf{e}}_z$ in a static medium, $\mathbf{u} = 0$.
+Assuming a collisionless plasma, the VFP equation simplifies to:
 
 $$
- f(t, \mathbf{x}, \mathbf{p}) = \sum^{l_{\rm max}}_{l = 0} \sum^{l}_{m = 0}
- \sum^{1}_{s = 0} f_{lms}(t, \mathbf{x}, p) Y_{lms}(\theta,\varphi) \,,
+  \frac{\partial f}{\partial t} + \mathbf{v} \cdot \nabla_{x} f +
+  q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
+  0\, .
 $$
 
-We get a system of equations:
+Using a cut-off in the spherical harmonic expansion order $l_{\rm max}=1$, the
+system of equations for the expansion coefficients $f_{lms}$ is given by:
 
-$$
-  \partial_{t}\pmb{f} +
-  \left(
-    U^{a}\mathbf{1} +
-    V \mathbf{A}^{a}
-  \right) \partial_{x_{a}}\pmb{f} -
-  \left(
-    \gamma m \frac{\mathrm{d} U_{a}}{\mathrm{d} t} \mathbf{A}^{a} -
-    p \frac{\partial U_{b}}{\partial x^{a}} \mathbf{A}^{a}\mathbf{A}^{b}
-  \right) \partial_{p} \pmb{f} +
-  \left(
-    \frac{1}{V} \epsilon_{abc} \frac{\mathrm{d} U^{a}}{\mathrm{d} t}
-      \mathbf{A}^{b}\mathbf{\Omega}^{c} +
-    \epsilon_{bcd} \frac{\partial U_{b}}{\partial x^{a}}\mathbf{A}^{a}
-      \mathbf{A}^{c}\mathbf{\Omega}^{d}
-  \right) \pmb{f} -
-  \omega_{a}\mathbf{\Omega}^{a}\pmb{f} +
-  \nu \mathbf{C}\pmb{f}
-  = 0
-$$
-
-In our case and with $l_{\rm max}=1$ this simplifies to:
-
-$$
-  \partial_{t}\pmb{f} +
-  V \mathbf{A}^{a} \partial_{x_{a}}\pmb{f} -
-  \omega_{a}\mathbf{\Omega}^{a}\pmb{f}
-  = 0
-$$
-
-Where $\omega_{a} = \omega \delta_{a,z}$, $\omega = \frac{B_0 q}{\gamma m}$.
-In 1D we have $\partial_{x}\pmb{f} = \partial_{z}\pmb{f} = 0$. Therefore:
-
-$$
-  \partial_{t}\pmb{f} +
-  V \mathbf{A}^{x} \partial_{x}\pmb{f} -
-  \omega \mathbf{\Omega}^{z}\pmb{f}
-  = 0
-$$
-
-Putting in the components of $\mathbf{A}$ and $\mathbf{\Omega}$, we get:
-
-$$
-  \partial_{t} f_{000} +
-  \frac{V}{\sqrt{3}} \partial_{x} f_{100}
-  = 0
-$$
-
-$$
-  \partial_{t} f_{110} -
+\begin{align*}
+   & \partial_{t} f_{000} +
+  \frac{v}{\sqrt{3}} \partial_{x} f_{100}
+  = 0                       \\
+   & \partial_{t} f_{110} -
   \omega f_{100}
-  = 0
-$$
-
-$$
-  \partial_{t} f_{100} +
-  \frac{V}{\sqrt{3}} \partial_{x} f_{000} +
+  = 0                       \\
+   & \partial_{t} f_{100} +
+  \frac{v}{\sqrt{3}} \partial_{x} f_{000} +
   \omega f_{110}
-  = 0
-$$
+  = 0 \\
+  & \partial_{t} f_{111} = 0
+\end{align*}
 
-$$
-  \partial_{t} f_{111} = 0
-$$
+Here, we introduced the gyrofrequency $\omega = \frac{B_0 q}{\gamma m}$, with
+the magnetic field $B_0$, the charge $q$, the Lorentz factor $\gamma$, and the
+mass $m$. In the following, we drop $f_{111}$ as it decouples and has a trivial
+solution.
 
-Here, we used
-$A^{x}_{20}=A^{x}_{02}=\sqrt{\frac{(l+m)(l-m)}{(2l+1)(2l-1)}}=1/\sqrt{3}$,
-and $\Omega^{z}_{12} = -\Omega^{z}_{21} = 1$ with all other components
-vanishing.
-Be aware that the ordering of components in the vector is
-$\pmb{f} = (f_{000}, f_{110}, f_{100}, f_{111})$.
+In @cite Schween2024, we derived an analytical solution for this system of
+equations assuming a periodic box of length $L$. We obtained the following
+solution for the expansion coefficients $f_{lms}$:
 
-$f_{111} = \rm const.$ decouples from the system of equations, and we choose the
-initial conditions so that $f_{111} = 0$.
-
-Acting with $\partial_{t}$ on the third equation and inserting the other
-equations, we arrive at:
-
-$$
-  \partial_{t}^2 f_{100} -
-  \frac{V^2}{3} \partial_{x}^2 f_{100} +
-  \omega^2 f_{100}
-  = 0
-$$
-
-We apply the ansatz of factorization for $f_{110}$:
-
-$$
-  f_{100}(t, x) = \phi(t) \psi(x)
-$$
-
-Inserting this into the equation above and denoting
-$\partial_{t} \phi(t) = \dot{\phi}$ and $\partial_{x} \psi(x) = \psi'(x)$,
-we get:
-
-$$
-  \ddot{\phi(t)} \psi(x) -
-  \frac{V^2}{3} \phi(t) \psi''(x) +
-  \omega^2 \phi(t) \psi(x)
-  = 0
-$$
-
-$$
-  \implies
-  \frac{\ddot{\phi(t)} + \omega^2 \phi(t)}{\phi(t)}
-  = \frac{V^2}{3} \frac{\psi''(x)}{\psi(x)}
-  = - c_n^2 = \rm const.
-$$
-
-These equations are respectively solved by:
-
-$$
-  \phi(t) = \phi_{0,n} \sin(\sqrt{\omega^2 + c_n^2} t) +
-    \phi_{1,n} \cos(\sqrt{\omega^2 + c_n^2} t)
-$$
-
-We use initial conditions, such that $f_{100}(t=0) = 0 \implies \phi_{1,n} = 0$.
-
-$$
-  \psi(x) = \psi_{0,n} \sin\left(\frac{\sqrt{3} c_n}{V} x\right) +
-    \psi_{1,n} \cos\left(\frac{\sqrt{3} c_n}{V} x\right)
-$$
-
-The full solution is given by a superposition of these Fourier modes:
-
-$$
-  f_{100}(t, x) = \sum_{n} \phi_{0,n} \sin(\sqrt{\omega^2 + c_n^2} t)
-    \left[ \psi_{0,n} \sin(k_n x) + \psi_{1,n} \cos(k_n x) \right]
-$$
-
-where we introduced the wave number $k_n = \frac{\sqrt{3} c_n}{V}$.
-
-One can notice, that $\phi_{0,n}$, $\psi_{0,n}$ and $\psi_{1,n}$ are degenerate
-once. In the following, we choose $\phi_{0,n} = 1$.
-
-Enforcing periodic boundary conditions in a box with length $L$, we get:
-
-$$
-  k_n L = \frac{\sqrt{3} c_n}{V} L \overset{!}{=} 2 \pi n
-  \implies c_n = \frac{V}{\sqrt{3} L} 2 \pi n \,, k_n = \frac{2 \pi n}{L}
-$$
-
-with $n \in \mathbb{N}$.
-
-Inserting this solution in the equation for $f_{000}$, we get:
-
-$$
-  f_{000}(t,x) - f_{000}(t=0,x)
-  = -\int_{0}^{t} \frac{V}{\sqrt{3}} \partial_{x} f_{100}(\tilde{t}, x)
-    \mathrm{d}\tilde{t}
-  = \sum_{n} \frac{V}{\sqrt{3}} \frac{1}{\sqrt{\omega^2 + c_n^2}}
-    \left[ \cos(\sqrt{\omega^2 + c_n^2} t) - 1 \right] \frac{\sqrt{3} c_n}{V}
-    \left[ \psi_{0,n} \cos(k_n x) - \psi_{1,n} \sin(k_n x) \right]
-$$
-
-We choose the following initial condition for $f_{000}$ (wisely choosing the
-prefactor):
-
-$$
-  f_{000}(t=0, x) = \sum_{n} \sqrt{\omega^2 + c_n^2}
-    \left[ A_n \cos(k_n x) - B_n \sin(k_n x) \right]
-$$
-
-Using this gives us an initial condition for the derivative of $f_{100}$:
-
-$$
-  \partial_{t} f_{100} \rvert_{t=0} +
-  \frac{V}{\sqrt{3}} \partial_{x} f_{000} \rvert_{t=0} +
-  \omega f_{110} \rvert_{t=0}
-  = 0
-$$
-
-Using $f_{110}(t=0,x) = 0$, this results in:
-
-$$
-  \sum_{n} \sqrt{\omega^2 + c_n^2}
-    \left[ \psi_{0,n} \sin(k_n x) + \psi_{1,n} \cos(k_n x) \right]
-  = -\frac{V}{\sqrt{3}} \sum_{n} \sqrt{\omega^2 + c_n^2} k_n
-    \left[ - A_n \sin(k_n x) - B_n \cos(k_n x) \right]
-$$
-
-Comparing the coefficients we get:
-
-$$
-  \psi_{n,0} = \frac{V}{\sqrt{3}} k_n A_n = c_n A_n
-$$
-
-$$
-  \psi_{n,1} = c_n B_n
-$$
-
-We can get $f_{110}$ by integrating $f_{100}$ in time. Using the initial
-condition $f_{110}(t=0) = 0$, we get:
-
-$$
-  f_{110}(t,x) = \int_{0}^{t} \omega f_{100}(\tilde{t}, x) \mathrm{d}\tilde{t}
-  = \sum_{n} \frac{\omega c_n}{\sqrt{\omega^2 + c_n^2}}
-    \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
-    \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
-$$
-
-To summarize, we have:
-
-$$
-  f_{000}(t,x) = \sum_{n} \frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
-    \left[
-      \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
-      \frac{\omega^2 + c_n^2}{c_n^2}
+\begin{align*}
+  f_{000}(t,x)  & = \sum_{n} \frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
+  \left[
+    \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
+    \frac{\omega^2 + c_n^2}{c_n^2}
     \right]
-    \left[ A_n \cos(k_n x) - B_n \sin(k_n x) \right]
-$$
+  \left[ A_n \cos(k_n x) - B_n \sin(k_n x) \right]                      \\
+  f_{110}(t,x)  & = \sum_{n} \frac{\omega c_n}{\sqrt{\omega^2 + c_n^2}}
+  \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
+  \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]                      \\
+  f_{100}(t, x) & = \sum_{n} c_n \sin(\sqrt{\omega^2 + c_n^2} t)
+  \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
+\end{align*}
+
+$A_n$ and $B_n$ are the Fourier coefficients given by the initial condition for
+$f_{000}$. The wave number $k_n = \frac{2 \pi n}{L}$ and the constant $c_n =
+\frac{v}{\sqrt{3}} k_n$ are determined by the velocity $v$ and the box length $L$.
+
+This analytic solution can be used to compare with the numerical solution at an
+arbitrary time $t$ to assess the convergence of the numerical solution.
+
+
+## Implementation {#implementation-convergence-study}
+
+In the following, we will show the implementation of the convergence study
+example in @sapphire. As always, the steup is devided up into two main files:
+
+- [config.h](#config-convergence-study) which defines the setup of the VFP
+  system and runtime parameters.
+- [convergence-study.cpp](#main-convergence-study) which implements the `main`
+  function to executes the simulation and compares the result to the analytic
+  solution.
+
+In this example, we will only highlight the main parts of the implementation.
+For a comprehensive overview, please refer to the [scattering
+only](#scattering-only) example.
+
+
+### config.h {#config-convergence-study}
+
+
+#### VFP equation {#dimension-convergence-study}
+
+Given that the example considers a one-dimensional problem with decoupling of
+the momenta, we can set the dimensionality of the problem to `dim = dim_ps =
+dim_cs = 2`.
+
+@snippet{lineno} examples/convergence-study/config.h Dimension
+
+In the VFP equation, we only have the @ref sapphirepp::VFP::VFPFlags::magnetic
+"magnetic", $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$,
+and @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
+$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, terms. For the latter, we are in
+the spatial case of a static background plasma, $\mathbf{u} = 0$. The magnetic
+field is time independent, hence we can use
+@ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent" flag.
+
+@snippet{lineno} examples/convergence-study/config.h VFP Flags
+
+
+#### Runtime Parameters {#parameter-convergence-study}
+
+The main parameters describing out setup are the magnetic field strength $B_0$,
+and the box length $L$. For simplicity, we hardcode the coefficients $A_n$ and
+$B_n$ for the initial conditions. We leave the implementation of these as
+runtime parameters as an exercise for the interested reader.
+
+One peculiarity is, that the box length $L$ is already given by the domain size
+defined in the @ref sapphirepp::VFP::VFPParameters "VFPParameters" class.
+However, in order to access this parameter in the @ref
+sapphirepp::VFP::InitialValueFunction "InitialValueFunction", we need to copy it
+to the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class. The same
+goes for the velocity $v$, gamma factor $\gamma$, charge $q$, and mass $m$.
+
+1. **Define**
+
+   We start by defining the runtime parameters, including a copy of the @ref
+   sapphirepp::VFP::VFPParameters "VFPParameters" $L$, $v$, $\gamma$, $q$, and
+   $m$. We will copy their values in the [main
+   function](#setup-convergence-study).
+
+   @snippet{lineno} examples/convergence-study/config.h Define runtime parameter
+
+2. **Declare**
+  
+   As in the [gyro-advection](#gyro-advection) example, we use the trick to use
+   $\frac{B_0}{2 \pi}$ instead of $B_0$ as an input parameter. Since the main
+   frequency in the problem is the gyrofrequency $\omega = \frac{B_0 q}{\gamma
+    m}$, we want to ensure that a final time $T_{\rm final} = n \times T_g = n
+    \times \frac{2 \pi}{B_0} \frac{\gamma m}{q}$ corresponds to exactly $n$ full
+   gyroperiods.
+
+   @snippet{lineno} examples/convergence-study/config.h Declare runtime parameter
+
+3. **Parse**
+
+   Last, we parse the runtime parameter $B_0$:
+
+   @snippet{lineno} examples/convergence-study/config.h Parse runtime parameter
+
+
+#### Analytic solution {#initial-condition-convergence-study}
+
+We "misuse" the @ref sapphirepp::VFP::InitialValueFunction
+"InitialValueFunction" to implement the analytic solution at all times. Setting
+$t=0$ yields the initial condition, but setting $t>0$ yields the analytic
+solution at a given time. To recall the analytic solution, we have:
+
+
+\begin{align*}
+  f_{000}(t,x)  & = \sum_{n} \frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
+  \left[
+    \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
+    \frac{\omega^2 + c_n^2}{c_n^2}
+    \right]
+  \left[ A_n \cos(k_n x) - B_n \sin(k_n x) \right]                      \\
+  f_{110}(t,x)  & = \sum_{n} \frac{\omega c_n}{\sqrt{\omega^2 + c_n^2}}
+  \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
+  \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]                      \\
+  f_{100}(t, x) & = \sum_{n} c_n \sin(\sqrt{\omega^2 + c_n^2} t)
+  \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
+\end{align*}
+
+with  $\omega = \frac{B_0 q}{\gamma m}$, $k_n = \frac{2 \pi n}{L}$ and $c_n =
+\frac{v}{\sqrt{3}} k_n$. As mentioned before, we hardcode the coefficients $A_n$ and
+$B_n$ for simplicity. We choose a simple sin wave $B_1 = 1$. To ensure
+positivity of the analytic solution, we use the offset $A_0 = 2$.
+
+We start the implementation by defining some useful constants. To access the
+current time, we use the
+@dealref{get_time(),classFunctionTime,ae7d37ddb04314b38cf67c6cba22923f6} method
+of the @dealref{dealii::Function,classFunction} class. We define the
+coefficients $A_n$ and $B_n$ as array, containing `A[0] = A_0`, `A[1] = A_1`,
+etc.
+
+@snippet{lineno} examples/convergence-study/config.h Initial value constants
+
+Now, we implement the solution by looping over the modes $n=0$ until $n_{\rm
+max}$. Note that we took special care in the $f_{000}$ term to avoid division by
+$c_n$, which evaluates to zero for $n=0$.
+
+@snippet{lineno} examples/convergence-study/config.h Initial value
+
+
+#### Magnetic field {#magnetic-field-convergence-study}
+
+The implementation of the magnetic field $\mathbf{B} = B_0 \hat{\mathbf{e}}_z$
+is straightforward:f
+
+@snippet{lineno} examples/convergence-study/config.h Magnetic field
+
+
+### convergence-study.cpp {#main-convergence-study}
+
+In the `main` function, we will implement the comparison of the numerical and
+analytic solution. Because we want to compare the solution at all time steps, we
+will not use the @ref sapphirepp::VFP::VFPSolver::run "run()" function, but
+implement the time loop ourselves. We will also output add the analytic solution
+to the output, showing a comparison between `projection` and `interpolation` of
+the solution (see the [visualization](#visualization) section).
+
+
+#### Setup {#setup-convergence-study}
+
+The setup in the main function is fairly standard. We initialize MPI, and the
+@ref sapphirepp::saplog "saplog" stream. We then parse the runtime parameters.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Main function setup
+
+One speciality is that we need to copy the runtime parameters $L$, $v$,
+$\gamma$, $q$, and $m$ to the @ref sapphirepp::PhysicalParameters
+"PhysicalParameters" class. In addition, we check if the assumptions of $l_{\rm
+max} = 1$ and periodic boundary conditions are met.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Copy VFP parameter
+
+As we want to calculate the numerical error at every time step, we create a
+`csv` file to store the results.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Create error file
+
+Now we create and set up the @ref sapphirepp::VFP::VFPSolver "VFPSolver" object.
+Notice that we are not using the @ref sapphirepp::VFP::VFPSolver::run "run()"
+function, but implement the time loop ourselves.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Setup vfp_solver
+
+Last, we have to prepare the analytic solution. To this end create an instance
+of the @ref sapphirepp::VFP::InitialValueFunction "InitialValueFunction" and a
+@dealref{Vector,classPETScWrappers_1_1MPI_1_1Vector}. In addition, we create a
+@dealref{ComponentSelectFunction} in order to on;y compare the $f_{000}$ modes
+when calculating the error.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Setup analytic solution
+
+
+#### Time loop {#time-loop-convergence-study}
+
+Next comes the integral part of the simulation: the time loop. Every time step
+we have to perform the following steps:
+
+- Output the solution, numeric and analytic
+- Calculate the error
+- Advance the time, by performing an Euler or Runge-Kutta step
+
+To keep track of the time steps, we use the @dealref{DiscreteTime} class.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Time loop
+
+We only want to output the solution every Nth time steps, where N is the
+`output_frequency`. Ensuring this with an `if` statement, we add three
+different vectors to the output:
+
+- the numeric solution
+- a projection of analytic solution onto the finite element DG space
+- an interpolation of the analytic solution
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Output solution
+
+Next we calculate the error and the norm of the solution. Notice that the
+`weight` function allows us to only select the $f_{000}$ mode. Having both the
+$L^2$ error, $\lVert f_{000, h}^{n} - f_{000}(t^n) \rVert_{L^2}$, and the $L^2$
+norm, $\lVert f_{000, h}^{n} \rVert_{L^2}$, we can calculate the relative error
+as
 
 $$
-  f_{110}(t,x) = \sum_{n} \frac{\omega c_n}{\sqrt{\omega^2 + c_n^2}}
-    \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
-    \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
+  \text{rel. error} \coloneqq \frac{\lVert f_{000, h}^{n} - f_{000}(t^n)
+  \rVert_{L^2}}{\lVert f_{000, h}^{n} \rVert_{L^2}} \,.
 $$
 
-$$
-  f_{100}(t, x) = \sum_{n} c_n \sin(\sqrt{\omega^2 + c_n^2} t)
-    \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
-$$
+We output this results and save them to the `csv` file.
 
-$$
-  f_{111}(t, x) = 0
-$$
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Calculate error
+
+Finally, we advance the time by performing an Euler or Runge-Kutta step. We
+select the method according to the `time_stepping_method` runtime parameter, and
+use the methods implemented in the @ref sapphirepp::VFP::VFPSolver "VFPSolver".
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Time step
+
+
+#### End simulation {#end-simulation-convergence-study}
+
+After finishing the time loop, we output the final results, and calculate the
+final error.
+
+@note In @sapphire, we output the results at the *start* of each time step.
+  Therefore, we additionally need to output the final results after the last
+  time step.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp Last time step
+
+Finally, we can end the simulation and close the `csv` file.
+
+@snippet{lineno} examples/convergence-study/convergence-study.cpp End simulation
+
+
+## Results {#results-convergence-study}
+
+@todo Add results for convergence study example.
+
+
+## The plain program {#plain-convergence-study}
+
+
+### config.h {#plain-config-convergence-study}
+
+@include{lineno} examples/convergence-study/config.h
+
+
+### convergence-study.cpp {#plain-main-convergence-study}
+
+@include{lineno} examples/convergence-study/convergence-study.cpp
+
+
+<div class="section_buttons">
+
+| Previous              |
+|:----------------------|
+| [Examples](#examples) |
+
+</div>
 
 
 ---
 
-Last, we check again, that this solution is correct by inserting it into the
-third equation of the system of equations:
-
-$$
-  \partial_{t} f_{100} +
-  \frac{V}{\sqrt{3}} \partial_{x} f_{000} +
-  \omega f_{110}
-  = 0
-$$
-
-Inserting all functions we arrive at:
-
-$$
-  \sum_{n} c_n \sqrt{\omega^2 + c_n^2} \cos(\sqrt{\omega^2 + c_n^2} t)
-    \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right] +
-  \sum_{n} \frac{V}{\sqrt{3}}\frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
-    \left[
-      \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
-      \frac{\omega^2 + c_n^2}{c_n^2}
-    \right]
-    k_n \left[ -A_n \sin(k_n x) - B_n \cos(k_n x) \right] +
-  \sum_{n} \frac{\omega^2 c_n}{\sqrt{\omega^2 + c_n^2}}
-    \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
-    \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
-  = 0
-$$
-
-Comparing the coefficients we have:
-
-$$
-  c_n \sqrt{\omega^2 + c_n^2} \cos(\sqrt{\omega^2 + c_n^2} t) -
-  \frac{c_n^3}{\sqrt{\omega^2 + c_n^2}}
-    \left[
-      \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
-      \frac{\omega^2 + c_n^2}{c_n^2}
-    \right] +
-  \frac{\omega^2 c_n}{\sqrt{\omega^2 + c_n^2}}
-    \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
-  = 0
-$$
-
-$$
-  \implies
-  \left[
-    \omega^2 + c_n^2 - c_n^2 - \omega^2
-  \right] \cos(\sqrt{\omega^2 + c_n^2} t) +
-  c_n^2 - (\omega^2 + c_n^2) + \omega^2
-  = 0 \quad \rm (correct)
-$$
+@author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
+@date 2024-03-07
