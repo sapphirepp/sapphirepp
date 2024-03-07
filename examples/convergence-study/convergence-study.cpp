@@ -40,18 +40,21 @@
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
 
+
+
 int
 main(int argc, char *argv[])
 {
   try
     {
+      /** [Main function setup] */
       using namespace sapphirepp;
       using namespace VFP;
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
 
-      saplog.init(3);
+      saplog.init(2);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
@@ -71,36 +74,31 @@ main(int argc, char *argv[])
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
       vfp_parameters.parse_parameters(prm);
+      /** [Main function setup] */
 
-      AssertThrow(vfp_parameters.expansion_order == 1,
-                  dealii::ExcMessage("Expansion order be one."));
 
-      // Copy vfp_parameters to physical parameters for inital function
+      /** [Copy VFP parameter] */
+      physical_parameters.box_length =
+        std::abs(vfp_parameters.p1[0] - vfp_parameters.p2[0]);
       physical_parameters.velocity = vfp_parameters.velocity;
       physical_parameters.gamma    = vfp_parameters.gamma;
       physical_parameters.charge   = vfp_parameters.charge;
       physical_parameters.mass     = vfp_parameters.mass;
-      physical_parameters.box_length =
-        std::abs(vfp_parameters.p1[0] - vfp_parameters.p2[0]);
 
-      const double gyroperiod =
-        vfp_parameters.gamma * vfp_parameters.mass /
-        (physical_parameters.B0_2pi * vfp_parameters.charge);
-      const double gyroradius =
-        vfp_parameters.gamma * vfp_parameters.mass * vfp_parameters.velocity /
-        (vfp_parameters.charge * physical_parameters.B0);
-      const double box_length =
-        std::abs(vfp_parameters.p1[0] - vfp_parameters.p2[0]);
-      saplog << "particle_velocity = " << vfp_parameters.velocity
-             << ", gyroperiod = " << gyroperiod
-             << ", gyroradius = " << gyroradius
-             << ", box_length = " << box_length
-             << ", final_time = " << vfp_parameters.final_time << std::endl;
+      AssertThrow(dimension == 1,
+                  dealii::ExcMessage("This example assumes 'dimension = 1'."));
+      AssertThrow(vfp_parameters.expansion_order == 1,
+                  dealii::ExcMessage(
+                    "This example assumes 'Expansion order = 1'."));
+      AssertThrow((vfp_parameters.boundary_conditions[0] ==
+                   VFP::BoundaryConditions::periodic) &&
+                    (vfp_parameters.boundary_conditions[1] ==
+                     VFP::BoundaryConditions::periodic),
+                  dealii::ExcMessage("This example assumes periodic BC."));
+      /** [Copy VFP parameter] */
 
-      if (std::fmod(vfp_parameters.final_time, gyroperiod) != 0.)
-        saplog << "Warning: Final time is not a multiple of the gyroperiod."
-               << std::endl;
 
+      /** [Create error file] */
       std::ofstream error_file(output_parameters.output_path / "error.csv");
       AssertThrow(!error_file.fail(),
                   dealii::ExcFileNotOpen(output_parameters.output_path /
@@ -114,90 +112,111 @@ main(int argc, char *argv[])
                  << "L2_error"
                  << "; "
                  << "relative_error" << std::endl;
+      /** [Create error file] */
 
+
+      /** [Setup vfp_solver] */
       VFPSolver<dimension> vfp_solver(vfp_parameters,
                                       physical_parameters,
                                       output_parameters);
       vfp_solver.setup();
+      /** [Setup vfp_solver] */
 
-      const unsigned int num_exp_coefficients =
-        (vfp_parameters.expansion_order + 1) *
-        (vfp_parameters.expansion_order + 1);
 
-      InitialValueFunction<dimension> analytic_solution(
-        physical_parameters, vfp_parameters.expansion_order);
-      const dealii::ComponentSelectFunction<dimension> weight(
-        0, num_exp_coefficients);
+      /** [Setup analytic solution] */
+      const unsigned int system_size = vfp_solver.get_pde_system().system_size;
+
+      InitialValueFunction<dimension> analytic_solution(physical_parameters,
+                                                        system_size);
+      const dealii::ComponentSelectFunction<dimension> weight(0, system_size);
 
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
         vfp_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
-
-      std::vector<std::string> component_names(num_exp_coefficients);
-      std::vector<std::string> component_names_interpol(num_exp_coefficients);
-      const std::vector<std::array<unsigned int, 3>> lms_indices =
-        PDESystem::create_lms_indices(num_exp_coefficients);
-      for (unsigned int i = 0; i < num_exp_coefficients; ++i)
-        {
-          const std::array<unsigned int, 3> &lms = lms_indices[i];
-          component_names[i] = "analytic_f_" + std::to_string(lms[0]) +
-                               std::to_string(lms[1]) + std::to_string(lms[2]);
-          component_names_interpol[i] =
-            "analytic_interpol_f_" + std::to_string(lms[0]) +
-            std::to_string(lms[1]) + std::to_string(lms[2]);
-        }
-
-      saplog << "Calculate analytic solution" << std::endl;
-
-      dealii::DataOut<dimension> data_out;
-      data_out.attach_dof_handler(vfp_solver.get_dof_handler());
-      analytic_solution.set_time(0.);
+      /** [Setup analytic solution] */
 
 
-      vfp_solver.project(analytic_solution, analytic_solution_vector);
-      data_out.add_data_vector(analytic_solution_vector, component_names);
-
-      dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                                       analytic_solution,
-                                       analytic_solution_vector);
-      data_out.add_data_vector(analytic_solution_vector,
-                               component_names_interpol);
-
-      data_out.build_patches(vfp_parameters.polynomial_degree);
-      output_parameters.write_results<dimension>(data_out,
-                                                 0,
-                                                 0.,
-                                                 "analytic_solution");
-
-      saplog << "Compute error" << std::endl;
-      const double L2_error =
-        vfp_solver.compute_global_error(analytic_solution,
-                                        dealii::VectorTools::L2_norm,
-                                        dealii::VectorTools::L2_norm,
-                                        &weight);
-      const double L2_norm =
-        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                         dealii::VectorTools::L2_norm,
-                                         &weight);
-
-      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-             << ", rel error = " << L2_error / L2_norm << std::endl;
-
-      error_file << 0 << "; " << 0.0 << "; " << L2_norm << "; " << L2_error
-                 << "; " << L2_error / L2_norm << std::endl;
-
+      /** [Time loop] */
       DiscreteTime discrete_time(0,
                                  vfp_parameters.final_time,
                                  vfp_parameters.time_step);
       for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
         {
           {
-            LogStream::Prefix prefix("VFP", saplog);
             saplog << "Time step " << std::setw(6) << std::right
                    << discrete_time.get_step_number()
                    << " at t = " << discrete_time.get_current_time() << " \t["
                    << Utilities::System::get_time() << "]" << std::endl;
 
+            analytic_solution.set_time(discrete_time.get_current_time());
+            /** [Time loop] */
+
+
+            /** [Output solution] */
+            if ((discrete_time.get_step_number() %
+                 output_parameters.output_frequency) == 0)
+              {
+                LogStream::Prefix prefix("Output", saplog);
+                saplog << "Output solution" << std::endl;
+
+                dealii::DataOut<dimension> data_out;
+                data_out.attach_dof_handler(vfp_solver.get_dof_handler());
+
+                // Output numeric solution
+                data_out.add_data_vector(vfp_solver.get_current_solution(),
+                                         PDESystem::create_component_name_list(
+                                           system_size));
+
+                // Output projected analytic solution
+                vfp_solver.project(analytic_solution, analytic_solution_vector);
+                data_out.add_data_vector(analytic_solution_vector,
+                                         PDESystem::create_component_name_list(
+                                           system_size, "project_f_"));
+
+                // Output interpolated analytic solution
+                dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
+                                                 analytic_solution,
+                                                 analytic_solution_vector);
+                data_out.add_data_vector(analytic_solution_vector,
+                                         PDESystem::create_component_name_list(
+                                           system_size, "interpol_f_"));
+
+                data_out.build_patches(vfp_parameters.polynomial_degree);
+                output_parameters.write_results<dimension>(
+                  data_out,
+                  discrete_time.get_step_number(),
+                  discrete_time.get_current_time());
+              }
+            /** [Output solution] */
+
+
+            /** [Calculate error] */
+            {
+              LogStream::Prefix prefix2("Error", saplog);
+              saplog << "Calculate error" << std::endl;
+
+              const double L2_error =
+                vfp_solver.compute_global_error(analytic_solution,
+                                                dealii::VectorTools::L2_norm,
+                                                dealii::VectorTools::L2_norm,
+                                                &weight);
+              const double L2_norm =
+                vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                                 dealii::VectorTools::L2_norm,
+                                                 &weight);
+
+              saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+                     << ", rel error = " << L2_error / L2_norm << std::endl;
+
+              error_file << discrete_time.get_step_number() << "; "
+                         << discrete_time.get_current_time() << "; " << L2_norm
+                         << "; " << L2_error << "; " << L2_error / L2_norm
+                         << std::endl;
+            }
+            /** [Calculate error] */
+
+
+            /** [Time step] */
             switch (vfp_parameters.time_stepping_method)
               {
                 case TimeSteppingMethod::forward_euler:
@@ -219,62 +238,78 @@ main(int argc, char *argv[])
                 default:
                   AssertThrow(false, ExcNotImplemented());
               }
-
-            vfp_solver.output_results(discrete_time.get_step_number() + 1,
-                                      discrete_time.get_next_time());
           }
-
-          LogStream::Prefix prefix2("analytic", saplog);
-          saplog << "Calculate analytic solution" << std::endl;
-          analytic_solution.set_time(discrete_time.get_next_time());
-
-          if ((discrete_time.get_step_number() + 1) %
-                output_parameters.output_frequency ==
-              0)
-            {
-              dealii::DataOut<dimension> data_out;
-              data_out.attach_dof_handler(vfp_solver.get_dof_handler());
-              vfp_solver.project(analytic_solution, analytic_solution_vector);
-              data_out.add_data_vector(analytic_solution_vector,
-                                       component_names);
-
-              dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                                               analytic_solution,
-                                               analytic_solution_vector);
-              data_out.add_data_vector(analytic_solution_vector,
-                                       component_names_interpol);
-
-              data_out.build_patches(vfp_parameters.polynomial_degree);
-              output_parameters.write_results<dimension>(
-                data_out,
-                discrete_time.get_step_number() + 1,
-                discrete_time.get_next_time(),
-                "analytic_solution");
-            }
-
-          saplog << "Compute error" << std::endl;
-          const double L2_error =
-            vfp_solver.compute_global_error(analytic_solution,
-                                            dealii::VectorTools::L2_norm,
-                                            dealii::VectorTools::L2_norm,
-                                            &weight);
-          const double L2_norm =
-            vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                             dealii::VectorTools::L2_norm,
-                                             &weight);
-
-          saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-                 << ", rel error = " << L2_error / L2_norm << std::endl;
-
-          error_file << discrete_time.get_step_number() + 1 << "; "
-                     << discrete_time.get_next_time() << "; " << L2_norm << "; "
-                     << L2_error << "; " << L2_error / L2_norm << std::endl;
         }
+      /** [Time step] */
+
+
+      /** [Last time step] */
+      analytic_solution.set_time(discrete_time.get_current_time());
+
+      {
+        LogStream::Prefix prefix("Output", saplog);
+        saplog << "Output results" << std::endl;
+
+        dealii::DataOut<dimension> data_out;
+        data_out.attach_dof_handler(vfp_solver.get_dof_handler());
+
+        // Output numeric solution
+        data_out.add_data_vector(vfp_solver.get_current_solution(),
+                                 PDESystem::create_component_name_list(
+                                   system_size));
+
+        // Output projected analytic solution
+        vfp_solver.project(analytic_solution, analytic_solution_vector);
+        data_out.add_data_vector(
+          analytic_solution_vector,
+          PDESystem::create_component_name_list(system_size, "project_f_"));
+
+        // Output interpolated analytic solution
+        dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
+                                         analytic_solution,
+                                         analytic_solution_vector);
+        data_out.add_data_vector(
+          analytic_solution_vector,
+          PDESystem::create_component_name_list(system_size, "interpol_f_"));
+
+        data_out.build_patches(vfp_parameters.polynomial_degree);
+        output_parameters.write_results<dimension>(
+          data_out,
+          discrete_time.get_step_number(),
+          discrete_time.get_current_time());
+      }
+
+      {
+        LogStream::Prefix prefix2("Error", saplog);
+        saplog << "Calculate L2 error" << std::endl;
+
+        const double L2_error =
+          vfp_solver.compute_global_error(analytic_solution,
+                                          dealii::VectorTools::L2_norm,
+                                          dealii::VectorTools::L2_norm,
+                                          &weight);
+        const double L2_norm =
+          vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                           dealii::VectorTools::L2_norm,
+                                           &weight);
+
+        saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+               << ", rel error = " << L2_error / L2_norm << std::endl;
+
+        error_file << discrete_time.get_step_number() << "; "
+                   << discrete_time.get_current_time() << "; " << L2_norm
+                   << "; " << L2_error << "; " << L2_error / L2_norm
+                   << std::endl;
+      }
+      /** [Last time step] */
+
+
+      /** [End simulation] */
       saplog << "Simulation ended at t = " << discrete_time.get_current_time()
              << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
       error_file.close();
-      vfp_solver.get_timer().print_wall_time_statistics(MPI_COMM_WORLD);
+      /** [End simulation] */
     }
   catch (std::exception &exc)
     {

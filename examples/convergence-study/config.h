@@ -50,15 +50,14 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double B0_2pi;
     double B0;
-    /** [Define runtime parameter] */
-    // Copy of VFP parameters for inital value function
+    // Copy of VFP parameters for InitialValueFunction
+    double box_length;
     double velocity;
     double gamma;
     double charge;
     double mass;
-    double box_length;
+    /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
 
@@ -93,8 +92,8 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
-      B0_2pi = prm.get_double("B0/2pi");
-      B0     = B0_2pi * 2. * M_PI;
+      /** Parse runtime parameter */
+      B0 = prm.get_double("B0/2pi") * 2. * M_PI;
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
@@ -126,13 +125,10 @@ namespace sapphirepp
     {
     public:
       InitialValueFunction(const PhysicalParameters &physical_parameters,
-                           const unsigned int        exp_order)
-        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+                           const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
         , prm{physical_parameters}
-        , lms_indices{PDESystem::create_lms_indices(exp_order)}
-        , V{prm.velocity}
-        , L{prm.box_length}
-        , omega{prm.B0 * prm.charge / (prm.gamma * prm.mass)}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
 
 
@@ -144,34 +140,38 @@ namespace sapphirepp
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
+        /** [Initial value constants] */
+        const double t     = this->get_time();
+        const double x     = point[0];
+        const double omega = prm.B0 * prm.charge / (prm.gamma * prm.mass);
+
+        // Coefficients
+        const double A[2] = {2., 0.};
+        const double B[2] = {0., 1.};
+        /** [Initial value constants] */
+
         /** [Initial value] */
-        // 1D Fourier series analytic solution
-        f = 0;
-
-        const double t = this->get_time();
-        const double x = point[0];
-
-        for (unsigned int n = 1; n < 2; ++n)
+        f = 0; // Initialize to zero
+        for (unsigned int n = 0; n < 2; ++n)
           {
-            const double A_n = 0.;
-            const double B_n = 1.;
-            const double k_n = n * 2. * M_PI / L;
-            const double c_n = V * k_n / std::sqrt(3.);
+            const double k_n = n * 2. * M_PI / prm.box_length;
+            const double c_n = prm.velocity / std::sqrt(3.) * k_n;
 
             // f_000
-            f[0] += c_n / std::sqrt(omega * omega + c_n * c_n) *
-                    (std::cos(std::sqrt(omega * omega + c_n * c_n) * t) - 1. +
-                     (omega * omega + c_n * c_n) / (c_n * c_n)) *
-                    (A_n * std::cos(k_n * x) - B_n * std::sin(k_n * x));
+            f[0] +=
+              (c_n * c_n / std::sqrt(omega * omega + c_n * c_n) *
+                 (std::cos(std::sqrt(omega * omega + c_n * c_n) * t) - 1.) +
+               std::sqrt(omega * omega + c_n * c_n)) *
+              (A[n] * std::cos(k_n * x) - B[n] * std::sin(k_n * x));
 
             // f_110
-            f[1] += omega / std::sqrt(omega * omega + c_n * c_n) *
+            f[1] += omega * c_n / std::sqrt(omega * omega + c_n * c_n) *
                     (1. - std::cos(std::sqrt(omega * omega + c_n * c_n) * t)) *
-                    (A_n * std::sin(k_n * x) + B_n * std::cos(k_n * x));
+                    (A[n] * std::sin(k_n * x) + B[n] * std::cos(k_n * x));
 
             // f_100
-            f[2] += std::sin(std::sqrt(omega * omega + c_n * c_n) * t) *
-                    (A_n * std::sin(k_n * x) + B_n * std::cos(k_n * x));
+            f[2] += c_n * std::sin(std::sqrt(omega * omega + c_n * c_n) * t) *
+                    (A[n] * std::sin(k_n * x) + B[n] * std::cos(k_n * x));
 
             // f_111
             f[3] += 0.;
@@ -184,9 +184,6 @@ namespace sapphirepp
     private:
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
-      const double                                   V;     /** Velocity */
-      const double                                   L;     /** Length */
-      const double                                   omega; /** Gyrofrequency */
     };
 
 
@@ -232,10 +229,10 @@ namespace sapphirepp
     {
     public:
       Source(const PhysicalParameters &physical_parameters,
-             unsigned int              exp_order)
-        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+             unsigned int              system_size)
+        : dealii::Function<dim>(system_size)
         , prm{physical_parameters}
-        , lms_indices{PDESystem::create_lms_indices(exp_order)}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
 
 
