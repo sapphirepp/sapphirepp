@@ -285,9 +285,6 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
     locally_relevant_current_solution = initial_condition;
   }
 
-  // Output t = 0
-  output_results(0, 0.);
-
   // Assemble the dg matrix for t = 0
   assemble_dg_matrix(0);
   // Source term at t = 0;
@@ -319,6 +316,11 @@ sapphirepp::VFP::VFPSolver<dim>::run()
              << " at t = " << discrete_time.get_current_time() << " \t["
              << Utilities::System::get_time() << "]" << std::endl;
 
+      if ((discrete_time.get_step_number() %
+           output_parameters.output_frequency) == 0)
+        output_results(discrete_time.get_step_number(),
+                       discrete_time.get_current_time());
+
       switch (vfp_parameters.time_stepping_method)
         {
           case TimeSteppingMethod::forward_euler:
@@ -339,10 +341,12 @@ sapphirepp::VFP::VFPSolver<dim>::run()
           default:
             AssertThrow(false, ExcNotImplemented());
         }
-
-      output_results(discrete_time.get_step_number() + 1,
-                     discrete_time.get_next_time());
     }
+
+  // Output at the final result
+  output_results(discrete_time.get_step_number(),
+                 discrete_time.get_current_time());
+
   saplog << "Simulation ended at t = " << discrete_time.get_current_time()
          << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
@@ -1854,9 +1858,6 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   const unsigned int time_step_number,
   const double       cur_time)
 {
-  if (time_step_number % output_parameters.output_frequency != 0)
-    return;
-
   TimerOutput::Scope timer_section(timer, "Output");
   DataOut<dim_ps>    data_out;
   data_out.attach_dof_handler(dof_handler);
