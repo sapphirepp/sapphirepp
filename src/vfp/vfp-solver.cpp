@@ -1959,6 +1959,15 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
 
 
 template <unsigned int dim>
+const sapphirepp::VFP::PDESystem &
+sapphirepp::VFP::VFPSolver<dim>::get_pde_system() const
+{
+  return pde_system;
+}
+
+
+
+template <unsigned int dim>
 const typename sapphirepp::VFP::VFPSolver<dim>::Triangulation &
 sapphirepp::VFP::VFPSolver<dim>::get_triangulation() const
 {

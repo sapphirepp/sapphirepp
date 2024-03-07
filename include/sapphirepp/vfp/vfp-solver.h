@@ -316,6 +316,14 @@ namespace sapphirepp
        * @{
        */
       /**
+       * @brief Get the PDE system object
+       *
+       * @return const PDESystem&
+       */
+      const PDESystem &
+      get_pde_system() const;
+
+      /**
        * @brief Get the triangulation object
        *
        * @return const Triangulation&
