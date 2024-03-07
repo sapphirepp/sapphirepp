@@ -191,7 +191,7 @@ We choose the following initial condition for $f_{000}$ (wisely choosing the
 prefactor):
 
 $$
-  f_{000}(t=0, x) = \sum_{n} \frac{\sqrt{\omega^2 + c_n^2}}{c_n}
+  f_{000}(t=0, x) = \sum_{n} \sqrt{\omega^2 + c_n^2}
     \left[ A_n \cos(k_n x) - B_n \sin(k_n x) \right]
 $$
 
@@ -209,18 +209,18 @@ Using $f_{110}(t=0,x) = 0$, this results in:
 $$
   \sum_{n} \sqrt{\omega^2 + c_n^2}
     \left[ \psi_{0,n} \sin(k_n x) + \psi_{1,n} \cos(k_n x) \right]
-  = -\frac{V}{\sqrt{3}} \sum_{n} \frac{\sqrt{\omega^2 + c_n^2}}{c_n} k_n
+  = -\frac{V}{\sqrt{3}} \sum_{n} \sqrt{\omega^2 + c_n^2} k_n
     \left[ - A_n \sin(k_n x) - B_n \cos(k_n x) \right]
 $$
 
 Comparing the coefficients we get:
 
 $$
-  \psi_{n,0} = \frac{V}{\sqrt{3}} \frac{k_n A_n}{c_n} = A_n
+  \psi_{n,0} = \frac{V}{\sqrt{3}} k_n A_n = c_n A_n
 $$
 
 $$
-  \psi_{n,1} = B_n
+  \psi_{n,1} = c_n B_n
 $$
 
 We can get $f_{110}$ by integrating $f_{100}$ in time. Using the initial
@@ -228,7 +228,7 @@ condition $f_{110}(t=0) = 0$, we get:
 
 $$
   f_{110}(t,x) = \int_{0}^{t} \omega f_{100}(\tilde{t}, x) \mathrm{d}\tilde{t}
-  = \sum_{n} \frac{\omega}{\sqrt{\omega^2 + c_n^2}}
+  = \sum_{n} \frac{\omega c_n}{\sqrt{\omega^2 + c_n^2}}
     \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
     \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
 $$
@@ -236,7 +236,7 @@ $$
 To summarize, we have:
 
 $$
-  f_{000}(t,x) = \sum_{n} \frac{c_n}{\sqrt{\omega^2 + c_n^2}}
+  f_{000}(t,x) = \sum_{n} \frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
     \left[
       \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
       \frac{\omega^2 + c_n^2}{c_n^2}
@@ -245,13 +245,13 @@ $$
 $$
 
 $$
-  f_{110}(t,x) = \sum_{n} \frac{\omega}{\sqrt{\omega^2 + c_n^2}}
+  f_{110}(t,x) = \sum_{n} \frac{\omega c_n}{\sqrt{\omega^2 + c_n^2}}
     \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
     \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
 $$
 
 $$
-  f_{100}(t, x) = \sum_{n} \sin(\sqrt{\omega^2 + c_n^2} t)
+  f_{100}(t, x) = \sum_{n} c_n \sin(\sqrt{\omega^2 + c_n^2} t)
     \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
 $$
 
@@ -275,15 +275,15 @@ $$
 Inserting all functions we arrive at:
 
 $$
-  \sum_{n} \sqrt{\omega^2 + c_n^2} \cos(\sqrt{\omega^2 + c_n^2} t)
+  \sum_{n} c_n \sqrt{\omega^2 + c_n^2} \cos(\sqrt{\omega^2 + c_n^2} t)
     \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right] +
-  \sum_{n} \frac{V}{\sqrt{3}}\frac{c_n}{\sqrt{\omega^2 + c_n^2}}
+  \sum_{n} \frac{V}{\sqrt{3}}\frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
     \left[
       \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
       \frac{\omega^2 + c_n^2}{c_n^2}
     \right]
     k_n \left[ -A_n \sin(k_n x) - B_n \cos(k_n x) \right] +
-  \sum_{n} \frac{\omega^2}{\sqrt{\omega^2 + c_n^2}}
+  \sum_{n} \frac{\omega^2 c_n}{\sqrt{\omega^2 + c_n^2}}
     \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
     \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
   = 0
@@ -292,13 +292,13 @@ $$
 Comparing the coefficients we have:
 
 $$
-  \sqrt{\omega^2 + c_n^2} \cos(\sqrt{\omega^2 + c_n^2} t) -
-  \frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
+  c_n \sqrt{\omega^2 + c_n^2} \cos(\sqrt{\omega^2 + c_n^2} t) -
+  \frac{c_n^3}{\sqrt{\omega^2 + c_n^2}}
     \left[
       \cos(\sqrt{\omega^2 + c_n^2} t) - 1 +
       \frac{\omega^2 + c_n^2}{c_n^2}
     \right] +
-  \frac{\omega^2}{\sqrt{\omega^2 + c_n^2}}
+  \frac{\omega^2 c_n}{\sqrt{\omega^2 + c_n^2}}
     \left[ 1 - \cos(\sqrt{\omega^2 + c_n^2} t) \right]
   = 0
 $$
