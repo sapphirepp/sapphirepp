@@ -76,6 +76,26 @@ sapphirepp::VFP::PDESystem::create_lms_indices(const unsigned int system_size)
 
 
 
+std::vector<std::string>
+sapphirepp::VFP::PDESystem::create_component_name_list(
+  const unsigned int system_size,
+  const std::string &prefix)
+{
+  const std::vector<std::array<unsigned int, 3>> lms_indices =
+    PDESystem::create_lms_indices(system_size);
+  std::vector<std::string> component_names(system_size);
+
+  for (unsigned int i = 0; i < system_size; ++i)
+    {
+      component_names[i] = prefix + std::to_string(lms_indices[i][0]) +
+                           std::to_string(lms_indices[i][1]) +
+                           std::to_string(lms_indices[i][2]);
+    }
+  return component_names;
+}
+
+
+
 const std::vector<dealii::LAPACKFullMatrix<double>> &
 sapphirepp::VFP::PDESystem::get_advection_matrices() const
 {

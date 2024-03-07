@@ -178,28 +178,18 @@ main(int argc, char *argv[])
                                        analytic_solution_vector);
       /** [Calculate analytic solution] */
 
-      /** [Component names] */
-      const unsigned int num_exp_coefficients =
-        (vfp_parameters.expansion_order + 1) *
-        (vfp_parameters.expansion_order + 1);
-      std::vector<std::string> component_names(num_exp_coefficients);
-      const std::vector<std::array<unsigned int, 3>> lms_indices =
-        PDESystem::create_lms_indices(num_exp_coefficients);
-      for (unsigned int i = 0; i < num_exp_coefficients; ++i)
-        {
-          const std::array<unsigned int, 3> &lms = lms_indices[i];
-          component_names[i] = "analytic_f_" + std::to_string(lms[0]) +
-                               std::to_string(lms[1]) + std::to_string(lms[2]);
-        }
-      /** [Component names] */
-
       /** [Output analytic solution] */
       dealii::DataOut<dimension> data_out;
       data_out.attach_dof_handler(vfp_solver.get_dof_handler());
-      data_out.add_data_vector(analytic_solution_vector, component_names);
+      data_out.add_data_vector(analytic_solution_vector,
+                               PDESystem::create_component_name_list(
+                                 vfp_solver.get_pde_system().system_size,
+                                 "analytic_f_"));
       data_out.build_patches(vfp_parameters.polynomial_degree);
-      output_parameters.base_file_name = "analytic_solution";
-      output_parameters.write_results<dimension>(data_out, 0);
+      output_parameters.write_results<dimension>(data_out,
+                                                 0,
+                                                 vfp_parameters.final_time,
+                                                 "analytic_solution");
       /** [Output analytic solution] */
       /** [Try-Catch end] */
     }

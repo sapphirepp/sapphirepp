@@ -455,19 +455,19 @@ create a @dealref{MPI::Vector,classPETScWrappers_1_1MPI_1_1Vector} object. We
 store the finite element coefficients of the analytic solution in this vector
 using the
 @dealref{interpolate(),namespaceVectorTools,a32b68e11070496fcaf6c2389f088d09c}
-function.
+function. Note that the interpolation ensures that the values at the nodes are
+given by the function values. This is not the case for a projected function,
+which the weak solution approximates. We refer to the discussion in the
+[visualization](#visualization) section.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Calculate analytic solution
 
-In order to assign names to the components of the vector, we create a list
-called `component_names`. This list maps each component index to its
-corresponding name.
-
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Component names
-
 Finally, we write the analytic solution to a file using the @dealref{DataOut}
 object and the @ref sapphirepp::Utils::OutputParameters::write_results
-"write_results()" function.
+"write_results()" function. We can make use of the @ref
+sapphirepp::VFP::PDESystem::create_component_name_list
+"create_component_name_list()" function to name the components of the
+vector.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Output analytic solution
 

@@ -1860,18 +1860,9 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   TimerOutput::Scope timer_section(timer, "Output");
   DataOut<dim_ps>    data_out;
   data_out.attach_dof_handler(dof_handler);
-  // Create a vector of strings with names for the components of the
-  // solution
-  std::vector<std::string> component_names(pde_system.system_size);
-
-  for (unsigned int i = 0; i < pde_system.system_size; ++i)
-    {
-      const std::array<unsigned int, 3> &lms = pde_system.lms_indices[i];
-      component_names[i]                     = "f_" + std::to_string(lms[0]) +
-                           std::to_string(lms[1]) + std::to_string(lms[2]);
-    }
-
-  data_out.add_data_vector(locally_relevant_current_solution, component_names);
+  data_out.add_data_vector(locally_relevant_current_solution,
+                           PDESystem::create_component_name_list(
+                             pde_system.system_size));
 
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());

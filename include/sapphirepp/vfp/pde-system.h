@@ -34,6 +34,7 @@
 
 #include <array>
 #include <ostream>
+#include <string>
 #include <vector>
 
 namespace sapphirepp
@@ -77,6 +78,7 @@ namespace sapphirepp
       PDESystem(const unsigned int expansion_order);
 
 
+      /** @{ */
       /**
        * @brief Create a mapping between the system index \f$ i \f$ and the
        *        spherical harmonic indices \f$ (l,m,s) \f$
@@ -88,6 +90,20 @@ namespace sapphirepp
        */
       static std::vector<std::array<unsigned int, 3>>
       create_lms_indices(const unsigned int system_size);
+
+      /**
+       * @brief Create a list of component names, `f_lms`
+       *
+       * @param system_size Number of expansion coefficients, normally
+       *        \f$ (l_{\rm max} + 1)^2 \f$.
+       * @param prefix Prefix for the component names.
+       * @return std::vector<std::string> component_names.
+       *         List `component_names[i] = "f_lms"`.
+       */
+      static std::vector<std::string>
+      create_component_name_list(const unsigned int system_size,
+                                 const std::string &prefix = "f_");
+      /** @} */
 
 
 

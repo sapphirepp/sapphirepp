@@ -201,7 +201,7 @@ main(int argc, char *argv[])
         vfp_parameters.mass);
 
       WeightFunction<dimension> weight(physical_parameters,
-                                       vfp_parameters.expansion_order);
+                                       vfp_solver.get_pde_system().system_size);
 
       const double L2_error =
         vfp_solver.compute_global_error(analytic_solution,
@@ -226,30 +226,21 @@ main(int argc, char *argv[])
                                        weight,
                                        weight_vector);
 
-      const unsigned int num_exp_coefficients =
-        (vfp_parameters.expansion_order + 1) *
-        (vfp_parameters.expansion_order + 1);
-      std::vector<std::string> component_names(num_exp_coefficients);
-      std::vector<std::string> component_names_weight(num_exp_coefficients);
-      const std::vector<std::array<unsigned int, 3>> lms_indices =
-        PDESystem::create_lms_indices(num_exp_coefficients);
-      for (unsigned int i = 0; i < num_exp_coefficients; ++i)
-        {
-          const std::array<unsigned int, 3> &lms = lms_indices[i];
-          component_names[i] = "analytic_f_" + std::to_string(lms[0]) +
-                               std::to_string(lms[1]) + std::to_string(lms[2]);
-          component_names_weight[i] = "weight_" + std::to_string(lms[0]) +
-                                      std::to_string(lms[1]) +
-                                      std::to_string(lms[2]);
-        }
-
       dealii::DataOut<dimension> data_out;
       data_out.attach_dof_handler(vfp_solver.get_dof_handler());
-      data_out.add_data_vector(analytic_solution_vector, component_names);
-      data_out.add_data_vector(weight_vector, component_names_weight);
+      data_out.add_data_vector(analytic_solution_vector,
+                               PDESystem::create_component_name_list(
+                                 vfp_solver.get_pde_system().system_size,
+                                 "analytic_f_"));
+      data_out.add_data_vector(weight_vector,
+                               PDESystem::create_component_name_list(
+                                 vfp_solver.get_pde_system().system_size,
+                                 "weight_"));
       data_out.build_patches(vfp_parameters.polynomial_degree);
-      output_parameters.base_file_name = "analytic_solution";
-      output_parameters.write_results<dimension>(data_out, 0);
+      output_parameters.write_results<dimension>(data_out,
+                                                 0,
+                                                 vfp_parameters.final_time,
+                                                 "analytic_solution");
 
       saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
              << ", rel error = " << L2_error / L2_norm
