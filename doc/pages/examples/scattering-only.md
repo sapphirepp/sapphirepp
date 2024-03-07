@@ -164,8 +164,8 @@ class. We create the class @ref sapphirepp::VFP::InitialValueFunction
 @dealref{Function}. In line with the @dealii style, we keep the dimension as a
 template parameter, even though it is defined in the compile-time variable
 `dimension`. This function needs to provide a value for each component
-$f_{lms}$, making it a **vector-valued** function with $(l_{\rm max}+1)^2$
-components.
+$f_{lms}$, making it a **vector-valued** function with `system_size =
+(l_max+1)^2` components.
 
 In the constructor, we pass the @ref sapphirepp::PhysicalParameters
 "PhysicalParameters" and store it in the `private const` variable `prm`. This
@@ -185,7 +185,7 @@ component $f_{lms}$ at the given point, which is stored in the results vector
 `f`.
 
 To catch implementation errors, we check that the size of the results vector `f`
-matches the number of components $(l_{\rm max}+1)^2$, using the
+matches the number of components `system_size`, using the
 @dealref{Assert,group__Exceptions,ga70a0bb353656e704acf927945277bbc6} macro,
 which is only activated in debug mode. Note that we use
 `static_cast<void>(point)` to avoid a compiler warning about an unused variable.

@@ -278,7 +278,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   {
     TimerOutput::Scope timer_section(timer, "Project initial condition");
     InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
-                                                        expansion_order);
+                                                        pde_system.system_size);
     PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
                                                  mpi_communicator);
     project(initial_value_function, initial_condition);
@@ -295,7 +295,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   // Source term at t = 0;
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
-      Source<dim_ps> source_function(physical_parameters, expansion_order);
+      Source<dim_ps> source_function(physical_parameters,
+                                     pde_system.system_size);
       source_function.set_time(0);
       compute_source_term(source_function);
     }
@@ -1549,7 +1550,8 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
         {
           system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
           // Update the source term
-          Source<dim_ps> source_function(physical_parameters, expansion_order);
+          Source<dim_ps> source_function(physical_parameters,
+                                         pde_system.system_size);
           source_function.set_time(time + time_step);
           compute_source_term(source_function);
           system_rhs.add(theta * time_step, locally_owned_current_source);
@@ -1666,7 +1668,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
-          Source<dim_ps> source_function(physical_parameters, expansion_order);
+          Source<dim_ps> source_function(physical_parameters,
+                                         pde_system.system_size);
           source_function.set_time(time + c[1] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1695,7 +1698,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
-          Source<dim_ps> source_function(physical_parameters, expansion_order);
+          Source<dim_ps> source_function(physical_parameters,
+                                         pde_system.system_size);
           source_function.set_time(time + c[2] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1730,7 +1734,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
-          Source<dim_ps> source_function(physical_parameters, expansion_order);
+          Source<dim_ps> source_function(physical_parameters,
+                                         pde_system.system_size);
           source_function.set_time(time + c[3] * time_step);
           compute_source_term(source_function);
           system_rhs.add(-1., locally_owned_current_source);
@@ -1818,7 +1823,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
                         VFPFlags::none) // time dependent source
             {
               Source<dim_ps> source_function(physical_parameters,
-                                             expansion_order);
+                                             pde_system.system_size);
               source_function.set_time(time + c[s] * time_step);
               compute_source_term(source_function);
               system_rhs.add(-1., locally_owned_current_source);

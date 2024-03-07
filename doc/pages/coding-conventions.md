@@ -419,16 +419,16 @@ list here:
     ```cpp
     std::vector<std::array<unsigned int, 3>>
     sapphirepp::VFP::PDESystem::create_lms_indices(
-      const unsigned int expansion_order)
+      const unsigned int system_size)
     {
       ...
       return lms_indices;
     }
     ```
 
-    Here, the user calls `PDESystem::create_lms_indices(3)`, for example. There
+    Here, the user calls `PDESystem::create_lms_indices(9)`, for example. There
     really is no reason why the function would ever want to change the value of
-    the `expansion_order` argument — so mark it as constant: this both helps the
+    the `system_size` argument — so mark it as constant: this both helps the
     reader of the code understand that this is an input argument of the function
     for which we need not search below whether it is ever changed, and it helps
     the compiler help us find bugs if we ever accidentally change the value.

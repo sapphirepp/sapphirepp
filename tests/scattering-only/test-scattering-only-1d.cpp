@@ -52,11 +52,11 @@ namespace sapinternal
     {
     public:
       AnalyticSolution(const PhysicalParameters &physical_parameters,
-                       const unsigned int        exp_order,
+                       const unsigned int        system_size,
                        const double              time)
-        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1), time)
+        : dealii::Function<dim>(system_size, time)
         , prm{physical_parameters}
-        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+        , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
       {}
 
 
@@ -144,7 +144,7 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
       using namespace sapinternal::AnalyticSolutionImplementation;
       AnalyticSolution<dimension> analytic_solution(
         physical_parameters,
-        vfp_parameters.expansion_order,
+        vfp_solver.get_pde_system().system_size,
         vfp_parameters.final_time);
 
       const double L2_error =
@@ -202,9 +202,10 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
   timer.stop();
 
   using namespace sapinternal::AnalyticSolutionImplementation;
-  AnalyticSolution<dimension> analytic_solution(physical_parameters,
-                                                vfp_parameters.expansion_order,
-                                                vfp_parameters.final_time);
+  AnalyticSolution<dimension> analytic_solution(
+    physical_parameters,
+    vfp_solver.get_pde_system().system_size,
+    vfp_parameters.final_time);
 
   const double L2_error =
     vfp_solver.compute_global_error(analytic_solution,

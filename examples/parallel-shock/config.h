@@ -183,10 +183,10 @@ namespace sapphirepp
     {
     public:
       InitialValueFunction(const PhysicalParameters &physical_parameters,
-                           const unsigned int        exp_order)
-        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+                           const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
         , prm{physical_parameters}
-        , lms_indices{PDESystem::create_lms_indices(exp_order)}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
 
 
@@ -258,10 +258,10 @@ namespace sapphirepp
     {
     public:
       Source(const PhysicalParameters &physical_parameters,
-             unsigned int              exp_order)
-        : dealii::Function<dim>((exp_order + 1) * (exp_order + 1))
+             unsigned int              system_size)
+        : dealii::Function<dim>(system_size)
         , prm{physical_parameters}
-        , lms_indices{PDESystem::create_lms_indices(exp_order)}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
 
 

@@ -115,12 +115,10 @@ main(int argc, char *argv[])
 
       saplog << "Calculate analytic solution" << std::endl;
       InitialValueFunction<dimension> analytic_solution(
-        physical_parameters, vfp_parameters.expansion_order);
+        physical_parameters, vfp_solver.get_pde_system().system_size);
 
       const dealii::ComponentSelectFunction<dimension> weight(
-        0,
-        (vfp_parameters.expansion_order + 1) *
-          (vfp_parameters.expansion_order + 1));
+        0, vfp_solver.get_pde_system().system_size);
 
       const double L2_error =
         vfp_solver.compute_global_error(analytic_solution,

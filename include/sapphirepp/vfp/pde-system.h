@@ -81,13 +81,13 @@ namespace sapphirepp
        * @brief Create a mapping between the system index \f$ i \f$ and the
        *        spherical harmonic indices \f$ (l,m,s) \f$
        *
-       * @param expansion_order Maximum order of the spherical harmonic
-       *        expansion \f$ l_{\rm max} \f$
+       * @param system_size Number of expansion coefficients, normally
+       *        \f$ (l_{\rm max} + 1)^2 \f$.
        * @return std::vector<std::array<unsigned int, 3>> lms_indices.
        *         Mapping `lms_indices[i] = {l,m,s}`.
        */
       static std::vector<std::array<unsigned int, 3>>
-      create_lms_indices(const unsigned int expansion_order);
+      create_lms_indices(const unsigned int system_size);
 
 
 

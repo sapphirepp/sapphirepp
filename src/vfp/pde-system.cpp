@@ -33,7 +33,7 @@
 sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
   : expansion_order{expansion_order}
   , system_size{(expansion_order + 1) * (expansion_order + 1)}
-  , lms_indices{create_lms_indices(expansion_order)}
+  , lms_indices{create_lms_indices(system_size)}
   , advection_matrices(3)
   , generator_rotation_matrices(3)
   , adv_mat_products(6)
@@ -52,27 +52,23 @@ sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
 
 
 std::vector<std::array<unsigned int, 3>>
-sapphirepp::VFP::PDESystem::create_lms_indices(
-  const unsigned int expansion_order)
+sapphirepp::VFP::PDESystem::create_lms_indices(const unsigned int system_size)
 {
-  const unsigned int system_size =
-    (expansion_order + 1) * (expansion_order + 1);
   std::vector<std::array<unsigned int, 3>> lms_indices(system_size);
-  for (long s = 0; s <= 1; ++s)
+
+  unsigned int l = 0;
+  long         m = 0;
+  for (unsigned int i = 0; i < system_size; ++i)
     {
-      for (long l = 0; l <= static_cast<long>(expansion_order); ++l)
+      lms_indices[i][0] = l;
+      lms_indices[i][1] = static_cast<unsigned int>(std::abs(m));
+      lms_indices[i][2] = m <= 0 ? 0 : 1;
+
+      m++;
+      if (m > static_cast<long>(l))
         {
-          for (long m = s; m <= l; ++m)
-            {
-              const long index = l * (l + 1) - (s ? -1 : 1) * m;
-              AssertIndexRange(index, system_size);
-              lms_indices[static_cast<unsigned int>(index)][0] =
-                static_cast<unsigned int>(l);
-              lms_indices[static_cast<unsigned int>(index)][1] =
-                static_cast<unsigned int>(m);
-              lms_indices[static_cast<unsigned int>(index)][2] =
-                static_cast<unsigned int>(s);
-            }
+          l++;
+          m = -static_cast<long>(l);
         }
     }
   return lms_indices;

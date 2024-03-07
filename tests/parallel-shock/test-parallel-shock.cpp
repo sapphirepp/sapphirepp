@@ -49,11 +49,11 @@ namespace sapinternal
     {
     public:
       AnalyticSolution(const PhysicalParameters &physical_parameters,
-                       const unsigned int        exp_order,
+                       const unsigned int        system_size,
                        const double             &mass)
-        : Function<dim>((exp_order + 1) * (exp_order + 1))
+        : Function<dim>(system_size)
         , prm{physical_parameters}
-        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+        , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
         , particle_velocity(mass)
         , scattering_frequency(prm)
       {}
@@ -108,10 +108,10 @@ namespace sapinternal
     {
     public:
       WeightFunction(const PhysicalParameters &physical_parameters,
-                     const unsigned int        exp_order)
-        : Function<dim>((exp_order + 1) * (exp_order + 1))
+                     const unsigned int        system_size)
+        : Function<dim>(system_size)
         , prm{physical_parameters}
-        , lms_indices{VFP::PDESystem::create_lms_indices(exp_order)}
+        , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
       {}
 
 
@@ -197,7 +197,7 @@ main(int argc, char *argv[])
 
       AnalyticSolution<dimension> analytic_solution(
         physical_parameters,
-        vfp_parameters.expansion_order,
+        vfp_solver.get_pde_system().system_size,
         vfp_parameters.mass);
 
       WeightFunction<dimension> weight(physical_parameters,
