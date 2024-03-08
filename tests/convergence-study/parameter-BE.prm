@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 5
   set Output frequency             = 20
   set Results folder               = ./results
-  set Simulation identifier        = convergence-study
+  set Simulation identifier        = convergence-study-BE
 end
 subsection Physical parameters
   set B0/2pi = 1.
@@ -18,7 +18,7 @@ subsection VFP
   end
   subsection Mesh
     set Grid type             = Hypercube
-    set Number of cells       = 8
+    set Number of cells       = 64
     set Point 1               = -10.
     set Point 2               = 10.
     subsection Boundary conditions
@@ -32,7 +32,7 @@ subsection VFP
   end
   subsection Time stepping
     set Final time     = 20.
-    set Method         = FE
+    set Method         = BE
     set Time step size = 0.01
   end
   subsection TransportOnly
