@@ -9,7 +9,7 @@ add_test(NAME quick-start
 set_property(TEST quick-start PROPERTY
              LABELS "quick-start"
                     "2d" "momentum" "spatial_advection" "source" "scattering"
-                    "shock" "Crank-Nicholson"
+                    "shock" "CN"
                     "commit-Release" "commit-Debug"
                     "full-suite-Release" "full-suite-Debug")
 

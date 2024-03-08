@@ -17,7 +17,7 @@ add_test(NAME scattering-only-1d-CN
 set_property(TEST scattering-only-1d-CN PROPERTY
              LABELS "scattering-only"
                     "1d" "scattering"
-                    "Crank-Nicholson" "periodic BC"
+                    "CN" "periodic BC"
                     "full-suite-Release" "full-suite-Debug")
 
 add_test(NAME scattering-only-1d-ERK4
@@ -34,7 +34,8 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY
 # set_property(TEST scattering-only-1d-LSERK PROPERTY
 #              LABELS "scattering-only"
 #                     "1d" "scattering"
-#                     "LSERK" "periodic BC")
+#                     "LSERK" "periodic BC"
+#                     "full-suite-Debug" "full-suite-Release")
 
 add_test(NAME scattering-only-1d-FE
          COMMAND ./test-scattering-only-1d parameter-1d-FE.prm test_run 1e-1)

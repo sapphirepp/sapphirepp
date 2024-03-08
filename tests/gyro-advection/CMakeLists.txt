@@ -14,7 +14,7 @@ add_test(NAME gyro-advection
 set_property(TEST gyro-advection PROPERTY
              LABELS "gyro-advection"
                     "2d" "spatial_advection" "magnetic"
-                    "Crank-Nicholson" "periodic BC"
+                    "CN" "periodic BC"
                     "commit-Release" "commit-Debug"
                     "full-suite-Release" "full-suite-Debug")
 
@@ -23,7 +23,7 @@ add_test(NAME gyro-static
 set_property(TEST gyro-static PROPERTY
              LABELS "gyro-advection"
                     "2d" "spatial_advection" "magnetic"
-                    "Crank-Nicholson" "continuos gradients"
+                    "CN" "continuos gradients"
                     "commit-Release" "commit-Debug"
                     "full-suite-Release" "full-suite-Debug")
 

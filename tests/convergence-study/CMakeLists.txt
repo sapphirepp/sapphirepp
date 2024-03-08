@@ -15,7 +15,7 @@ add_test(NAME convergence-study-CN
 set_property(TEST convergence-study-CN PROPERTY
              LABELS "convergence-study"
                     "1d" "spatial_advection" "magnetic"
-                    "Crank-Nicholson" "periodic BC"
+                    "CN" "periodic BC"
                     "fast" "commit-Debug" "commit-Release"
                     "full-suite-Release" "full-suite-Debug")
 
