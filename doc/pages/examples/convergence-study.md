@@ -274,7 +274,7 @@ norm, $\lVert f_{000, h}^{n} \rVert_{L^2}$, we can calculate the relative error
 as
 
 $$
-  \text{rel. error} \coloneqq \frac{\lVert f_{000, h}^{n} - f_{000}(t^n)
+  \text{rel. error} := \frac{\lVert f_{000, h}^{n} - f_{000}(t^n)
   \rVert_{L^2}}{\lVert f_{000, h}^{n} \rVert_{L^2}} \,.
 $$
 
@@ -307,7 +307,30 @@ Finally, we can end the simulation and close the `csv` file.
 
 ## Results {#results-convergence-study}
 
-@todo Add results for convergence study example.
+Showing the results for a low resolution run, illustrates the difference between
+*projection* and *interpolation* of the analytic solution. While the
+interpolation gives the exact values at the nodes, the projection approximates
+the solution in the finite element space. Using a discontinuous Galerkin method,
+the projection is not continuous, but has jumps at the nodes. We can see that
+the *weak* numerical solution is approximating the *projection* of the analytic
+solution. Consequently, the numeric solution is not continuous and shows jumps
+at the nodes. We discuss this in more detail in the
+[visualization](#visualization) section.
+
+![Results t0](https://sapphirepp.org/img/examples/convergence-study/convergence_study_t0.png)
+![Results tEnd](https://sapphirepp.org/img/examples/convergence-study/convergence_study_tEnd.png)
+
+Running the simulation for different time steps, $\Delta t$, we can assess the
+convergence of the numerical solution. As expected, the `ERK4` method is forth
+order, while the forward Euler method is only first order. We can also study the
+convergence of the numerical solution with spatial resolutions $\Delta
+x$ for different polynomial degrees $k$. In this case, we expect the error to
+follow a $(\Delta x)^{k+1}$ scaling, assuming the projection error dominates.
+
+<p float="center">
+  <img src="https://sapphirepp.org/img/examples/convergence-study/convergence_study_dt.png" alt="Convergence dt" width="49%">
+  <img src="https://sapphirepp.org/img/examples/convergence-study/convergence_study_dx.png" alt="Convergence dx" width="49%">
+</p>
 
 
 ## The plain program {#plain-convergence-study}
