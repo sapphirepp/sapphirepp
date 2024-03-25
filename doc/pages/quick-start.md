@@ -54,12 +54,13 @@ the anisotropies of the distribution function. @sapphire computes the expansion
 coefficients $f_{lms}(\mathbf{x}, p, t)$ up to a maximum order $l_{\rm max}$,
 hence it reduces the dimensionality of the problem from the full six dimensional
 phase space $(\mathbf{x}, \mathbf{p})$ to a four dimensional **reduced phase
-space** $(\mathbf{x}, p)$. We can reduce the dimensionality even further,
-noticing that our problem only depends on one spatial dimension. Our spatial
-domain for this problem $(\mathbf{x}) = (x)$, called **configuration space**,
-has therefore the dimensionality `dim_cs = 1`. The **computational domain** for
-this problem therefore has the dimensionality `dim = dim_ps = dim_cs + 1 = 2`,
-equalling the dimensionality of the reduced phase space `dim_ps`.
+space** $\mathbf{\xi} = (\mathbf{x}, p)^{T}$. We can reduce the dimensionality
+even further, noticing that our problem only depends on one spatial dimension.
+Our spatial domain for this problem $(\mathbf{x}) = (x)$, called **configuration
+space**, has therefore the dimensionality `dim_cs = 1`. The **computational
+domain** for this problem therefore has the dimensionality `dim = dim_ps =
+dim_cs + 1 = 2`, equalling the dimensionality of the reduced phase space
+`dim_ps`.
 
 @note The computational domain is always the reduced phase space. Therefore, the
       dimension of the grid and (most) quantities `dim`, equals the dimension of
