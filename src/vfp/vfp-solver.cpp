@@ -55,6 +55,7 @@
 #include <deal.II/meshworker/mesh_loop.h>
 
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools_integrate_difference.h>
 #include <deal.II/numerics/vector_tools_project.h>
@@ -271,7 +272,15 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   timer.reset();
   make_grid();
   setup_system();
-  assemble_mass_matrix();
+
+  {
+    TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
+    saplog << "Assemble mass matrix." << std::endl;
+    MatrixCreator::create_mass_matrix(mapping,
+                                      dof_handler,
+                                      quadrature,
+                                      mass_matrix);
+  }
 
   {
     TimerOutput::Scope timer_section(timer, "Project initial condition");
@@ -587,70 +596,6 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                        locally_owned_dofs,
                        dsp,
                        mpi_communicator);
-}
-
-
-
-template <unsigned int dim>
-void
-sapphirepp::VFP::VFPSolver<dim>::assemble_mass_matrix()
-{
-  TimerOutput::Scope timer_section(timer, "Mass matrix");
-
-  using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
-  using namespace sapphirepp::internal::VFPSolver;
-
-  const auto cell_worker = [](const Iterator      &cell,
-                              ScratchData<dim_ps> &scratch_data,
-                              CopyData            &copy_data) {
-    FEValues<dim_ps> &fe_v = scratch_data.fe_values;
-    fe_v.reinit(cell);
-    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
-    // reinit the cell_matrix
-    copy_data.reinit(cell, n_dofs);
-    const std::vector<double> &JxW = fe_v.get_JxW_values();
-
-    for (const unsigned int q_index : fe_v.quadrature_point_indices())
-      {
-        for (unsigned int i : fe_v.dof_indices())
-          {
-            const unsigned int component_i =
-              fe_v.get_fe().system_to_component_index(i).first;
-            for (unsigned int j : fe_v.dof_indices())
-              {
-                const unsigned int component_j =
-                  fe_v.get_fe().system_to_component_index(j).first;
-                // mass matrix
-                copy_data.cell_matrix(i, j) +=
-                  (component_i == component_j ? fe_v.shape_value(i, q_index) *
-                                                  fe_v.shape_value(j, q_index) :
-                                                0) *
-                  JxW[q_index];
-              }
-          }
-      }
-  };
-
-  const auto copier = [&](const CopyData &c) {
-    constraints.distribute_local_to_global(c.cell_matrix,
-                                           c.local_dof_indices,
-                                           mass_matrix);
-  };
-  ScratchData<dim_ps> scratch_data(mapping, fe, quadrature, quadrature_face);
-  CopyData            copy_data;
-  // Perform the integration loop only over the locally owned cells
-  const auto filtered_iterator_range =
-    dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
-
-  saplog << "Begin the assembly of the mass matrix." << std::endl;
-  MeshWorker::mesh_loop(filtered_iterator_range,
-                        cell_worker,
-                        copier,
-                        scratch_data,
-                        copy_data,
-                        MeshWorker::assemble_own_cells);
-  mass_matrix.compress(VectorOperation::add);
-  saplog << "The mass matrix was assembled." << std::endl;
 }
 
 

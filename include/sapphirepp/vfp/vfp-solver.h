@@ -499,14 +499,6 @@ namespace sapphirepp
        */
       void
       setup_system();
-
-      /**
-       * @brief Assemble the mass matrix
-       *
-       * Setup and compute the @ref mass_matrix
-       */
-      void
-      assemble_mass_matrix();
       /** @} */
 
 
