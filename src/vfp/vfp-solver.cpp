@@ -302,7 +302,11 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
       Source<dim_ps> source_function(physical_parameters,
                                      pde_system.system_size);
       source_function.set_time(0);
-      compute_source_term(source_function);
+      VectorTools::create_right_hand_side(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          source_function,
+                                          locally_owned_current_source);
     }
 }
 
@@ -568,6 +572,9 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                                            locally_relevant_dofs,
                                            mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
+
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -1415,63 +1422,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::compute_source_term(
-  const Function<dim> &source_function)
-{
-  FEValues<dim_ps> fe_v(mapping,
-                        fe,
-                        quadrature,
-                        update_values | update_quadrature_points |
-                          update_JxW_values);
-
-  const unsigned int n_dofs = fe.n_dofs_per_cell();
-  Vector<double>     cell_rhs(n_dofs);
-
-  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
-  // reinitializes the source term
-  locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      if (cell->is_locally_owned())
-        {
-          cell_rhs = 0;
-          fe_v.reinit(cell);
-
-          const std::vector<Point<dim_ps>> &q_points =
-            fe_v.get_quadrature_points();
-          const std::vector<double> &JxW = fe_v.get_JxW_values();
-
-          // NOLINTBEGIN(google-readability-casting)
-          std::vector<Vector<double>> source_values(
-            q_points.size(), Vector<double>(pde_system.system_size));
-          // NOLINTEND(google-readability-casting)
-          source_function.vector_value_list(q_points, source_values);
-
-          for (const unsigned int q_index : fe_v.quadrature_point_indices())
-            {
-              for (unsigned int i : fe_v.dof_indices())
-                {
-                  const unsigned int component_i =
-                    fe.system_to_component_index(i).first;
-                  cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                                 source_values[q_index][component_i] *
-                                 JxW[q_index];
-                }
-            }
-          cell->get_dof_indices(local_dof_indices);
-
-          constraints.distribute_local_to_global(cell_rhs,
-                                                 local_dof_indices,
-                                                 locally_owned_current_source);
-        }
-    }
-  locally_owned_current_source.compress(VectorOperation::add);
-}
-
-
-
-template <unsigned int dim>
-void
 sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
@@ -1500,7 +1450,11 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
           source_function.set_time(time + time_step);
-          compute_source_term(source_function);
+          VectorTools::create_right_hand_side(mapping,
+                                              dof_handler,
+                                              quadrature,
+                                              source_function,
+                                              locally_owned_current_source);
           system_rhs.add(theta * time_step, locally_owned_current_source);
         }
       else
@@ -1618,7 +1572,11 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
           source_function.set_time(time + c[1] * time_step);
-          compute_source_term(source_function);
+          VectorTools::create_right_hand_side(mapping,
+                                              dof_handler,
+                                              quadrature,
+                                              source_function,
+                                              locally_owned_current_source);
           system_rhs.add(-1., locally_owned_current_source);
         }
       else
@@ -1648,7 +1606,11 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
           source_function.set_time(time + c[2] * time_step);
-          compute_source_term(source_function);
+          VectorTools::create_right_hand_side(mapping,
+                                              dof_handler,
+                                              quadrature,
+                                              source_function,
+                                              locally_owned_current_source);
           system_rhs.add(-1., locally_owned_current_source);
         }
       else
@@ -1684,7 +1646,11 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
           source_function.set_time(time + c[3] * time_step);
-          compute_source_term(source_function);
+          VectorTools::create_right_hand_side(mapping,
+                                              dof_handler,
+                                              quadrature,
+                                              source_function,
+                                              locally_owned_current_source);
           system_rhs.add(-1., locally_owned_current_source);
         }
       else
@@ -1772,7 +1738,11 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
               Source<dim_ps> source_function(physical_parameters,
                                              pde_system.system_size);
               source_function.set_time(time + c[s] * time_step);
-              compute_source_term(source_function);
+              VectorTools::create_right_hand_side(mapping,
+                                                  dof_handler,
+                                                  quadrature,
+                                                  source_function,
+                                                  locally_owned_current_source);
               system_rhs.add(-1., locally_owned_current_source);
             }
           else

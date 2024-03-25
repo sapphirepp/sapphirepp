@@ -513,16 +513,6 @@ namespace sapphirepp
        */
       void
       assemble_dg_matrix(const double time);
-
-      /**
-       * @brief Compute the source term
-       *
-       * Compute the @ref locally_owned_current_source
-       *
-       * @param source_function Source function
-       */
-      void
-      compute_source_term(const Function<dim> &source_function);
       /** @} */
     };
 
