@@ -18,6 +18,7 @@ message("Sapphire++ version ${SAPPHIREPP_VERSION}")
 
 option(SAPPHIREPP "Compile Sapphire++" ON )
 option(VFP "Build with VFP module" ON)
+option(MHD "Build with MHD module" ON)
 option(EXAMPLES "Build with examples" OFF)
 option(TESTS "Build with tests" OFF)
 option(DOC "Build with documentation" OFF)
@@ -70,9 +71,27 @@ if(SAPPHIREPP)
     deal_ii_setup_target(sapphirepp)
     target_include_directories(sapphirepp PUBLIC
                                ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+    target_include_directories(sapphirepp PUBLIC
+                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
     target_include_directories(sapphirepp PUBLIC ${CONFIG_HEADER_DIR})
     target_link_libraries(sapphirepp UtilsLib)
   endif(VFP)
+
+  if(MHD)
+    MESSAGE(STATUS "Preparing MHD module")
+    # VFP source files have to be compiled together with the main/config file
+    file(GLOB MHD_SOURCES src/mhd/*.cpp)
+
+    file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
+    add_executable(test-mhd test-mhd.cpp ${MHD_SOURCES})
+    deal_ii_setup_target(test-mhd)
+    target_include_directories(test-mhd PUBLIC
+                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+    target_include_directories(test-mhd PUBLIC
+                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
+    target_include_directories(test-mhd PUBLIC ${CONFIG_HEADER_DIR})
+    target_link_libraries(test-mhd UtilsLib)
+  endif(MHD)
 
   if(EXAMPLES)
     MESSAGE(STATUS "Preparing Examples")

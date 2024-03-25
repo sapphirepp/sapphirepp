@@ -39,6 +39,8 @@
 #include <cmath>
 #include <vector>
 
+#include "mhd-equations.h"
+#include "mhd-flags.h"
 #include "pde-system.h"
 #include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
@@ -655,5 +657,84 @@ namespace sapphirepp
       const PhysicalParameters prm;
     };
   } // namespace VFP
+
+
+
+  namespace MHD
+  {
+    /** [MHD Dimension] */
+    // !!!EDIT HERE!!!
+    /** Specify mhd configuration space dimension \f$ (\mathbf{x}) \f$ */
+    static constexpr unsigned int dim_mhd = 3;
+    /** [MHD Dimension] */
+
+
+
+    /** [MHD Flags] */
+    // !!!EDIT HERE!!!
+    /** Specify which MHD flags should be active */
+    static constexpr MHDFlags mhd_flags = MHDFlags::none;
+    /** [MHD Flags] */
+
+
+
+    /**
+     * @brief Initial condition
+     *
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$
+     */
+    template <unsigned int dim>
+    class InitialConditionMHD : public dealii::Function<dim>
+    {
+    public:
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       */
+      InitialConditionMHD(const PhysicalParameters &physical_parameters)
+        : dealii::Function<dim>(MHDEquations<dim>::n_components)
+        , prm{physical_parameters}
+      {}
+
+
+
+      /**
+       * @brief Evaluate the initial condition at point `p`
+       *
+       * @param point Point in configuration phase space
+       * @param f Return vector
+       * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
+       */
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
+      {
+        AssertDimension(f.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        for (unsigned int i = 0; i < f.size(); ++i)
+          {
+            /** [MHD Initial condition] */
+            // !!!EDIT HERE!!!
+            f[i] = 0.;
+            /** [MHD Initial condition] */
+          }
+
+        // Test case: sin profile for first component
+        const double length = 2;
+        const double x      = point[0];
+
+        f[0] = std::sin(M_PI * x / length);
+      }
+
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
+    };
+
+  } // namespace MHD
 } // namespace sapphirepp
 #endif
