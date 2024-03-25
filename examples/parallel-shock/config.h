@@ -172,7 +172,7 @@ namespace sapphirepp
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
       VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
-      VFPFlags::magnetic | VFPFlags::source |
+      VFPFlags::rotation | VFPFlags::source |
       VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
     /** [VFP Flags] */
 

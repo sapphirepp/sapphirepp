@@ -97,8 +97,8 @@ dim_cs = 2`.
 
 @snippet{lineno} examples/convergence-study/config.h Dimension
 
-In the VFP equation, we only have the @ref sapphirepp::VFP::VFPFlags::magnetic
-"magnetic", $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$,
+In the VFP equation, we only have the @ref sapphirepp::VFP::VFPFlags::rotation
+"rotation", $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$,
 and @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
 $(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, terms. For the latter, we are in
 the spatial case of a static background plasma, $\mathbf{u} = 0$. The magnetic

@@ -245,10 +245,10 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
     {
       AssertThrow(((vfp_flags & VFPFlags::spatial_advection) !=
                    VFPFlags::none) ||
-                    ((vfp_flags & VFPFlags::magnetic) != VFPFlags::none),
-                  ExcMessage("Either the spatial advection term or the "
-                             "magnetic field must be activated if the fields "
-                             "are time independent."));
+                    ((vfp_flags & VFPFlags::rotation) != VFPFlags::none),
+                  ExcMessage("Either the spatial advection or the rotation "
+                             "term must be activated if the fields are time "
+                             "independent."));
     }
   if ((vfp_flags & VFPFlags::time_independent_source) != VFPFlags::none)
     {
@@ -798,7 +798,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((vfp_flags & VFPFlags::magnetic) !=
+                if constexpr ((vfp_flags & VFPFlags::rotation) !=
                               VFPFlags::none)
                   {
                     // NOTE: All three components of the B-Field are

@@ -41,7 +41,24 @@ namespace sapphirepp
   {
 
     /**
-     * @brief Flags to activate the different terms of the VFP equation
+     * @brief Flags to activate the different terms of the VFP equation.
+     *
+     * We split the VFP equation into different terms,
+     * \f{align}{
+     *   \frac{\partial f}{\partial t} & \quad & \text{(time-evolution term)} \\
+     *   & + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f
+     *   & \text{(spatial advection term)} \\
+     *   & - \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}
+     *     \cdot \nabla_{p}f
+     *     - \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f
+     *   & \text{(momentum term)} \\
+     *   & + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)
+     *   & \text{(rotation term)} \\
+     *   = & \frac{\nu}{2} \Delta_{\theta, \varphi} f
+     *   & \text{(collision term)} \\
+     *   & + S \,. & \text{(source term)} \\
+     * \f}
+     * These terms can be individually adctivated or deactivated.
      */
     enum class VFPFlags
     {
@@ -60,11 +77,11 @@ namespace sapphirepp
       collision = 1 << 1,
 
       /**
-       * Activate the magnetic field
+       * Activate the rotation term, i.e. the magentic field
        * \f$ q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)
        * \f$
        */
-      magnetic = 1 << 2,
+      rotation = 1 << 2,
 
       /**
        * If the fields \f$ \mathbf{u} \f$ and \f$\mathbf{B} \f$ are time
@@ -131,8 +148,8 @@ namespace sapphirepp
         os << "	 - Spatial Advection\n";
       if ((f & VFPFlags::collision) != VFPFlags::none)
         os << "	 - Collision\n";
-      if ((f & VFPFlags::magnetic) != VFPFlags::none)
-        os << "	 - Magnetic\n";
+      if ((f & VFPFlags::rotation) != VFPFlags::none)
+        os << "	 - Rotation\n";
       if ((f & VFPFlags::time_independent_fields) != VFPFlags::none)
         os << "	 - Time Independent Fields\n";
       else

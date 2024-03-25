@@ -26,7 +26,7 @@ In this example, we will not take into account scattering, a background velocity
 field, or a source term. This leads us to the following VFP equation:
 
 $$
-  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f -
+  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f +
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,.
 $$
 
@@ -98,15 +98,16 @@ phase space to the configuration space, setting `dim = dim_ps = dim_cs = 2`.
 Revisiting the VFP equation,
 
 $$
-  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f -
+  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f +
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,,
 $$
 
 we have the time derivative and two additional terms. The first term represents
 @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
-$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, while the second term denotes @ref
-sapphirepp::VFP::VFPFlags::magnetic "magnetic" interactions, $q \mathbf{v} \cdot
-\left( \mathbf{B} \times \nabla_{p} f \right)$. Moreover, the magnetic field is
+$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, while the second term denotes
+@ref sapphirepp::VFP::VFPFlags::rotation "rotation" due to magnetic
+interactions, $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f
+\right)$. Moreover, the magnetic field is
 @ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent".
 Consequently, we activate these three @ref sapphirepp::VFP::VFPFlags
 "VFP flags":
