@@ -615,53 +615,10 @@ sapphirepp::VFP::VFPSolver<dim>::project(
 {
   saplog << "Project a function onto the finite element space" << std::endl;
   LogStream::Prefix p("project", saplog);
+
   // Create right hand side
-  FEValues<dim_ps> fe_v(mapping,
-                        fe,
-                        quadrature,
-                        update_values | update_quadrature_points |
-                          update_JxW_values);
-
-  const unsigned int n_dofs = fe.n_dofs_per_cell();
-  Vector<double>     cell_rhs(n_dofs);
-
-  std::vector<types::global_dof_index> local_dof_indices(n_dofs);
-
   PETScWrappers::MPI::Vector rhs(locally_owned_dofs, mpi_communicator);
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      if (cell->is_locally_owned())
-        {
-          cell_rhs = 0;
-          fe_v.reinit(cell);
-
-          const std::vector<Point<dim_ps>> &q_points =
-            fe_v.get_quadrature_points();
-          const std::vector<double> &JxW = fe_v.get_JxW_values();
-
-          std::vector<Vector<double>> function_values(
-            q_points.size(), Vector<double>(f.n_components));
-          f.vector_value_list(q_points, function_values);
-
-          for (const unsigned int q_index : fe_v.quadrature_point_indices())
-            {
-              for (unsigned int i : fe_v.dof_indices())
-                {
-                  const unsigned int component_i =
-                    fe.system_to_component_index(i).first;
-                  cell_rhs(i) += fe_v.shape_value(i, q_index) *
-                                 function_values[q_index][component_i] *
-                                 JxW[q_index];
-                }
-            }
-          cell->get_dof_indices(local_dof_indices);
-
-          constraints.distribute_local_to_global(cell_rhs,
-                                                 local_dof_indices,
-                                                 rhs);
-        }
-    }
-  rhs.compress(VectorOperation::add);
+  VectorTools::create_right_hand_side(mapping, dof_handler, quadrature, f, rhs);
 
   // Solve the system
   PETScWrappers::PreconditionNone preconditioner;
