@@ -101,7 +101,7 @@ dimensional, corresponding two a 2d reduced phase space. We therefore set the
 `dimension` of the computational domain to $2$ in `sapphirepp/include/config.h`
 (see the corresponding line numbers below):
 
-@snippet{lineno} sapphirepp/include/config.h Dimension
+@snippet{lineno} include/config.h Dimension
 
 Next, we have to specify which terms of the VFP equation are used. Because we do
 not consider a magnetic field in this example, the VFP equation is,
@@ -131,7 +131,7 @@ have the injection of particles at a @ref sapphirepp:VFP::VFPFlags::source
 "source" $S$. In @sapphire, we activate these effects by listing them in the @ref
 sapphirepp::VFP::VFPFlags "vfp_flags" variable (separated by a bitwise or `|`):
 
-@snippet{lineno} sapphirepp/include/config.h VFP Flags
+@snippet{lineno} include/config.h VFP Flags
 
 As you can see, we added two additional flags, @ref
 sapphirepp::VFP::VFPFlags::time_independent_fields and @ref
@@ -152,7 +152,7 @@ realistic setup with a momentum dependence we refer to the advanced [parallel
 shock example](#parallel-shock). The corresponding implementation in @sapphire
 is only line in `sapphirepp/include/config.h`:
 
-@snippet{lineno} sapphirepp/include/config.h Scattering frequency
+@snippet{lineno} include/config.h Scattering frequency
 
 
 ### Source term {#source-term-quick-start}
@@ -181,7 +181,7 @@ $$
 
 Notice the factor $\frac{1}{\sqrt{4 \pi}}$ we have to account for.
 
-@snippet{lineno} sapphirepp/include/config.h Source
+@snippet{lineno} include/config.h Source
 
 
 ### Velocity field {#velocity-quick-start}
@@ -200,7 +200,7 @@ configuration space, @sapphire allows prescribing flows outside the plane by
 setting $u_y$ and $u_z$-components. In our case, we only have a flow in
 $x$-direction, so we can set the other components to zero:
 
-@snippet{lineno} sapphirepp/include/config.h Background velocity value
+@snippet{lineno} include/config.h Background velocity value
 
 As we can see above, the VFP equation not only depends on the value of velocity,
 but also on different combinations of its derivatives $\frac{\partial
@@ -213,7 +213,7 @@ $$
   \left(1 - \tanh\left(\frac{x}{d_s}\right)^2\right) \,.
 $$
 
-@snippet{lineno} sapphirepp/include/config.h Background velocity divergence
+@snippet{lineno} include/config.h Background velocity divergence
 
 The material derivative is given by,
 
@@ -226,7 +226,7 @@ $$
   \tanh\left(\frac{x}{d_s}\right)^2\right) \,.
 $$
 
-@snippet{lineno} sapphirepp/include/config.h Background velocity material derivative
+@snippet{lineno} include/config.h Background velocity material derivative
 
 Last, we also need the Jacobian $\frac{\partial u_{x_i}}{\partial x_j}$ of the
 velocity field to compute the numerical flux. We only have a $x$-$x$-component
@@ -237,7 +237,7 @@ $$
   \left(1 - \tanh\left(\frac{x}{d_s}\right)^2\right) \,.
 $$
 
-@snippet{lineno} sapphirepp/include/config.h Background velocity Jacobian
+@snippet{lineno} include/config.h Background velocity Jacobian
 
 
 ### Compile and run {#compile-quick-start}
