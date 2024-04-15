@@ -23,9 +23,9 @@ subsection VFP
     set Scaling factor shock  = 1.1
     subsection Boundary conditions
       set lower x = zero inflow
-      set upper x = continuous gradients
-      set lower p = continuous gradients
-      set upper p = continuous gradients
+      set upper x = continuous
+      set lower p = continuous
+      set upper p = continuous
     end
   end
   subsection Time stepping

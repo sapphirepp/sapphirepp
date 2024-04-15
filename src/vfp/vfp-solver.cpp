@@ -1166,10 +1166,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 // if constexpr ((vfp_flags & VFPFlags::spatial_advection) !=
                 //               VFPFlags::none)
 
-                // TODO: Check naming of BC
                 switch (boundary_condition)
                   {
-                    case BoundaryConditions::continuous_gradients:
+                    case BoundaryConditions::continuous:
                       {
                         copy_data.cell_matrix(i, j) +=
                           fe_face_v.shape_value(i, q_index) *

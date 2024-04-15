@@ -70,28 +70,28 @@ subsection VFP
 
     subsection Boundary conditions
       # Boundary condition at the lower p boundary.
-      set lower p = continuous gradients
+      set lower p = continuous
 
       # Boundary condition at the lower x boundary.
-      set lower x = continuous gradients
+      set lower x = continuous
 
       # Boundary condition at the lower y boundary.
-      set lower y = continuous gradients
+      set lower y = continuous
 
       # Boundary condition at the lower z boundary.
-      set lower z = continuous gradients
+      set lower z = continuous
 
       # Boundary condition at the upper p boundary.
-      set upper p = continuous gradients
+      set upper p = continuous
 
       # Boundary condition at the upper x boundary.
-      set upper x = continuous gradients
+      set upper x = continuous
 
       # Boundary condition at the upper y boundary.
-      set upper y = continuous gradients
+      set upper y = continuous
 
       # Boundary condition at the upper z boundary.
-      set upper z = continuous gradients
+      set upper z = continuous
     end
 
   end

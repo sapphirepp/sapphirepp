@@ -181,10 +181,10 @@ namespace sapphirepp
     enum class BoundaryConditions
     {
       /**
-       * Continuous gradients. The gradients of the distribution function at the
-       * boundary are continuously extrapolated from the interior.
+       * Continuous. The distribution function at the boundary is continuously
+       * extrapolated from the interior.
        */
-      continuous_gradients,
+      continuous,
 
       /**
        * Zero inflow. Only outflow, no inflow at the boundary.

@@ -99,37 +99,37 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
     prm.enter_subsection("Boundary conditions");
     {
       const auto boundary_pattern =
-        Patterns::Selection("continuous gradients|zero inflow|periodic");
+        Patterns::Selection("continuous|zero inflow|periodic");
       prm.declare_entry("lower x",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower x boundary.");
       prm.declare_entry("upper x",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper x boundary.");
       prm.declare_entry("lower y",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower y boundary.");
       prm.declare_entry("upper y",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper y boundary.");
       prm.declare_entry("lower z",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower z boundary.");
       prm.declare_entry("upper z",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper z boundary.");
       prm.declare_entry("lower p",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower p boundary.");
       prm.declare_entry("upper p",
-                        "continuous gradients",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper p boundary.");
     }
@@ -324,9 +324,9 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             Assert(false, ExcNotImplemented());
 
           s = prm.get(entry);
-          if (s == "continuous gradients")
+          if (s == "continuous")
             boundary_conditions[boundary_id] =
-              VFP::BoundaryConditions::continuous_gradients;
+              VFP::BoundaryConditions::continuous;
           else if (s == "zero inflow")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::zero_inflow;

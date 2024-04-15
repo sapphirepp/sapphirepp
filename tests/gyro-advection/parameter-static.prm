@@ -21,10 +21,10 @@ subsection VFP
     set Point 1         = -3., -3.
     set Point 2         = 3., 3.
     subsection Boundary conditions
-      set lower x = continuous gradients
-      set lower y = continuous gradients
-      set upper x = continuous gradients
-      set upper y = continuous gradients
+      set lower x = continuous
+      set lower y = continuous
+      set upper x = continuous
+      set upper y = continuous
     end
   end
   subsection Time stepping
