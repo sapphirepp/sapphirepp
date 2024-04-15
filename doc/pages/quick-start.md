@@ -265,8 +265,10 @@ Once compiled, you can run the executable using the command below:
 To use multiple processors, you can use `mpirun`:
 
 ```shell
-  mpirun ./sapphirepp
+  mpirun -np N ./sapphirepp
 ```
+  
+where `N` is the number of processors you want to use.
 
 
 ## Results {#results-quick-start}

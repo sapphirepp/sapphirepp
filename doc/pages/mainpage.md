@@ -132,7 +132,7 @@ You can obtain @sapphire either as a tarball from the
 cloning the `git` repository:
 
 ```shell
-git clone https://github.com/sapphirepp/sapphirepp
+git clone https://github.com/sapphirepp/sapphirepp.git
 ```
 
 Afterwards you can compile @sapphire, with `cmake` and `make`:
@@ -141,7 +141,7 @@ Afterwards you can compile @sapphire, with `cmake` and `make`:
 cd sapphirepp
 export DEAL_II_DIR="path/to/deal.II"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
-cd build && make
+make --directory=build
 ```
 
 Developers are advised to use the following options:
@@ -159,14 +159,16 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -
 To run @sapphire, you need to provide a configuration file:
 
 ```shell
-./sapphirepp parameter.prm
+./build/sapphirepp parameter-template.prm
 ```
 
 You enable parallel execution by using `mpirun`:
 
 ```shell
-mpirun ./sapphirepp parameter.prm
+mpirun -np N ./build/sapphirepp parameter-template.prm
 ```
+
+where `N` is the number of processors to use.
 
 For more details on using @sapphire, refer to the [examples](#examples).
 
