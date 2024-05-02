@@ -30,6 +30,8 @@
 
 #include <deal.II/base/tensor.h>
 
+#include <deal.II/lac/vector.h>
+
 #include <string>
 #include <vector>
 
@@ -63,8 +65,8 @@ namespace sapphirepp
       static constexpr unsigned int first_magnetic_component = dim + 2;
       /** @} */
 
-      using state_type = Tensor<1, n_components>;
-      using flux_type  = Tensor<1, n_components, Tensor<1, dim>>;
+      using state_type = dealii::Vector<double>;
+      using flux_type  = std::vector<Tensor<1, dim, double>>;
 
 
 
@@ -82,6 +84,12 @@ namespace sapphirepp
       static std::vector<std::string>
       create_component_name_list(const std::string &prefix = "");
       /** @} */
+
+
+
+      void
+      compute_flux_matrix(const state_type &state,
+                          flux_type        &flux_matrix) const;
     };
   } // namespace MHD
 } // namespace sapphirepp

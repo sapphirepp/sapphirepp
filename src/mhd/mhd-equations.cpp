@@ -53,6 +53,28 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
 
 
 
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
+  const state_type &state,
+  flux_type        &flux_matrix) const
+{
+  /** @todo Implement this function. So far this is only an empty implementation
+   * to test the code */
+
+  AssertDimension(state.size(), n_components);
+  AssertDimension(flux_matrix.size(), n_components);
+
+  for (unsigned int i = 0; i < n_components; ++i)
+    for (unsigned int d = 0; d < dim; ++d)
+      flux_matrix[i][d] = 0.;
+
+  // Test case: advect first component
+  flux_matrix[0][0] = 1. * state[0];
+}
+
+
+
 // Explicit instantiations
 template class sapphirepp::MHD::MHDEquations<1>;
 template class sapphirepp::MHD::MHDEquations<2>;
