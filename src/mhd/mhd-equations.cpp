@@ -42,10 +42,10 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
   component_names[MHDEquations<dim>::density_component] = prefix + "rho";
   component_names[MHDEquations<dim>::energy_component]  = prefix + "E";
   for (unsigned int d = 0; d < dim; ++d)
-    component_names[MHDEquations<dim>::momentum_component + d] =
+    component_names[MHDEquations<dim>::first_momentum_component + d] =
       prefix + "u_" + std::to_string(d + 1);
-  for (unsigned int d = 0; d < 3; ++d)
-    component_names[MHDEquations<dim>::magnetic_component + d] =
+  for (unsigned int d = 0; d < dim_B; ++d)
+    component_names[MHDEquations<dim>::first_magnetic_component + d] =
       prefix + "B_" + std::to_string(d + 1);
 
   return component_names;

@@ -28,6 +28,8 @@
 #ifndef MHD_MHDEQUATIONS_H
 #define MHD_MHDEQUATIONS_H
 
+#include <deal.II/base/tensor.h>
+
 #include <string>
 #include <vector>
 
@@ -35,6 +37,10 @@ namespace sapphirepp
 {
   namespace MHD
   {
+    using namespace dealii;
+
+
+
     /**
      * @brief Define functions related to MHD equations.
      *
@@ -47,13 +53,18 @@ namespace sapphirepp
     {
     public:
       /** @{ */
+      /** Dimension of the magnetic field */
+      static constexpr unsigned int dim_B = 3;
       /** Number of components */
-      static constexpr unsigned int n_components       = 2 + dim + 3;
-      static constexpr unsigned int density_component  = 0;
-      static constexpr unsigned int momentum_component = 1;
-      static constexpr unsigned int energy_component   = dim + 1;
-      static constexpr unsigned int magnetic_component = dim + 2;
+      static constexpr unsigned int n_components             = 2 + dim + dim_B;
+      static constexpr unsigned int density_component        = 0;
+      static constexpr unsigned int first_momentum_component = 1;
+      static constexpr unsigned int energy_component         = dim + 1;
+      static constexpr unsigned int first_magnetic_component = dim + 2;
       /** @} */
+
+      using state_type = Tensor<1, n_components>;
+      using flux_type  = Tensor<1, n_components, Tensor<1, dim>>;
 
 
 
