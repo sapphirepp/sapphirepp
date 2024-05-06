@@ -187,7 +187,7 @@ namespace sapphirepp
         }
       };
     } // namespace MHDSolver
-  }   // namespace internal
+  } // namespace internal
 } // namespace sapphirepp
 
 
@@ -498,25 +498,55 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_matrix(const double time)
     // reinit the cell_matrix
     copy_data.reinit(cell, n_dofs);
 
-    // const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double> &JxW = fe_v.get_JxW_values();
+    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double>     &JxW      = fe_v.get_JxW_values();
+
+    // std::vector<typename MHDEquations<dim>::state_type> q(q_points.size());
+    std::vector<Vector<double>> states(
+      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
+    // typename MHDEquations<dim>::state_vector state;
+    typename MHDEquations<dim>::flux_type flux_matrix(
+      MHDEquations<dim>::n_components);
+
+
+    fe_v.get_function_values(locally_owned_previous_solution, states);
+    // // Calculate value of the state vector q at the quadrature points
+    // /** @todo Export calculation of state vector to different function */
+    // for (const unsigned int q_index : fe_v.quadrature_point_indices())
+    //   {
+    //     q[q_index] = 0.0;
+    //     for (unsigned int i : fe_v.dof_indices())
+    //       {
+    //         /** @todo: This implicitly assumes primitive basis functions*/
+    //         const unsigned int component_i =
+    //           fe_v.get_fe().system_to_component_index(i).first;
+
+    //         q[q_index][component_i] +=
+    //           locally_owned_previous_solution(copy_data.local_dof_indices[i])
+    //           * fe_v.shape_value_component(i, q_index, component_i);
+    //       }
+    //   }
 
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
+        mhd_equations.compute_flux_matrix(states[q_index], flux_matrix);
+
         for (unsigned int i : fe_v.dof_indices())
           {
             // const unsigned int component_i =
             //   fe_v.get_fe().system_to_component_index(i).first;
-            for (unsigned int j : fe_v.dof_indices())
-              {
-                // const unsigned int component_j =
-                //   fe_v.get_fe().system_to_component_index(j).first;
 
-                /** @todo Cell integral */
+            // Note: We are not linearizing the flux, but we limit ourselves to
+            // explicit time stepping methods
+
+            /** @todo Check cell integral. Remove copy_data matrix, maybe add
+             * vector if needed, but I think everything goes to RHS anyways */
+            for (uint c = 0; c < MHDEquations<dim>::n_components; ++c)
+              {
                 // 0 * \phi_i * \phi_j
-                copy_data.cell_matrix(i, j) +=
-                  0. * fe_v.shape_value(i, q_index) *
-                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                copy_data.cell_rhs(i) +=
+                  flux_matrix[c] * fe_v.shape_grad_component(i, q_index, c) *
+                  JxW[q_index];
               }
           }
       }
