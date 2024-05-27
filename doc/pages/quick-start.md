@@ -8,15 +8,15 @@
 This quick-start guide will help you to get started with @sapphire. Note that it
 will not show all features of @sapphire, but covers the basics you need to write
 your own application in @sapphire. We will demonstrate @sapphire on a simplified
-version of the CR acceleration at a parallel shock. For a more realistic
-implementation and advanced features of sapphire we refer to the
+version of the CR acceleration at a parallel shock. For a more detailed
+implementation including advanced features of sapphire we refer to the
 [examples](#examples).
 
-Let's get started by considering the following setup: We have a plain shock that
-the particles will cross, to gain energy by the first order Fermi mechanism
+Let's get started by considering the following setup: We have a planar shock that
+the particles will cross, to gain energy by the first-order Fermi mechanism
 @cite Drury1983 @cite Kirk1994 @cite Schween2024. We will prescribe the
 background plasma in the shock frame, resulting in a stationary velocity field
-$\mathbf{u}(\mathbf{x})$ with the shock of compression ratio $r$ at $0$:
+$\mathbf{u}(\mathbf{x})$ with the shock compression ratio $r$ at $0$:
 
 \begin{align}
   \mathbf{u}(\mathbf{x}) = u_1 \hat{\mathbf{e}}_x \text{, for } x < 0 \\
@@ -33,7 +33,7 @@ $$
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S\, .
 $$
 
-Here, $f(\mathbf{x}, \mathbf{p})$ is the distribution function of the highly
+Here, $f(\mathbf{x}, \mathbf{p})$ is the distribution function of the
 energetic particles with momentum $\mathbf{p} = \gamma m \mathbf{v}$.
 $\frac{\mathrm{D}}{\mathrm{D} t} = \frac{\partial}{\partial t} + \mathbf{u}
 \cdot \frac{\partial}{\partial \mathbf{x}}$ denotes the material derivative,
@@ -41,7 +41,7 @@ $\nu(p)$ and $S(\mathbf{x}, \mathbf{p})$ the scattering frequency and source
 respectively.
 
 @sapphire efficiently solves this equation by exploiting that the distribution
-function $f$ is in many physical environments almost isotropic. It, thus,
+function $f$ is in many physical environments almost isotropic. It thus
 expresses $f$ as a series of spherical harmonics, i.e.
 
 $$
@@ -51,8 +51,8 @@ $$
 
 whose zeroth order term is the isotropic part and higher order terms represent
 the anisotropies of the distribution function. @sapphire computes the expansion
-coefficients $f_{lms}(\mathbf{x}, p, t)$ up to a maximum order $l_{\rm max}$,
-hence it reduces the dimensionality of the problem from the full six dimensional
+coefficients $f_{lms}(\mathbf{x}, p, t)$ up to a maximum order $l_{\rm max}$.
+Hence it reduces the dimensionality of the problem from the full six dimensional
 phase space $(\mathbf{x}, \mathbf{p})$ to a four dimensional **reduced phase
 space** $\mathbf{\xi} = (\mathbf{x}, p)^{T}$. We can reduce the dimensionality
 even further, noticing that our problem only depends on one spatial dimension.
@@ -67,7 +67,7 @@ dim_cs + 1 = 2`, equalling the dimensionality of the reduced phase space
       the reduced phase space, `dim = dim_ps`.
 
 In practice this means, that if we refer to a `point` in @sapphire, the first
-`dim_cs` components are the spacial coordinates $\mathbf{x} = (x,y,z)$ and the
+`dim_cs` components are the spatial coordinates $\mathbf{x} = (x,y,z)$ and the
 last component is the momentum $p$. Hence, we have in this example:
 
 ```cpp
@@ -77,18 +77,18 @@ last component is the momentum $p$. Hence, we have in this example:
 
 @note Due to limitations of @dealii, the maximum computational dimension is
       currently limited to `dim = dim_ps = 3`. This means that one either has to
-      assume an at most 2d spatial domain (`dim_cs = 2` $\implies$ `dim_ps =
+      assume an, at most, 2d spatial domain (`dim_cs = 2` $\implies$ `dim_ps =
       3`), or a three-dimensional but momentum independent problem (`dim_ps =
       dim_cs = 3`).
 
 
 ## Implementation {#implementation-quick-start}
 
-After this somewhat lengthy introduction, lets start to implement the above
+After this somewhat lengthy introduction, let's start to implement the above
 stated equation in @sapphire. To this end, we have to modify the
 `sapphirepp/include/config.h` file. This file contains the physical setup for
-the simulation. In total is file is over 600 lines long, but as a user you can
-ignore most of it as boilerplate code. There are only very few lines you have to
+the simulation. In total this file is over 600 lines long, but as a user you can
+ignore most of it as boilerplate code. There are in practise very few lines you have to
 adapt to your problem, marked with a `// !!!EDIT HERE!!!` comment. Let's start
 going through these lines step by step.
 
@@ -113,7 +113,7 @@ $$
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S\, .
 $$
 
-In total, we have four effects that play are important. First, we have @ref
+In total, we have four effects at play that are important. First, we have @ref
 sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection", $(\mathbf{u} +
 \mathbf{v}) \cdot \nabla_{x} f$, due to the background plasma velocity
 $\mathbf{u}(\mathbf{x},t)$ and the particle velocity $\mathbf{v}(\mathbf{p})$.
