@@ -142,6 +142,8 @@ namespace sapphirepp
         FullMatrix<double> cell_dg_matrix_12;
         FullMatrix<double> cell_dg_matrix_21;
         FullMatrix<double> cell_dg_matrix_22;
+        Vector<double>     cell_dg_rhs_1;
+        Vector<double>     cell_dg_rhs_2;
 
         std::vector<types::global_dof_index> local_dof_indices;
         std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -156,6 +158,8 @@ namespace sapphirepp
           cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
           cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
           cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+          cell_dg_rhs_1.reinit(dofs_per_cell);
+          cell_dg_rhs_2.reinit(dofs_per_cell);
 
           local_dof_indices.resize(dofs_per_cell);
           cell->get_dof_indices(local_dof_indices);
@@ -170,7 +174,7 @@ namespace sapphirepp
       struct CopyData
       {
         FullMatrix<double>                   cell_matrix;
-        Vector<double>                       cell_rhs;
+        Vector<double>                       cell_dg_rhs;
         std::vector<types::global_dof_index> local_dof_indices;
         std::vector<types::global_dof_index> local_dof_indices_neighbor;
         std::vector<CopyDataFace>            face_data;
@@ -180,7 +184,7 @@ namespace sapphirepp
         reinit(const Iterator &cell, unsigned int dofs_per_cell)
         {
           cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
-          cell_rhs.reinit(dofs_per_cell);
+          cell_dg_rhs.reinit(dofs_per_cell);
 
           local_dof_indices.resize(dofs_per_cell);
           cell->get_dof_indices(local_dof_indices);
@@ -406,6 +410,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   locally_relevant_current_solution.reinit(locally_owned_dofs,
                                            locally_relevant_dofs,
                                            mpi_communicator);
+  dg_rhs.reinit(locally_owned_dofs, mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
@@ -543,7 +548,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_matrix(const double time)
             for (uint c = 0; c < MHDEquations<dim>::n_components; ++c)
               {
                 // 0 * \phi_i * \phi_j
-                copy_data.cell_rhs(i) +=
+                copy_data.cell_dg_rhs(i) +=
                   flux_matrix[c] * fe_v.shape_grad_component(i, q_index, c) *
                   JxW[q_index];
               }
