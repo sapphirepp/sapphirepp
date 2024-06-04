@@ -414,6 +414,7 @@ namespace sapphirepp
       make_grid();
 
 
+
       /**
        * @brief Setup data structure for the linear system
        *
@@ -427,14 +428,14 @@ namespace sapphirepp
 
       /** @{ */
       /**
-       * @brief Assemble the DG matrix
+       * @brief Assemble the right hand side of the DG system
        *
-       * Compute the @ref dg_matrix
+       * Compute the @ref dg_rhs
        *
        * @param time Time of the current time step
        */
       void
-      assemble_dg_matrix(const double time);
+      assemble_dg_rhs(const double time);
       /** @} */
     };
 

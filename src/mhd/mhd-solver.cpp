@@ -176,8 +176,8 @@ namespace sapphirepp
         FullMatrix<double>                   cell_matrix;
         Vector<double>                       cell_dg_rhs;
         std::vector<types::global_dof_index> local_dof_indices;
-        std::vector<types::global_dof_index> local_dof_indices_neighbor;
-        std::vector<CopyDataFace>            face_data;
+        // std::vector<types::global_dof_index> local_dof_indices_neighbor;
+        std::vector<CopyDataFace> face_data;
 
         template <typename Iterator>
         void
@@ -256,9 +256,6 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
     // that is the moment where the ghost cells are filled.
     locally_relevant_current_solution = initial_condition;
   }
-
-  // Assemble the dg matrix for t = 0
-  assemble_dg_matrix(0);
 }
 
 
@@ -475,23 +472,17 @@ sapphirepp::MHD::MHDSolver<dim>::project(
 
 template <unsigned int dim>
 void
-sapphirepp::MHD::MHDSolver<dim>::assemble_dg_matrix(const double time)
+sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 {
-  TimerOutput::Scope timer_section(timer, "DG matrix - MHD");
-  /*
-    What kind of loops are there ?
-    1. Loop over all cells (this happens inside the mesh_loop)
-    2. Loop over the degrees of freedom on each cell
-    - the method system_to_component_index() returns the index of the non-zero
-    component of the vector-valued shape function which corresponds to the
-    indices (l,m,s)
-  */
+  TimerOutput::Scope timer_section(timer, "DG rhs - MHD");
+
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::internal::MHDSolver;
 
-  (void)time; // suppress compiler warning
+  static_cast<void>(time); // suppress compiler warning
+  dg_rhs = 0;
 
-  // I do not no the meaning of the following "const" specifier
+  // assemble cell terms
   const auto cell_worker = [&](const Iterator   &cell,
                                ScratchData<dim> &scratch_data,
                                CopyData         &copy_data) {
@@ -752,35 +743,27 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_matrix(const double time)
           }
       }
   };
+
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
-    constraints.distribute_local_to_global(c.cell_matrix,
+    constraints.distribute_local_to_global(c.cell_dg_rhs,
                                            c.local_dof_indices,
-                                           dg_matrix);
+                                           dg_rhs);
     for (auto &cdf : c.face_data)
       {
-        for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
-          for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j)
-            {
-              dg_matrix.add(cdf.local_dof_indices[i],
-                            cdf.local_dof_indices[j],
-                            cdf.cell_dg_matrix_11(i, j));
-              dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-                            cdf.local_dof_indices[j],
-                            cdf.cell_dg_matrix_12(i, j));
-              dg_matrix.add(cdf.local_dof_indices[i],
-                            cdf.local_dof_indices_neighbor[j],
-                            cdf.cell_dg_matrix_21(i, j));
-              dg_matrix.add(cdf.local_dof_indices_neighbor[i],
-                            cdf.local_dof_indices_neighbor[j],
-                            cdf.cell_dg_matrix_22(i, j));
-            }
+        /** @todo Maybe manual addition necessary as in VFP? */
+        constraints.distribute_local_to_global(cdf.cell_dg_rhs_1,
+                                               cdf.local_dof_indices,
+                                               dg_rhs);
+        constraints.distribute_local_to_global(cdf.cell_dg_rhs_2,
+                                               cdf.local_dof_indices_neighbor,
+                                               dg_rhs);
       }
   };
 
   ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
   CopyData         copy_data;
-  saplog << "Begin the assembly of the DG matrix." << std::endl;
+  saplog << "Begin the assembly of the DG rhs." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
   MeshWorker::mesh_loop(filtered_iterator_range,
@@ -794,8 +777,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_matrix(const double time)
                           MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker,
                         face_worker);
-  dg_matrix.compress(VectorOperation::add);
-  saplog << "The DG matrix was assembled." << std::endl;
+  /** @todo This might be obsolete because we are using
+   * distribute_local_to_globale */
+  dg_rhs.compress(VectorOperation::add);
+  saplog << "The DG rhs was assembled." << std::endl;
 }
 
 
@@ -811,8 +796,7 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
   // time_step * rhs(time)
 
   // Assemble the right hand side
-  dg_rhs = 0; /** @todo < move this into assemble_dg() */
-  assemble_dg_matrix(time);
+  assemble_dg_rhs(time);
 
   locally_owned_previous_solution = locally_relevant_current_solution;
 
