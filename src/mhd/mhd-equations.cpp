@@ -27,6 +27,9 @@
 
 #include "mhd-equations.h"
 
+#include <deal.II/base/exceptions.h>
+
+
 template <unsigned int dim>
 sapphirepp::MHD::MHDEquations<dim>::MHDEquations() = default;
 
@@ -63,7 +66,6 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
    * to test the code */
 
   AssertDimension(state.size(), n_components);
-  AssertDimension(flux_matrix.size(), n_components);
 
   for (unsigned int i = 0; i < n_components; ++i)
     for (unsigned int d = 0; d < dim; ++d)

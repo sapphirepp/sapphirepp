@@ -505,8 +505,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_matrix(const double time)
     std::vector<Vector<double>> states(
       q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
     // typename MHDEquations<dim>::state_vector state;
-    typename MHDEquations<dim>::flux_type flux_matrix(
-      MHDEquations<dim>::n_components);
+    typename MHDEquations<dim>::flux_type flux_matrix;
 
 
     fe_v.get_function_values(locally_owned_previous_solution, states);

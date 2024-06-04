@@ -32,6 +32,7 @@
 
 #include <deal.II/lac/vector.h>
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -66,7 +67,7 @@ namespace sapphirepp
       /** @} */
 
       using state_type = dealii::Vector<double>;
-      using flux_type  = std::vector<Tensor<1, dim, double>>;
+      using flux_type  = std::array<Tensor<1, dim, double>, n_components>;
 
 
 
