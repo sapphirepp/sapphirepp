@@ -807,33 +807,25 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
 {
   TimerOutput::Scope timer_section(timer, "FE method - MHD");
   LogStream::Prefix  p("FE_method", saplog);
-  // Equation: mass_matrix  f(time + time_step) = (mass_matrix - time_step *
-  // dg_matrix(time) ) f(time) + time_step *  s(time)
+  // Equation: mass_matrix  f(time + time_step) = mass_matrix f(time) +
+  // time_step * rhs(time)
+
+  // Assemble the right hand side
+  dg_rhs = 0; /** @todo < move this into assemble_dg() */
+  assemble_dg_matrix(time);
 
   locally_owned_previous_solution = locally_relevant_current_solution;
 
   mass_matrix.vmult(system_rhs, locally_owned_previous_solution);
-  PETScWrappers::MPI::Vector tmp(locally_owned_dofs, mpi_communicator);
-  dg_matrix.vmult(tmp, locally_owned_previous_solution);
-  system_rhs.add(-time_step, tmp);
-
-  // Since the the dg_matrix depends on the veld amount of time steps)
-  // if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
-  //               VFPFlags::none) // time dependent fields
-  //   {
-  dg_matrix = 0;
-  assemble_dg_matrix(time + time_step);
-  //   }
-
-  system_matrix.copy_from(mass_matrix);
+  system_rhs.add(time_step, dg_rhs);
 
   SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   PETScWrappers::PreconditionBlockJacobi preconditioner;
-  preconditioner.initialize(system_matrix);
+  preconditioner.initialize(mass_matrix);
 
-  solver.solve(system_matrix,
+  solver.solve(mass_matrix,
                locally_owned_previous_solution,
                system_rhs,
                preconditioner);
