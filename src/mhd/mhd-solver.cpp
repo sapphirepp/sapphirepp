@@ -532,11 +532,9 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                                    const unsigned int &face_no,
                                    ScratchData<dim>   &scratch_data,
                                    CopyData           &copy_data) {
-    scratch_data.fe_values_face.reinit(cell, face_no);
-    const FEFaceValuesBase<dim> &fe_face_v = scratch_data.fe_values_face;
-    // Every shape function on the cell could contribute to the face
-    // integral, hence n_facet_dofs = n_dofs_per_cell
-    const unsigned int n_facet_dofs = fe_face_v.get_fe().n_dofs_per_cell();
+    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
+    fe_v_face.reinit(cell, face_no);
+
     // NOTE: copy_data is not reinitialized, the cell_workers contribution
     // to the cell_dg_matrix should not be deleted
 
@@ -544,51 +542,54 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     const BoundaryConditionsMHD boundary_condition =
       mhd_parameters.boundary_conditions[boundary_id];
 
-    const std::vector<Point<dim>> &q_points = fe_face_v.get_quadrature_points();
-    const std::vector<double>     &JxW      = fe_face_v.get_JxW_values();
-    // const std::vector<Tensor<1, dim>> &normals =
-    // fe_face_v.get_normal_vectors();
+    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
+    const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
 
-    // NOLINTBEGIN(google-readability-casting)
-    std::vector<FullMatrix<double>> positive_flux_matrices(
-      q_points.size(), FullMatrix<double>(mhd_equations.n_components));
-    std::vector<FullMatrix<double>> negative_flux_matrices(
-      q_points.size(), FullMatrix<double>(mhd_equations.n_components));
-    // NOLINTEND(google-readability-casting)
+    // Initialise state and flux vectors
+    std::vector<Vector<double>> states(
+      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
+    typename MHDEquations<dim>::state_type virtual_neighbor_state(
+      MHDEquations<dim>::n_components);
+    typename MHDEquations<dim>::state_type numerical_normal_flux(
+      MHDEquations<dim>::n_components);
 
-    /** @todo Implement zero_inflow boundary */
-    // upwind_flux.compute_upwind_fluxes(q_points,
-    //                                   normals,
-    //                                   positive_flux_matrices,
-    //                                   negative_flux_matrices);
+    // Compute states
+    fe_v_face.get_function_values(locally_owned_previous_solution, states);
 
-    for (unsigned int q_index : fe_face_v.quadrature_point_indices())
+    for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
-        for (unsigned int i = 0; i < n_facet_dofs; ++i)
+        // Calculate virtual neighbor state according to boundary condition
+        switch (boundary_condition)
           {
-            const unsigned int component_i =
-              fe_face_v.get_fe().system_to_component_index(i).first;
-            for (unsigned int j = 0; j < n_facet_dofs; ++j)
+            case BoundaryConditionsMHD::zero_inflow:
               {
-                const unsigned int component_j =
-                  fe_face_v.get_fe().system_to_component_index(j).first;
+                /** @todo Check if this BC is equivalent to zero inflow */
+                virtual_neighbor_state = states[q_index];
+                break;
+              }
+            case BoundaryConditionsMHD::periodic:
+            default:
+              Assert(false, ExcNotImplemented());
+          }
 
-                switch (boundary_condition)
-                  {
-                    case BoundaryConditionsMHD::zero_inflow:
-                      {
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          positive_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                        break;
-                      }
-                    case BoundaryConditionsMHD::periodic:
-                      break;
-                    default:
-                      Assert(false, ExcNotImplemented());
-                  }
+        numerical_flux.compute_numerical_normal_flux(normals[q_index],
+                                                     states[q_index],
+                                                     virtual_neighbor_state,
+                                                     numerical_normal_flux);
+
+
+        for (unsigned int i : fe_v_face.dof_indices())
+          {
+            // const unsigned int component_i =
+            //   fe_v_face.get_fe().system_to_component_index(i).first;
+
+            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+              {
+                // - n * F[c] * \phi[c]_{i,-}
+                copy_data.cell_dg_rhs(i) +=
+                  -numerical_normal_flux[c] *
+                  fe_v_face.shape_value_component(i, q_index, c) * JxW[q_index];
               }
           }
       }
