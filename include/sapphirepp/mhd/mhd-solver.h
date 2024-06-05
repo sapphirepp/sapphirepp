@@ -63,6 +63,7 @@
 #include "mhd-equations.h"
 #include "mhd-flags.h"
 #include "mhd-parameters.h"
+#include "numerical-flux.h"
 #include "output-parameters.h"
 
 
@@ -318,6 +319,8 @@ namespace sapphirepp
       /** @{ */
       /** @ref MHDEquations */
       MHDEquations<dim> mhd_equations;
+      /** @ref NumericalFlux */
+      NumericalFlux<dim> numerical_flux;
       /** @} */
 
       /** MPI communicator */

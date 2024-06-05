@@ -204,6 +204,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
   , mhd_equations()
+  , numerical_flux(mhd_equations)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
@@ -514,7 +515,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 
             for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
               {
-                // F[c] * \grad \phi[c]_j
+                // F[c] * \grad \phi[c]_i
                 copy_data.cell_dg_rhs(i) +=
                   flux_matrix[c] * fe_v.shape_grad_component(i, q_index, c) *
                   JxW[q_index];
@@ -611,24 +612,20 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                                const unsigned int &neighbor_subface_no,
                                ScratchData<dim>   &scratch_data,
                                CopyData           &copy_data) {
-    // NOTE: The flag MeshWorker::assemble_own_interior_faces_both will not
-    // work for this face_worker. It implicitly assumes that faces are only
-    // assembled once. And hence subface_no, can be ignored
-    (void)subface_no; // suppress compiler warning
+    // We assumes that faces are only  assembled once. And hence subface_no, can
+    // be ignored.
+    static_cast<void>(subface_no);
+    // We are not using mesh refinement yet. Hence neighbor_subface_no can be
+    // ignored.
+    static_cast<void>(neighbor_subface_no);
 
     FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
 
-    // NOTE: I do not know how to initialise this reference whose value
-    // depends on the value of neighbor_subface_no. Subfaces only exists if
-    // the triangulation was refined differently in different parts of the
-    // domain. Since I am currently testing, I am always refining globally,
-    // so no subfaces exist and I just ignore this case. Hence
-    // neighbor_subface_no can be ignored
-    (void)neighbor_subface_no;
     FEFaceValues<dim> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
+
     // Create an element at the end of the vector containing the face data
     copy_data.face_data.emplace_back();
     CopyDataFace      &copy_data_face = copy_data.face_data.back();
@@ -637,86 +634,56 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 
     const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
     const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
-    // const std::vector<Tensor<1, dim>> &normals =
-    // fe_v_face.get_normal_vectors();
+    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
 
-    // For every interior face there is an in- and outflow represented by
-    // the corresponding flux matrices
-    // NOLINTBEGIN(google-readability-casting)
-    std::vector<FullMatrix<double>> positive_flux_matrices(
-      q_points.size(), FullMatrix<double>(mhd_equations.n_components));
-    std::vector<FullMatrix<double>> negative_flux_matrices(
-      q_points.size(), FullMatrix<double>(mhd_equations.n_components));
-    // NOLINTEND(google-readability-casting)
+    // Initialise state and flux vectors
+    std::vector<Vector<double>> states(
+      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
+    std::vector<Vector<double>> states_neighbor(
+      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
+    typename MHDEquations<dim>::state_type numerical_normal_flux(
+      MHDEquations<dim>::n_components);
 
-    /** @todo compute fluxes */
-    // upwind_flux.compute_upwind_fluxes(q_points,
-    //                                   normals,
-    //                                   positive_flux_matrices,
-    //                                   negative_flux_matrices);
+    // Compute states
+    fe_v_face.get_function_values(locally_owned_previous_solution, states);
+    fe_v_face_neighbor.get_function_values(locally_owned_previous_solution,
+                                           states_neighbor);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
-        // cell_dg_matrix_11
+        numerical_flux.compute_numerical_normal_flux(normals[q_index],
+                                                     states[q_index],
+                                                     states_neighbor[q_index],
+                                                     numerical_normal_flux);
+
+        // cell_dg_rhs_1
         for (unsigned int i : fe_v_face.dof_indices())
           {
-            const unsigned int component_i =
-              fe_v_face.get_fe().system_to_component_index(i).first;
-            for (unsigned int j : fe_v_face.dof_indices())
+            // const unsigned int component_i =
+            //   fe_v_face.get_fe().system_to_component_index(i).first;
+
+            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
               {
-                unsigned int component_j =
-                  fe_v_face.get_fe().system_to_component_index(j).first;
-                copy_data_face.cell_dg_matrix_11(i, j) +=
-                  fe_v_face.shape_value(i, q_index) *
-                  positive_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                // - n * F[c] * \phi[c]_{i,-}
+                copy_data_face.cell_dg_rhs_1(i) +=
+                  -numerical_normal_flux[c] *
+                  fe_v_face.shape_value_component(i, q_index, c) * JxW[q_index];
               }
           }
-        // cell_dg_matrix_12
-        for (unsigned int i : fe_v_face.dof_indices())
-          {
-            const unsigned int component_i =
-              fe_v_face.get_fe().system_to_component_index(i).first;
-            for (unsigned int j : fe_v_face_neighbor.dof_indices())
-              {
-                unsigned int component_j = fe_v_face_neighbor.get_fe()
-                                             .system_to_component_index(j)
-                                             .first;
-                copy_data_face.cell_dg_matrix_12(i, j) -=
-                  fe_v_face_neighbor.shape_value(i, q_index) *
-                  positive_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
-              }
-          }
-        // cell_dg_matrix_21
+
+        // cell_dg_rhs_2
         for (unsigned int i : fe_v_face_neighbor.dof_indices())
           {
-            const unsigned int component_i =
-              fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
-            for (unsigned int j : fe_v_face.dof_indices())
+            // const unsigned int component_i =
+            //   fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
+
+            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
               {
-                unsigned int component_j =
-                  fe_v_face.get_fe().system_to_component_index(j).first;
-                copy_data_face.cell_dg_matrix_21(i, j) +=
-                  fe_v_face.shape_value(i, q_index) *
-                  negative_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
-              }
-          }
-        // cell_dg_matrix_22
-        for (unsigned int i : fe_v_face_neighbor.dof_indices())
-          {
-            const unsigned int component_i =
-              fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
-            for (unsigned int j : fe_v_face_neighbor.dof_indices())
-              {
-                unsigned int component_j = fe_v_face_neighbor.get_fe()
-                                             .system_to_component_index(j)
-                                             .first;
-                copy_data_face.cell_dg_matrix_22(i, j) -=
-                  fe_v_face_neighbor.shape_value(i, q_index) *
-                  negative_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                // + n * F[c] * \phi[c]_{i,+}
+                copy_data_face.cell_dg_rhs_2(i) +=
+                  numerical_normal_flux[c] *
+                  fe_v_face_neighbor.shape_value_component(i, q_index, c) *
+                  JxW[q_index];
               }
           }
       }
