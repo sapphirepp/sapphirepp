@@ -138,12 +138,8 @@ namespace sapphirepp
 
       struct CopyDataFace
       {
-        FullMatrix<double> cell_dg_matrix_11;
-        FullMatrix<double> cell_dg_matrix_12;
-        FullMatrix<double> cell_dg_matrix_21;
-        FullMatrix<double> cell_dg_matrix_22;
-        Vector<double>     cell_dg_rhs_1;
-        Vector<double>     cell_dg_rhs_2;
+        Vector<double> cell_dg_rhs_1;
+        Vector<double> cell_dg_rhs_2;
 
         std::vector<types::global_dof_index> local_dof_indices;
         std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -154,10 +150,6 @@ namespace sapphirepp
                const Iterator &neighbor_cell,
                unsigned int    dofs_per_cell)
         {
-          cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
-          cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
-          cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
-          cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
           cell_dg_rhs_1.reinit(dofs_per_cell);
           cell_dg_rhs_2.reinit(dofs_per_cell);
 
@@ -173,7 +165,6 @@ namespace sapphirepp
 
       struct CopyData
       {
-        FullMatrix<double>                   cell_matrix;
         Vector<double>                       cell_dg_rhs;
         std::vector<types::global_dof_index> local_dof_indices;
         // std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -183,7 +174,6 @@ namespace sapphirepp
         void
         reinit(const Iterator &cell, unsigned int dofs_per_cell)
         {
-          cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
           cell_dg_rhs.reinit(dofs_per_cell);
 
           local_dof_indices.resize(dofs_per_cell);
@@ -423,13 +413,6 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   // PERIODIC
   // DoFTools::make_flux_sparsity_pattern(dof_handler, dsp, constraints,
   // false);
-  dg_matrix.reinit(locally_owned_dofs,
-                   locally_owned_dofs,
-                   dsp,
-                   mpi_communicator);
-  // NOTE: DealII does not allow to use different sparsity patterns for
-  // matrices, which you would like to add. Even though the the mass matrix
-  // differs from the dg matrix.
   mass_matrix.reinit(locally_owned_dofs,
                      locally_owned_dofs,
                      dsp,
