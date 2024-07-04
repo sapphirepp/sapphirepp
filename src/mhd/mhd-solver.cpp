@@ -273,8 +273,15 @@ sapphirepp::MHD::MHDSolver<dim>::run()
         output_results(discrete_time.get_step_number(),
                        discrete_time.get_current_time());
 
-      forward_euler_method(discrete_time.get_current_time(),
-                           discrete_time.get_next_step_size());
+      switch (mhd_parameters.time_stepping_method)
+        {
+          case TimeSteppingMethodMHD::forward_euler:
+            forward_euler_method(discrete_time.get_current_time(),
+                                 discrete_time.get_next_step_size());
+            break;
+          default:
+            AssertThrow(false, ExcNotImplemented());
+        }
     }
 
   // Output at the final result
