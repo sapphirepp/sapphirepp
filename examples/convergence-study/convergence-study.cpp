@@ -142,103 +142,101 @@ main(int argc, char *argv[])
                                  vfp_parameters.time_step);
       for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
         {
-          {
-            saplog << "Time step " << std::setw(6) << std::right
-                   << discrete_time.get_step_number()
-                   << " at t = " << discrete_time.get_current_time() << " \t["
-                   << Utilities::System::get_time() << "]" << std::endl;
+          saplog << "Time step " << std::setw(6) << std::right
+                 << discrete_time.get_step_number()
+                 << " at t = " << discrete_time.get_current_time() << " \t["
+                 << Utilities::System::get_time() << "]" << std::endl;
 
-            analytic_solution.set_time(discrete_time.get_current_time());
-            /** [Time loop] */
-
-
-            /** [Output solution] */
-            if ((discrete_time.get_step_number() %
-                 output_parameters.output_frequency) == 0)
-              {
-                LogStream::Prefix prefix("Output", saplog);
-                saplog << "Output solution" << std::endl;
-
-                dealii::DataOut<dimension> data_out;
-                data_out.attach_dof_handler(vfp_solver.get_dof_handler());
-
-                // Output numeric solution
-                data_out.add_data_vector(vfp_solver.get_current_solution(),
-                                         PDESystem::create_component_name_list(
-                                           system_size));
-
-                // Output projected analytic solution
-                vfp_solver.project(analytic_solution, analytic_solution_vector);
-                data_out.add_data_vector(analytic_solution_vector,
-                                         PDESystem::create_component_name_list(
-                                           system_size, "project_f_"));
-
-                // Output interpolated analytic solution
-                dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                                                 analytic_solution,
-                                                 analytic_solution_vector);
-                data_out.add_data_vector(analytic_solution_vector,
-                                         PDESystem::create_component_name_list(
-                                           system_size, "interpol_f_"));
-
-                data_out.build_patches(vfp_parameters.polynomial_degree);
-                output_parameters.write_results<dimension>(
-                  data_out,
-                  discrete_time.get_step_number(),
-                  discrete_time.get_current_time());
-              }
-            /** [Output solution] */
+          analytic_solution.set_time(discrete_time.get_current_time());
+          /** [Time loop] */
 
 
-            /** [Calculate error] */
+          /** [Output solution] */
+          if ((discrete_time.get_step_number() %
+               output_parameters.output_frequency) == 0)
             {
-              LogStream::Prefix prefix2("Error", saplog);
-              saplog << "Calculate error" << std::endl;
+              LogStream::Prefix prefix("Output", saplog);
+              saplog << "Output solution" << std::endl;
 
-              const double L2_error =
-                vfp_solver.compute_global_error(analytic_solution,
-                                                dealii::VectorTools::L2_norm,
-                                                dealii::VectorTools::L2_norm,
-                                                &weight);
-              const double L2_norm =
-                vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                                 dealii::VectorTools::L2_norm,
-                                                 &weight);
+              dealii::DataOut<dimension> data_out;
+              data_out.attach_dof_handler(vfp_solver.get_dof_handler());
 
-              saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-                     << ", rel error = " << L2_error / L2_norm << std::endl;
+              // Output numeric solution
+              data_out.add_data_vector(vfp_solver.get_current_solution(),
+                                       PDESystem::create_component_name_list(
+                                         system_size));
 
-              error_file << discrete_time.get_step_number() << "; "
-                         << discrete_time.get_current_time() << "; " << L2_norm
-                         << "; " << L2_error << "; " << L2_error / L2_norm
-                         << std::endl;
+              // Output projected analytic solution
+              vfp_solver.project(analytic_solution, analytic_solution_vector);
+              data_out.add_data_vector(analytic_solution_vector,
+                                       PDESystem::create_component_name_list(
+                                         system_size, "project_f_"));
+
+              // Output interpolated analytic solution
+              dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
+                                               analytic_solution,
+                                               analytic_solution_vector);
+              data_out.add_data_vector(analytic_solution_vector,
+                                       PDESystem::create_component_name_list(
+                                         system_size, "interpol_f_"));
+
+              data_out.build_patches(vfp_parameters.polynomial_degree);
+              output_parameters.write_results<dimension>(
+                data_out,
+                discrete_time.get_step_number(),
+                discrete_time.get_current_time());
             }
-            /** [Calculate error] */
+          /** [Output solution] */
 
 
-            /** [Time step] */
-            switch (vfp_parameters.time_stepping_method)
-              {
-                case TimeSteppingMethod::forward_euler:
-                case TimeSteppingMethod::backward_euler:
-                case TimeSteppingMethod::crank_nicolson:
-                  vfp_solver.theta_method(discrete_time.get_current_time(),
-                                          discrete_time.get_next_step_size());
-                  break;
-                case TimeSteppingMethod::erk4:
-                  vfp_solver.explicit_runge_kutta(
-                    discrete_time.get_current_time(),
-                    discrete_time.get_next_step_size());
-                  break;
-                case TimeSteppingMethod::lserk:
-                  vfp_solver.low_storage_explicit_runge_kutta(
-                    discrete_time.get_current_time(),
-                    discrete_time.get_next_step_size());
-                  break;
-                default:
-                  AssertThrow(false, ExcNotImplemented());
-              }
+          /** [Calculate error] */
+          {
+            LogStream::Prefix prefix2("Error", saplog);
+            saplog << "Calculate error" << std::endl;
+
+            const double L2_error =
+              vfp_solver.compute_global_error(analytic_solution,
+                                              dealii::VectorTools::L2_norm,
+                                              dealii::VectorTools::L2_norm,
+                                              &weight);
+            const double L2_norm =
+              vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                               dealii::VectorTools::L2_norm,
+                                               &weight);
+
+            saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+                   << ", rel error = " << L2_error / L2_norm << std::endl;
+
+            error_file << discrete_time.get_step_number() << "; "
+                       << discrete_time.get_current_time() << "; " << L2_norm
+                       << "; " << L2_error << "; " << L2_error / L2_norm
+                       << std::endl;
           }
+          /** [Calculate error] */
+
+
+          /** [Time step] */
+          switch (vfp_parameters.time_stepping_method)
+            {
+              case TimeSteppingMethod::forward_euler:
+              case TimeSteppingMethod::backward_euler:
+              case TimeSteppingMethod::crank_nicolson:
+                vfp_solver.theta_method(discrete_time.get_current_time(),
+                                        discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::erk4:
+                vfp_solver.explicit_runge_kutta(
+                  discrete_time.get_current_time(),
+                  discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::lserk:
+                vfp_solver.low_storage_explicit_runge_kutta(
+                  discrete_time.get_current_time(),
+                  discrete_time.get_next_step_size());
+                break;
+              default:
+                AssertThrow(false, ExcNotImplemented());
+            }
         }
       /** [Time step] */
 

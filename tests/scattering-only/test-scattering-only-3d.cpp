@@ -36,7 +36,7 @@
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
 
-const unsigned int dim = 2;
+const unsigned int dim = 3;
 
 
 namespace sapinternal
