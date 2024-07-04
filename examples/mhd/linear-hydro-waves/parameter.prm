@@ -1,0 +1,37 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = vtu
+  set Number of digits for counter = 5
+  # set Output frequency             = 20
+  set Output frequency             = 1
+  set Results folder               = ./results
+  set Simulation identifier        = linear-hydro-waves
+end
+subsection Physical parameters
+  set Zero State = 1.
+  set Amplitude  = 0.1
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 40, 2, 2
+    set Point 1         = -2., -2., -2.
+    set Point 2         = 2., 2., 2.
+    subsection Boundary conditions
+      set lower x = periodic
+      set lower y = periodic
+      set lower z = periodic
+      set upper x = periodic
+      set upper y = periodic
+      set upper z = periodic
+    end
+  end
+  subsection Time stepping
+    set Final time     = 8
+    set Method         = FE
+    set Time step size = 0.01
+  end
+end
