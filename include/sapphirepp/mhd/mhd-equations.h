@@ -91,6 +91,13 @@ namespace sapphirepp
       void
       compute_flux_matrix(const state_type &state,
                           flux_type        &flux_matrix) const;
+
+
+
+      double
+      compute_maximal_eigenvalue_normal(
+        const state_type             &state,
+        const dealii::Tensor<1, dim> &normal) const;
     };
   } // namespace MHD
 } // namespace sapphirepp

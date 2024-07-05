@@ -80,6 +80,21 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 
 
 
+template <unsigned int dim>
+double
+sapphirepp::MHD::MHDEquations<dim>::compute_maximal_eigenvalue_normal(
+  const state_type             &state,
+  const dealii::Tensor<1, dim> &normal) const
+{
+  /** @todo Implement this eigenvalue calculation */
+  static_cast<void>(state);
+  static_cast<void>(normal);
+
+  return 1.0;
+}
+
+
+
 // Explicit instantiations
 template class sapphirepp::MHD::MHDEquations<1>;
 template class sapphirepp::MHD::MHDEquations<2>;
