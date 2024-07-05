@@ -29,6 +29,8 @@
 
 #include <deal.II/base/exceptions.h>
 
+#include <cmath>
+
 
 
 template <unsigned int dim>
@@ -59,13 +61,26 @@ sapphirepp::MHD::NumericalFlux<dim>::compute_numerical_normal_flux(
   mhd_equations.compute_flux_matrix(state_1, flux_matrix_1);
   mhd_equations.compute_flux_matrix(state_2, flux_matrix_2);
 
+  const double max_eigenvalue_1 =
+    mhd_equations.compute_maximal_eigenvalue_normal(state_1, normal);
+  const double max_eigenvalue_2 =
+    mhd_equations.compute_maximal_eigenvalue_normal(state_2, normal);
+  const double max_eigenvalue = std::fmax(max_eigenvalue_1, max_eigenvalue_2);
+
   for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
     {
       /** @todo Implement other numerical fluxes */
 
-      // Central Flux
+      // /** [Central Flux] */
+      // numerical_normal_flux[c] =
+      //   0.5 * (normal * flux_matrix_1[c] + normal * flux_matrix_2[c]);
+      // /** [Central Flux] */
+
+      /** [local Lax-Friedrichs Flux] */
       numerical_normal_flux[c] =
-        0.5 * (normal * flux_matrix_1[c] + normal * flux_matrix_2[c]);
+        0.5 * (normal * flux_matrix_1[c] + normal * flux_matrix_2[c]) -
+        0.5 * max_eigenvalue * (state_2[c] - state_1[c]);
+      /** [local Lax-Friedrichs Flux] */
     }
 }
 
