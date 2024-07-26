@@ -151,7 +151,7 @@ declare, and parse our custom runtime parameters, as demonstrated in the
 The initial condition is an isotropic Gaussian distribution, as previously
 described. Consequently, we set all expansion coefficients $f_{l>0}$ to zero,
 except for the isotropic component $f_{i(0,0,0)} = f_0$. To calculate $r^2 =
-x^2+×y^2$, we employ the
+x^2+y^2$, we employ the
 @dealref{point.norm_square(),classTensor,ac9829e8f74544262c6b0ec1f39429029}
 function.
 
