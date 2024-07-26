@@ -102,7 +102,7 @@ Run the script by executing:
 
 ```shell
 chmod u+x install-dealii.sh
-./install_dealii.sh
+./install-dealii.sh
 ```
 
 Follow the on-screen instructions during the installation process. If the script
