@@ -7,7 +7,6 @@ participating. To this end, we have adopted a [code of
 conduct](https://sapphirepp.org/latest/md_doc_2pages_2code-of-conduct-page.html)
 that we expect all participants to adhere to.×
 
-
 ## Getting started with git and GitHub
 
 If you are new to using git or the GitHub platform you may find it helpful to
@@ -17,7 +16,6 @@ Book](https://git-scm.com/book/en/v2) by Scott Chacon and Ben Straub or the
 [32.8](http://www.math.colostate.edu/~bangerth/videos.676.32.8.html) and
 [32.75](https://www.math.colostate.edu/~bangerth/videos.676.32.75.html) by
 Wolfgang Bangerth.
-
 
 ## Getting help
 
@@ -39,7 +37,7 @@ without the need to be subscribed.
 Subscribing to the mailing list is equivalent to confirming that you are okay
 with publishing the emails you sent to the mailing list on this archive.
 Nonetheless, we use all possibilities, which the mailing list archive software
-provides, to hide sensible and irrelevant information. For example, your email
+provides, to hide sensitive and irrelevant information. For example, your email
 address will be disguised.
 
 Please do not post any confidential information (e.g. email addresses of others)
@@ -52,14 +50,12 @@ and enter your email address. If you would like us to delete any of your
 contributions, please write an email to
 [contact@sapphirepp.org](mailto:contact@sapphirepp.org).
 
-
 ## Bug reports
 
 It is a great help to us if you report any bugs in the library that you may
 find. We keep track of all open issues
 [here](https://github.com/sapphirepp/sapphirepp/issues). If you can, please try
 to include a minimal failing example that can help us reproduce the problem.
-
 
 ## Making changes and contributing new features
 

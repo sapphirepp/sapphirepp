@@ -2,7 +2,6 @@
 
 @tableofcontents
 
-
 ## Introduction {#introduction-quick-start}
 
 This quick-start guide will help you to get started with @sapphire. Note that it
@@ -52,15 +51,15 @@ $$
 whose zeroth order term is the isotropic part and higher order terms represent
 the anisotropies of the distribution function. @sapphire computes the expansion
 coefficients $f_{lms}(\mathbf{x}, p, t)$ up to a maximum order $l_{\rm max}$.
-Hence it reduces the dimensionality of the problem from the full six dimensional
-phase space $(\mathbf{x}, \mathbf{p})$ to a four dimensional **reduced phase
-space** $\mathbf{\xi} = (\mathbf{x}, p)^{T}$. We can reduce the dimensionality
-even further, noticing that our problem only depends on one spatial dimension.
-Our spatial domain for this problem $(\mathbf{x}) = (x)$, called **configuration
-space**, has therefore the dimensionality `dim_cs = 1`. The **computational
-domain** for this problem therefore has the dimensionality `dim = dim_ps =
-dim_cs + 1 = 2`, equalling the dimensionality of the reduced phase space
-`dim_ps`.
+Hence, it reduces the dimensionality of the problem from the full six
+dimensional phase space $(\mathbf{x}, \mathbf{p})$ to a four dimensional
+**reduced phase space** $\mathbf{\xi} = (\mathbf{x}, p)^{T}$. We can reduce the
+dimensionality even further, noticing that our problem only depends on one
+spatial dimension. Our spatial domain for this problem $(\mathbf{x}) = (x)$,
+called **configuration space**, has therefore the dimensionality `dim_cs = 1`.
+The **computational domain** for this problem therefore has the dimensionality
+`dim = dim_ps = dim_cs + 1 = 2`, equalling the dimensionality of the reduced
+phase space `dim_ps`.
 
 @note The computational domain is always the reduced phase space. Therefore, the
       dimension of the grid and (most) quantities `dim`, equals the dimension of
@@ -77,10 +76,9 @@ last component is the momentum $p$. Hence, we have in this example:
 
 @note Due to limitations of @dealii, the maximum computational dimension is
       currently limited to `dim = dim_ps = 3`. This means that one either has to
-      assume an, at most, 2d spatial domain (`dim_cs = 2` $\implies$ `dim_ps =
+      assume an at most 2d spatial domain (`dim_cs = 2` $\implies$ `dim_ps =
       3`), or a three-dimensional but momentum independent problem (`dim_ps =
       dim_cs = 3`).
-
 
 ## Implementation {#implementation-quick-start}
 
@@ -91,7 +89,6 @@ the simulation. In total this file is over 600 lines long, but as a user you can
 ignore most of it as boilerplate code. There are in practise very few lines you have to
 adapt to your problem, marked with a `// !!!EDIT HERE!!!` comment. Let's start
 going through these lines step by step.
-
 
 ### Dimensionality and VFPFlags {#dimension-quick-start}
 
@@ -140,7 +137,6 @@ velocity field and the source are time independent. This results in noticeable
 performance gains, as @sapphire only needs to calculate the corresponding
 DG-matrices once.
 
-
 ### Scattering frequency {#scattering-frequency-quick-start}
 
 Now that the general problem is stated, we have to specify the scattering
@@ -153,7 +149,6 @@ shock example](#parallel-shock). The corresponding implementation in @sapphire
 is only line in `sapphirepp/include/config.h`:
 
 @snippet{lineno} include/config.h Scattering frequency
-
 
 ### Source term {#source-term-quick-start}
 
@@ -182,7 +177,6 @@ $$
 Notice the factor $\frac{1}{\sqrt{4 \pi}}$ we have to account for.
 
 @snippet{lineno} include/config.h Source
-
 
 ### Velocity field {#velocity-quick-start}
 
@@ -239,7 +233,6 @@ $$
 
 @snippet{lineno} include/config.h Background velocity Jacobian
 
-
 ### Compile and run {#compile-quick-start}
 
 After making modifications to the physical setup, you'll need to recompile
@@ -251,12 +244,13 @@ executable. Execute the following commands to compile @sapphire:
 ```shell
   cd sapphirepp
   mkdir build
+  cmake -S . -B build
   cd build
-  cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
   make
 ```
 
-Once compiled, you can run the executable using the command below:
+Once compiled, you can run the executable inside the `build` folder using the
+command below:
 
 ```shell
   ./sapphirepp
@@ -269,7 +263,6 @@ To use multiple processors, you can use `mpirun`:
 ```
   
 where `N` is the number of processors you want to use.
-
 
 ## Results {#results-quick-start}
 
@@ -307,7 +300,6 @@ To continue, we recommend having a look at the [parallel shock
 example](#parallel-shock). There, we will discuss how to use and define runtime
 parameters, among other topics.
 
-
 <div class="section_buttons">
 
 | Previous       |                            Next |
@@ -315,7 +307,6 @@ parameters, among other topics.
 | [Home](#index) | [Visualization](#visualization) |
 
 </div>
-
 
 ---
 

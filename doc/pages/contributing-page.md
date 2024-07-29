@@ -10,7 +10,6 @@
 
 @subpage coding-conventions "Coding Conventions"
 
-
 <div class="section_buttons">
 
 | Previous              |                                Next |

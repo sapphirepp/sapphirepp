@@ -2,11 +2,9 @@
 [![clang-format Check](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml)
 [![Full test suite](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml)
 
-
 <p align="center">
 <img src="logo/sapphire-logo-text.png" alt="Sapphire++ logo" width=394>
 </p>
-
 
 # About
 
@@ -33,7 +31,6 @@ Sapphire++ is developed by the [Astrophysical Plasma
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
 group located at the [Max-Planck-Institut für
 Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
-
 
 ## Installation
 
@@ -67,7 +64,6 @@ cd build && make
 A detailed description of the installation process can be found in the
 [documentation](https://sapphirepp.org).
 
-
 ## Getting started
 
 To run Sapphire++ you need to provide a configuration file:
@@ -85,7 +81,6 @@ mpirun ./sapphirepp parameter.prm
 We provide a documentation on our website [sapphire.org](https://sapphirepp.org)
 together with [tutorials](https://sapphirepp.org/latest/examples.html) and
 [examples](examples).
-
 
 ## Licence
 
@@ -106,7 +101,6 @@ Here's the BibTeX entry for the paper:
   doi={DOI}
 }
 ```
-
 
 ## Contributing
 

@@ -20,7 +20,6 @@ Here's the BibTeX entry for the paper:
 
 @todo Add paper reference
 
-
 <div class="section_buttons">
 
 | Previous                              |

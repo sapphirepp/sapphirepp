@@ -17,7 +17,6 @@
     equations solved in @sapphire in a special scenario. This is used to verify
     the accuracy of the numerical methods by performing a convergence study.
 
-
 <div class="section_buttons">
 
 | Previous                        |                          Next |

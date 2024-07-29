@@ -23,12 +23,10 @@ with only a few modifications.
   we not always follows these conventions in the code yet. You are welcome to
   help us to improve our code base by contributing style improvements!
 
-
 ## Notes indentation {#coding-conventions-indentation}
 
 We use clang-format to format our code. We recommand to integrate code
 formatting in your IDE.
-
 
 ## Style issues {#coding-conventions-style}
 
@@ -108,46 +106,45 @@ formatting in your IDE.
    sapphirepp::VFP::VFPParameters "VFPParameters".
 
 10. If a function has both input and output parameters, usually the input
-   parameters shall precede the output parameters, unless there are good
-   reasons to change this order. (The most common reason is trailing input
-   parameters with default values.)
+    parameters shall precede the output parameters, unless there are good
+    reasons to change this order. (The most common reason is trailing input
+    parameters with default values.)
 
 11. Exceptions are used for internal parameter checking and for consistency
-   checks through the @dealii `Assert` macro. Exception handling like done by
-   the C++ language (`try/throw/catch`, and using the `AssertThrow` macro) are
-   used to handle run time errors (like I/O failures) which must be on in any
-   case, not only in debug mode.
+    checks through the @dealii `Assert` macro. Exception handling like done by
+    the C++ language (`try/throw/catch`, and using the `AssertThrow` macro) are
+    used to handle run time errors (like I/O failures) which must be on in any
+    case, not only in debug mode.
 
 12. Sometimes it makes sense to implement a class by using several non-member
-   functions that are not part of the public interface and are only meant to be
-   called in the current source file. Such free functions should be put in an
-   internal namespace `sapinternal` structured in the following way:
+    functions that are not part of the public interface and are only meant to be
+    called in the current source file. Such free functions should be put in an
+    internal namespace `sapinternal` structured in the following way:
 
-   ```cpp
-   namespace sapinternal
-   {
-     namespace ClassNameImplementation
-     {
-       // free functions go here
-     }
-   }
-   ```
+    ```cpp
+    namespace sapinternal
+    {
+      namespace ClassNameImplementation
+      {
+        // free functions go here
+      }
+    }
+    ```
 
-  where `ClassName` is the name of the calling class.
+    where `ClassName` is the name of the calling class.
 
 13. Classes, namespaces and types generally are named using uppercase letters to
-   denote word beginnings (e.g. `OutputParameters`) — sometimes called
-   *[camel case](https://en.wikipedia.org/wiki/Camel_case)* — while functions
-   and variables use lowercase letters and underscores to separate words.
+    denote word beginnings (e.g. `OutputParameters`) — sometimes called
+    *[camel case](https://en.wikipedia.org/wiki/Camel_case)* — while functions
+    and variables use lowercase letters and underscores to separate words.
 
 14. We may use forward declarations in header files to, hopefully, improve
-   compilation speeds by not using headers when we just need to mark a certain
-   type as an argument to a function. The convention is that, if all we need is
-   a type name, then the type may be forward declared in the header where we
-   need it; if a function (or member function) can return a value then a
-   declaration of that value's type should be available (by including the
-   necessary header).
-
+    compilation speeds by not using headers when we just need to mark a certain
+    type as an argument to a function. The convention is that, if all we need is
+    a type name, then the type may be forward declared in the header where we
+    need it; if a function (or member function) can return a value then a
+    declaration of that value's type should be available (by including the
+    necessary header).
 
 ## Instantiation of templated functions/classes {#coding-conventions-templates}
 
@@ -177,7 +174,6 @@ following convention:
    take, the definitions of functions are provided at the bottom of the header
    file with declarations. The definitions should be guarded with
    `#ifndef DOXYGEN ... #endif` to prevent Doxygen from picking them up.
-
 
 ## Defensive programming {#coding-conventions-defensive-programming}
 
@@ -433,12 +429,11 @@ list here:
     for which we need not search below whether it is ever changed, and it helps
     the compiler help us find bugs if we ever accidentally change the value.
 
-
 ## Documentation style {#coding-conventions-documentation}
 
 We build the documentation for @sapphire using
 [Doxygen](https://www.doxygen.nl/index.html). We use the `/**` style for
-documentation strings and `@` for Doxygen commands. You can
+documentation strings and `@` for Doxygen commands. You can use
 [Markdown](https://www.doxygen.nl/manual/markdown.html) syntax in your comments
 and include Latex formulas using `\f$ \alpha \f$` for inline and
 
@@ -497,7 +492,6 @@ Markdown and can be found in `doc/pages`.
 We use some custom commands like `@ sapphire` and `@ dealii` (without the space)
 to refer to @sapphire and @dealii consistently.
 
-
 ## Git {#coding-conventions-git}
 
 We would like to keep a clean and linear git history. To this end, we would like
@@ -524,11 +518,9 @@ optional footer
 with one of the following type: `feat`, `fix`, `docs`, `style`, `refactor`,
 `perf`, `test`, ...
 
-
 Don't think of these conventions as a hurdle to contribute! Feel free to
 contribute in any way you like. We will help you to get your contribution into
 the right shape. We are happy to help you to get started!
-
 
 <div class="section_buttons">
 

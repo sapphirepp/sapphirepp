@@ -5,7 +5,6 @@ margin: 0 auto; width:40%">
 
 @tableofcontents
 
-
 # About {#about}
 
 @sapphire is an acronym and stands for \"<strong>S</strong>imulating
@@ -65,12 +64,9 @@ Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-group
 group located at the [Max-Planck-Institut für
 Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
 
-
 # Installation {#installation}
 
-
 ## System requirements {#requirements}
-
 
 @sapphire uses the C++ library @dealii to solve the differential equations with
 finite elements. We use MPI to parallelize @sapphire. For optimized parallel
@@ -111,19 +107,19 @@ script and skip the installation of already installed packages. If the
 installation process is interrupted during the compilation of @dealii, you can
 resume the installation with the following commands:
 
-
 ```shell
 cd dealii-X.X.X/build
 make -j N install
 ```
 
-where `X.X.X` is the version number of @dealii and `N` is the number of threads
-to use for the compilation (should match number of processors on your system).
+where `X.X.X` represents the version number of @dealii, and `N` specifies the
+number of threads to use for the compilation. A common issue during the @dealii
+compilation is the compiler running out of memory. If this occurs, we recommend
+restarting the compilation with fewer threads.
 
 For macOS user, @dealii offers prepackaged `.dmg` files with all dependencies
 included. To install, follow the
 [deal.II Mac OSX Instructions](https://github.com/dealii/dealii/wiki/MacOSX).
-
 
 ## Compiling @sapphire {#compilation}
 
@@ -153,7 +149,6 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -
 @note Do not forget to switch to the optimized `Release` build before starting
  extensive simulation runs.
 
-
 ## Getting started {#getting-started}
 
 To run @sapphire, you need to provide a configuration file:
@@ -172,10 +167,10 @@ where `N` is the number of processors to use.
 
 For more details on using @sapphire, refer to the [examples](#examples).
 
-
 <div class="section_buttons">
 
 |                        Next |
 |----------------------------:|
 | [Quick start](#quick-start) |
+
 </div>

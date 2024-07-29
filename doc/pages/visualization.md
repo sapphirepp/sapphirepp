@@ -11,7 +11,6 @@ this section, we want to provide you some tips, tricks and lessons we had to
 learn on the way, that might help with visualizing and interpreting the output
 of @sapphire.
 
-
 ## Discontinuous Galerkin Finite Elements: Projection vs. Interpolation {#dg-fe-visualization}
 
 In finite element (FE) methods, differential equation are solved by finding
@@ -69,7 +68,6 @@ u(x^-_{j+\frac{1}{2}}))$. $a$, $b$, $C$, and $D$ are constants that bound the
 error. Concluding, we can see that the discontinuities are a feature of the DG
 method, that we can expect to be on the order of numerical errors.
 
-
 ## Polynomial basis functions and deal.II output {#dealii-visualization}
 
 In @sapphire, we use polynomial basis functions $\phi_i$ for the FE
@@ -97,23 +95,20 @@ inside the cells. There are some important points to note:
   This is often more effective in reducing discontinuities than increasing the
   mesh resolution. See for example the figure below.
 
-
 ![Discontinuities for $k=2$](https://sapphirepp.org/img/examples/visualization/visualization_discontinuity_k2.png)
-
 
 This figure shows again the $f_{110}$ mode of the
 [convergence-study](#convergence-study) example, but with a higher polynomial
 degree of $k=2$. One can see that the discontinuities much less pronounced than
 in the $k=1$ case (figure in previous section).
 
-
 ## VFP modules specialities {#vfp-visualization}
 
 In the VFP module in @sapphire, we have to consider some additional points when
 visualizing and interpreting the results:
 
-- @sapphire uses an expansion into spherical harmonics. It output these
-  expansion coefficients, $f_{lms}$ labelled `f_lms`. It does *not* the give the
+- @sapphire uses an expansion into spherical harmonics. It outputs these
+  expansion coefficients, $f_{lms}$ labelled `f_lms`. It does *not* give the
   distribution function $f$.
 - @sapphire uses *mixed coordinates*. The corresponding laboratory frame
   momentum does depend on the position *and* direction of the particles (the
@@ -124,7 +119,6 @@ visualizing and interpreting the results:
   both solutions are given in the same coordinate system (since there is no easy
   way to convert @sapphire output to laboratory frame coordinates, we recommend
   to use mixed coordinates for the comparison).
-
 
 ## ParaView {#paraview-visualization}
 
@@ -153,7 +147,6 @@ Here we want to give you some tips and tricks we learned when using
   Combined with using the `Sample Uniformly` option, this will ensure the
   solution is only sampled inside a cell, where the solution is well-defined.
 
-
 <div class="section_buttons">
 
 | Previous                    |                  Next |
@@ -161,7 +154,6 @@ Here we want to give you some tips and tricks we learned when using
 | [Quick-start](#quick-start) | [Examples](#examples) |
 
 </div>
-
 
 ---
 

@@ -2,7 +2,6 @@
 
 @tableofcontents
 
-
 ## Introduction {#introduction-parallel-shock}
 
 In this example we simulate the transport and acceleration of particles in a
@@ -77,7 +76,6 @@ $$
   f_{100} = 0 \quad \text{ for } x \geq 0 \,.
 $$
 
-
 ## Parameter files {#parameter-into-parallel-shock}
 
 A key feature of @sapphire, not covered in the [quick start](#quick-start)
@@ -149,14 +147,12 @@ Users can also define their own parameters to describe the physical setup. An
 example of this can be found in the [implementation](#parameter-parallel-shock)
 section.
 
-
 ## Implementation {#implementation-parallel-shock}
 
 An implementation of this example can be found in the example directory
 `sapphirepp/examples/parallel-shock`. The following sections will explain the
 implementation in detail. As shown in the [quick start](#quick-start), there are
 only a few lines in the `config.h` file that need to be adjusted.
-
 
 ### VFP equation {#dimension-parallel-shock}
 
@@ -169,7 +165,7 @@ dependence on $\varphi$, spherical harmonics with $m>0$ will be zero.
 
 @snippet{lineno} examples/parallel-shock/config.h Dimension
 
-Next, we need to specify which parts of the VFP equation are present in out
+Next, we need to specify which parts of the VFP equation are present in our
 problem. Here, we have the full VFP equation,
 
 $$
@@ -185,7 +181,6 @@ know that the velocity field and magnetic field time independent, as well as the
 source.
 
 @snippet{lineno} examples/parallel-shock/config.h VFP Flags
-
 
 ### Defining Custom Runtime Parameters {#parameter-parallel-shock}
 
@@ -248,7 +243,6 @@ Implementing these parameters in @sapphire involves a three-step process:
 
    @snippet{lineno} examples/parallel-shock/config.h Parse runtime parameter
 
-
 ### Scattering frequency {#scattering-frequency-parallel-shock}
 
 Now we implement the functions related to the physical setup, starting with the
@@ -268,7 +262,6 @@ the index `i` to refer to an individual point:
 
 Notice that we use access the runtime parameter $\nu_0$ via the (previously
 modified) @ref sapphirepp::PhysicalParameters "PhysicalParameters" class `prm`.
-
 
 ### Source term {#source-term-parallel-shock}
 
@@ -291,7 +284,6 @@ $i(l,m,s)$, at one `point`.
 
 @snippet{lineno} examples/parallel-shock/config.h Source
 
-
 ### Magnetic field {#magnetic-field-parallel-shock}
 
 As described above, we use a constant magnetic field parallel to the shock,
@@ -299,7 +291,6 @@ $\mathbf{B} = B_0 \hat{\mathbf{e}}_x$. It does not influence the steady state
 solution, but nevertheless we include it for completeness.
 
 @snippet{lineno} examples/parallel-shock/config.h Magnetic field
-
 
 ### Velocity field {#velocity-parallel-shock}
 
@@ -328,7 +319,6 @@ u_{x}}{\partial x}$ stays the same.
 
    @snippet{lineno} examples/parallel-shock/config.h Background velocity Jacobian
 
-
 ### Compile and run {#compile-parallel-shock}
 
 To run the simulation, implement the above functions in the `config.h` file and
@@ -340,10 +330,12 @@ recompile @sapphire:
 ```
 
 Alternatively, you can use the implementation in the `examples/parallel-shock`
-folder. This executable will be called `parallel-shock` instead of `sapphirepp`.
+folder. This executable will be named `parallel-shock` instead of `sapphirepp`.
+Note that for this to work, @sapphire must be configured with the
+`-DEXAMPLES=ON` option.
 
 ```shell
-  cd sapphirepp/examples/parallel-shock
+  cd sapphirepp/build/examples/parallel-shock
   make parallel-shock
 ```
 
@@ -355,10 +347,9 @@ We recommend running the simulation with the parameters given in
 Run the simulation with:
 
 ```shell
-  cd sapphirepp/examples/parallel-shock
+  cd sapphirepp/build/examples/parallel-shock
   ./parallel-shock parameter.prm
 ```
-
 
 ## Results {#results-parallel-shock}
 
@@ -382,7 +373,6 @@ disappears in the downstream region.
 
 ![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock-f-x.png)
 
-
 <div class="section_buttons">
 
 | Previous              |
@@ -390,7 +380,6 @@ disappears in the downstream region.
 | [Examples](#examples) |
 
 </div>
-
 
 ---
 
