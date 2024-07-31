@@ -149,9 +149,9 @@ Here we want to give you some tips and tricks we learned when using
 
 <div class="section_buttons">
 
-| Previous                    |                  Next |
-|:----------------------------|----------------------:|
-| [Quick-start](#quick-start) | [Examples](#examples) |
+| Previous                                |                  Next |
+|:----------------------------------------|----------------------:|
+| [ParaView Tutorial](#paraview-tutorial) | [Examples](#examples) |
 
 </div>
 

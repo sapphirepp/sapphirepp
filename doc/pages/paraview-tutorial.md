@@ -47,3 +47,16 @@
 ![Image Description](https://sapphirepp.org/img/paraview-tutorial/paraview-15.png)
 
 ![Image Description](https://sapphirepp.org/img/paraview-tutorial/paraview-16.png)
+
+<div class="section_buttons">
+
+| Previous                        |                                                     Next |
+|:--------------------------------|---------------------------------------------------------:|
+| [Visualization](#visualization) | [Tips and Tricks for Visualization](#visualization-tips) |
+
+</div>
+
+---
+
+@author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
+@date 2024-07-31

@@ -269,7 +269,11 @@ where `N` is the number of processors you want to use.
 Running the simulation will produce a `results` directory containing the output
 as `solution_*.pvtu` files. These files can be visualized using visualization
 software like [ParaView](https://www.paraview.org) or
-[VisIt](https://visit-dav.github.io/visit-website/).
+[VisIt](https://visit-dav.github.io/visit-website/). A [detailed
+tutorial](#paraview-tutorial) on how to visualise the results using
+[ParaView](https://www.paraview.org) is given in the next section on
+[Visualization](#visualization). Here we just present the results to give a
+first impression.
 
 Opening the files as a time series, we can see that they contain the expansion
 coefficients `f_lms`. Let's have a look at the zeroth order coefficient
