@@ -1,4 +1,4 @@
-# Visualization {#visualization}
+# Tips and Tricks for Visualization {#visualization-tips}
 
 @tableofcontents
 
