@@ -186,10 +186,10 @@ namespace sapphirepp
         AssertDimension(scattering_frequencies.size(), points.size());
         static_cast<void>(component); // suppress compiler warning
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             // !!!EDIT HERE!!!
-            scattering_frequencies[i] = prm.nu;
+            scattering_frequencies[q_index] = prm.nu;
           }
       }
 
@@ -312,10 +312,10 @@ namespace sapphirepp
         AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
 
-        for (unsigned int i = 0; i < divergence.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             // !!!EDIT HERE!!!
-            divergence[i] = 0.; // div u
+            divergence[q_index] = 0.; // div u
           }
       }
       /** [BackgroundVelocityField divergence] */
@@ -331,12 +331,12 @@ namespace sapphirepp
         AssertDimension(material_derivatives.size(), points.size());
         AssertDimension(material_derivatives[0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             // !!!EDIT HERE!!!
-            material_derivatives[i][0] = 0.; // D/Dt u_x
-            material_derivatives[i][1] = 0.; // D/Dt u_y
-            material_derivatives[i][2] = 0.; // D/Dt u_z
+            material_derivatives[q_index][0] = 0.; // D/Dt u_x
+            material_derivatives[q_index][1] = 0.; // D/Dt u_y
+            material_derivatives[q_index][2] = 0.; // D/Dt u_z
           }
       }
       /** [BackgroundVelocityField material derivative] */
@@ -353,20 +353,20 @@ namespace sapphirepp
         AssertDimension(jacobians[0].size(), this->n_components);
         AssertDimension(jacobians[0][0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             // !!!EDIT HERE!!!
-            jacobians[i][0][0] = 0.; // \partial u_x / \partial x
-            jacobians[i][0][1] = 0.; // \partial u_x / \partial y
-            jacobians[i][0][2] = 0.; // \partial u_x / \partial z
+            jacobians[q_index][0][0] = 0.; // \partial u_x / \partial x
+            jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
+            jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
-            jacobians[i][1][0] = 0.; // \partial u_y / \partial x
-            jacobians[i][1][1] = 0.; // \partial u_y / \partial y
-            jacobians[i][1][2] = 0.; // \partial u_y / \partial z
+            jacobians[q_index][1][0] = 0.; // \partial u_y / \partial x
+            jacobians[q_index][1][1] = 0.; // \partial u_y / \partial y
+            jacobians[q_index][1][2] = 0.; // \partial u_y / \partial z
 
-            jacobians[i][2][0] = 0.; // \partial u_z / \partial x
-            jacobians[i][2][1] = 0.; // \partial u_z / \partial y
-            jacobians[i][2][2] = 0.; // \partial u_z / \partial z
+            jacobians[q_index][2][0] = 0.; // \partial u_z / \partial x
+            jacobians[q_index][2][1] = 0.; // \partial u_z / \partial y
+            jacobians[q_index][2][2] = 0.; // \partial u_z / \partial z
           }
       }
 

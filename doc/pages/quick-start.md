@@ -150,6 +150,13 @@ is only line in `sapphirepp/include/config.h`:
 
 @snippet{lineno} include/config.h Scattering frequency
 
+@note You might notice the index `q_index` in the line above. For performance
+      reasons, the @ref sapphirepp::VFP::ScatteringFrequency
+      "ScatteringFrequency" function calculates the scattering frequencies for a
+      list of `points` rather than for one individual `point`. Consequently, the
+      function returns a list of scattering frequency values, each corresponding
+      to a point in the list, indexed by `q_index`.
+
 ### Source term {#source-term-quick-start}
 
 Next, we specify the injection of particles at the shock ($x = 0$). We use a

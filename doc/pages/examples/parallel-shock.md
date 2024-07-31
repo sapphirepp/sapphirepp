@@ -267,7 +267,7 @@ $$
 To get the momentum variable $\ln p$ we use the second component of the `point`
 in reduced phase space that is given to function. One peculiarity here is, that
 the function calculates the scattering frequency at multiple `points`. We use
-the index `i` to refer to an individual point:
+the index `q_index` to refer to an individual point:
 
 @snippet{lineno} examples/parallel-shock/config.h Scattering frequency
 
