@@ -62,7 +62,7 @@ cd build && make
 ```
 
 A detailed description of the installation process can be found in the
-[documentation](https://sapphirepp.org).
+[documentation](https://sapphirepp.org#installation).
 
 ## Getting started
 
@@ -75,12 +75,16 @@ To run Sapphire++ you need to provide a configuration file:
 You enable parallel execution by using `mpirun`:
 
 ```shell
-mpirun ./sapphirepp parameter.prm
+mpirun -np N ./sapphirepp parameter.prm
 ```
 
-We provide a documentation on our website [sapphire.org](https://sapphirepp.org)
-together with [tutorials](https://sapphirepp.org/latest/examples.html) and
-[examples](examples).
+where `N` is the number of processors to use.
+
+Comprehensive documentation is available on our website
+[sapphire.org](https://sapphirepp.org). There, you can find a [quick-start
+guide](https://sapphirepp.org/latest/quick-start.html) and various
+[tutorials](https://sapphirepp.org/latest/examples.html). The source code for
+the examples is located in the [examples](examples) folder.
 
 ## Licence
 
