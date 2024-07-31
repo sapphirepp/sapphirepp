@@ -76,7 +76,7 @@ $$
   f_{100} = 0 \quad \text{ for } x \geq 0 \,.
 $$
 
-## Parameter files {#parameter-into-parallel-shock}
+## Parameter files {#parameter-files-parallel-shock}
 
 A key feature of @sapphire, not covered in the [quick start](#quick-start)
 guide, is the use of parameter files. These files allow you to define the
