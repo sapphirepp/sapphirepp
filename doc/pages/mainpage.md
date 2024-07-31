@@ -90,7 +90,7 @@ following programs installed:
 - For generating the documentation: [Doxygen](https://www.doxygen.nl) version
   @doxygen_min_version or later with `dot`
 - For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/) or
-  [ParaView](http://www.paraview.org/)
+  @paraview
 
 To install @dealii and all necessary prerequisites for @sapphire, we provide an
 [installation script](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/install-dealii.sh).

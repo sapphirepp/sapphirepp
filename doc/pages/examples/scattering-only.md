@@ -574,8 +574,7 @@ The program creates a `results` folder in the current directory, with a
 parameters (`log.prm`), the analytic solution (`analytic_solution_0000.vtu`),
 and the numerical solution at each time step (`solution_*.vtu`).
 
-The `*.vtu` files can be opened in visualization software like
-[ParaView](https://www.paraview.org) or
+The `*.vtu` files can be opened in visualization software like @paraview or
 [VisIt](https://visit-dav.github.io/visit-website/). These files contain all
 expansion coefficients `f_lms` along with the MPI `subdomain`. Note that the
 solution `f_lms` is a `dim = dim_ps` dimensional quantity in mixed coordinate

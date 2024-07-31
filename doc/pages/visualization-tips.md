@@ -122,12 +122,12 @@ visualizing and interpreting the results:
 
 ## ParaView {#paraview-visualization}
 
-Here we want to give you some tips and tricks we learned when using
-[ParaView](https://www.paraview.org) to visualize the results of @sapphire:
+Here we want to give you some tips and tricks we learned when using @paraview to
+visualize the results of @sapphire:
 
-- ParaView uses the values given at the nodes and linearly interpolates between
+- @paraview uses the values given at the nodes and linearly interpolates between
   them inside each cell.
-- ParaView has problems reading the mesh data (especially in the 1D case).
+- @paraview has problems reading the mesh data (especially in the 1D case).
   Therefore, when using the `PlotOverLine` feature one should *not* use the
   `Sample At Cell Boundaries` or `Sample At Segment Centers` options. Instead,
   one should use the option `Sample Uniformly`.

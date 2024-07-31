@@ -288,6 +288,7 @@ ALIASES                = sapphire="Sapphire++" \
                          dealref{2}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html\"> \1 </A>" \
                          dealref{3}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html#\3\"> \1 </A>" \
                          dealref{1}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/class\1.html\"> \1 </A>" \
+                         paraview="<A HREF=\"https://www.paraview.org\"> ParaView </A>" \
                          cmake_min_version="@CMAKE_MINIMUM_REQUIRED_VERSION@" \
                          dealii_min_version="@DEAL_II_MIN_VERSION@" \
                          doxygen_min_version="@DOXYGEN_MIN_VERSION@"
