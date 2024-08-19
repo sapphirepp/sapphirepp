@@ -40,16 +40,17 @@ std::vector<std::string>
 sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
   const std::string &prefix)
 {
-  std::vector<std::string> component_names(MHDEquations<dim>::n_components);
+  std::vector<std::string> component_names(n_components);
 
-  component_names[MHDEquations<dim>::density_component] = prefix + "rho";
-  component_names[MHDEquations<dim>::energy_component]  = prefix + "E";
-  for (unsigned int d = 0; d < dim; ++d)
-    component_names[MHDEquations<dim>::first_momentum_component + d] =
-      prefix + "u_" + std::to_string(d + 1);
-  for (unsigned int d = 0; d < dim_B; ++d)
-    component_names[MHDEquations<dim>::first_magnetic_component + d] =
-      prefix + "B_" + std::to_string(d + 1);
+  component_names[density_component] = prefix + "rho";
+  component_names[energy_component]  = prefix + "E";
+  for (unsigned int d = 0; d < dim_uB; ++d)
+    {
+      component_names[first_momentum_component + d] =
+        prefix + "p_" + std::to_string(d + 1);
+      component_names[first_magnetic_component + d] =
+        prefix + "B_" + std::to_string(d + 1);
+    }
 
   return component_names;
 }

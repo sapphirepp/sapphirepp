@@ -56,14 +56,14 @@ namespace sapphirepp
     {
     public:
       /** @{ */
-      /** Dimension of the magnetic field */
-      static constexpr unsigned int dim_B = 3;
+      /** Dimension of the velocity and magnetic field. Always fixed to 3. */
+      static constexpr unsigned int dim_uB = 3;
       /** Number of components */
-      static constexpr unsigned int n_components             = 2 + dim + dim_B;
-      static constexpr unsigned int density_component        = 0;
+      static constexpr unsigned int n_components      = 2 + dim_uB + dim_uB;
+      static constexpr unsigned int density_component = 0;
       static constexpr unsigned int first_momentum_component = 1;
-      static constexpr unsigned int energy_component         = dim + 1;
-      static constexpr unsigned int first_magnetic_component = dim + 2;
+      static constexpr unsigned int energy_component         = dim_uB + 1;
+      static constexpr unsigned int first_magnetic_component = dim_uB + 2;
       /** @} */
 
       using state_type = dealii::Vector<double>;
@@ -77,7 +77,7 @@ namespace sapphirepp
 
       /** @{ */
       /**
-       * @brief Create a list of component names, `rho`, `u_i`, `E`, `B_i`.
+       * @brief Create a list of component names, `rho`, `p_i`, `E`, `B_i`.
        *
        * @param prefix Prefix for the component names.
        * @return std::vector<std::string> component_names.
