@@ -68,14 +68,14 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 
   AssertDimension(state.size(), n_components);
 
-  for (unsigned int i = 0; i < n_components; ++i)
+  for (unsigned int c = 0; c < n_components; ++c)
     {
       for (unsigned int d = 0; d < dim; ++d)
         {
-          flux_matrix[i][d] = 0.;
+          flux_matrix[c][d] = 0.;
         }
       // Test case: advect each component in x direction
-      flux_matrix[i][0] = 1. * state[i];
+      flux_matrix[c][0] = 1. * state[c];
     }
 }
 
