@@ -41,14 +41,51 @@ namespace sapphirepp
 {
   namespace MHD
   {
+    using namespace dealii;
+
+
+
+    /**
+     * @brief Class for computing numerical flux in MHD simulations.
+     *
+     * The flux is computed based on the given normal vector and the states of
+     * the system.
+     *
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
+     *         `dim`
+     */
     template <unsigned int dim>
     class NumericalFlux
     {
     public:
+      /**
+       * @brief Constructor
+       *
+       * @param mhd_equations Instance of the underlying @ref MHDEquations.
+       */
       NumericalFlux(const MHDEquations<dim> &mhd_equations);
 
 
 
+      /**
+       * @brief Compute the numerical flux given the normal vector and states.
+       *
+       * Uses a local Lax-Friedrichs flux to compute the numerical flux,
+       * \f[
+       *   \mathbf{F}^{\text{num}} =
+       *   \frac{1}{2} \hat{\mathbf{n}} \cdot
+       *   \left( \mathbf{F}(\mathbf{w}_-) + \mathbf{F}(\mathbf{w}_+) \right)
+       *   - \frac{\max(\lambda_{-, \hat{\mathbf{n}}},
+       *   \lambda_{+, \hat{\mathbf{n}}})}{2}
+       *   \left( \mathbf{w}_+ - \mathbf{w}_- \right) \,.
+       * \f]
+       *
+       * @param normal Normal vector of the face \f$ \hat{\mathbf{n}} \f$.
+       * @param state_1 Left state \f$ \mathbf{w}_- \f$.
+       * @param state_2 Right state \f$ \mathbf{w}_+ \f$.
+       * @param numerical_normal_flux Resulting numerical flux
+       *        \f$ \mathbf{F}^{\text{num}} \f$.
+       */
       void
       compute_numerical_normal_flux(
         const dealii::Tensor<1, dim>                 &normal,
@@ -59,6 +96,7 @@ namespace sapphirepp
 
 
     private:
+      /** @ref MHDEquations */
       const MHDEquations<dim> mhd_equations;
     };
   } // namespace MHD

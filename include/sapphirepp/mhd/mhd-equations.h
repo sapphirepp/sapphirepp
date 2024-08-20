@@ -67,12 +67,12 @@ namespace sapphirepp
        */
       static constexpr unsigned int first_momentum_component = 1;
       /** Index of the energy component \f$ \mathcal{E} \f$. */
-      static constexpr unsigned int energy_component = dim + 1;
+      static constexpr unsigned int energy_component = dim_uB + 1;
       /**
        * Starting index of the magnetic components \f$ \mathbf{B} \f$
        * (@ref dim_uB components).
        */
-      static constexpr unsigned int first_magnetic_component = dim + 2;
+      static constexpr unsigned int first_magnetic_component = dim_uB + 2;
       /** @} */
 
       /**
