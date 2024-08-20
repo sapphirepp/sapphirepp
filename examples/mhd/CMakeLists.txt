@@ -1,1 +1,1 @@
-add_subdirectory(linear-hydro-waves)
+add_subdirectory(linear-waves)

@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/mhd/liner-hydro-waves/config.h
+ * @file examples/mhd/liner-waves/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for liner-hydro-waves example
+ * @brief Implement physical setup for liner-waves example
  */
 
 #ifndef CONFIG_H

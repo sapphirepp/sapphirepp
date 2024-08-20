@@ -5,7 +5,7 @@ subsection Output
   # set Output frequency             = 20
   set Output frequency             = 1
   set Results folder               = ./results
-  set Simulation identifier        = linear-hydro-waves
+  set Simulation identifier        = linear-waves
 end
 subsection Physical parameters
   set Zero State = 1.

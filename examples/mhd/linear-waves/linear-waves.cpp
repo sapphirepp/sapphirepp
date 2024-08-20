@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/mhd/linear-hydro-waves/linear-hydro-waves.cpp
+ * @file examples/mhd/linear-waves/linear-waves.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for linear-hydro-waves example
+ * @brief Implement main function for linear-waves example
  */
 
 #include <deal.II/base/discrete_time.h>
