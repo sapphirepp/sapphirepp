@@ -101,6 +101,31 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximal_eigenvalue_normal(
 
 
 
+template <unsigned int dim>
+double
+sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
+  const state_type &state) const
+{
+  AssertDimension(state.size(), n_components);
+
+  double p2 = 0.;
+  double B2 = 0.;
+  for (unsigned int d = 0; d < dim_uB; ++d)
+    {
+      p2 += state[first_momentum_component + d] *
+            state[first_momentum_component + d];
+      B2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+    }
+
+
+  return (adiabatic_index - 1.) *
+         (state[energy_component] - 1. / (2. * state[density_component]) * p2 -
+          1 / (8. * M_PI) * B2);
+}
+
+
+
 // Explicit instantiations
 template class sapphirepp::MHD::MHDEquations<1>;
 template class sapphirepp::MHD::MHDEquations<2>;

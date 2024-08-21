@@ -150,6 +150,19 @@ namespace sapphirepp
         const state_type             &state,
         const dealii::Tensor<1, dim> &normal) const;
       /** @} */
+
+
+      /** @{ */
+      /**
+       * @brief Compute the pressure \f$ P \f$ from the MHD state
+       *        \f$ \mathbf{w} \f$.
+       *
+       * @param state The MHD state \f$ \mathbf{w} \f$.
+       * @return double The pressure \f$ P \f$.
+       */
+      double
+      compute_pressure(const state_type &state) const;
+      /** @} */
     };
   } // namespace MHD
 } // namespace sapphirepp
