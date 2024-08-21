@@ -31,7 +31,12 @@
 
 
 template <unsigned int dim>
-sapphirepp::MHD::MHDEquations<dim>::MHDEquations() = default;
+sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
+  : adiabatic_index{adiabatic_index}
+{
+  AssertThrow(adiabatic_index > 1.0,
+              dealii::ExcMessage("Adiabatic index must be larger than 1.0."));
+}
 
 
 

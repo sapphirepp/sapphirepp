@@ -103,8 +103,14 @@ namespace sapphirepp
         std::array<dealii::Tensor<1, dim, double>, n_components>;
 
 
+      /** @{ */
+      /** Adiabatic index \f$ \gamma \f$ */
+      const double adiabatic_index;
+      /** @} */
+
+
       /** Constructor */
-      MHDEquations();
+      MHDEquations(const double adiabatic_index);
 
 
       /** @{ */

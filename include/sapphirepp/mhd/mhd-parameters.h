@@ -111,6 +111,13 @@ namespace sapphirepp
 
 
 
+      /** @{ */
+      /** Adiabatic index \f$ \gamma \f$ */
+      double adiabatic_index;
+      /** @} */
+
+
+
       /** @brief Constructor */
       MHDParameters();
 

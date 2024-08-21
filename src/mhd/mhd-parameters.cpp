@@ -142,6 +142,16 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 
 
+  prm.enter_subsection("Plasma properties");
+  {
+    prm.declare_entry("Adiabatic index",
+                      "1.666666",
+                      Patterns::Double(1),
+                      "Adiabatic index (gamma) of the plasma.");
+  } // Plasma properties
+  prm.leave_subsection();
+
+
   prm.leave_subsection();
 }
 
@@ -285,6 +295,13 @@ sapphirepp::MHD::MHDParameters<dim>::parse_parameters(ParameterHandler &prm)
     polynomial_degree =
       static_cast<unsigned int>(prm.get_integer("Polynomial degree"));
   } // Finite element
+  prm.leave_subsection();
+
+
+  prm.enter_subsection("Plasma properties");
+  {
+    adiabatic_index = prm.get_double("Adiabatic index");
+  } // Plasma properties
   prm.leave_subsection();
 
 

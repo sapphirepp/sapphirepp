@@ -194,7 +194,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   : mhd_parameters{mhd_parameters}
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
-  , mhd_equations()
+  , mhd_equations(mhd_parameters.adiabatic_index)
   , numerical_flux(mhd_equations)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
