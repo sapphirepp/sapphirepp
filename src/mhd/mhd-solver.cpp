@@ -688,7 +688,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                                            dg_rhs);
     for (auto &cdf : c.face_data)
       {
-        /** @todo Maybe manual addition necessary as in VFP? */
         constraints.distribute_local_to_global(cdf.cell_dg_rhs_1,
                                                cdf.local_dof_indices,
                                                dg_rhs);
@@ -714,8 +713,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                           MeshWorker::assemble_own_interior_faces_once,
                         boundary_worker,
                         face_worker);
-  /** @todo This might be obsolete because we are using
-   * distribute_local_to_globale */
   dg_rhs.compress(VectorOperation::add);
   saplog << "The DG rhs was assembled." << std::endl;
 }
@@ -746,6 +743,8 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(mass_matrix);
 
+  // The x vector has to be a vector of locally_owned_dofs, so we make use of
+  // the locally_owned_previous_solution
   solver.solve(mass_matrix,
                locally_owned_previous_solution,
                system_rhs,
@@ -769,6 +768,13 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   TimerOutput::Scope timer_section(timer, "Output - MHD");
   DataOut<dim>       data_out;
   data_out.attach_dof_handler(dof_handler);
+  /**
+   * @todo Use
+   * @dealref{DataComponentInterpretation,namespaceDataComponentInterpretation}
+   * to output u and B as a vector field. Problem: At the moment deal.II only
+   * allows to output a `dim` dimensional vector field, with `dim` being the
+   * dimension of the grid.
+   */
   data_out.add_data_vector(locally_relevant_current_solution,
                            MHDEquations<dim>::create_component_name_list());
 
