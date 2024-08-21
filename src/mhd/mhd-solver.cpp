@@ -493,7 +493,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
       q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
     typename MHDEquations<dim>::flux_type flux_matrix;
 
-    fe_v.get_function_values(locally_owned_previous_solution, states);
+    fe_v.get_function_values(locally_relevant_current_solution, states);
 
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
@@ -546,7 +546,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
       MHDEquations<dim>::n_components);
 
     // Compute states
-    fe_v_face.get_function_values(locally_owned_previous_solution, states);
+    fe_v_face.get_function_values(locally_relevant_current_solution, states);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
@@ -637,8 +637,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
       MHDEquations<dim>::n_components);
 
     // Compute states
-    fe_v_face.get_function_values(locally_owned_previous_solution, states);
-    fe_v_face_neighbor.get_function_values(locally_owned_previous_solution,
+    fe_v_face.get_function_values(locally_relevant_current_solution, states);
+    fe_v_face_neighbor.get_function_values(locally_relevant_current_solution,
                                            states_neighbor);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())

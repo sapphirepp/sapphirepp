@@ -431,7 +431,8 @@ namespace sapphirepp
       /**
        * @brief Assemble the right hand side of the DG system
        *
-       * Compute the @ref dg_rhs
+       * Compute the @ref dg_rhs using the @ref
+       * locally_relevant_current_solution
        *
        * @param time Time of the current time step
        */
