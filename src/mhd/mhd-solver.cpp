@@ -740,20 +740,10 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
   mass_matrix.vmult(system_rhs, locally_owned_previous_solution);
   system_rhs.add(time_step, dg_rhs);
 
+  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
-  //! Original code
-  // SolverControl              solver_control(1000, 1e-6 *
-  // system_rhs.l2_norm()); PETScWrappers::SolverGMRES solver(solver_control,
-  // mpi_communicator);
-
-  // PETScWrappers::PreconditionBlockJacobi preconditioner;
-  // preconditioner.initialize(mass_matrix);
-
-  //! New code
-  SolverControl                   solver_control(1000, 1e-12);
-  PETScWrappers::SolverRichardson solver(solver_control, mpi_communicator);
-
-  PETScWrappers::PreconditionSSOR preconditioner;
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(mass_matrix);
 
   solver.solve(mass_matrix,
