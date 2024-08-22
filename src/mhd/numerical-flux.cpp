@@ -62,9 +62,9 @@ sapphirepp::MHD::NumericalFlux<dim>::compute_numerical_normal_flux(
   mhd_equations.compute_flux_matrix(state_2, flux_matrix_2);
 
   const double max_eigenvalue_1 =
-    mhd_equations.compute_maximal_eigenvalue_normal(state_1, normal);
+    mhd_equations.compute_maximum_normal_eigenvalue(state_1, normal);
   const double max_eigenvalue_2 =
-    mhd_equations.compute_maximal_eigenvalue_normal(state_2, normal);
+    mhd_equations.compute_maximum_normal_eigenvalue(state_2, normal);
   const double max_eigenvalue = std::fmax(max_eigenvalue_1, max_eigenvalue_2);
 
   for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
