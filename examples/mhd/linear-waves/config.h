@@ -165,6 +165,7 @@ namespace sapphirepp
         , primitive_background_state(MHDEquations<dim>::n_components)
         , primitive_eigenvectors(MHDEquations<dim>::n_components)
       {
+        // Create background state
         primitive_background_state[MHDEquations<dim>::density_component] =
           prm.rho_0;
         primitive_background_state[MHDEquations<dim>::pressure_component] =
@@ -177,12 +178,44 @@ namespace sapphirepp
               [MHDEquations<dim>::first_magnetic_component + d] = prm.B_0[d];
           }
 
+        // Define short hand definitions
+        const double rho_0 =
+          primitive_background_state[MHDEquations<dim>::density_component];
+        const double P_0 =
+          primitive_background_state[MHDEquations<dim>::pressure_component];
+        dealii::Tensor<1, MHDEquations<dim>::dim_uB> u_0, B_0;
+        for (unsigned int d = 0; d < MHDEquations<dim>::dim_uB; ++d)
+          {
+            u_0[d] = primitive_background_state
+              [MHDEquations<dim>::first_velocity_component + d];
+            B_0[d] = primitive_background_state
+              [MHDEquations<dim>::first_magnetic_component + d];
+          }
+        (void)u_0;
+        (void)B_0;
+
+        const double a_s =
+          std::sqrt(mhd_equations.adiabatic_index * P_0 / rho_0);
+        (void)a_s;
+
+
         // Density entropy wave
         primitive_eigenvectors                                       = 0;
         primitive_eigenvectors[MHDEquations<dim>::density_component] = 1.;
+        eigenvalues                                                  = u_0[0];
 
-        eigenvalues = primitive_background_state
-          [MHDEquations<dim>::first_velocity_component];
+
+        // Left going sound wave
+        primitive_eigenvectors                                       = 0;
+        primitive_eigenvectors[MHDEquations<dim>::density_component] = rho_0;
+        primitive_eigenvectors[MHDEquations<dim>::first_velocity_component] =
+          -a_s;
+        primitive_eigenvectors[MHDEquations<dim>::pressure_component] =
+          rho_0 * a_s * a_s;
+        eigenvalues = u_0[0] - a_s;
+
+        saplog << "Background state: " << std::endl;
+        saplog << primitive_background_state << std::endl;
       }
 
 
