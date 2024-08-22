@@ -79,17 +79,19 @@ main(int argc, char *argv[])
 
 
       /** [Copy VFP parameter] */
-      physical_parameters.box_length_x =
-        std::abs(mhd_parameters.p1[0] - mhd_parameters.p2[0]);
       physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
+      physical_parameters.box_length      = std::vector<double>(3);
+      for (unsigned int d = 0; d < dim_mhd; ++d)
+        {
+          physical_parameters.box_length[d] =
+            std::abs(mhd_parameters.p1[d] - mhd_parameters.p2[d]);
 
-      AssertThrow(dim_mhd == 1,
-                  dealii::ExcMessage("This example assumes 'dim_mhd = 1'."));
-      AssertThrow((mhd_parameters.boundary_conditions[0] ==
-                   MHD::BoundaryConditionsMHD::periodic) &&
-                    (mhd_parameters.boundary_conditions[1] ==
-                     MHD::BoundaryConditionsMHD::periodic),
-                  dealii::ExcMessage("This example assumes periodic BC."));
+          AssertThrow((mhd_parameters.boundary_conditions[2 * d + 0] ==
+                       MHD::BoundaryConditionsMHD::periodic) &&
+                        (mhd_parameters.boundary_conditions[2 * d + 1] ==
+                         MHD::BoundaryConditionsMHD::periodic),
+                      dealii::ExcMessage("This example assumes periodic BC."));
+        }
       /** [Copy VFP parameter] */
 
 
