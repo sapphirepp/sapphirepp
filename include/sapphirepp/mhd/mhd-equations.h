@@ -73,6 +73,14 @@ namespace sapphirepp
        * (@ref dim_uB components).
        */
       static constexpr unsigned int first_magnetic_component = dim_uB + 2;
+      /**
+       * Only in primitive states: Starting index of the velocity components
+       * \f$ \mathbf{u} \f$ (@ref dim_uB components).
+       */
+      static constexpr unsigned int first_velocity_component =
+        first_momentum_component;
+      /** Only in primitive states: Index of the energy component \f$ P \f$. */
+      static constexpr unsigned int pressure_component = energy_component;
       /** @} */
 
       /**
@@ -115,7 +123,10 @@ namespace sapphirepp
 
       /** @{ */
       /**
-       * @brief Create a list of component names: `rho`, `p_i`, `E`, `B_i`.
+       * @brief Create a list of component names corresponding to the conserved
+       *        MHD state.
+       *
+       * Returns a list: `rho`, `p_i`, `E`, `B_i`.
        *
        * @param prefix Prefix for the component names.
        * @return std::vector<std::string> component_names.
@@ -129,7 +140,7 @@ namespace sapphirepp
       /**
        * @brief Compute the MHD flux matrix.
        *
-       * @param state The MHD state \f$ \mathbf{w} \f$.
+       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
        * @param flux_matrix The MHD flux \f$ \mathbf{F}(\mathbf{w}) \f$.
        */
       void
@@ -141,7 +152,7 @@ namespace sapphirepp
       /**
        * @brief Computes the maximal eigenvalue in normal direction.
        *
-       * @param state The MHD state \f$ \mathbf{w} \f$.
+       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
        * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
        * @return double The maximal eigenvalue in normal direction.
        */
@@ -157,11 +168,71 @@ namespace sapphirepp
        * @brief Compute the pressure \f$ P \f$ from the MHD state
        *        \f$ \mathbf{w} \f$.
        *
-       * @param state The MHD state \f$ \mathbf{w} \f$.
+       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
        * @return double The pressure \f$ P \f$.
        */
       double
       compute_pressure(const state_type &state) const;
+      /** @} */
+
+
+      /** @{ */
+      /**
+       * @brief Convert primitive to conserved state.
+       *
+       * @param primitive_state Primitive state
+       *        \f[
+       *          \tilde{\mathbf{w}} =
+       *          \begin{pmatrix}
+       *            \rho        \\
+       *            \mathbf{u}  \\
+       *            P \\
+       *            \mathbf{B}
+       *          \end{pmatrix} \,.
+       *        \f]
+       * @param conserved_state Returns the conserved state
+       *        \f[
+       *          \mathbf{w} =
+       *          \begin{pmatrix}
+       *            \rho        \\
+       *            \mathbf{p}  \\
+       *            \mathcal{E} \\
+       *            \mathbf{B}
+       *          \end{pmatrix} \,.
+       *        \f]
+       */
+      void
+      convert_primitive_to_conserved(const state_type &primitive_state,
+                                     state_type       &conserved_state) const;
+
+
+      /**
+       * @brief Convert conserved to primitive state.
+       *
+       * @param conserved_state Conserved state
+       *        \f[
+       *          \mathbf{w} =
+       *          \begin{pmatrix}
+       *            \rho        \\
+       *            \mathbf{p}  \\
+       *            \mathcal{E} \\
+       *            \mathbf{B}
+       *          \end{pmatrix} \,.
+       *        \f]
+       * @param primitive_state Returns the primitive state
+       *        \f[
+       *          \tilde{\mathbf{w}} =
+       *          \begin{pmatrix}
+       *            \rho        \\
+       *            \mathbf{u}  \\
+       *            P \\
+       *            \mathbf{B}
+       *          \end{pmatrix} \,.
+       *        \f]
+       */
+      void
+      convert_conserved_to_primitive(const state_type &conserved_state,
+                                     state_type       &primitive_state) const;
       /** @} */
     };
   } // namespace MHD

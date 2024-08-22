@@ -154,6 +154,67 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
 
 
 
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
+  const state_type &primitive_state,
+  state_type       &conserved_state) const
+{
+  AssertDimension(primitive_state.size(), n_components);
+  AssertDimension(conserved_state.size(), n_components);
+
+  double u2 = 0.;
+  double B2 = 0.;
+  for (unsigned int d = 0; d < dim_uB; ++d)
+    {
+      u2 += primitive_state[first_velocity_component + d] *
+            primitive_state[first_velocity_component + d];
+      B2 += primitive_state[first_magnetic_component + d] *
+            primitive_state[first_magnetic_component + d];
+    }
+
+  const double energy =
+    0.5 * primitive_state[density_component] * u2 +
+    primitive_state[pressure_component] / (adiabatic_index - 1.) +
+    1. / (8. * M_PI) * B2;
+
+  conserved_state[density_component] = primitive_state[density_component];
+  conserved_state[energy_component]  = energy;
+  for (unsigned int d = 0; d < dim_uB; ++d)
+    {
+      conserved_state[first_momentum_component + d] =
+        primitive_state[density_component] *
+        primitive_state[first_velocity_component + d];
+      conserved_state[first_magnetic_component + d] =
+        primitive_state[first_magnetic_component + d];
+    }
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
+  const state_type &conserved_state,
+  state_type       &primitive_state) const
+{
+  AssertDimension(conserved_state.size(), n_components);
+  AssertDimension(primitive_state.size(), n_components);
+
+  primitive_state[density_component]  = conserved_state[density_component];
+  primitive_state[pressure_component] = compute_pressure(conserved_state);
+  for (unsigned int d = 0; d < dim_uB; ++d)
+    {
+      primitive_state[first_velocity_component + d] =
+        conserved_state[first_momentum_component + d] /
+        conserved_state[density_component];
+      primitive_state[first_magnetic_component + d] =
+        conserved_state[first_magnetic_component + d];
+    }
+}
+
+
+
 // Explicit instantiations
 template class sapphirepp::MHD::MHDEquations<1>;
 template class sapphirepp::MHD::MHDEquations<2>;
