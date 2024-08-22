@@ -36,6 +36,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <sstream>
 #include <vector>
 
 #include "mhd-equations.h"
@@ -50,10 +51,11 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double rho_0;
-    double u_0;
-    double P_0;
-    double amplitude;
+    double              rho_0;
+    double              P_0;
+    std::vector<double> u_0;
+    std::vector<double> B_0;
+    double              amplitude;
     // Copy of MHD parameters for InitialValueFunction
     double box_length_x;
     double adiabatic_index;
@@ -76,14 +78,18 @@ namespace sapphirepp
                         "1.",
                         dealii::Patterns::Double(0),
                         "Background density");
-      prm.declare_entry("u_0",
-                        "1",
-                        dealii::Patterns::Double(),
-                        "Background velocity in x-direction");
       prm.declare_entry("P_0",
                         "0.6",
                         dealii::Patterns::Double(0),
                         "Background pressure");
+      prm.declare_entry("u_0",
+                        "1., 0., 0.",
+                        dealii::Patterns::Anything(),
+                        "Background velocity in x, y, z direction");
+      prm.declare_entry("B_0",
+                        "0., 0., 0.",
+                        dealii::Patterns::Anything(),
+                        "Background magnetic field in x, y, z direction");
       prm.declare_entry("Amplitude",
                         "1e-3",
                         dealii::Patterns::Double(0),
@@ -101,12 +107,28 @@ namespace sapphirepp
       dealii::LogStream::Prefix pre1("Startup", saplog);
       dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
+      std::string s;
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
-      rho_0     = prm.get_double("rho_0");
-      u_0       = prm.get_double("u_0");
-      P_0       = prm.get_double("P_0");
+      rho_0 = prm.get_double("rho_0");
+      P_0   = prm.get_double("P_0");
+
+      s = prm.get("u_0");
+      std::stringstream u_0_string(s);
+      for (std::string tmp; std::getline(u_0_string, tmp, ',');)
+        u_0.push_back(std::stod(tmp));
+      AssertThrow(u_0.size() == 3,
+                  dealii::ExcMessage(
+                    "Dimension of background velocity must be 3."));
+      s = prm.get("B_0");
+      std::stringstream B_0_string(s);
+      for (std::string tmp; std::getline(B_0_string, tmp, ',');)
+        B_0.push_back(std::stod(tmp));
+      AssertThrow(B_0.size() == 3,
+                  dealii::ExcMessage(
+                    "Dimension of background magnetic field must be 3."));
+
       amplitude = prm.get_double("Amplitude");
       /** [Parse runtime parameter]  */
 
@@ -143,19 +165,24 @@ namespace sapphirepp
         , primitive_background_state(MHDEquations<dim>::n_components)
         , primitive_eigenvectors(MHDEquations<dim>::n_components)
       {
-        primitive_background_state = 0;
         primitive_background_state[MHDEquations<dim>::density_component] =
           prm.rho_0;
-        primitive_background_state
-          [MHDEquations<dim>::first_velocity_component] = prm.u_0;
         primitive_background_state[MHDEquations<dim>::pressure_component] =
           prm.P_0;
+        for (unsigned int d = 0; d < MHDEquations<dim>::dim_uB; ++d)
+          {
+            primitive_background_state
+              [MHDEquations<dim>::first_velocity_component + d] = prm.u_0[d];
+            primitive_background_state
+              [MHDEquations<dim>::first_magnetic_component + d] = prm.B_0[d];
+          }
 
         // Density entropy wave
         primitive_eigenvectors                                       = 0;
         primitive_eigenvectors[MHDEquations<dim>::density_component] = 1.;
 
-        eigenvalues = prm.u_0;
+        eigenvalues = primitive_background_state
+          [MHDEquations<dim>::first_velocity_component];
       }
 
 
