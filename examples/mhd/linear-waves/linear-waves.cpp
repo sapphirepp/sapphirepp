@@ -81,6 +81,7 @@ main(int argc, char *argv[])
       /** [Copy VFP parameter] */
       physical_parameters.box_length_x =
         std::abs(mhd_parameters.p1[0] - mhd_parameters.p2[0]);
+      physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
 
       AssertThrow(dim_mhd == 1,
                   dealii::ExcMessage("This example assumes 'dim_mhd = 1'."));

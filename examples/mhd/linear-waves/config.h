@@ -54,8 +54,9 @@ namespace sapphirepp
     double u_0;
     double P_0;
     double amplitude;
-    // Copy of VFP parameters for InitialValueFunction
+    // Copy of MHD parameters for InitialValueFunction
     double box_length_x;
+    double adiabatic_index;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -138,6 +139,7 @@ namespace sapphirepp
       InitialConditionMHD(const PhysicalParameters &physical_parameters)
         : dealii::Function<dim>(MHDEquations<dim>::n_components)
         , prm{physical_parameters}
+        , mhd_equations(prm.adiabatic_index)
         , primitive_background_state(MHDEquations<dim>::n_components)
         , primitive_eigenvectors(MHDEquations<dim>::n_components)
       {
@@ -145,16 +147,15 @@ namespace sapphirepp
         primitive_background_state[MHDEquations<dim>::density_component] =
           prm.rho_0;
         primitive_background_state
-          [MHDEquations<dim>::first_momentum_component] = prm.u_0;
-        primitive_background_state[MHDEquations<dim>::energy_component] =
+          [MHDEquations<dim>::first_velocity_component] = prm.u_0;
+        primitive_background_state[MHDEquations<dim>::pressure_component] =
           prm.P_0;
 
+        // Density entropy wave
         primitive_eigenvectors                                       = 0;
         primitive_eigenvectors[MHDEquations<dim>::density_component] = 1.;
-        primitive_eigenvectors[MHDEquations<dim>::first_momentum_component] =
-          prm.u_0;
-        primitive_eigenvectors[MHDEquations<dim>::energy_component] =
-          0.5 * prm.u_0 * prm.u_0;
+
+        eigenvalues = prm.u_0;
       }
 
 
@@ -167,17 +168,18 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [MHD Initial condition] */
-        // Test case: shifted sin profile in all components
         const double t = this->get_time();
         const double x = point[0];
 
-        const double lambda = 1.0;
-
-        f = primitive_background_state;
+        typename MHDEquations<dim>::state_type primitive_state =
+          primitive_background_state;
 
         for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
-          f[c] += primitive_eigenvectors[c] * prm.amplitude *
-                  std::sin(2. * M_PI / prm.box_length_x * (x - lambda * t));
+          primitive_state[c] +=
+            primitive_eigenvectors[c] * prm.amplitude *
+            std::sin(2. * M_PI / prm.box_length_x * (x - eigenvalues * t));
+
+        mhd_equations.convert_primitive_to_conserved(primitive_state, f);
         /** [MHD Initial condition] */
       }
 
@@ -185,8 +187,10 @@ namespace sapphirepp
 
     private:
       const PhysicalParameters               prm;
+      const MHDEquations<dim>                mhd_equations;
       typename MHDEquations<dim>::state_type primitive_background_state;
       typename MHDEquations<dim>::state_type primitive_eigenvectors;
+      double                                 eigenvalues;
     };
 
   } // namespace MHD
