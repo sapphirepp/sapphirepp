@@ -68,19 +68,47 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
   const state_type &state,
   flux_type        &flux_matrix) const
 {
-  /** @todo Implement this function. So far this is only an empty implementation
-   * to test the code */
-
   AssertDimension(state.size(), n_components);
 
-  for (unsigned int c = 0; c < n_components; ++c)
+  const double pressure = compute_pressure(state);
+  double       B2       = 0.;
+  double       pB       = 0.;
+  for (unsigned int d = 0; d < dim_uB; ++d)
     {
-      for (unsigned int d = 0; d < dim; ++d)
+      B2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+      pB += state[first_momentum_component + d] *
+            state[first_magnetic_component + d];
+    }
+
+  for (unsigned int j = 0; j < dim; ++j)
+    {
+      flux_matrix[density_component][j] = state[first_momentum_component + j];
+
+      flux_matrix[energy_component][j] =
+        state[first_momentum_component + j] / state[density_component] *
+          (state[energy_component] + pressure + 1. / (8. * M_PI) * B2) -
+        1. / (4. * M_PI * state[density_component]) * pB *
+          state[first_magnetic_component + j];
+
+      for (unsigned int i = 0; i < dim_uB; ++i)
         {
-          flux_matrix[c][d] = 0.;
+          flux_matrix[first_momentum_component + i][j] =
+            state[first_momentum_component + j] *
+              state[first_momentum_component + i] / state[density_component] -
+            1. / (4. * M_PI) * state[first_magnetic_component + j] *
+              state[first_magnetic_component + i];
+
+          flux_matrix[first_magnetic_component + i][j] =
+            (state[first_momentum_component + j] *
+               state[first_magnetic_component + i] -
+             state[first_momentum_component + i] *
+               state[first_magnetic_component + j]) /
+            state[density_component];
         }
-      // Test case: advect each component in x direction
-      flux_matrix[c][0] = 1. * state[c];
+
+      flux_matrix[first_momentum_component + j][j] +=
+        pressure + 1. / (8. * M_PI) * B2;
     }
 }
 
