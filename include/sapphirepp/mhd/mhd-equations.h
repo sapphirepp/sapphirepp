@@ -150,14 +150,14 @@ namespace sapphirepp
 
 
       /**
-       * @brief Computes the maximal eigenvalue in normal direction.
+       * @brief Computes the maximum eigenvalue in normal direction.
        *
        * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
        * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
-       * @return double The maximal eigenvalue in normal direction.
+       * @return double The maximum eigenvalue in normal direction.
        */
       double
-      compute_maximal_eigenvalue_normal(
+      compute_maximum_normal_eigenvalue(
         const state_type             &state,
         const dealii::Tensor<1, dim> &normal) const;
       /** @} */
@@ -173,6 +173,39 @@ namespace sapphirepp
        */
       double
       compute_pressure(const state_type &state) const;
+
+
+      /**
+       * @brief Compute all eigenvalues corresponding to the MHD state
+       *        \f$ \mathbf{w} \f$.
+       *
+       * Returns a list of all eigenvalues in normal direction, ordered in the
+       * following way,
+       * \f[
+       *   \lambda_n =
+       *   \begin{pmatrix}
+       *     u - c_f \\
+       *     u - c_a \\
+       *     u - c_s \\
+       *     u       \\
+       *     u       \\
+       *     u + c_s \\
+       *     u + c_a \\
+       *     u + c_f
+       *   \end{pmatrix} \,,
+       * \f]
+       * where \f$ c_f \f$ and \f$ c_s \f$ are the fast and slow magnetosonic
+       * speeds respectively, and \f$ c_a \f$ is the Alfven speed.
+       *
+       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
+       * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
+       * @param eigenvalues List of the eigenvalues.
+       *
+       */
+      void
+      compute_normale_eigenvalues(const state_type             &state,
+                                  const dealii::Tensor<1, dim> &normal,
+                                  dealii::Vector<double> &eigenvalues) const;
       /** @} */
 
 

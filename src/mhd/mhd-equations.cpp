@@ -29,6 +29,9 @@
 
 #include <deal.II/base/exceptions.h>
 
+#include <algorithm>
+#include <cmath>
+
 
 template <unsigned int dim>
 sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
@@ -116,15 +119,23 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 
 template <unsigned int dim>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_maximal_eigenvalue_normal(
+sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
   const state_type             &state,
   const dealii::Tensor<1, dim> &normal) const
 {
-  /** @todo Implement this eigenvalue calculation */
-  static_cast<void>(state);
-  static_cast<void>(normal);
+  AssertDimension(state.size(), n_components);
 
-  return 1.0;
+  /** @todo Optimize this function */
+
+  dealii::Vector<double> eigenvalues(8);
+  compute_normale_eigenvalues(state, normal, eigenvalues);
+
+  double max_eigenvalue =
+    *std::max_element(eigenvalues.begin(), eigenvalues.end());
+  double min_eigenvalue =
+    *std::min_element(eigenvalues.begin(), eigenvalues.end());
+
+  return std::max(std::fabs(max_eigenvalue), std::fabs(min_eigenvalue));
 }
 
 
@@ -150,6 +161,51 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
   return (adiabatic_index - 1.) *
          (state[energy_component] - 1. / (2. * state[density_component]) * p2 -
           1 / (8. * M_PI) * B2);
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
+  const state_type             &state,
+  const dealii::Tensor<1, dim> &normal,
+  dealii::Vector<double>       &eigenvalues) const
+{
+  AssertDimension(state.size(), n_components);
+  AssertDimension(eigenvalues.size(), 8);
+
+  double B2 = 0.;
+  for (unsigned int d = 0; d < dim_uB; ++d)
+    {
+      B2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+    }
+  double nu = 0.;
+  double nB = 0.;
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      nu += normal[d] * state[first_momentum_component + d] /
+            state[density_component];
+      nB += normal[d] * state[first_magnetic_component + d];
+    }
+
+  const double pressure = compute_pressure(state);
+  const double a_s2     = adiabatic_index * pressure / state[density_component];
+  const double c_a2     = B2 / (4. * M_PI * state[density_component]);
+  const double d_n      = (a_s2 + c_a2) * (a_s2 + c_a2) -
+                     a_s2 * nB * nB / (M_PI * state[density_component]);
+  const double c_s2 = 0.5 * (a_s2 + c_a2 - std::sqrt(d_n));
+  const double c_f2 = 0.5 * (a_s2 + c_a2 + std::sqrt(d_n));
+
+  eigenvalues[0] = nu - std::sqrt(c_f2);
+  eigenvalues[1] = nu - std::sqrt(c_a2);
+  eigenvalues[2] = nu - std::sqrt(c_s2);
+  eigenvalues[3] = nu;
+  eigenvalues[4] = nu;
+  eigenvalues[5] = nu + std::sqrt(c_s2);
+  eigenvalues[6] = nu + std::sqrt(c_a2);
+  eigenvalues[7] = nu + std::sqrt(c_f2);
 }
 
 
