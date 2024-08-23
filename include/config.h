@@ -681,10 +681,11 @@ namespace sapphirepp
     /**
      * @brief Initial condition
      *
-     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$
+     * @tparam spacedim Dimension of the space in which the function operate,
+     *         same as @ref MHDEquations::spacedim
      */
-    template <unsigned int dim>
-    class InitialConditionMHD : public dealii::Function<dim>
+    template <unsigned int spacedim>
+    class InitialConditionMHD : public dealii::Function<spacedim>
     {
     public:
       /**
@@ -693,7 +694,7 @@ namespace sapphirepp
        * @param physical_parameters User defined runtime parameters
        */
       InitialConditionMHD(const PhysicalParameters &physical_parameters)
-        : dealii::Function<dim>(MHDEquations<dim>::n_components)
+        : dealii::Function<spacedim>(MHDEquations<dim_mhd>::n_components)
         , prm{physical_parameters}
       {}
 
@@ -702,13 +703,13 @@ namespace sapphirepp
       /**
        * @brief Evaluate the initial condition at point `p`
        *
-       * @param point Point in configuration phase space
+       * @param point Point in space
        * @param f Return vector
        * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
        */
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &f) const override
+      vector_value(const dealii::Point<spacedim> &point,
+                   dealii::Vector<double>        &f) const override
       {
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
@@ -728,17 +729,17 @@ namespace sapphirepp
         const double enthalpy = (energy + pressure) / density;
 
         // Background state in conserved variables
-        f                                              = 0;
-        f[MHDEquations<dim>::density_component]        = density;
-        f[MHDEquations<dim>::first_momentum_component] = density * u_x;
-        f[MHDEquations<dim>::energy_component]         = energy;
+        f                                                  = 0;
+        f[MHDEquations<dim_mhd>::density_component]        = density;
+        f[MHDEquations<dim_mhd>::first_momentum_component] = density * u_x;
+        f[MHDEquations<dim_mhd>::energy_component]         = energy;
 
         // Left going sound wave
-        f[MHDEquations<dim>::density_component] +=
+        f[MHDEquations<dim_mhd>::density_component] +=
           1. * amplitude * std::sin(2 * M_PI * x / length);
-        f[MHDEquations<dim>::first_momentum_component] +=
+        f[MHDEquations<dim_mhd>::first_momentum_component] +=
           (u_x - c) * amplitude * std::sin(2 * M_PI * x / length);
-        f[MHDEquations<dim>::energy_component] +=
+        f[MHDEquations<dim_mhd>::energy_component] +=
           (enthalpy - u_x * c) * amplitude * std::sin(2 * M_PI * x / length);
         /** [MHD Initial condition] */
       }
