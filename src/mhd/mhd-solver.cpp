@@ -77,16 +77,16 @@ namespace sapphirepp
       using namespace dealii;
 
       // The mesh_loop function requires helper data types
-      template <unsigned int dim>
+      template <unsigned int dim, unsigned int spacedim>
       class ScratchData
       {
       public:
         // Constructor
         ScratchData(
-          const Mapping<dim>        &mapping,
-          const FiniteElement<dim>  &fe,
-          const Quadrature<dim>     &quadrature,
-          const Quadrature<dim - 1> &quadrature_face,
+          const Mapping<dim, spacedim>       &mapping,
+          const FiniteElement<dim, spacedim> &fe,
+          const Quadrature<dim>              &quadrature,
+          const Quadrature<dim - 1>          &quadrature_face,
           const UpdateFlags update_flags = update_values | update_gradients |
                                            update_quadrature_points |
                                            update_JxW_values,
@@ -108,7 +108,7 @@ namespace sapphirepp
         {}
 
         // Copy Constructor
-        ScratchData(const ScratchData<dim> &scratch_data)
+        ScratchData(const ScratchData<dim, spacedim> &scratch_data)
           : fe_values(scratch_data.fe_values.get_mapping(),
                       scratch_data.fe_values.get_fe(),
                       scratch_data.fe_values.get_quadrature(),
@@ -129,10 +129,10 @@ namespace sapphirepp
               scratch_data.fe_values_subface_neighbor.get_update_flags())
         {}
 
-        FEValues<dim>        fe_values;
-        FEFaceValues<dim>    fe_values_face;
-        FEFaceValues<dim>    fe_values_face_neighbor;
-        FESubfaceValues<dim> fe_values_subface_neighbor;
+        FEValues<dim, spacedim>        fe_values;
+        FEFaceValues<dim, spacedim>    fe_values_face;
+        FEFaceValues<dim, spacedim>    fe_values_face_neighbor;
+        FESubfaceValues<dim, spacedim> fe_values_subface_neighbor;
       };
 
 
@@ -182,7 +182,7 @@ namespace sapphirepp
         }
       };
     } // namespace MHDSolver
-  } // namespace internal
+  }   // namespace internal
 } // namespace sapphirepp
 
 
@@ -195,12 +195,14 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
   , mhd_equations(mhd_parameters.adiabatic_index)
-  , numerical_flux(mhd_equations)
+  , numerical_flux(MHDEquations<spacedim>(
+      mhd_parameters
+        .adiabatic_index)) // TODO: Change back after correcting templates
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
-  , fe(FE_DGQ<dim>(mhd_parameters.polynomial_degree),
+  , fe(FE_DGQ<dim, spacedim>(mhd_parameters.polynomial_degree),
        MHDEquations<dim>::n_components)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
@@ -240,7 +242,8 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
 
   {
     TimerOutput::Scope timer_section(timer, "Project initial condition - MHD");
-    InitialConditionMHD<dim>   initial_condition_function(physical_parameters);
+    InitialConditionMHD<spacedim> initial_condition_function(
+      physical_parameters);
     PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
                                                  mpi_communicator);
     project(initial_condition_function, initial_condition);
@@ -320,8 +323,8 @@ sapphirepp::MHD::MHDSolver<dim>::make_grid()
         {
           saplog << "Read grid from file \"" << mhd_parameters.grid_file << "\""
                  << std::endl;
-          GridIn<dim>   grid_in(triangulation);
-          std::ifstream input(mhd_parameters.grid_file);
+          GridIn<dim, spacedim> grid_in(triangulation);
+          std::ifstream         input(mhd_parameters.grid_file);
           grid_in.read_ucd(input);
           Assert(triangulation.all_reference_cells_are_hyper_cube(),
                  ExcNotImplemented("The grid must consist of hypercubes."));
@@ -436,7 +439,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::project(
-  const Function<dim>        &f,
+  const Function<spacedim>   &f,
   PETScWrappers::MPI::Vector &projected_function) const
 {
   saplog << "Project a function onto the finite element space" << std::endl;
@@ -468,17 +471,17 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 {
   TimerOutput::Scope timer_section(timer, "DG rhs - MHD");
 
-  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
+  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
   using namespace sapphirepp::internal::MHDSolver;
 
   static_cast<void>(time); // suppress compiler warning
   dg_rhs = 0;
 
   // assemble cell terms
-  const auto cell_worker = [&](const Iterator   &cell,
-                               ScratchData<dim> &scratch_data,
-                               CopyData         &copy_data) {
-    FEValues<dim> &fe_v = scratch_data.fe_values;
+  const auto cell_worker = [&](const Iterator             &cell,
+                               ScratchData<dim, spacedim> &scratch_data,
+                               CopyData                   &copy_data) {
+    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
     // reinit cell
     fe_v.reinit(cell);
 
@@ -486,8 +489,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     // reinit the cell_matrix
     copy_data.reinit(cell, n_dofs);
 
-    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double>     &JxW      = fe_v.get_JxW_values();
+    const std::vector<Point<spacedim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double>          &JxW      = fe_v.get_JxW_values();
 
     std::vector<Vector<double>> states(
       q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
@@ -519,11 +522,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 
 
   // assemble boundary face terms
-  const auto boundary_worker = [&](const Iterator     &cell,
-                                   const unsigned int &face_no,
-                                   ScratchData<dim>   &scratch_data,
-                                   CopyData           &copy_data) {
-    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
+  const auto boundary_worker = [&](const Iterator             &cell,
+                                   const unsigned int         &face_no,
+                                   ScratchData<dim, spacedim> &scratch_data,
+                                   CopyData                   &copy_data) {
+    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
 
     // NOTE: copy_data is not reinitialized, the cell_workers contribution
@@ -533,9 +536,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     const BoundaryConditionsMHD boundary_condition =
       mhd_parameters.boundary_conditions[boundary_id];
 
-    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
-    const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
-    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
+    const std::vector<Point<spacedim>> &q_points =
+      fe_v_face.get_quadrature_points();
+    const std::vector<double>              &JxW = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, spacedim>> &normals =
+      fe_v_face.get_normal_vectors();
 
     // Initialise state and flux vectors
     std::vector<Vector<double>> states(
@@ -596,14 +601,14 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   // |     |     |
   // *-----*     *--> x
   // Hence, n_x = 1. and n_y = 1.
-  const auto face_worker = [&](const Iterator     &cell,
-                               const unsigned int &face_no,
-                               const unsigned int &subface_no,
-                               const Iterator     &neighbor_cell,
-                               const unsigned int &neighbor_face_no,
-                               const unsigned int &neighbor_subface_no,
-                               ScratchData<dim>   &scratch_data,
-                               CopyData           &copy_data) {
+  const auto face_worker = [&](const Iterator             &cell,
+                               const unsigned int         &face_no,
+                               const unsigned int         &subface_no,
+                               const Iterator             &neighbor_cell,
+                               const unsigned int         &neighbor_face_no,
+                               const unsigned int         &neighbor_subface_no,
+                               ScratchData<dim, spacedim> &scratch_data,
+                               CopyData                   &copy_data) {
     // We assumes that faces are only  assembled once. And hence subface_no, can
     // be ignored.
     static_cast<void>(subface_no);
@@ -611,10 +616,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     // ignored.
     static_cast<void>(neighbor_subface_no);
 
-    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
+    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
 
-    FEFaceValues<dim> &fe_v_face_neighbor =
+    FEFaceValues<dim, spacedim> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
@@ -624,9 +629,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     const unsigned int n_dofs         = fe_v_face.get_fe().n_dofs_per_cell();
     copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
-    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
-    const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
-    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
+    const std::vector<Point<spacedim>> &q_points =
+      fe_v_face.get_quadrature_points();
+    const std::vector<double>              &JxW = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, spacedim>> &normals =
+      fe_v_face.get_normal_vectors();
 
     // Initialise state and flux vectors
     std::vector<Vector<double>> states(
@@ -697,8 +704,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
       }
   };
 
-  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
-  CopyData         copy_data;
+  ScratchData<dim, spacedim> scratch_data(mapping,
+                                          fe,
+                                          quadrature,
+                                          quadrature_face);
+  CopyData                   copy_data;
   saplog << "Begin the assembly of the DG rhs." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
@@ -765,8 +775,8 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   const unsigned int time_step_number,
   const double       cur_time)
 {
-  TimerOutput::Scope timer_section(timer, "Output - MHD");
-  DataOut<dim>       data_out;
+  TimerOutput::Scope     timer_section(timer, "Output - MHD");
+  DataOut<dim, spacedim> data_out;
   data_out.attach_dof_handler(dof_handler);
   /**
    * @todo Use
@@ -786,9 +796,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(mhd_parameters.polynomial_degree);
-  output_parameters.write_results<dim, dim>(data_out,
-                                            time_step_number,
-                                            cur_time);
+  output_parameters.write_results<dim, spacedim>(data_out,
+                                                 time_step_number,
+                                                 cur_time);
 }
 
 
@@ -796,10 +806,10 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
 template <unsigned int dim>
 double
 sapphirepp::MHD::MHDSolver<dim>::compute_global_error(
-  const Function<dim>         &exact_solution,
-  const VectorTools::NormType &cell_norm,
-  const VectorTools::NormType &global_norm,
-  const Function<dim, double> *weight) const
+  const Function<spacedim>         &exact_solution,
+  const VectorTools::NormType      &cell_norm,
+  const VectorTools::NormType      &global_norm,
+  const Function<spacedim, double> *weight) const
 {
   LogStream::Prefix p("MHD", saplog);
   saplog << "Compute the global error" << std::endl;
@@ -833,9 +843,9 @@ sapphirepp::MHD::MHDSolver<dim>::compute_global_error(
 template <unsigned int dim>
 double
 sapphirepp::MHD::MHDSolver<dim>::compute_weighted_norm(
-  const VectorTools::NormType &cell_norm,
-  const VectorTools::NormType &global_norm,
-  const Function<dim, double> *weight) const
+  const VectorTools::NormType      &cell_norm,
+  const VectorTools::NormType      &global_norm,
+  const Function<spacedim, double> *weight) const
 {
   LogStream::Prefix p("MHD", saplog);
   saplog << "Compute the weighted norm" << std::endl;
@@ -847,7 +857,8 @@ sapphirepp::MHD::MHDSolver<dim>::compute_weighted_norm(
   const QIterated<dim> q_iterated(q_trapezoid,
                                   mhd_parameters.polynomial_degree * 2 + 1);
 
-  const Functions::ZeroFunction<dim> zero_function(mhd_equations.n_components);
+  const Functions::ZeroFunction<spacedim> zero_function(
+    mhd_equations.n_components);
 
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
@@ -887,7 +898,7 @@ sapphirepp::MHD::MHDSolver<dim>::get_triangulation() const
 
 
 template <unsigned int dim>
-const dealii::DoFHandler<dim> &
+const dealii::DoFHandler<dim, sapphirepp::MHD::MHDSolver<dim>::spacedim> &
 sapphirepp::MHD::MHDSolver<dim>::get_dof_handler() const
 {
   return dof_handler;

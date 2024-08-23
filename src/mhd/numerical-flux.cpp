@@ -87,6 +87,6 @@ sapphirepp::MHD::NumericalFlux<dim>::compute_numerical_normal_flux(
 
 
 // explicit instantiation
-template class sapphirepp::MHD::NumericalFlux<1>;
-template class sapphirepp::MHD::NumericalFlux<2>;
+// template class sapphirepp::MHD::NumericalFlux<1>;
+// template class sapphirepp::MHD::NumericalFlux<2>;
 template class sapphirepp::MHD::NumericalFlux<3>;

@@ -111,7 +111,7 @@ namespace sapphirepp
        * to the spatial dimension.
        */
       using flux_type =
-        std::array<dealii::Tensor<1, dim, double>, n_components>;
+        std::array<dealii::Tensor<1, spacedim, double>, n_components>;
 
 
       /** @{ */
