@@ -209,7 +209,7 @@ namespace sapphirepp
           prm.rho_0;
         primitive_background_state[MHDEquations<dim>::pressure_component] =
           prm.P_0;
-        for (unsigned int d = 0; d < MHDEquations<dim>::dim_uB; ++d)
+        for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
           {
             primitive_background_state
               [MHDEquations<dim>::first_velocity_component + d] = prm.u_0[d];
@@ -230,8 +230,8 @@ namespace sapphirepp
           primitive_background_state[MHDEquations<dim>::density_component];
         const double P_0 =
           primitive_background_state[MHDEquations<dim>::pressure_component];
-        dealii::Tensor<1, MHDEquations<dim>::dim_uB> u_0, B_0;
-        for (unsigned int d = 0; d < MHDEquations<dim>::dim_uB; ++d)
+        dealii::Tensor<1, MHDEquations<dim>::spacedim> u_0, B_0;
+        for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
           {
             u_0[d] = primitive_background_state
               [MHDEquations<dim>::first_velocity_component + d];
