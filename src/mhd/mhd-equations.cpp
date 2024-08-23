@@ -52,7 +52,7 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
 
   component_names[density_component] = prefix + "rho";
   component_names[energy_component]  = prefix + "E";
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       component_names[first_momentum_component + d] =
         prefix + "p_" + std::to_string(d + 1);
@@ -76,7 +76,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
   const double pressure = compute_pressure(state);
   double       B2       = 0.;
   double       pB       = 0.;
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       B2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
@@ -94,7 +94,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
         1. / (4. * M_PI * state[density_component]) * pB *
           state[first_magnetic_component + j];
 
-      for (unsigned int i = 0; i < dim_uB; ++i)
+      for (unsigned int i = 0; i < spacedim; ++i)
         {
           flux_matrix[first_momentum_component + i][j] =
             state[first_momentum_component + j] *
@@ -149,7 +149,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
 
   double p2 = 0.;
   double B2 = 0.;
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       p2 += state[first_momentum_component + d] *
             state[first_momentum_component + d];
@@ -176,7 +176,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
   AssertDimension(eigenvalues.size(), 8);
 
   double B2 = 0.;
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       B2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
@@ -221,7 +221,7 @@ sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
 
   double u2 = 0.;
   double B2 = 0.;
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       u2 += primitive_state[first_velocity_component + d] *
             primitive_state[first_velocity_component + d];
@@ -236,7 +236,7 @@ sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
 
   conserved_state[density_component] = primitive_state[density_component];
   conserved_state[energy_component]  = energy;
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       conserved_state[first_momentum_component + d] =
         primitive_state[density_component] *
@@ -259,7 +259,7 @@ sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
 
   primitive_state[density_component]  = conserved_state[density_component];
   primitive_state[pressure_component] = compute_pressure(conserved_state);
-  for (unsigned int d = 0; d < dim_uB; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       primitive_state[first_velocity_component + d] =
         conserved_state[first_momentum_component + d] /
