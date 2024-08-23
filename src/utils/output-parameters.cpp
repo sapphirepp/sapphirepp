@@ -143,13 +143,13 @@ sapphirepp::Utils::OutputParameters::parse_parameters_callback(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, unsigned int spacedim>
 void
 sapphirepp::Utils::OutputParameters::write_results(
-  DataOut<dim>      &data_out,
-  const unsigned int time_step_number,
-  const double       cur_time,
-  const std::string &filename)
+  DataOut<dim, spacedim> &data_out,
+  const unsigned int      time_step_number,
+  const double            cur_time,
+  const std::string      &filename)
 {
   LogStream::Prefix p("OutputParameters", saplog);
   saplog << "Writing results at time_step " << time_step_number << std::endl;
@@ -184,6 +184,7 @@ sapphirepp::Utils::OutputParameters::write_results(
         }
       case OutputFormat::hdf5:
         {
+          // TODO: Check if dim or spacedim
           Assert(
             dim > 1,
             ExcMessage(
@@ -254,28 +255,43 @@ sapphirepp::Utils::OutputParameters::write_results(
 
 // Explicit instantiation
 template void
-sapphirepp::Utils::OutputParameters::write_results<1>(DataOut<1> &,
-                                                      const unsigned int,
-                                                      const double,
-                                                      const std::string &);
+sapphirepp::Utils::OutputParameters::write_results<1, 1>(DataOut<1, 1> &,
+                                                         const unsigned int,
+                                                         const double,
+                                                         const std::string &);
 template void
-sapphirepp::Utils::OutputParameters::write_results<2>(DataOut<2> &,
-                                                      const unsigned int,
-                                                      const double,
-                                                      const std::string &);
+sapphirepp::Utils::OutputParameters::write_results<1, 2>(DataOut<1, 2> &,
+                                                         const unsigned int,
+                                                         const double,
+                                                         const std::string &);
 template void
-sapphirepp::Utils::OutputParameters::write_results<3>(DataOut<3> &,
-                                                      const unsigned int,
-                                                      const double,
-                                                      const std::string &);
+sapphirepp::Utils::OutputParameters::write_results<1, 3>(DataOut<1, 3> &,
+                                                         const unsigned int,
+                                                         const double,
+                                                         const std::string &);
+template void
+sapphirepp::Utils::OutputParameters::write_results<2, 2>(DataOut<2, 2> &,
+                                                         const unsigned int,
+                                                         const double,
+                                                         const std::string &);
+template void
+sapphirepp::Utils::OutputParameters::write_results<2, 3>(DataOut<2, 3> &,
+                                                         const unsigned int,
+                                                         const double,
+                                                         const std::string &);
+template void
+sapphirepp::Utils::OutputParameters::write_results<3, 3>(DataOut<3, 3> &,
+                                                         const unsigned int,
+                                                         const double,
+                                                         const std::string &);
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, unsigned int spacedim>
 void
 sapphirepp::Utils::OutputParameters::write_grid(
-  const Triangulation<dim> &triangulation,
-  const std::string        &filename) const
+  const Triangulation<dim, spacedim> &triangulation,
+  const std::string                  &filename) const
 {
   LogStream::Prefix p("OutputParameters", saplog);
   saplog << "Write grid " << filename << std::endl;
@@ -292,11 +308,26 @@ sapphirepp::Utils::OutputParameters::write_grid(
 
 // Explicit
 template void
-sapphirepp::Utils::OutputParameters::write_grid<1>(const Triangulation<1> &,
-                                                   const std::string &) const;
+sapphirepp::Utils::OutputParameters::write_grid<1, 1>(
+  const Triangulation<1, 1> &,
+  const std::string &) const;
 template void
-sapphirepp::Utils::OutputParameters::write_grid<2>(const Triangulation<2> &,
-                                                   const std::string &) const;
+sapphirepp::Utils::OutputParameters::write_grid<1, 2>(
+  const Triangulation<1, 2> &,
+  const std::string &) const;
 template void
-sapphirepp::Utils::OutputParameters::write_grid<3>(const Triangulation<3> &,
-                                                   const std::string &) const;
+sapphirepp::Utils::OutputParameters::write_grid<1, 3>(
+  const Triangulation<1, 3> &,
+  const std::string &) const;
+template void
+sapphirepp::Utils::OutputParameters::write_grid<2, 2>(
+  const Triangulation<2, 2> &,
+  const std::string &) const;
+template void
+sapphirepp::Utils::OutputParameters::write_grid<2, 3>(
+  const Triangulation<2, 3> &,
+  const std::string &) const;
+template void
+sapphirepp::Utils::OutputParameters::write_grid<3, 3>(
+  const Triangulation<3, 3> &,
+  const std::string &) const;
