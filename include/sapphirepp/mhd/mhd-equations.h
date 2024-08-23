@@ -161,8 +161,8 @@ namespace sapphirepp
        */
       double
       compute_maximum_normal_eigenvalue(
-        const state_type             &state,
-        const dealii::Tensor<1, dim> &normal) const;
+        const state_type                  &state,
+        const dealii::Tensor<1, spacedim> &normal) const;
       /** @} */
 
 
@@ -206,8 +206,8 @@ namespace sapphirepp
        *
        */
       void
-      compute_normale_eigenvalues(const state_type             &state,
-                                  const dealii::Tensor<1, dim> &normal,
+      compute_normale_eigenvalues(const state_type                  &state,
+                                  const dealii::Tensor<1, spacedim> &normal,
                                   dealii::Vector<double> &eigenvalues) const;
       /** @} */
 
