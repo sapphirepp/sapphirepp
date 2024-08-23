@@ -79,8 +79,9 @@ main(int argc, char *argv[])
 
 
       /** [Copy VFP parameter] */
+      const unsigned int spacedim         = MHDEquations<dim_mhd>::spacedim;
       physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
-      physical_parameters.box_length      = std::vector<double>(3);
+      physical_parameters.box_length      = std::vector<double>(dim_mhd);
       for (unsigned int d = 0; d < dim_mhd; ++d)
         {
           physical_parameters.box_length[d] =
@@ -121,7 +122,7 @@ main(int argc, char *argv[])
 
 
       /** [Setup analytic solution] */
-      InitialConditionMHD<dim_mhd> analytic_solution(physical_parameters);
+      InitialConditionMHD<spacedim> analytic_solution(physical_parameters);
 
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
@@ -151,7 +152,7 @@ main(int argc, char *argv[])
               LogStream::Prefix prefix("Output", saplog);
               saplog << "Output solution" << std::endl;
 
-              dealii::DataOut<dim_mhd> data_out;
+              dealii::DataOut<dim_mhd, spacedim> data_out;
               data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
               // Output numeric solution
@@ -174,7 +175,7 @@ main(int argc, char *argv[])
                 MHDEquations<dim_mhd>::create_component_name_list("interpol_"));
 
               data_out.build_patches(mhd_parameters.polynomial_degree);
-              output_parameters.write_results<dim_mhd, dim_mhd>(
+              output_parameters.write_results<dim_mhd, spacedim>(
                 data_out,
                 discrete_time.get_step_number(),
                 discrete_time.get_current_time());
@@ -228,7 +229,7 @@ main(int argc, char *argv[])
         LogStream::Prefix prefix("Output", saplog);
         saplog << "Output results" << std::endl;
 
-        dealii::DataOut<dim_mhd> data_out;
+        dealii::DataOut<dim_mhd, spacedim> data_out;
         data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
         // Output numeric solution
@@ -251,7 +252,7 @@ main(int argc, char *argv[])
           MHDEquations<dim_mhd>::create_component_name_list("interpol_"));
 
         data_out.build_patches(mhd_parameters.polynomial_degree);
-        output_parameters.write_results<dim_mhd, dim_mhd>(
+        output_parameters.write_results<dim_mhd, spacedim>(
           data_out,
           discrete_time.get_step_number(),
           discrete_time.get_current_time());
