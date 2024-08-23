@@ -55,27 +55,30 @@ namespace sapphirepp
     {
     public:
       /** @{ */
-      /** Dimension of the velocity and magnetic field (always fixed to 3). */
-      static constexpr unsigned int dim_uB = 3;
+      /**
+       * Dimension of the space in which the equations operate, i.e. the
+       * dimension of the velocity and magnetic field.
+       */
+      static constexpr unsigned int spacedim = 3;
       /** Number of components `c`. */
-      static constexpr unsigned int n_components = 2 + dim_uB + dim_uB;
+      static constexpr unsigned int n_components = 2 + spacedim + spacedim;
       /** Index of the density component \f$ \rho \f$. */
       static constexpr unsigned int density_component = 0;
       /**
        * Starting index of the momentum components \f$ \mathbf{p} \f$
-       * (@ref dim_uB components).
+       * (@ref spacedim components).
        */
       static constexpr unsigned int first_momentum_component = 1;
       /** Index of the energy component \f$ \mathcal{E} \f$. */
-      static constexpr unsigned int energy_component = dim_uB + 1;
+      static constexpr unsigned int energy_component = spacedim + 1;
       /**
        * Starting index of the magnetic components \f$ \mathbf{B} \f$
-       * (@ref dim_uB components).
+       * (@ref spacedim components).
        */
-      static constexpr unsigned int first_magnetic_component = dim_uB + 2;
+      static constexpr unsigned int first_magnetic_component = spacedim + 2;
       /**
        * Only in primitive states: Starting index of the velocity components
-       * \f$ \mathbf{u} \f$ (@ref dim_uB components).
+       * \f$ \mathbf{u} \f$ (@ref spacedim components).
        */
       static constexpr unsigned int first_velocity_component =
         first_momentum_component;
