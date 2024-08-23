@@ -174,7 +174,7 @@ main(int argc, char *argv[])
                 MHDEquations<dim_mhd>::create_component_name_list("interpol_"));
 
               data_out.build_patches(mhd_parameters.polynomial_degree);
-              output_parameters.write_results<dim_mhd>(
+              output_parameters.write_results<dim_mhd, dim_mhd>(
                 data_out,
                 discrete_time.get_step_number(),
                 discrete_time.get_current_time());
@@ -251,7 +251,7 @@ main(int argc, char *argv[])
           MHDEquations<dim_mhd>::create_component_name_list("interpol_"));
 
         data_out.build_patches(mhd_parameters.polynomial_degree);
-        output_parameters.write_results<dim_mhd>(
+        output_parameters.write_results<dim_mhd, dim_mhd>(
           data_out,
           discrete_time.get_step_number(),
           discrete_time.get_current_time());
