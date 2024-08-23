@@ -713,19 +713,34 @@ namespace sapphirepp
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
-        for (unsigned int i = 0; i < f.size(); ++i)
-          {
-            /** [MHD Initial condition] */
-            // !!!EDIT HERE!!!
-            f[i] = 0.;
-            /** [MHD Initial condition] */
-          }
+        /** [MHD Initial condition] */
+        const double length          = 1.;
+        const double amplitude       = 1e-4;
+        const double adiabatic_index = 5. / 3.;
+        const double x               = point[0];
 
-        // Test case: sin profile for first component
-        const double length = 2;
-        const double x      = point[0];
+        const double pressure = 1. / adiabatic_index;
+        const double density  = 1.;
+        const double u_x      = 0.;
 
-        f[0] = std::sin(M_PI * x / length);
+        const double energy   = pressure / (adiabatic_index - 1.);
+        const double c        = std::sqrt(adiabatic_index * pressure / density);
+        const double enthalpy = (energy + pressure) / density;
+
+        // Background state in conserved variables
+        f                                              = 0;
+        f[MHDEquations<dim>::density_component]        = density;
+        f[MHDEquations<dim>::first_momentum_component] = density * u_x;
+        f[MHDEquations<dim>::energy_component]         = energy;
+
+        // Left going sound wave
+        f[MHDEquations<dim>::density_component] +=
+          1. * amplitude * std::sin(2 * M_PI * x / length);
+        f[MHDEquations<dim>::first_momentum_component] +=
+          (u_x - c) * amplitude * std::sin(2 * M_PI * x / length);
+        f[MHDEquations<dim>::energy_component] +=
+          (enthalpy - u_x * c) * amplitude * std::sin(2 * M_PI * x / length);
+        /** [MHD Initial condition] */
       }
 
 

@@ -49,7 +49,7 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      saplog.init(100);
+      saplog.init(100, true);
 
       std::string parameter_filename = "parameter-mhd.prm";
       if (argc > 1)
