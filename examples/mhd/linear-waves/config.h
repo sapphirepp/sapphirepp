@@ -191,30 +191,32 @@ namespace sapphirepp
 
 
 
-    template <unsigned int dim>
-    class InitialConditionMHD : public dealii::Function<dim>
+    template <unsigned int spacedim>
+    class InitialConditionMHD : public dealii::Function<spacedim>
     {
     public:
       InitialConditionMHD(const PhysicalParameters &physical_parameters)
-        : dealii::Function<dim>(MHDEquations<dim>::n_components)
+        : dealii::Function<spacedim>(MHDEquations<dim_mhd>::n_components)
         , prm{physical_parameters}
         , mhd_equations(prm.adiabatic_index)
-        , primitive_background_state(MHDEquations<dim>::n_components)
-        , conserved_background_state(MHDEquations<dim>::n_components)
-        , primitive_eigenvectors(dim)
-        , eigenvalues(dim)
+        , primitive_background_state(MHDEquations<dim_mhd>::n_components)
+        , conserved_background_state(MHDEquations<dim_mhd>::n_components)
+        , primitive_eigenvectors(dim_mhd)
+        , eigenvalues(dim_mhd)
       {
         // Create background state
-        primitive_background_state[MHDEquations<dim>::density_component] =
+        primitive_background_state[MHDEquations<dim_mhd>::density_component] =
           prm.rho_0;
-        primitive_background_state[MHDEquations<dim>::pressure_component] =
+        primitive_background_state[MHDEquations<dim_mhd>::pressure_component] =
           prm.P_0;
-        for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
+        for (unsigned int d = 0; d < spacedim; ++d)
           {
             primitive_background_state
-              [MHDEquations<dim>::first_velocity_component + d] = prm.u_0[d];
+              [MHDEquations<dim_mhd>::first_velocity_component + d] =
+                prm.u_0[d];
             primitive_background_state
-              [MHDEquations<dim>::first_magnetic_component + d] = prm.B_0[d];
+              [MHDEquations<dim_mhd>::first_magnetic_component + d] =
+                prm.B_0[d];
           }
 
         saplog << "Primitive background state: " << std::endl;
@@ -227,16 +229,16 @@ namespace sapphirepp
 
         // Define short hand definitions
         const double rho_0 =
-          primitive_background_state[MHDEquations<dim>::density_component];
+          primitive_background_state[MHDEquations<dim_mhd>::density_component];
         const double P_0 =
-          primitive_background_state[MHDEquations<dim>::pressure_component];
-        dealii::Tensor<1, MHDEquations<dim>::spacedim> u_0, B_0;
-        for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
+          primitive_background_state[MHDEquations<dim_mhd>::pressure_component];
+        dealii::Tensor<1, spacedim> u_0, B_0;
+        for (unsigned int d = 0; d < spacedim; ++d)
           {
             u_0[d] = primitive_background_state
-              [MHDEquations<dim>::first_velocity_component + d];
+              [MHDEquations<dim_mhd>::first_velocity_component + d];
             B_0[d] = primitive_background_state
-              [MHDEquations<dim>::first_magnetic_component + d];
+              [MHDEquations<dim_mhd>::first_magnetic_component + d];
           }
         (void)u_0;
         (void)B_0;
@@ -246,8 +248,8 @@ namespace sapphirepp
         (void)a_s;
 
         // Create normal vector
-        dealii::Tensor<1, dim> normal;
-        for (unsigned int d = 0; d < dim; ++d)
+        dealii::Tensor<1, spacedim> normal;
+        for (unsigned int d = 0; d < dim_mhd; ++d)
           {
             normal    = 0.;
             normal[d] = 1.;
@@ -263,45 +265,47 @@ namespace sapphirepp
 
             // Create eigenvectors
             primitive_eigenvectors[d] =
-              std::vector<typename MHDEquations<dim>::state_type>(8);
+              std::vector<typename MHDEquations<dim_mhd>::state_type>(8);
             for (unsigned int i = 0; i < 8; ++i)
               {
                 primitive_eigenvectors[d][i] =
-                  typename MHDEquations<dim>::state_type(
-                    MHDEquations<dim>::n_components);
+                  typename MHDEquations<dim_mhd>::state_type(
+                    MHDEquations<dim_mhd>::n_components);
                 primitive_eigenvectors[d][i] = 0;
               }
 
             /** @todo Implement MHD waves */
 
             // Left going sound wave
-            primitive_eigenvectors[d][0][MHDEquations<dim>::density_component] =
-              rho_0;
             primitive_eigenvectors[d][0]
-                                  [MHDEquations<dim>::first_velocity_component +
-                                   d] = -a_s;
+                                  [MHDEquations<dim_mhd>::density_component] =
+                                    rho_0;
+            primitive_eigenvectors
+              [d][0][MHDEquations<dim_mhd>::first_velocity_component + d] =
+                -a_s;
             primitive_eigenvectors[d][0]
-                                  [MHDEquations<dim>::pressure_component] =
+                                  [MHDEquations<dim_mhd>::pressure_component] =
                                     rho_0 * a_s * a_s;
             saplog << "Left going sound wave in direction " << d
                    << ", eigenvalue=" << eigenvalues[d][0] << std::endl;
             saplog << primitive_eigenvectors[d][0] << std::endl;
 
             // Density entropy wave
-            primitive_eigenvectors[d][3][MHDEquations<dim>::density_component] =
-              1.;
+            primitive_eigenvectors[d][3]
+                                  [MHDEquations<dim_mhd>::density_component] =
+                                    1.;
             saplog << "Density entropy wave in direction " << d
                    << ", eigenvalue=" << eigenvalues[d][3] << std::endl;
             saplog << primitive_eigenvectors[d][3] << std::endl;
 
             // Right going sound wave
-            primitive_eigenvectors[d][7][MHDEquations<dim>::density_component] =
-              rho_0;
             primitive_eigenvectors[d][7]
-                                  [MHDEquations<dim>::first_velocity_component +
-                                   d] = a_s;
+                                  [MHDEquations<dim_mhd>::density_component] =
+                                    rho_0;
+            primitive_eigenvectors
+              [d][7][MHDEquations<dim_mhd>::first_velocity_component + d] = a_s;
             primitive_eigenvectors[d][7]
-                                  [MHDEquations<dim>::pressure_component] =
+                                  [MHDEquations<dim_mhd>::pressure_component] =
                                     rho_0 * a_s * a_s;
             saplog << "Right going sound wave in direction " << d
                    << ", eigenvalue=" << eigenvalues[d][7] << std::endl;
@@ -312,8 +316,8 @@ namespace sapphirepp
 
 
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &f) const override
+      vector_value(const dealii::Point<spacedim> &point,
+                   dealii::Vector<double>        &f) const override
       {
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
@@ -321,12 +325,13 @@ namespace sapphirepp
         /** [MHD Initial condition] */
         const double t = this->get_time();
 
-        typename MHDEquations<dim>::state_type primitive_state =
+        typename MHDEquations<dim_mhd>::state_type primitive_state =
           primitive_background_state;
 
-        for (unsigned int d = 0; d < dim; ++d)
+        for (unsigned int d = 0; d < dim_mhd; ++d)
           for (unsigned int i = 0; i < 8; ++i)
-            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+            for (unsigned int c = 0; c < MHDEquations<dim_mhd>::n_components;
+                 ++c)
               primitive_state[c] +=
                 primitive_eigenvectors[d][i][c] * prm.amplitude *
                 prm.eigenmodes[d][i] *
@@ -340,11 +345,11 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters               prm;
-      const MHDEquations<dim>                mhd_equations;
-      typename MHDEquations<dim>::state_type primitive_background_state;
-      typename MHDEquations<dim>::state_type conserved_background_state;
-      std::vector<std::vector<typename MHDEquations<dim>::state_type>>
+      const PhysicalParameters                   prm;
+      const MHDEquations<dim_mhd>                mhd_equations;
+      typename MHDEquations<dim_mhd>::state_type primitive_background_state;
+      typename MHDEquations<dim_mhd>::state_type conserved_background_state;
+      std::vector<std::vector<typename MHDEquations<dim_mhd>::state_type>>
                                           primitive_eigenvectors;
       std::vector<dealii::Vector<double>> eigenvalues;
     };
