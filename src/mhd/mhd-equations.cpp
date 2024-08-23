@@ -84,7 +84,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
             state[first_magnetic_component + d];
     }
 
-  for (unsigned int j = 0; j < dim; ++j)
+  for (unsigned int j = 0; j < spacedim; ++j)
     {
       flux_matrix[density_component][j] = state[first_momentum_component + j];
 
@@ -120,8 +120,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 template <unsigned int dim>
 double
 sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
-  const state_type             &state,
-  const dealii::Tensor<1, dim> &normal) const
+  const state_type                  &state,
+  const dealii::Tensor<1, spacedim> &normal) const
 {
   AssertDimension(state.size(), n_components);
 
@@ -168,9 +168,9 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
-  const state_type             &state,
-  const dealii::Tensor<1, dim> &normal,
-  dealii::Vector<double>       &eigenvalues) const
+  const state_type                  &state,
+  const dealii::Tensor<1, spacedim> &normal,
+  dealii::Vector<double>            &eigenvalues) const
 {
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvalues.size(), 8);
