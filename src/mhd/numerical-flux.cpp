@@ -33,18 +33,18 @@
 
 
 
-template <unsigned int dim>
-sapphirepp::MHD::NumericalFlux<dim>::NumericalFlux(
+template <unsigned int spacedim>
+sapphirepp::MHD::NumericalFlux<spacedim>::NumericalFlux(
   const MHDEquations &mhd_equations)
   : mhd_equations{mhd_equations}
 {}
 
 
 
-template <unsigned int dim>
+template <unsigned int spacedim>
 void
-sapphirepp::MHD::NumericalFlux<dim>::compute_numerical_normal_flux(
-  const dealii::Tensor<1, dim>            &normal,
+sapphirepp::MHD::NumericalFlux<spacedim>::compute_numerical_normal_flux(
+  const dealii::Tensor<1, spacedim>       &normal,
   const typename MHDEquations::state_type &state_1,
   const typename MHDEquations::state_type &state_2,
   typename MHDEquations::state_type       &numerical_normal_flux) const
@@ -86,6 +86,5 @@ sapphirepp::MHD::NumericalFlux<dim>::compute_numerical_normal_flux(
 
 
 // explicit instantiation
-// template class sapphirepp::MHD::NumericalFlux<1>;
-// template class sapphirepp::MHD::NumericalFlux<2>;
-template class sapphirepp::MHD::NumericalFlux<3>;
+template class sapphirepp::MHD::NumericalFlux<
+  sapphirepp::MHD::MHDEquations::spacedim>;
