@@ -51,10 +51,9 @@ namespace sapphirepp
      * The flux is computed based on the given normal vector and the states of
      * the system.
      *
-     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
-     *         `dim`
+     * @tparam spacedim Dimension of the space in which the equations operate
      */
-    template <unsigned int dim>
+    template <unsigned int spacedim>
     class NumericalFlux
     {
     public:
@@ -88,7 +87,7 @@ namespace sapphirepp
        */
       void
       compute_numerical_normal_flux(
-        const dealii::Tensor<1, dim>            &normal,
+        const dealii::Tensor<1, spacedim>       &normal,
         const typename MHDEquations::state_type &state_1,
         const typename MHDEquations::state_type &state_2,
         typename MHDEquations::state_type       &numerical_normal_flux) const;
