@@ -33,8 +33,8 @@
 #include <cmath>
 
 
-template <unsigned int dim>
-sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
+
+sapphirepp::MHD::MHDEquations::MHDEquations(const double adiabatic_index)
   : adiabatic_index{adiabatic_index}
 {
   AssertThrow(adiabatic_index > 1.0,
@@ -43,9 +43,8 @@ sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
 
 
 
-template <unsigned int dim>
 std::vector<std::string>
-sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
+sapphirepp::MHD::MHDEquations::create_component_name_list(
   const std::string &prefix)
 {
   std::vector<std::string> component_names(n_components);
@@ -65,11 +64,9 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
 
 
 
-template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
-  const state_type &state,
-  flux_type        &flux_matrix) const
+sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
+                                                   flux_type &flux_matrix) const
 {
   AssertDimension(state.size(), n_components);
 
@@ -117,9 +114,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 
 
 
-template <unsigned int dim>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
+sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
   const state_type                  &state,
   const dealii::Tensor<1, spacedim> &normal) const
 {
@@ -140,10 +136,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
 
 
 
-template <unsigned int dim>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
-  const state_type &state) const
+sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
 
@@ -165,9 +159,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
 
 
 
-template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
+sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
   const state_type                  &state,
   const dealii::Tensor<1, spacedim> &normal,
   dealii::Vector<double>            &eigenvalues) const
@@ -183,7 +176,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
     }
   double nu = 0.;
   double nB = 0.;
-  for (unsigned int d = 0; d < dim; ++d)
+  for (unsigned int d = 0; d < spacedim; ++d)
     {
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
@@ -210,9 +203,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
 
 
 
-template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
+sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
   const state_type &primitive_state,
   state_type       &conserved_state) const
 {
@@ -248,9 +240,8 @@ sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
 
 
 
-template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
+sapphirepp::MHD::MHDEquations::convert_conserved_to_primitive(
   const state_type &conserved_state,
   state_type       &primitive_state) const
 {
@@ -268,10 +259,3 @@ sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
         conserved_state[first_magnetic_component + d];
     }
 }
-
-
-
-// Explicit instantiations
-template class sapphirepp::MHD::MHDEquations<1>;
-template class sapphirepp::MHD::MHDEquations<2>;
-template class sapphirepp::MHD::MHDEquations<3>;
