@@ -63,7 +63,7 @@ namespace sapphirepp
        *
        * @param mhd_equations Instance of the underlying @ref MHDEquations.
        */
-      NumericalFlux(const MHDEquations<dim> &mhd_equations);
+      NumericalFlux(const MHDEquations &mhd_equations);
 
 
 
@@ -88,16 +88,16 @@ namespace sapphirepp
        */
       void
       compute_numerical_normal_flux(
-        const dealii::Tensor<1, dim>                 &normal,
-        const typename MHDEquations<dim>::state_type &state_1,
-        const typename MHDEquations<dim>::state_type &state_2,
-        typename MHDEquations<dim>::state_type &numerical_normal_flux) const;
+        const dealii::Tensor<1, dim>            &normal,
+        const typename MHDEquations::state_type &state_1,
+        const typename MHDEquations::state_type &state_2,
+        typename MHDEquations::state_type       &numerical_normal_flux) const;
 
 
 
     private:
       /** @ref MHDEquations */
-      const MHDEquations<dim> mhd_equations;
+      const MHDEquations mhd_equations;
     };
   } // namespace MHD
 } // namespace sapphirepp

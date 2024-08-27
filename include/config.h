@@ -694,7 +694,7 @@ namespace sapphirepp
        * @param physical_parameters User defined runtime parameters
        */
       InitialConditionMHD(const PhysicalParameters &physical_parameters)
-        : dealii::Function<spacedim>(MHDEquations<dim_mhd>::n_components)
+        : dealii::Function<spacedim>(MHDEquations::n_components)
         , prm{physical_parameters}
       {}
 
@@ -729,17 +729,17 @@ namespace sapphirepp
         const double enthalpy = (energy + pressure) / density;
 
         // Background state in conserved variables
-        f                                                  = 0;
-        f[MHDEquations<dim_mhd>::density_component]        = density;
-        f[MHDEquations<dim_mhd>::first_momentum_component] = density * u_x;
-        f[MHDEquations<dim_mhd>::energy_component]         = energy;
+        f                                         = 0;
+        f[MHDEquations::density_component]        = density;
+        f[MHDEquations::first_momentum_component] = density * u_x;
+        f[MHDEquations::energy_component]         = energy;
 
         // Left going sound wave
-        f[MHDEquations<dim_mhd>::density_component] +=
+        f[MHDEquations::density_component] +=
           1. * amplitude * std::sin(2 * M_PI * x / length);
-        f[MHDEquations<dim_mhd>::first_momentum_component] +=
+        f[MHDEquations::first_momentum_component] +=
           (u_x - c) * amplitude * std::sin(2 * M_PI * x / length);
-        f[MHDEquations<dim_mhd>::energy_component] +=
+        f[MHDEquations::energy_component] +=
           (enthalpy - u_x * c) * amplitude * std::sin(2 * M_PI * x / length);
         /** [MHD Initial condition] */
       }

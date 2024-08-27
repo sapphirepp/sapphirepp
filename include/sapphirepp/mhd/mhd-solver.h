@@ -90,7 +90,7 @@ namespace sapphirepp
        * Dimension of the space in which the equations operate, i.e. the
        * dimension of the velocity and magnetic field.
        */
-      static constexpr unsigned int spacedim = MHDEquations<dim>::spacedim;
+      static constexpr unsigned int spacedim = MHDEquations::spacedim;
 
 
       /**
@@ -272,7 +272,7 @@ namespace sapphirepp
        *
        * @return const MHDEquations&
        */
-      const MHDEquations<dim> &
+      const MHDEquations &
       get_mhd_equations() const;
 
       /**
@@ -326,7 +326,7 @@ namespace sapphirepp
 
       /** @{ */
       /** @ref MHDEquations */
-      MHDEquations<dim> mhd_equations;
+      MHDEquations mhd_equations;
       /** @ref NumericalFlux */
       NumericalFlux<spacedim> numerical_flux;
       /** @} */
