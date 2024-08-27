@@ -32,6 +32,8 @@
 
 #include <deal.II/lac/vector.h>
 
+#include <deal.II/numerics/data_component_interpretation.h>
+
 #include <array>
 #include <string>
 #include <vector>
@@ -125,13 +127,29 @@ namespace sapphirepp
        * @brief Create a list of component names corresponding to the conserved
        *        MHD state.
        *
-       * Returns a list: `rho`, `p_i`, `E`, `B_i`.
+       * Returns a list: `rho`, `p`, `E`, `B`.
        *
        * @param prefix Prefix for the component names.
        * @return std::vector<std::string> component_names.
        */
       static std::vector<std::string>
       create_component_name_list(const std::string &prefix = "");
+
+      /**
+       * @brief Create a list of component interpretation corresponding to the
+       *        MHD state.
+       *
+       * Returns a list of
+       * @dealref{DataComponentInterpretation,namespaceDataComponentInterpretation},
+       * so the velocity and magnetic field components are interpreted as
+       * vectors in the output.
+       *
+       * @return std::vector<DataComponentInterpretation>
+       *         data_component_interpretation.
+       */
+      static std::vector<
+        dealii::DataComponentInterpretation::DataComponentInterpretation>
+      create_component_interpretation_list();
       /** @} */
 
 
