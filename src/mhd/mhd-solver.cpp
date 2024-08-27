@@ -182,7 +182,7 @@ namespace sapphirepp
         }
       };
     } // namespace MHDSolver
-  }   // namespace internal
+  } // namespace internal
 } // namespace sapphirepp
 
 
@@ -195,15 +195,13 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
   , mhd_equations(mhd_parameters.adiabatic_index)
-  , numerical_flux(MHDEquations<spacedim>(
-      mhd_parameters
-        .adiabatic_index)) // TODO: Change back after correcting templates
+  , numerical_flux(mhd_equations)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
   , fe(FE_DGQ<dim, spacedim>(mhd_parameters.polynomial_degree),
-       MHDEquations<dim>::n_components)
+       MHDEquations::n_components)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pcout(std::cout,
@@ -493,8 +491,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     const std::vector<double>          &JxW      = fe_v.get_JxW_values();
 
     std::vector<Vector<double>> states(
-      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
-    typename MHDEquations<dim>::flux_type flux_matrix;
+      q_points.size(), Vector<double>(MHDEquations::n_components));
+    typename MHDEquations::flux_type flux_matrix;
 
     fe_v.get_function_values(locally_relevant_current_solution, states);
 
@@ -507,7 +505,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
             // const unsigned int component_i =
             //   fe_v.get_fe().system_to_component_index(i).first;
 
-            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
               {
                 // F[c] * \grad \phi[c]_i
                 copy_data.cell_dg_rhs(i) +=
@@ -544,11 +542,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 
     // Initialise state and flux vectors
     std::vector<Vector<double>> states(
-      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
-    typename MHDEquations<dim>::state_type virtual_neighbor_state(
-      MHDEquations<dim>::n_components);
-    typename MHDEquations<dim>::state_type numerical_normal_flux(
-      MHDEquations<dim>::n_components);
+      q_points.size(), Vector<double>(MHDEquations::n_components));
+    typename MHDEquations::state_type virtual_neighbor_state(
+      MHDEquations::n_components);
+    typename MHDEquations::state_type numerical_normal_flux(
+      MHDEquations::n_components);
 
     // Compute states
     fe_v_face.get_function_values(locally_relevant_current_solution, states);
@@ -580,7 +578,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
             // const unsigned int component_i =
             //   fe_v_face.get_fe().system_to_component_index(i).first;
 
-            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
               {
                 // - n * F[c] * \phi[c]_{i,-}
                 copy_data.cell_dg_rhs(i) +=
@@ -637,11 +635,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 
     // Initialise state and flux vectors
     std::vector<Vector<double>> states(
-      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
+      q_points.size(), Vector<double>(MHDEquations::n_components));
     std::vector<Vector<double>> states_neighbor(
-      q_points.size(), Vector<double>(MHDEquations<dim>::n_components));
-    typename MHDEquations<dim>::state_type numerical_normal_flux(
-      MHDEquations<dim>::n_components);
+      q_points.size(), Vector<double>(MHDEquations::n_components));
+    typename MHDEquations::state_type numerical_normal_flux(
+      MHDEquations::n_components);
 
     // Compute states
     fe_v_face.get_function_values(locally_relevant_current_solution, states);
@@ -661,7 +659,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
             // const unsigned int component_i =
             //   fe_v_face.get_fe().system_to_component_index(i).first;
 
-            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
               {
                 // - n * F[c] * \phi[c]_{i,-}
                 copy_data_face.cell_dg_rhs_1(i) +=
@@ -676,7 +674,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
             // const unsigned int component_i =
             //   fe_v_face_neighbor.get_fe().system_to_component_index(i).first;
 
-            for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
               {
                 // + n * F[c] * \phi[c]_{i,+}
                 copy_data_face.cell_dg_rhs_2(i) +=
@@ -786,7 +784,7 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
    * dimension of the grid.
    */
   data_out.add_data_vector(locally_relevant_current_solution,
-                           MHDEquations<dim>::create_component_name_list());
+                           MHDEquations::create_component_name_list());
 
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());
@@ -880,7 +878,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_weighted_norm(
 
 
 template <unsigned int dim>
-const sapphirepp::MHD::MHDEquations<dim> &
+const sapphirepp::MHD::MHDEquations &
 sapphirepp::MHD::MHDSolver<dim>::get_mhd_equations() const
 {
   return mhd_equations;
