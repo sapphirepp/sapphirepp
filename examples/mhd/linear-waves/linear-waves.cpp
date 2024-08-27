@@ -29,6 +29,8 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
 
+#include <deal.II/numerics/data_out.h>
+
 #include <mpi.h>
 
 #include <fstream>
@@ -156,23 +158,29 @@ main(int argc, char *argv[])
               data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
               // Output numeric solution
-              data_out.add_data_vector(mhd_solver.get_current_solution(),
-                                       MHDEquations::create_component_name_list(
-                                         "numeric_"));
+              data_out.add_data_vector(
+                mhd_solver.get_current_solution(),
+                MHDEquations::create_component_name_list("numeric_"),
+                dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+                MHDEquations::create_component_interpretation_list());
 
               // Output projected analytic solution
               mhd_solver.project(analytic_solution, analytic_solution_vector);
-              data_out.add_data_vector(analytic_solution_vector,
-                                       MHDEquations::create_component_name_list(
-                                         "project_"));
+              data_out.add_data_vector(
+                analytic_solution_vector,
+                MHDEquations::create_component_name_list("project_"),
+                dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+                MHDEquations::create_component_interpretation_list());
 
               // Output interpolated analytic solution
               dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
                                                analytic_solution,
                                                analytic_solution_vector);
-              data_out.add_data_vector(analytic_solution_vector,
-                                       MHDEquations::create_component_name_list(
-                                         "interpol_"));
+              data_out.add_data_vector(
+                analytic_solution_vector,
+                MHDEquations::create_component_name_list("interpol_"),
+                dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+                MHDEquations::create_component_interpretation_list());
 
               data_out.build_patches(mhd_parameters.polynomial_degree);
               output_parameters.write_results<dim_mhd, spacedim>(
@@ -233,23 +241,29 @@ main(int argc, char *argv[])
         data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
         // Output numeric solution
-        data_out.add_data_vector(mhd_solver.get_current_solution(),
-                                 MHDEquations::create_component_name_list(
-                                   "numeric_"));
+        data_out.add_data_vector(
+          mhd_solver.get_current_solution(),
+          MHDEquations::create_component_name_list("numeric_"),
+          dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+          MHDEquations::create_component_interpretation_list());
 
         // Output projected analytic solution
         mhd_solver.project(analytic_solution, analytic_solution_vector);
-        data_out.add_data_vector(analytic_solution_vector,
-                                 MHDEquations::create_component_name_list(
-                                   "project_"));
+        data_out.add_data_vector(
+          analytic_solution_vector,
+          MHDEquations::create_component_name_list("project_"),
+          dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+          MHDEquations::create_component_interpretation_list());
 
         // Output interpolated analytic solution
         dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
                                          analytic_solution,
                                          analytic_solution_vector);
-        data_out.add_data_vector(analytic_solution_vector,
-                                 MHDEquations::create_component_name_list(
-                                   "interpol_"));
+        data_out.add_data_vector(
+          analytic_solution_vector,
+          MHDEquations::create_component_name_list("interpol_"),
+          dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+          MHDEquations::create_component_interpretation_list());
 
         data_out.build_patches(mhd_parameters.polynomial_degree);
         output_parameters.write_results<dim_mhd, spacedim>(
