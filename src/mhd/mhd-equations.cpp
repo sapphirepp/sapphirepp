@@ -53,13 +53,34 @@ sapphirepp::MHD::MHDEquations::create_component_name_list(
   component_names[energy_component]  = prefix + "E";
   for (unsigned int d = 0; d < spacedim; ++d)
     {
-      component_names[first_momentum_component + d] =
-        prefix + "p_" + std::to_string(d + 1);
-      component_names[first_magnetic_component + d] =
-        prefix + "B_" + std::to_string(d + 1);
+      component_names[first_momentum_component + d] = prefix + "p";
+      component_names[first_magnetic_component + d] = prefix + "B";
     }
 
   return component_names;
+}
+
+
+
+std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+sapphirepp::MHD::MHDEquations::create_component_interpretation_list()
+{
+  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+    data_component_interpretation(n_components);
+
+  data_component_interpretation[density_component] =
+    dealii::DataComponentInterpretation::component_is_scalar;
+  data_component_interpretation[energy_component] =
+    dealii::DataComponentInterpretation::component_is_scalar;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      data_component_interpretation[first_momentum_component + d] =
+        dealii::DataComponentInterpretation::component_is_part_of_vector;
+      data_component_interpretation[first_magnetic_component + d] =
+        dealii::DataComponentInterpretation::component_is_part_of_vector;
+    }
+
+  return data_component_interpretation;
 }
 
 

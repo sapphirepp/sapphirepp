@@ -776,15 +776,11 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   TimerOutput::Scope     timer_section(timer, "Output - MHD");
   DataOut<dim, spacedim> data_out;
   data_out.attach_dof_handler(dof_handler);
-  /**
-   * @todo Use
-   * @dealref{DataComponentInterpretation,namespaceDataComponentInterpretation}
-   * to output u and B as a vector field. Problem: At the moment deal.II only
-   * allows to output a `dim` dimensional vector field, with `dim` being the
-   * dimension of the grid.
-   */
-  data_out.add_data_vector(locally_relevant_current_solution,
-                           MHDEquations::create_component_name_list());
+  data_out.add_data_vector(
+    locally_relevant_current_solution,
+    MHDEquations::create_component_name_list(),
+    DataOut<dim, spacedim>::type_dof_data,
+    MHDEquations::create_component_interpretation_list());
 
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());
