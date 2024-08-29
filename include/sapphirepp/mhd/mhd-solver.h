@@ -157,6 +157,16 @@ namespace sapphirepp
        */
       void
       forward_euler_method(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with a strong stability-preserving
+       *        Runge-Kutta method.
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       */
+      void
+      explicit_runge_kutta(const double time, const double time_step);
       /** @} */
 
 

@@ -45,6 +45,7 @@
 #include <deal.II/grid/grid_tools.h>
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/petsc_solver.h>
 #include <deal.II/lac/sparsity_tools.h>
@@ -763,6 +764,110 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
 
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
+                                                      const double time_step)
+{
+  TimerOutput::Scope timer_section(timer, "ERK4 - MHD");
+  LogStream::Prefix  p("ERK4", saplog);
+  // ERK 4
+  // Butcher's array
+  // TODO: use fourth order RK
+  const unsigned int s = 2;
+  FullMatrix<double> alpha(s, s);
+  FullMatrix<double> beta(s, s);
+  Vector<double>     gamma({0., 1.});
+
+  alpha[0][0] = 1.;
+  alpha[1][0] = 0.5;
+  alpha[1][1] = 0.5;
+  beta[0][0]  = 1.;
+  beta[1][0]  = 0.;
+  beta[1][1]  = 0.5;
+
+  // TODO: Asserts
+
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
+  preconditioner.initialize(mass_matrix);
+  SolverControl              solver_control(1000);
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+  // PETScWrappers::SolverCG    solver(solver_control, mpi_communicator);
+
+  PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
+  std::vector<PETScWrappers::MPI::Vector> locally_owned_staged_solution(s);
+  std::vector<PETScWrappers::MPI::Vector> locally_owned_staged_dg_rhs(s);
+  for (unsigned int i = 0; i < s; ++i)
+    {
+      locally_owned_staged_solution[i].reinit(locally_owned_dofs,
+                                              mpi_communicator);
+      locally_owned_staged_dg_rhs[i].reinit(locally_owned_dofs,
+                                            mpi_communicator);
+    }
+
+  // Stage i=0
+  locally_owned_staged_solution[0] = locally_relevant_current_solution;
+  assemble_dg_rhs(time + gamma[0] * time_step);
+  locally_owned_staged_dg_rhs[0] = dg_rhs;
+
+  // Stage 0<i<s
+  for (unsigned int i = 1; i < s; ++i)
+    {
+      temp = locally_owned_staged_solution[0];
+      temp *= alpha[i - 1][0];
+      mass_matrix.vmult(system_rhs, temp);
+      system_rhs.add(beta[i - 1][0] * time_step,
+                     locally_owned_staged_dg_rhs[0]);
+      for (unsigned int j = 1; j < i; ++j)
+        {
+          temp = locally_owned_staged_solution[j];
+          temp *= alpha[i - 1][j];
+          mass_matrix.vmult_add(system_rhs, temp);
+          system_rhs.add(beta[i - 1][j] * time_step,
+                         locally_owned_staged_dg_rhs[j]);
+        }
+
+      solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+      solver.solve(mass_matrix,
+                   locally_owned_staged_solution[i],
+                   system_rhs,
+                   preconditioner);
+      saplog << "Stage i: " << i << "	Solver converged in "
+             << solver_control.last_step() << " iterations." << std::endl;
+
+      locally_relevant_current_solution = locally_owned_staged_solution[i];
+      assemble_dg_rhs(time + gamma[i] * time_step);
+      locally_owned_staged_dg_rhs[i] = dg_rhs;
+    }
+
+  // Stage  i=s
+  temp = locally_owned_staged_solution[0];
+  temp *= alpha[s - 1][0];
+  mass_matrix.vmult(system_rhs, temp);
+  system_rhs.add(beta[s - 1][0] * time_step, locally_owned_staged_dg_rhs[0]);
+  for (unsigned int j = 1; j < s; ++j)
+    {
+      temp = locally_owned_staged_solution[j];
+      temp *= alpha[s - 1][j];
+      mass_matrix.vmult_add(system_rhs, temp);
+      system_rhs.add(beta[s - 1][j] * time_step,
+                     locally_owned_staged_dg_rhs[j]);
+    }
+
+  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver.solve(mass_matrix,
+               locally_owned_previous_solution,
+               system_rhs,
+               preconditioner);
+  saplog << "Stage i: " << s << "	Solver converged in "
+         << solver_control.last_step() << " iterations." << std::endl;
+
+  // Update the solution
+  locally_relevant_current_solution = locally_owned_previous_solution;
 }
 
 
