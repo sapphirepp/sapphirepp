@@ -780,13 +780,10 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
 {
   TimerOutput::Scope timer_section(timer, "ERK - MHD");
   LogStream::Prefix  p("ERK", saplog);
-  // Butcher's array
-  Assert((mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk2) ||
-           (mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk4),
-         ExcNotImplemented());
+
   // Number of stages: erk2 uses 2 stages, erk 4 uses 5 stages
   const unsigned int s =
-    mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk2 ? 2 : 4;
+    mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk4 ? 5 : 2;
   FullMatrix<double> alpha(s, s);
   FullMatrix<double> beta(s, s);
   Vector<double>     gamma(s);
@@ -808,7 +805,44 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
         }
       case TimeSteppingMethodMHD::erk4:
         {
-          AssertThrow(false, ExcNotImplemented());
+          saplog << "Define Butcher's array for ERK4 method" << std::endl;
+          alpha[0][0] = 1.;
+          alpha[1][0] = 0.44437049406734;
+          alpha[1][1] = 0.55562950593266;
+          alpha[2][0] = 0.62010185138540;
+          alpha[2][1] = 0.;
+          alpha[2][2] = 0.37989814861460;
+          alpha[3][0] = 0.17807995410773;
+          alpha[3][1] = 0.;
+          alpha[3][2] = 0.0;
+          alpha[3][3] = 0.82192004589227;
+          alpha[4][0] = 0.00683325884039;
+          alpha[4][1] = 0.;
+          alpha[4][2] = 0.51723167208978;
+          alpha[4][3] = 0.12759831133288;
+          alpha[4][4] = 0.34833675773694;
+
+          beta[0][0] = 0.39175222700392;
+          beta[1][0] = 0.;
+          beta[1][1] = 0.36841059262959;
+          beta[2][0] = 0.;
+          beta[2][1] = 0.;
+          beta[2][2] = 0.25189177424738;
+          beta[3][0] = 0.;
+          beta[3][1] = 0.;
+          beta[3][2] = 0.;
+          beta[3][3] = 0.54497475021237;
+          beta[4][0] = 0.;
+          beta[4][1] = 0.;
+          beta[4][2] = 0.0;
+          beta[4][3] = 0.08460416338212;
+          beta[4][4] = 0.22600748319395;
+
+          gamma[0] = 0.;
+          gamma[1] = 0.39175222700392;
+          gamma[2] = 0.58607968896780;
+          gamma[3] = 0.47454236302687;
+          gamma[4] = 0.93501063100924;
           break;
         }
       case TimeSteppingMethodMHD::forward_euler:
@@ -818,13 +852,11 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
         }
     }
 
-  // TODO: Asserts
-
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(mass_matrix);
   SolverControl              solver_control(1000);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
-  // PETScWrappers::SolverCG    solver(solver_control, mpi_communicator);
+  // PETScWrappers::SolverCG solver(solver_control, mpi_communicator);
 
   PETScWrappers::MPI::Vector temp(locally_owned_dofs, mpi_communicator);
   std::vector<PETScWrappers::MPI::Vector> locally_owned_staged_solution(s);
