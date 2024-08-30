@@ -149,7 +149,7 @@ generate this plot, we first need to calculate the quantity $p^4 f_{000}$:
    ![Create Calculator](https://sapphirepp.org/img/paraview-tutorial/f_p-01-annotated.png)
 
 4. **Enter Equation:** In the equation field, enter the following expression:
-   `exp(4*CoordY) * f_000`. Here, `CoordY` represents the y-coordinate, i.e.,
+   `exp(4*CoordsY) * f_000`. Here, `CoordsY` represents the y-coordinate, i.e.,
    $\ln p$. You can see a list of available quantities in the calculator by
    clicking on **Scalars**.
 
