@@ -223,6 +223,12 @@ main(int argc, char *argv[])
                   discrete_time.get_current_time(),
                   discrete_time.get_next_step_size());
                 break;
+              case TimeSteppingMethodMHD::erk2:
+              case TimeSteppingMethodMHD::erk4:
+                mhd_solver.explicit_runge_kutta(
+                  discrete_time.get_current_time(),
+                  discrete_time.get_next_step_size());
+                break;
               default:
                 AssertThrow(false, ExcNotImplemented());
             }
