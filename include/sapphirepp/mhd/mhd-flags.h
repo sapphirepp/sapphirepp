@@ -104,7 +104,17 @@ namespace sapphirepp
       /**
        * Explicit Euler method.
        */
-      forward_euler
+      forward_euler,
+
+      /**
+       * Second order Runge-Kutta method.
+       */
+      erk2,
+
+      /**
+       * Fourth order Runge-Kutta method.
+       */
+      erk4
     };
 
 

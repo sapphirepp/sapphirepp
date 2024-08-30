@@ -282,6 +282,11 @@ sapphirepp::MHD::MHDSolver<dim>::run()
             forward_euler_method(discrete_time.get_current_time(),
                                  discrete_time.get_next_step_size());
             break;
+          case TimeSteppingMethodMHD::erk2:
+          case TimeSteppingMethodMHD::erk4:
+            explicit_runge_kutta(discrete_time.get_current_time(),
+                                 discrete_time.get_next_step_size());
+            break;
           default:
             AssertThrow(false, ExcNotImplemented());
         }
@@ -773,22 +778,45 @@ void
 sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "ERK4 - MHD");
-  LogStream::Prefix  p("ERK4", saplog);
-  // ERK 4
+  TimerOutput::Scope timer_section(timer, "ERK - MHD");
+  LogStream::Prefix  p("ERK", saplog);
   // Butcher's array
-  // TODO: use fourth order RK
-  const unsigned int s = 2;
+  Assert((mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk2) ||
+           (mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk4),
+         ExcNotImplemented());
+  // Number of stages: erk2 uses 2 stages, erk 4 uses 5 stages
+  const unsigned int s =
+    mhd_parameters.time_stepping_method == TimeSteppingMethodMHD::erk2 ? 2 : 4;
   FullMatrix<double> alpha(s, s);
   FullMatrix<double> beta(s, s);
-  Vector<double>     gamma({0., 1.});
+  Vector<double>     gamma(s);
 
-  alpha[0][0] = 1.;
-  alpha[1][0] = 0.5;
-  alpha[1][1] = 0.5;
-  beta[0][0]  = 1.;
-  beta[1][0]  = 0.;
-  beta[1][1]  = 0.5;
+  switch (mhd_parameters.time_stepping_method)
+    {
+      case TimeSteppingMethodMHD::erk2:
+        {
+          saplog << "Define Butcher's array for ERK2 method" << std::endl;
+          alpha[0][0] = 1.;
+          alpha[1][0] = 0.5;
+          alpha[1][1] = 0.5;
+          beta[0][0]  = 1.;
+          beta[1][0]  = 0.;
+          beta[1][1]  = 0.5;
+          gamma[0]    = 0.;
+          gamma[1]    = 1.;
+          break;
+        }
+      case TimeSteppingMethodMHD::erk4:
+        {
+          AssertThrow(false, ExcNotImplemented());
+          break;
+        }
+      case TimeSteppingMethodMHD::forward_euler:
+      default:
+        {
+          AssertThrow(false, ExcNotImplemented());
+        }
+    }
 
   // TODO: Asserts
 

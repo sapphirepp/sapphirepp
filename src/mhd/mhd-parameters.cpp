@@ -117,7 +117,7 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   {
     prm.declare_entry("Method",
                       "FE",
-                      Patterns::Selection("FE"),
+                      Patterns::Selection("FE|ERK2|ERK4"),
                       "The time stepping method.");
     prm.declare_entry("Time step size",
                       "1.0",
@@ -281,6 +281,10 @@ sapphirepp::MHD::MHDParameters<dim>::parse_parameters(ParameterHandler &prm)
     s = prm.get("Method");
     if (s == "FE")
       time_stepping_method = TimeSteppingMethodMHD::forward_euler;
+    else if (s == "ERK2")
+      time_stepping_method = TimeSteppingMethodMHD::erk2;
+    else if (s == "ERK4")
+      time_stepping_method = TimeSteppingMethodMHD::erk4;
     else
       Assert(false, ExcNotImplemented());
 
