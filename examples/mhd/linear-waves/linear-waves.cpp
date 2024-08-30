@@ -83,7 +83,7 @@ main(int argc, char *argv[])
       /** [Copy VFP parameter] */
       const unsigned int spacedim         = MHDEquations::spacedim;
       physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
-      physical_parameters.box_length      = std::vector<double>(dim_mhd);
+      physical_parameters.box_length      = std::vector<double>(spacedim, 1.);
       for (unsigned int d = 0; d < dim_mhd; ++d)
         {
           physical_parameters.box_length[d] =
