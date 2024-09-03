@@ -8,78 +8,82 @@ import matplotlib.pyplot as plt
 pval = 4 #desired ln p value
 nfiles = 501 #number of files
 step = 100 #timestepsize
-xch = 1 #choosen x value
+xch = 0 #choosen x value
 Bch = 1 #choosen B value
 uch=0.03 
+dsh=0.04
 r=4
 nu=1
-pinj=1
+pinj=2
 
 c = 299792458
 q0 = 1.602176634e-19
-B0 = 1e-10
+B0 = 1e-10*r
 m0 = 1.672621923e-27
+lam = 1/nu
 
 
-imp = pd.read_csv('extract/data.csv',skiprows=0, usecols=(1,2), delimiter=',')
+imp = pd.read_csv('nils2/data.csv',skiprows=0, usecols=(1,2), delimiter=',')
 imp = imp.to_numpy ()
 t = imp [:,0]
 file = imp [:,1]
 f =[]
 p = []
 for n in range (0,nfiles):
-    y = pd.read_csv('extract/'+file[n],skiprows=0, usecols=(0,8), delimiter=',')
-    y = y.to_numpy ()
-    ff = y [:,0]
-    pp = y [:,1]
-    f.append(ff)
-    p.append(pp)
+    if n>1:
+        y = pd.read_csv('nils2/'+file[n],skiprows=0, usecols=(0,8), delimiter=',')
+        y = y.to_numpy ()
+        ff = y [:,0]
+        f.append(ff)
+    else:
+        y = pd.read_csv('nils2/'+file[n],skiprows=0, usecols=(0,8), delimiter=',')
+        y = y.to_numpy ()
+        ff = y [:,0]
+        f.append(ff)
+        pp = y [:,1]
+        p.append(pp)
+
 pdiff = []
-for i in range (0,nfiles):
+'''for i in range (0,nfiles):
     for n in range (0,len(p[i])):
         pdif = p[i]-pval
         if (pdif[n]>0):
             pdiff.append(i)
             pdiff.append(n)
-            pdiff.append(p[i][n])
-            break
-pdlen = len(pdiff)/3
+            #pdiff.append(p[i][n])
+            break'''
+for n in range (0,len(p[1])):
+    if (p[1][n]-pval>0):
+        pdiff.append(n)
+        break
+pdlen = len(pdiff)/2
 pdlen=int(pdlen)
 t=[]
-n=pdiff[1]
-p=np.exp(pdiff[2])
-for i in range (0,pdlen):
-    t.append(int(pdiff[3*i])*step)
+n=pdiff[0]
+p = np.exp(p[1][n])
+for i in range (0,nfiles):
+    t.append(i*step)
 fr=[]
-#pr=[]
 for i in range (0,nfiles):
     fr.append(f[i][n])
-    #pr.append(p[i][n])
 f=fr
-#p=np.exp(pr[0])
-
-'''eponenttial p
-tanh in scat freq
-power law'''
-
 
 #theory
-rg = m0*c/(q0*B0)
-x = xch*rg
-u = uch * c
+u = uch/ (2 * r) * ((1 - r) * np.tanh(xch / dsh) +(1 + r))
+nu = nu*uch*uch/(u*u)
 f500=f[-1]
-tau = 4/(3*nu*uch*uch)
+tau = 4/(3*nu*u*u)
 fcalc=[0]
-print (x,u)
-c1=0.25*x/u+3*(r+1)/(4*(r-1))*np.log(p/pinj)*tau
+c1=xch/u+3*(r+1)/(4*(r-1))*np.log(p/pinj)*tau
 c2=tau*c1/2
+print(c1,c2)
 for i in range (1,nfiles):
     phi=0.5*(np.exp(2*c1*c1/c2)*sp.special.erfc(np.sqrt(c1*c1*c1/(2*t[i]*c2))+np.sqrt(c1*t[i]/(2*c2)))+sp.special.erfc(np.sqrt(c1*c1*c1/(2*t[i]*c2))-np.sqrt(c1*t[i]/(2*c2))))
     fi=f500*phi
     fcalc.append(fi)
 
-
-injectionRate = r
+#nils
+'''injectionRate = r
 injectionMomentum =pinj
 UShock =u
 compressionRatio = r
@@ -123,11 +127,16 @@ for i in range (1,nfiles):
     anaSolDruryy.append(anaSolDrury)
 
 anaSolDrury=anaSolDruryy
-plt.plot (t,anaSolDrury,label='nils')
+plt.plot (t,anaSolDrury,label='nils')'''
 
 
-plt.title ('x='+str(xch)+' , p='+str(p))
+plt.title (r'$ \Delta t = 10s , x =$'+str(xch)+ ', p='+str(np.round(p,decimals=2)) +r'$, 1/ \nu = $'+str(lam)+r'$, d_{sh}= $'+str(dsh))
+plt.xlabel ('time')
+plt.ylabel (r'$f_{000}$')
 plt.plot (t,f,label='sapphire')
 plt.plot (t, fcalc,label='theory')
 plt.legend ()
 plt.show ()
+
+q = -3*r/(r-1)-(9*uch*dsh*nu)/(2*(r-1))
+print(q)
