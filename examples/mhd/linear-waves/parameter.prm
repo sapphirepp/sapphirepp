@@ -34,7 +34,7 @@ subsection MHD
 end
 subsection Physical parameters
   set Amplitude = 1e-4
-  set B_0       = 0., 0., 0.
+  set b_0       = 0., 0., 0.
   set P_0       = 0.6
   set rho_0     = 1.
   set u_0       = 0., 0., 0.
