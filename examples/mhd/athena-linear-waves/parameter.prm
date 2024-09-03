@@ -1,8 +1,7 @@
 subsection Output
   set Base file name               = solution
-  set Format                       = vtu
+  set Format                       = pvtu
   set Number of digits for counter = 5
-  # set Output frequency             = 20
   set Output frequency             = 1
   set Results folder               = ./results
   set Simulation identifier        = athena-linear-waves
@@ -13,8 +12,7 @@ subsection MHD
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 20, 20, 20
-    # set Number of cells = 2, 2, 20
+    set Number of cells = 32, 32, 32
     set Point 1         = 0., 0., 0.
     set Point 2         = 1, 1., 1.
     subsection Boundary conditions
@@ -27,19 +25,12 @@ subsection MHD
     end
   end
   subsection Time stepping
-    set Final time     = 1
-    set Method         = FE
+    set Final time     = 2
+    set Method         = ERK4
     set Time step size = 0.01
   end
 end
 subsection Physical parameters
+  set Test case = 0
   set Amplitude = 1e-4
-  set b_0       = 0., 0., 0.
-  set P_0       = 0.6
-  set rho_0     = 1.
-  set u_0       = 0., 0., 0.
-
-  set Eigenmodes x = 1, 0, 0, 0, 0, 0, 0, 0
-  set Eigenmodes y = 0, 0, 0, 0, 0, 0, 0, 0
-  set Eigenmodes z = 0, 0, 0, 0, 0, 0, 0, 0
 end
