@@ -720,27 +720,77 @@ namespace sapphirepp
         const double adiabatic_index = 5. / 3.;
         const double x               = point[0];
 
-        const double pressure = 1. / adiabatic_index;
         const double density  = 1.;
+        const double pressure = 1. / adiabatic_index;
         const double u_x      = 0.;
+        const double u_y      = 0.;
+        const double u_z      = 0.;
+        // const double b_x      = 1.;
+        // const double b_y      = std::sqrt(2.);
+        // const double b_z      = 0.5;
+        const double b_x = 0.;
+        const double b_y = 0.;
+        const double b_z = 0.;
 
-        const double energy   = pressure / (adiabatic_index - 1.);
-        const double c        = std::sqrt(adiabatic_index * pressure / density);
-        const double enthalpy = (energy + pressure) / density;
+        const double energy =
+          0.5 * density * (u_x * u_x + u_y * u_y + u_z * u_z) +
+          pressure / (adiabatic_index - 1.) +
+          0.5 * (b_x * b_x + b_y * b_y + b_z * b_z);
 
         // Background state in conserved variables
-        f                                         = 0;
-        f[MHDEquations::density_component]        = density;
-        f[MHDEquations::first_momentum_component] = density * u_x;
-        f[MHDEquations::energy_component]         = energy;
+        f                                             = 0;
+        f[MHDEquations::density_component]            = density;
+        f[MHDEquations::first_momentum_component + 0] = density * u_x;
+        f[MHDEquations::first_momentum_component + 1] = density * u_y;
+        f[MHDEquations::first_momentum_component + 2] = density * u_z;
+        f[MHDEquations::energy_component]             = energy;
+        f[MHDEquations::first_magnetic_component + 0] = b_x;
+        f[MHDEquations::first_magnetic_component + 1] = b_y;
+        f[MHDEquations::first_magnetic_component + 2] = b_z;
 
-        // Left going sound wave
-        f[MHDEquations::density_component] +=
-          1. * amplitude * std::sin(2 * M_PI * x / length);
-        f[MHDEquations::first_momentum_component] +=
-          (u_x - c) * amplitude * std::sin(2 * M_PI * x / length);
-        f[MHDEquations::energy_component] +=
-          (enthalpy - u_x * c) * amplitude * std::sin(2 * M_PI * x / length);
+        typename MHDEquations::state_type R(MHDEquations::n_components);
+
+        // Left going sound wave (a_s = 1.)
+        R    = 0;
+        R[0] = 1.;
+        R[1] = -1;
+        R[2] = 0;
+        R[3] = 0;
+        R[4] = 3. / 2.;
+
+        // // Left going fast magneto-sonic wave (c_f = 2.)
+        // R    = 0;
+        // R[0] = 4.472135954999580e-01;
+        // R[1] = -8.944271909999160e-01;
+        // R[2] = 4.216370213557840e-01;
+        // R[3] = 1.490711984999860e-01;
+        // R[4] = 2.012457825664615e+00;
+        // R[6] = 8.432740427115680e-01;
+        // R[7] = 2.981423969999720e-01;
+
+        // Left going Alfven wave (c_a = 1.)
+        // R    = 0;
+        // R[0] = 0.000000000000000e+00;
+        // R[1] = 0.000000000000000e+00;
+        // R[2] = -3.333333333333333e-01;
+        // R[3] = 9.428090415820634e-01;
+        // R[4] = 0.000000000000000e+00;
+        // R[6] = -3.333333333333333e-01;
+        // R[7] = 9.428090415820634e-01;
+
+        // // Left going slow magneto-sonic wave (c_s = 0.5)
+        // R    = 0;
+        // R[0] = 8.944271909999159e-01;
+        // R[1] = -4.472135954999579e-01;
+        // R[2] = -8.432740427115680e-01;
+        // R[3] = -2.981423969999720e-01;
+        // R[4] = 6.708136850795449e-01;
+        // R[6] = -4.216370213557841e-01;
+        // R[7] = -1.490711984999860e-01;
+
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          f[c] += amplitude * R[c] * std::sin(2. * M_PI * x / length);
+
         /** [MHD Initial condition] */
       }
 
