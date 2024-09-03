@@ -55,6 +55,7 @@ namespace sapphirepp
     unsigned int test_case;
     double       amplitude;
     // Copy of MHD parameters for InitialValueFunction
+    unsigned int        dimension;
     std::vector<double> box_length;
     double              adiabatic_index;
     /** [Define runtime parameter] */
@@ -259,9 +260,59 @@ namespace sapphirepp
               AssertThrow(false, dealii::ExcNotImplemented());
           }
 
-        saplog << "Box length = " << prm.box_length[0]
-               << ", crossing after t = "
-               << prm.box_length[0] / std::fabs(eigenvalue) << std::endl;
+        wave_vector    = 0;
+        wave_vector[0] = 2 * M_PI / prm.box_length[0];
+        if (prm.dimension > 1)
+          wave_vector[1] = 2 * M_PI / prm.box_length[1];
+
+        wave_number = eigenvalue * std::sqrt(wave_vector * wave_vector);
+
+        double theta = 0;
+        if (prm.dimension == 2)
+          theta = std::atan(prm.box_length[1] / prm.box_length[0]);
+
+        saplog << prm.dimension << "D, k = " << wave_vector
+               << ", omega = " << wave_number
+               << ", T = " << 2 * M_PI / std::abs(wave_number)
+               << ", theta = " << theta * 180 / M_PI << "deg" << std::endl;
+
+        // Rotate state and eigenvector
+
+        const double tmp_p0_x =
+          background_state[MHDEquations::first_momentum_component + 0];
+        const double tmp_p0_y =
+          background_state[MHDEquations::first_momentum_component + 1];
+        background_state[MHDEquations::first_momentum_component + 0] =
+          std::cos(theta) * tmp_p0_x - std::sin(theta) * tmp_p0_y;
+        background_state[MHDEquations::first_momentum_component + 1] =
+          std::sin(theta) * tmp_p0_x + std::cos(theta) * tmp_p0_y;
+        const double tmp_b0_x =
+          background_state[MHDEquations::first_magnetic_component + 0];
+        const double tmp_b0_y =
+          background_state[MHDEquations::first_magnetic_component + 1];
+        background_state[MHDEquations::first_magnetic_component + 0] =
+          std::cos(theta) * tmp_b0_x - std::sin(theta) * tmp_b0_y;
+        background_state[MHDEquations::first_magnetic_component + 1] =
+          std::sin(theta) * tmp_b0_x + std::cos(theta) * tmp_b0_y;
+        saplog << "Rotated background state: " << background_state << std::endl;
+
+        const double tmp_p_x =
+          eigenvector[MHDEquations::first_momentum_component + 0];
+        const double tmp_p_y =
+          eigenvector[MHDEquations::first_momentum_component + 1];
+        eigenvector[MHDEquations::first_momentum_component + 0] =
+          std::cos(theta) * tmp_p_x - std::sin(theta) * tmp_p_y;
+        eigenvector[MHDEquations::first_momentum_component + 1] =
+          std::sin(theta) * tmp_p_x + std::cos(theta) * tmp_p_y;
+        const double tmp_b_x =
+          eigenvector[MHDEquations::first_magnetic_component + 0];
+        const double tmp_b_y =
+          eigenvector[MHDEquations::first_magnetic_component + 1];
+        eigenvector[MHDEquations::first_magnetic_component + 0] =
+          std::cos(theta) * tmp_b_x - std::sin(theta) * tmp_b_y;
+        eigenvector[MHDEquations::first_magnetic_component + 1] =
+          std::sin(theta) * tmp_b_x + std::cos(theta) * tmp_b_y;
+        saplog << "Rotated eigenvector: " << eigenvector << std::endl;
       }
 
 
@@ -281,8 +332,7 @@ namespace sapphirepp
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           {
             f[c] += prm.amplitude * eigenvector[c] *
-                    std::sin(2. * M_PI / prm.box_length[0] *
-                             (point[0] - eigenvalue * t));
+                    std::sin(wave_vector * point - wave_number * t);
           }
         /** [MHD Initial condition] */
       }
@@ -290,11 +340,13 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters          prm;
-      const MHDEquations                mhd_equations;
-      typename MHDEquations::state_type background_state;
-      typename MHDEquations::state_type eigenvector;
-      double                            eigenvalue;
+      const PhysicalParameters            prm;
+      const MHDEquations                  mhd_equations;
+      typename MHDEquations::state_type   background_state;
+      typename MHDEquations::state_type   eigenvector;
+      double                              eigenvalue;
+      dealii::Tensor<1, spacedim, double> wave_vector;
+      double                              wave_number;
     };
 
   } // namespace MHD

@@ -42,7 +42,7 @@
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
 
-const unsigned int dim = sapphirepp::MHD::dim_mhd;
+const unsigned int dim = 2;
 
 int
 main(int argc, char *argv[])
@@ -82,8 +82,9 @@ main(int argc, char *argv[])
 
       /** [Copy VFP parameter] */
       const unsigned int spacedim         = MHDEquations::spacedim;
+      physical_parameters.dimension       = dim;
       physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
-      physical_parameters.box_length      = std::vector<double>(spacedim, 1.);
+      physical_parameters.box_length      = std::vector<double>(dim);
       for (unsigned int d = 0; d < dim; ++d)
         {
           physical_parameters.box_length[d] =
