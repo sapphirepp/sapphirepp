@@ -42,7 +42,7 @@
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
 
-
+const unsigned int dim = sapphirepp::MHD::dim_mhd;
 
 int
 main(int argc, char *argv[])
@@ -66,7 +66,7 @@ main(int argc, char *argv[])
       dealii::ParameterHandler prm;
       PhysicalParameters       physical_parameters;
       Utils::OutputParameters  output_parameters;
-      MHDParameters<dim_mhd>   mhd_parameters;
+      MHDParameters<dim>       mhd_parameters;
 
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
@@ -84,7 +84,7 @@ main(int argc, char *argv[])
       const unsigned int spacedim         = MHDEquations::spacedim;
       physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
       physical_parameters.box_length      = std::vector<double>(spacedim, 1.);
-      for (unsigned int d = 0; d < dim_mhd; ++d)
+      for (unsigned int d = 0; d < dim; ++d)
         {
           physical_parameters.box_length[d] =
             std::abs(mhd_parameters.p1[d] - mhd_parameters.p2[d]);
@@ -116,9 +116,9 @@ main(int argc, char *argv[])
 
 
       /** [Setup mhd_solver] */
-      MHDSolver<dim_mhd> mhd_solver(mhd_parameters,
-                                    physical_parameters,
-                                    output_parameters);
+      MHDSolver<dim> mhd_solver(mhd_parameters,
+                                physical_parameters,
+                                output_parameters);
       mhd_solver.setup();
       /** [Setup mhd_solver] */
 
@@ -154,14 +154,14 @@ main(int argc, char *argv[])
               LogStream::Prefix prefix("Output", saplog);
               saplog << "Output solution" << std::endl;
 
-              dealii::DataOut<dim_mhd, spacedim> data_out;
+              dealii::DataOut<dim, spacedim> data_out;
               data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
               // Output numeric solution
               data_out.add_data_vector(
                 mhd_solver.get_current_solution(),
                 MHDEquations::create_component_name_list("numeric_"),
-                dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+                dealii::DataOut<dim, spacedim>::type_dof_data,
                 MHDEquations::create_component_interpretation_list());
 
               // Output projected analytic solution
@@ -169,7 +169,7 @@ main(int argc, char *argv[])
               data_out.add_data_vector(
                 analytic_solution_vector,
                 MHDEquations::create_component_name_list("project_"),
-                dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+                dealii::DataOut<dim, spacedim>::type_dof_data,
                 MHDEquations::create_component_interpretation_list());
 
               // Output interpolated analytic solution
@@ -179,11 +179,11 @@ main(int argc, char *argv[])
               data_out.add_data_vector(
                 analytic_solution_vector,
                 MHDEquations::create_component_name_list("interpol_"),
-                dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+                dealii::DataOut<dim, spacedim>::type_dof_data,
                 MHDEquations::create_component_interpretation_list());
 
               data_out.build_patches(mhd_parameters.polynomial_degree);
-              output_parameters.write_results<dim_mhd, spacedim>(
+              output_parameters.write_results<dim, spacedim>(
                 data_out,
                 discrete_time.get_step_number(),
                 discrete_time.get_current_time());
@@ -243,14 +243,14 @@ main(int argc, char *argv[])
         LogStream::Prefix prefix("Output", saplog);
         saplog << "Output results" << std::endl;
 
-        dealii::DataOut<dim_mhd, spacedim> data_out;
+        dealii::DataOut<dim, spacedim> data_out;
         data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
         // Output numeric solution
         data_out.add_data_vector(
           mhd_solver.get_current_solution(),
           MHDEquations::create_component_name_list("numeric_"),
-          dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+          dealii::DataOut<dim, spacedim>::type_dof_data,
           MHDEquations::create_component_interpretation_list());
 
         // Output projected analytic solution
@@ -258,7 +258,7 @@ main(int argc, char *argv[])
         data_out.add_data_vector(
           analytic_solution_vector,
           MHDEquations::create_component_name_list("project_"),
-          dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+          dealii::DataOut<dim, spacedim>::type_dof_data,
           MHDEquations::create_component_interpretation_list());
 
         // Output interpolated analytic solution
@@ -268,11 +268,11 @@ main(int argc, char *argv[])
         data_out.add_data_vector(
           analytic_solution_vector,
           MHDEquations::create_component_name_list("interpol_"),
-          dealii::DataOut<dim_mhd, spacedim>::type_dof_data,
+          dealii::DataOut<dim, spacedim>::type_dof_data,
           MHDEquations::create_component_interpretation_list());
 
         data_out.build_patches(mhd_parameters.polynomial_degree);
-        output_parameters.write_results<dim_mhd, spacedim>(
+        output_parameters.write_results<dim, spacedim>(
           data_out,
           discrete_time.get_step_number(),
           discrete_time.get_current_time());
