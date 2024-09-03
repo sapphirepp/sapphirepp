@@ -70,7 +70,8 @@ namespace sapphirepp
       /** Index of the energy component \f$ \mathcal{E} \f$. */
       static constexpr unsigned int energy_component = spacedim + 1;
       /**
-       * Starting index of the magnetic components \f$ \mathbf{B} \f$
+       * Starting index of the magnetic components
+       * \f$ \mathbf{b} = \frac{\mathbf{B}}{\sqrt{4\pi}} \f$
        * (@ref spacedim components).
        */
       static constexpr unsigned int first_magnetic_component = spacedim + 2;
@@ -94,9 +95,10 @@ namespace sapphirepp
        *     \rho        \\
        *     \mathbf{p}  \\
        *     \mathcal{E} \\
-       *     \mathbf{B}
-       *   \end{pmatrix} \,.
+       *     \mathbf{b}
+       *   \end{pmatrix} \,,
        * \f]
+       * with \f$ \mathbf{b} = \frac{\mathbf{B}}{\sqrt{4\pi}} \f$.
        * They are indexed as `state[c]` with the index `c` corresponding to the
        * component.
        */
@@ -127,7 +129,7 @@ namespace sapphirepp
        * @brief Create a list of component names corresponding to the conserved
        *        MHD state.
        *
-       * Returns a list: `rho`, `p`, `E`, `B`.
+       * Returns a list: `rho`, `p`, `E`, `b`.
        *
        * @param prefix Prefix for the component names.
        * @return std::vector<std::string> component_names.
@@ -237,7 +239,7 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{u}  \\
        *            P \\
-       *            \mathbf{B}
+       *            \mathbf{b}
        *          \end{pmatrix} \,.
        *        \f]
        * @param conserved_state Returns the conserved state
@@ -247,7 +249,7 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{p}  \\
        *            \mathcal{E} \\
-       *            \mathbf{B}
+       *            \mathbf{b}
        *          \end{pmatrix} \,.
        *        \f]
        */
@@ -266,7 +268,7 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{p}  \\
        *            \mathcal{E} \\
-       *            \mathbf{B}
+       *            \mathbf{b}
        *          \end{pmatrix} \,.
        *        \f]
        * @param primitive_state Returns the primitive state
@@ -276,7 +278,7 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{u}  \\
        *            P \\
-       *            \mathbf{B}
+       *            \mathbf{b}
        *          \end{pmatrix} \,.
        *        \f]
        */

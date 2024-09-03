@@ -54,7 +54,7 @@ sapphirepp::MHD::MHDEquations::create_component_name_list(
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       component_names[first_momentum_component + d] = prefix + "p";
-      component_names[first_magnetic_component + d] = prefix + "B";
+      component_names[first_magnetic_component + d] = prefix + "b";
     }
 
   return component_names;
@@ -92,13 +92,13 @@ sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
   AssertDimension(state.size(), n_components);
 
   const double pressure = compute_pressure(state);
-  double       B2       = 0.;
-  double       pB       = 0.;
+  double       b2       = 0.;
+  double       pb       = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
-      B2 += state[first_magnetic_component + d] *
+      b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
-      pB += state[first_momentum_component + d] *
+      pb += state[first_momentum_component + d] *
             state[first_magnetic_component + d];
     }
 
@@ -108,8 +108,8 @@ sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
 
       flux_matrix[energy_component][j] =
         state[first_momentum_component + j] / state[density_component] *
-          (state[energy_component] + pressure + 1. / (8. * M_PI) * B2) -
-        1. / (4. * M_PI * state[density_component]) * pB *
+          (state[energy_component] + pressure + 0.5 * b2) -
+        1. / (state[density_component]) * pb *
           state[first_magnetic_component + j];
 
       for (unsigned int i = 0; i < spacedim; ++i)
@@ -117,7 +117,7 @@ sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
           flux_matrix[first_momentum_component + i][j] =
             state[first_momentum_component + j] *
               state[first_momentum_component + i] / state[density_component] -
-            1. / (4. * M_PI) * state[first_magnetic_component + j] *
+            state[first_magnetic_component + j] *
               state[first_magnetic_component + i];
 
           flux_matrix[first_magnetic_component + i][j] =
@@ -128,8 +128,7 @@ sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
             state[density_component];
         }
 
-      flux_matrix[first_momentum_component + j][j] +=
-        pressure + 1. / (8. * M_PI) * B2;
+      flux_matrix[first_momentum_component + j][j] += pressure + 0.5 * b2;
     }
 }
 
@@ -163,19 +162,19 @@ sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
   AssertDimension(state.size(), n_components);
 
   double p2 = 0.;
-  double B2 = 0.;
+  double b2 = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       p2 += state[first_momentum_component + d] *
             state[first_momentum_component + d];
-      B2 += state[first_magnetic_component + d] *
+      b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
     }
 
 
   return (adiabatic_index - 1.) *
          (state[energy_component] - 1. / (2. * state[density_component]) * p2 -
-          1 / (8. * M_PI) * B2);
+          0.5 * b2);
 }
 
 
@@ -189,26 +188,26 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvalues.size(), 8);
 
-  double B2 = 0.;
+  double b2 = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
-      B2 += state[first_magnetic_component + d] *
+      b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
     }
   double nu = 0.;
-  double nB = 0.;
+  double nb = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
-      nB += normal[d] * state[first_magnetic_component + d];
+      nb += normal[d] * state[first_magnetic_component + d];
     }
 
   const double pressure = compute_pressure(state);
   const double a_s2     = adiabatic_index * pressure / state[density_component];
-  const double c_a2     = B2 / (4. * M_PI * state[density_component]);
+  const double c_a2     = b2 / state[density_component];
   const double d_n      = (a_s2 + c_a2) * (a_s2 + c_a2) -
-                     a_s2 * nB * nB / (M_PI * state[density_component]);
+                     4. * a_s2 * nb * nb / state[density_component];
   const double c_s2 = 0.5 * (a_s2 + c_a2 - std::sqrt(d_n));
   const double c_f2 = 0.5 * (a_s2 + c_a2 + std::sqrt(d_n));
 
@@ -233,19 +232,18 @@ sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
   AssertDimension(conserved_state.size(), n_components);
 
   double u2 = 0.;
-  double B2 = 0.;
+  double b2 = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       u2 += primitive_state[first_velocity_component + d] *
             primitive_state[first_velocity_component + d];
-      B2 += primitive_state[first_magnetic_component + d] *
+      b2 += primitive_state[first_magnetic_component + d] *
             primitive_state[first_magnetic_component + d];
     }
 
   const double energy =
     0.5 * primitive_state[density_component] * u2 +
-    primitive_state[pressure_component] / (adiabatic_index - 1.) +
-    1. / (8. * M_PI) * B2;
+    primitive_state[pressure_component] / (adiabatic_index - 1.) + 0.5 * b2;
 
   conserved_state[density_component] = primitive_state[density_component];
   conserved_state[energy_component]  = energy;
