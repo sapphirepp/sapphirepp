@@ -1,0 +1,45 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = vtu
+  set Number of digits for counter = 5
+  # set Output frequency             = 20
+  set Output frequency             = 1
+  set Results folder               = ./results
+  set Simulation identifier        = athena-linear-waves
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 20, 20, 20
+    # set Number of cells = 2, 2, 20
+    set Point 1         = 0., 0., 0.
+    set Point 2         = 1, 1., 1.
+    subsection Boundary conditions
+      set lower x = periodic
+      set lower y = periodic
+      set lower z = periodic
+      set upper x = periodic
+      set upper y = periodic
+      set upper z = periodic
+    end
+  end
+  subsection Time stepping
+    set Final time     = 1
+    set Method         = FE
+    set Time step size = 0.01
+  end
+end
+subsection Physical parameters
+  set Amplitude = 1e-4
+  set b_0       = 0., 0., 0.
+  set P_0       = 0.6
+  set rho_0     = 1.
+  set u_0       = 0., 0., 0.
+
+  set Eigenmodes x = 1, 0, 0, 0, 0, 0, 0, 0
+  set Eigenmodes y = 0, 0, 0, 0, 0, 0, 0, 0
+  set Eigenmodes z = 0, 0, 0, 0, 0, 0, 0, 0
+end
