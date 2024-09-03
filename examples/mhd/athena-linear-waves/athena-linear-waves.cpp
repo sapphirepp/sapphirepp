@@ -42,7 +42,7 @@
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
 
-const unsigned int dim = 2;
+const unsigned int dim = 3;
 
 int
 main(int argc, char *argv[])

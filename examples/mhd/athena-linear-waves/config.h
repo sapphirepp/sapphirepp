@@ -264,54 +264,84 @@ namespace sapphirepp
         wave_vector[0] = 2 * M_PI / prm.box_length[0];
         if (prm.dimension > 1)
           wave_vector[1] = 2 * M_PI / prm.box_length[1];
+        if (prm.dimension > 2)
+          wave_vector[2] = 2 * M_PI / prm.box_length[2];
 
         wave_number = eigenvalue * std::sqrt(wave_vector * wave_vector);
 
+        // Rotation angle around z-axis
         double theta = 0;
-        if (prm.dimension == 2)
+        if (prm.dimension > 1)
           theta = std::atan(prm.box_length[1] / prm.box_length[0]);
+        // Rotation angle around x-axis
+        double phi = 0;
+        if (prm.dimension > 2)
+          phi = std::atan(prm.box_length[2] / prm.box_length[1]);
 
         saplog << prm.dimension << "D, k = " << wave_vector
                << ", omega = " << wave_number
                << ", T = " << 2 * M_PI / std::abs(wave_number)
-               << ", theta = " << theta * 180 / M_PI << "deg" << std::endl;
+               << ", theta = " << theta * 180 / M_PI << "deg"
+               << ", phi = " << phi * 180 / M_PI << "deg" << std::endl;
 
         // Rotate state and eigenvector
+        double tmp_x, tmp_y, tmp_z;
 
-        const double tmp_p0_x =
-          background_state[MHDEquations::first_momentum_component + 0];
-        const double tmp_p0_y =
-          background_state[MHDEquations::first_momentum_component + 1];
+        // Rotate by theta around z-axis
+        tmp_x = background_state[MHDEquations::first_momentum_component + 0];
+        tmp_y = background_state[MHDEquations::first_momentum_component + 1];
         background_state[MHDEquations::first_momentum_component + 0] =
-          std::cos(theta) * tmp_p0_x - std::sin(theta) * tmp_p0_y;
+          std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
         background_state[MHDEquations::first_momentum_component + 1] =
-          std::sin(theta) * tmp_p0_x + std::cos(theta) * tmp_p0_y;
-        const double tmp_b0_x =
-          background_state[MHDEquations::first_magnetic_component + 0];
-        const double tmp_b0_y =
-          background_state[MHDEquations::first_magnetic_component + 1];
+          std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
+        tmp_x = background_state[MHDEquations::first_magnetic_component + 0];
+        tmp_y = background_state[MHDEquations::first_magnetic_component + 1];
         background_state[MHDEquations::first_magnetic_component + 0] =
-          std::cos(theta) * tmp_b0_x - std::sin(theta) * tmp_b0_y;
+          std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
         background_state[MHDEquations::first_magnetic_component + 1] =
-          std::sin(theta) * tmp_b0_x + std::cos(theta) * tmp_b0_y;
-        saplog << "Rotated background state: " << background_state << std::endl;
+          std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
 
-        const double tmp_p_x =
-          eigenvector[MHDEquations::first_momentum_component + 0];
-        const double tmp_p_y =
-          eigenvector[MHDEquations::first_momentum_component + 1];
+        tmp_x = eigenvector[MHDEquations::first_momentum_component + 0];
+        tmp_y = eigenvector[MHDEquations::first_momentum_component + 1];
         eigenvector[MHDEquations::first_momentum_component + 0] =
-          std::cos(theta) * tmp_p_x - std::sin(theta) * tmp_p_y;
+          std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
         eigenvector[MHDEquations::first_momentum_component + 1] =
-          std::sin(theta) * tmp_p_x + std::cos(theta) * tmp_p_y;
-        const double tmp_b_x =
-          eigenvector[MHDEquations::first_magnetic_component + 0];
-        const double tmp_b_y =
-          eigenvector[MHDEquations::first_magnetic_component + 1];
+          std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
+        tmp_x = eigenvector[MHDEquations::first_magnetic_component + 0];
+        tmp_y = eigenvector[MHDEquations::first_magnetic_component + 1];
         eigenvector[MHDEquations::first_magnetic_component + 0] =
-          std::cos(theta) * tmp_b_x - std::sin(theta) * tmp_b_y;
+          std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
         eigenvector[MHDEquations::first_magnetic_component + 1] =
-          std::sin(theta) * tmp_b_x + std::cos(theta) * tmp_b_y;
+          std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
+
+        // Rotate by phi around x-axis
+        tmp_y = background_state[MHDEquations::first_momentum_component + 1];
+        tmp_z = background_state[MHDEquations::first_momentum_component + 2];
+        background_state[MHDEquations::first_momentum_component + 1] =
+          std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
+        background_state[MHDEquations::first_momentum_component + 2] =
+          std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
+        tmp_y = background_state[MHDEquations::first_magnetic_component + 1];
+        tmp_z = background_state[MHDEquations::first_magnetic_component + 2];
+        background_state[MHDEquations::first_magnetic_component + 1] =
+          std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
+        background_state[MHDEquations::first_magnetic_component + 2] =
+          std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
+
+        tmp_y = eigenvector[MHDEquations::first_momentum_component + 1];
+        tmp_z = eigenvector[MHDEquations::first_momentum_component + 2];
+        eigenvector[MHDEquations::first_momentum_component + 1] =
+          std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
+        eigenvector[MHDEquations::first_momentum_component + 2] =
+          std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
+        tmp_y = eigenvector[MHDEquations::first_magnetic_component + 1];
+        tmp_z = eigenvector[MHDEquations::first_magnetic_component + 2];
+        eigenvector[MHDEquations::first_magnetic_component + 1] =
+          std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
+        eigenvector[MHDEquations::first_magnetic_component + 2] =
+          std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
+
+        saplog << "Rotated background state: " << background_state << std::endl;
         saplog << "Rotated eigenvector: " << eigenvector << std::endl;
       }
 
