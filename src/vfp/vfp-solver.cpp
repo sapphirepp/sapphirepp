@@ -319,51 +319,57 @@ sapphirepp::VFP::VFPSolver<dim>::run()
 {
   setup();
   LogStream::Prefix p("VFP", saplog);
-
-  DiscreteTime discrete_time(0,
-                             vfp_parameters.final_time,
-                             vfp_parameters.time_step);
-  for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+  if constexpr ((vfp_flags & VFPFlags::steady_state) != VFPFlags::none )
     {
-      saplog << "Time step " << std::setw(6) << std::right
-             << discrete_time.get_step_number()
-             << " at t = " << discrete_time.get_current_time() << " \t["
-             << Utilities::System::get_time() << "]" << std::endl;
-
-      if ((discrete_time.get_step_number() %
-           output_parameters.output_frequency) == 0)
-        output_results(discrete_time.get_step_number(),
-                       discrete_time.get_current_time());
-
-      switch (vfp_parameters.time_stepping_method)
-        {
-          case TimeSteppingMethod::forward_euler:
-          case TimeSteppingMethod::backward_euler:
-          case TimeSteppingMethod::crank_nicolson:
-            theta_method(discrete_time.get_current_time(),
-                         discrete_time.get_next_step_size());
-            break;
-          case TimeSteppingMethod::erk4:
-            explicit_runge_kutta(discrete_time.get_current_time(),
-                                 discrete_time.get_next_step_size());
-            break;
-          case TimeSteppingMethod::lserk:
-            low_storage_explicit_runge_kutta(
-              discrete_time.get_current_time(),
-              discrete_time.get_next_step_size());
-            break;
-          default:
-            AssertThrow(false, ExcNotImplemented());
-        }
+      steady_state_solve();
+      output_results(0,0);
+      saplog << "Simulation ended." << std::endl;
     }
+  else
+    {
+      DiscreteTime discrete_time(0,
+                                 vfp_parameters.final_time,
+                                 vfp_parameters.time_step);
+      for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+        {
+          saplog << "Time step " << std::setw(6) << std::right
+                 << discrete_time.get_step_number()
+                 << " at t = " << discrete_time.get_current_time() << " \t["
+                 << Utilities::System::get_time() << "]" << std::endl;
 
-  // Output at the final result
-  output_results(discrete_time.get_step_number(),
-                 discrete_time.get_current_time());
+          if ((discrete_time.get_step_number() %
+               output_parameters.output_frequency) == 0)
+            output_results(discrete_time.get_step_number(),
+                           discrete_time.get_current_time());
 
-  saplog << "Simulation ended at t = " << discrete_time.get_current_time()
-         << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+          switch (vfp_parameters.time_stepping_method)
+            {
+              case TimeSteppingMethod::forward_euler:
+              case TimeSteppingMethod::backward_euler:
+              case TimeSteppingMethod::crank_nicolson:
+                theta_method(discrete_time.get_current_time(),
+                             discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::erk4:
+                explicit_runge_kutta(discrete_time.get_current_time(),
+                                     discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::lserk:
+                low_storage_explicit_runge_kutta(
+                  discrete_time.get_current_time(),
+                  discrete_time.get_next_step_size());
+                break;
+              default:
+                AssertThrow(false, ExcNotImplemented());
+            }
+        }
+      // Output at the final result
+      output_results(discrete_time.get_step_number(),
+                     discrete_time.get_current_time());
 
+      saplog << "Simulation ended at t = " << discrete_time.get_current_time()
+             << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+    }
   timer.print_wall_time_statistics(mpi_communicator);
 }
 
