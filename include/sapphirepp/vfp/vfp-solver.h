@@ -169,7 +169,8 @@ namespace sapphirepp
       run();
       /** @} */
 
-
+      void
+      steady_state_solve();
 
       /**
        * @name Time stepping methods
