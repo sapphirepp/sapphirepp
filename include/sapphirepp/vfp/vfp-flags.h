@@ -118,7 +118,9 @@ namespace sapphirepp
        * `system_rhs` to be assembled only once.
        * \n By default the source is assumed to be time dependent.
        */
-      time_independent_source = 1 << 7
+      time_independent_source = 1 << 7,
+
+      steady_state = 1 << 8
     };
 
 
