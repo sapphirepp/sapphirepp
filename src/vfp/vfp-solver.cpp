@@ -1384,7 +1384,31 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   saplog << "The DG matrix was assembled." << std::endl;
 }
 
+template <unsigned int dim>
+void
+sapphirepp::VFPSolver<dim>::steady_state_solve()
+{
+  TimerOutput::Scope timer_section(timer, "Steady stat solve");
+  LogStream::Prefix  p("steady_state", saplog);
 
+  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+
+  // dg_matrix == system_matrix
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
+  preconditioner.initialize(dg_matrix);
+
+  solver.solve(dg_matrix,
+               locally_owned_previous_solution,
+               locally_owned_current_source, // right-hand side is determined by
+                                             // the source term
+               preconditioner);
+
+  locally_relevant_current_solution = locally_owned_previous_solution;
+
+  saplog << "Solver converged in " << solver_control.last_step()
+         << " iterations." << std::endl;
+}
 
 template <unsigned int dim>
 void
