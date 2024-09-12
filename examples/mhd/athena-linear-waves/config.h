@@ -269,16 +269,19 @@ namespace sapphirepp
 
         wave_number = eigenvalue * std::sqrt(wave_vector * wave_vector);
 
-        // Rotation angle around z-axis
+        // Rotation angle around z-axis: tan(theta) = sqrt(k_y^2 + k_z^2) / k_x
         double theta = 0;
         if (prm.dimension > 1)
-          theta = std::atan(prm.box_length[1] / prm.box_length[0]);
-        // Rotation angle around x-axis
+          theta = std::atan(std::sqrt(wave_vector[1] * wave_vector[1] +
+                                      wave_vector[2] * wave_vector[2]) /
+                            wave_vector[0]);
+        // Rotation angle around x-axis: tan(phi) = k_z/k_y
         double phi = 0;
         if (prm.dimension > 2)
-          phi = std::atan(prm.box_length[2] / prm.box_length[1]);
+          phi = std::atan(wave_vector[2] / wave_vector[1]);
 
         saplog << prm.dimension << "D, k = " << wave_vector
+               << ", |k| = " << wave_vector.norm()
                << ", omega = " << wave_number
                << ", T = " << 2 * M_PI / std::abs(wave_number)
                << ", theta = " << theta * 180 / M_PI << "deg"
