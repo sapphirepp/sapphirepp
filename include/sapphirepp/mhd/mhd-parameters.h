@@ -33,7 +33,6 @@
 #include <string>
 #include <vector>
 
-#include "config.h"
 #include "mhd-flags.h"
 
 namespace sapphirepp
