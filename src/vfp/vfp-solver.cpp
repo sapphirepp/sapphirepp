@@ -276,12 +276,15 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   setup_system();
 
   {
-    TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
-    saplog << "Assemble mass matrix." << std::endl;
-    MatrixCreator::create_mass_matrix(mapping,
-                                      dof_handler,
-                                      quadrature,
-                                      mass_matrix);
+    if constexpr ((VFPFlags::steady_state & vfp_flags) == VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
+        saplog << "Assemble mass matrix." << std::endl;
+        MatrixCreator::create_mass_matrix(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          mass_matrix);
+      }
   }
 
   {
