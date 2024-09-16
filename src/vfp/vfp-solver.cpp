@@ -1399,7 +1399,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   TimerOutput::Scope timer_section(timer, "Steady stat solve");
   LogStream::Prefix  p("steady_state", saplog);
 
-  SolverControl              solver_control(1000, 1e-10);
+  SolverControl              solver_control(2000, 1e-10);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   // dg_matrix == system_matrix
