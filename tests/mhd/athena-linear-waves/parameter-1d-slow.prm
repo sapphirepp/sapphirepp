@@ -1,0 +1,27 @@
+subsection Output
+  set Simulation identifier = 1d-slow-wave
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 32
+    set Point 1         = 0.
+    set Point 2         = 1.
+    subsection Boundary conditions
+      set lower x = periodic
+      set upper x = periodic
+    end
+  end
+  subsection Time stepping
+    set Final time     = 2
+    set Method         = ERK4
+    set Time step size = 0.01
+  end
+end
+subsection Physical parameters
+  set Test case = 4
+  set Amplitude = 1e-4
+end

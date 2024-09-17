@@ -1,10 +1,5 @@
 subsection Output
-  set Base file name               = solution
-  set Format                       = pvtu
-  set Number of digits for counter = 5
-  set Output frequency             = 1
-  set Results folder               = ./results
-  set Simulation identifier        = athena-linear-waves
+  set Simulation identifier = 2d-sound-wave
 end
 subsection MHD
   subsection Finite element
@@ -12,16 +7,14 @@ subsection MHD
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 32, 32, 32
-    set Point 1         = 0., 0., 0.
-    set Point 2         = 1, 1., 1.
+    set Number of cells = 32, 16
+    set Point 1         = 0., 0.
+    set Point 2         = 2., 1.
     subsection Boundary conditions
       set lower x = periodic
-      set lower y = periodic
-      set lower z = periodic
       set upper x = periodic
+      set lower y = periodic
       set upper y = periodic
-      set upper z = periodic
     end
   end
   subsection Time stepping

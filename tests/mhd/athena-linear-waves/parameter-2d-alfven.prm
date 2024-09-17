@@ -1,0 +1,29 @@
+subsection Output
+  set Simulation identifier = 2d-alfven-wave
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 32, 16
+    set Point 1         = 0., 0.
+    set Point 2         = 2., 1.
+    subsection Boundary conditions
+      set lower x = periodic
+      set upper x = periodic
+      set lower y = periodic
+      set upper y = periodic
+    end
+  end
+  subsection Time stepping
+    set Final time     = 2
+    set Method         = ERK4
+    set Time step size = 0.01
+  end
+end
+subsection Physical parameters
+  set Test case = 3
+  set Amplitude = 1e-4
+end

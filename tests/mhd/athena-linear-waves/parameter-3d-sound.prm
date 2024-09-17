@@ -1,0 +1,31 @@
+subsection Output
+  set Simulation identifier = 3d-sound-wave
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 16, 8, 8
+    set Point 1         = 0., 0., 0.
+    set Point 2         = 3., 1.5, 1.5
+    subsection Boundary conditions
+      set lower x = periodic
+      set upper x = periodic
+      set lower y = periodic
+      set upper y = periodic
+      set lower z = periodic
+      set upper z = periodic
+    end
+  end
+  subsection Time stepping
+    set Final time     = 3
+    set Method         = ERK4
+    set Time step size = 0.02
+  end
+end
+subsection Physical parameters
+  set Test case = 0
+  set Amplitude = 1e-4
+end
