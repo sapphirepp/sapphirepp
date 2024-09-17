@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/mhd/athena-linear-waves/athena-linear-waves.cpp
+ * @file test/mhd/athena-linear-waves/test-athena-linear-waves-3d.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for athena-linear-waves example
+ * @brief Implement 3d tests for athena-linear-waves example
  */
 
 #include <deal.II/base/discrete_time.h>
@@ -42,7 +42,11 @@
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
 
+
+
 const unsigned int dim = 3;
+
+
 
 int
 main(int argc, char *argv[])
@@ -56,12 +60,15 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      // saplog.init(2);
-      saplog.init(100);
+      saplog.init(2);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
+
+      double max_L2_error = 1e-10;
+      if (argc > 2)
+        max_L2_error = std::stod(argv[2]);
 
       dealii::ParameterHandler prm;
       PhysicalParameters       physical_parameters;
@@ -80,7 +87,7 @@ main(int argc, char *argv[])
       /** [Main function setup] */
 
 
-      /** [Copy VFP parameter] */
+      /** [Copy MHD parameter] */
       const unsigned int spacedim         = MHDEquations::spacedim;
       physical_parameters.dimension       = dim;
       physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
@@ -96,7 +103,7 @@ main(int argc, char *argv[])
                          MHD::BoundaryConditionsMHD::periodic),
                       dealii::ExcMessage("This example assumes periodic BC."));
         }
-      /** [Copy VFP parameter] */
+      /** [Copy MHD parameter] */
 
 
       /** [Create error file] */
@@ -298,6 +305,12 @@ main(int argc, char *argv[])
                    << discrete_time.get_current_time() << "; " << L2_norm
                    << "; " << L2_error << "; " << L2_error / L2_norm
                    << std::endl;
+
+        AssertThrow((L2_error / L2_norm) < max_L2_error,
+                    dealii::ExcMessage(
+                      "L2 error is too large! (" +
+                      dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
+                      dealii::Utilities::to_string(max_L2_error) + ")"));
       }
       /** [Last time step] */
 
