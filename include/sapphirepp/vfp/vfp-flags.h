@@ -194,6 +194,9 @@ namespace sapphirepp
           else
             os << " (time dependent)\n";
         }
+      if ((f & VFPFlags::steady_state) != VFPFlags::none)
+        os << "	 - Steady state solution\n";
+
       return os;
     }
 
