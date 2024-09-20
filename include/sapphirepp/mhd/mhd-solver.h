@@ -404,8 +404,8 @@ namespace sapphirepp
       /** @} */
 
       /** @{ */
-      /** Previous solution */
-      PETScWrappers::MPI::Vector locally_owned_previous_solution;
+      /** Locally owned solution */
+      PETScWrappers::MPI::Vector locally_owned_solution;
       /** Current solution */
       PETScWrappers::MPI::Vector locally_relevant_current_solution;
       /** @} */

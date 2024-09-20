@@ -409,7 +409,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   // example 23) constraints.close();
 
   // Vectors
-  locally_owned_previous_solution.reinit(locally_owned_dofs, mpi_communicator);
+  locally_owned_solution.reinit(locally_owned_dofs, mpi_communicator);
   locally_relevant_current_solution.reinit(locally_owned_dofs,
                                            locally_relevant_dofs,
                                            mpi_communicator);
@@ -746,9 +746,9 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
   // Assemble the right hand side
   assemble_dg_rhs(time);
 
-  locally_owned_previous_solution = locally_relevant_current_solution;
+  locally_owned_solution = locally_relevant_current_solution;
 
-  mass_matrix.vmult(system_rhs, locally_owned_previous_solution);
+  mass_matrix.vmult(system_rhs, locally_owned_solution);
   system_rhs.add(time_step, dg_rhs);
 
   SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
@@ -758,14 +758,11 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
   preconditioner.initialize(mass_matrix);
 
   // The x vector has to be a vector of locally_owned_dofs, so we make use of
-  // the locally_owned_previous_solution
-  solver.solve(mass_matrix,
-               locally_owned_previous_solution,
-               system_rhs,
-               preconditioner);
+  // the locally_owned_solution
+  solver.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
 
   // Update the solution
-  locally_relevant_current_solution = locally_owned_previous_solution;
+  locally_relevant_current_solution = locally_owned_solution;
 
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
@@ -919,15 +916,12 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
     }
 
   solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
-  solver.solve(mass_matrix,
-               locally_owned_previous_solution,
-               system_rhs,
-               preconditioner);
+  solver.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
   saplog << "Stage i: " << s << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
 
   // Update the solution
-  locally_relevant_current_solution = locally_owned_previous_solution;
+  locally_relevant_current_solution = locally_owned_solution;
 }
 
 
