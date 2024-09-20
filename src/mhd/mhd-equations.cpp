@@ -141,17 +141,33 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
 {
   AssertDimension(state.size(), n_components);
 
-  /** @todo Optimize this function */
+  const double pressure = compute_pressure(state);
+  double       b2       = 0.;
+  double       nb       = 0.;
+  double       nu       = 0.;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+      nu += normal[d] * state[first_momentum_component + d] /
+            state[density_component];
+      nb += normal[d] * state[first_magnetic_component + d];
+    }
 
-  dealii::Vector<double> eigenvalues(8);
-  compute_normale_eigenvalues(state, normal, eigenvalues);
+  const double a_s2 = adiabatic_index * pressure / state[density_component];
+  const double c_a2 = b2 / state[density_component];
+  const double d_n  = (a_s2 + c_a2) * (a_s2 + c_a2) -
+                     4. * a_s2 * nb * nb / state[density_component];
+  Assert(a_s2 >= 0.,
+         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(c_a2 >= 0.,
+         dealii::ExcMessage("Negative squared alfven speed warning."));
+  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
+  const double c_f2 = 0.5 * (a_s2 + c_a2 + std::sqrt(d_n));
+  Assert(c_f2 >= 0.,
+         dealii::ExcMessage("Negative squared fast speed warning."));
 
-  double max_eigenvalue =
-    *std::max_element(eigenvalues.begin(), eigenvalues.end());
-  double min_eigenvalue =
-    *std::min_element(eigenvalues.begin(), eigenvalues.end());
-
-  return std::max(std::fabs(max_eigenvalue), std::fabs(min_eigenvalue));
+  return std::fabs(nu) + std::sqrt(c_f2);
 }
 
 
@@ -197,15 +213,12 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
 
   const double pressure = compute_pressure(state);
   double       b2       = 0.;
+  double       nu       = 0.;
+  double       nb       = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
-    }
-  double nu = 0.;
-  double nb = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
-    {
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
       nb += normal[d] * state[first_magnetic_component + d];

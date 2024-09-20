@@ -169,11 +169,13 @@ namespace sapphirepp
 
 
       /**
-       * @brief Computes the maximum eigenvalue in normal direction.
+       * @brief Computes the absolute value of maximum eigenvalue in normal
+       *        direction.
        *
        * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
        * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
-       * @return double The maximum eigenvalue in normal direction.
+       * @return double The absolute value of maximum eigenvalue in normal
+       *         direction.
        */
       double
       compute_maximum_normal_eigenvalue(
