@@ -160,6 +160,10 @@ double
 sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
+  Assert(state[density_component] > 0.,
+         dealii::ExcMessage("Negative density warning."));
+  Assert(state[energy_component] > 0.,
+         dealii::ExcMessage("Negative energy warning."));
 
   double p2 = 0.;
   double b2 = 0.;
@@ -171,10 +175,13 @@ sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
             state[first_magnetic_component + d];
     }
 
+  const double pressure =
+    (adiabatic_index - 1.) *
+    (state[energy_component] - 1. / (2. * state[density_component]) * p2 -
+     0.5 * b2);
 
-  return (adiabatic_index - 1.) *
-         (state[energy_component] - 1. / (2. * state[density_component]) * p2 -
-          0.5 * b2);
+  Assert(pressure > 0., dealii::ExcMessage("Negative pressure warning."));
+  return pressure;
 }
 
 
@@ -188,7 +195,8 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvalues.size(), 8);
 
-  double b2 = 0.;
+  const double pressure = compute_pressure(state);
+  double       b2       = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       b2 += state[first_magnetic_component + d] *
@@ -203,13 +211,21 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
       nb += normal[d] * state[first_magnetic_component + d];
     }
 
-  const double pressure = compute_pressure(state);
-  const double a_s2     = adiabatic_index * pressure / state[density_component];
-  const double c_a2     = b2 / state[density_component];
-  const double d_n      = (a_s2 + c_a2) * (a_s2 + c_a2) -
+  const double a_s2 = adiabatic_index * pressure / state[density_component];
+  const double c_a2 = b2 / state[density_component];
+  const double d_n  = (a_s2 + c_a2) * (a_s2 + c_a2) -
                      4. * a_s2 * nb * nb / state[density_component];
+  Assert(a_s2 >= 0.,
+         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(c_a2 >= 0.,
+         dealii::ExcMessage("Negative squared alfven speed warning."));
+  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
   const double c_s2 = 0.5 * (a_s2 + c_a2 - std::sqrt(d_n));
   const double c_f2 = 0.5 * (a_s2 + c_a2 + std::sqrt(d_n));
+  Assert(c_s2 >= 0.,
+         dealii::ExcMessage("Negative squared slow speed warning."));
+  Assert(c_f2 >= 0.,
+         dealii::ExcMessage("Negative squared fast speed warning."));
 
   eigenvalues[0] = nu - std::sqrt(c_f2);
   eigenvalues[1] = nu - std::sqrt(c_a2);
@@ -230,6 +246,10 @@ sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
 {
   AssertDimension(primitive_state.size(), n_components);
   AssertDimension(conserved_state.size(), n_components);
+  Assert(primitive_state[density_component] > 0.,
+         dealii::ExcMessage("Negative density warning."));
+  Assert(primitive_state[pressure_component] > 0.,
+         dealii::ExcMessage("Negative pressure warning."));
 
   double u2 = 0.;
   double b2 = 0.;
@@ -244,6 +264,7 @@ sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
   const double energy =
     0.5 * primitive_state[density_component] * u2 +
     primitive_state[pressure_component] / (adiabatic_index - 1.) + 0.5 * b2;
+  Assert(energy > 0., dealii::ExcMessage("Negative energy warning."));
 
   conserved_state[density_component] = primitive_state[density_component];
   conserved_state[energy_component]  = energy;
