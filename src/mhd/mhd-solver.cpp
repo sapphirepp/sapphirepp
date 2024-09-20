@@ -243,12 +243,10 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
     TimerOutput::Scope timer_section(timer, "Project initial condition - MHD");
     InitialConditionMHD<spacedim> initial_condition_function(
       physical_parameters);
-    PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
-                                                 mpi_communicator);
-    project(initial_condition_function, initial_condition);
+    project(initial_condition_function, locally_owned_solution);
     // Here a non ghosted vector, is copied into a ghosted vector. I think
     // that is the moment where the ghost cells are filled.
-    locally_relevant_current_solution = initial_condition;
+    locally_relevant_current_solution = locally_owned_solution;
   }
 }
 
@@ -745,8 +743,6 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
 
   // Assemble the right hand side
   assemble_dg_rhs(time);
-
-  locally_owned_solution = locally_relevant_current_solution;
 
   mass_matrix.vmult(system_rhs, locally_owned_solution);
   system_rhs.add(time_step, dg_rhs);
