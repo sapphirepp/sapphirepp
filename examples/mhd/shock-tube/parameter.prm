@@ -1,0 +1,34 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = pvtu
+  set Number of digits for counter = 5
+  set Output frequency             = 1
+  set Results folder               = ./results
+  set Simulation identifier        = shock-tube
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 32
+    set Point 1         = 0.
+    set Point 2         = 1.
+    subsection Boundary conditions
+      set lower x = zero inflow
+      set upper x = zero inflow
+    end
+  end
+  subsection Plasma properties
+    set Adiabatic index = 1.4
+  end
+  subsection Time stepping
+    set Final time     = 2
+    set Method         = ERK4
+    set Time step size = 0.0001
+  end
+end
+subsection Physical parameters
+  set Test case = 0
+end
