@@ -82,7 +82,7 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
 
     prm.enter_subsection("Boundary conditions");
     {
-      const auto boundary_pattern = Patterns::Selection("periodic");
+      const auto boundary_pattern = Patterns::Selection("zero inflow|periodic");
       prm.declare_entry("lower x",
                         "periodic",
                         boundary_pattern,
