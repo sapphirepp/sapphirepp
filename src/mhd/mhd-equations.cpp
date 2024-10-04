@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 
 
@@ -140,6 +141,8 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
   const dealii::Tensor<1, spacedim> &normal) const
 {
   AssertDimension(state.size(), n_components);
+  Assert(std::abs(normal.norm() - 1) < std::numeric_limits<double>::epsilon(),
+         dealii::ExcMessage("Normal vector must be normalized."));
 
   const double pressure = compute_pressure(state);
   double       b2       = 0.;
@@ -155,15 +158,17 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
     }
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
-  const double c_a2 = b2 / state[density_component];
-  const double d_n  = (a_s2 + c_a2) * (a_s2 + c_a2) -
-                     4. * a_s2 * nb * nb / state[density_component];
+  const double c_a2 = nb * nb / state[density_component];
+  const double d_n  = (a_s2 + b2 / state[density_component]) *
+                       (a_s2 + b2 / state[density_component]) -
+                     4. * a_s2 * c_a2;
   Assert(a_s2 >= 0.,
          dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
   Assert(c_a2 >= 0.,
          dealii::ExcMessage("Negative squared alfven speed warning."));
   Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
-  const double c_f2 = 0.5 * (a_s2 + c_a2 + std::sqrt(d_n));
+  const double c_f2 =
+    0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
   Assert(c_f2 >= 0.,
          dealii::ExcMessage("Negative squared fast speed warning."));
 
@@ -209,7 +214,9 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
   dealii::Vector<double>            &eigenvalues) const
 {
   AssertDimension(state.size(), n_components);
-  AssertDimension(eigenvalues.size(), 8);
+  AssertDimension(eigenvalues.size(), n_components);
+  Assert(std::abs(normal.norm() - 1) < std::numeric_limits<double>::epsilon(),
+         dealii::ExcMessage("Normal vector must be normalized."));
 
   const double pressure = compute_pressure(state);
   double       b2       = 0.;
@@ -225,16 +232,19 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
     }
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
-  const double c_a2 = b2 / state[density_component];
-  const double d_n  = (a_s2 + c_a2) * (a_s2 + c_a2) -
-                     4. * a_s2 * nb * nb / state[density_component];
+  const double c_a2 = nb * nb / state[density_component];
+  const double d_n  = (a_s2 + b2 / state[density_component]) *
+                       (a_s2 + b2 / state[density_component]) -
+                     4. * a_s2 * c_a2;
   Assert(a_s2 >= 0.,
          dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
   Assert(c_a2 >= 0.,
          dealii::ExcMessage("Negative squared alfven speed warning."));
   Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
-  const double c_s2 = 0.5 * (a_s2 + c_a2 - std::sqrt(d_n));
-  const double c_f2 = 0.5 * (a_s2 + c_a2 + std::sqrt(d_n));
+  const double c_s2 =
+    0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
+  const double c_f2 =
+    0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
   Assert(c_s2 >= 0.,
          dealii::ExcMessage("Negative squared slow speed warning."));
   Assert(c_f2 >= 0.,
