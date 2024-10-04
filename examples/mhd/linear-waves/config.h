@@ -98,15 +98,15 @@ namespace sapphirepp
                         dealii::Patterns::Double(0),
                         "Amplitude of the perturbation");
       prm.declare_entry("Eigenmodes x",
-                        "0, 0, 0, 0, 0, 0, 0, 0",
+                        "0, 0, 0, 0, 0, 0, 0",
                         dealii::Patterns::Anything(),
                         "Select the eigenmodes in x direction");
       prm.declare_entry("Eigenmodes y",
-                        "0, 0, 0, 0, 0, 0, 0, 0",
+                        "0, 0, 0, 0, 0, 0, 0",
                         dealii::Patterns::Anything(),
                         "Select the eigenmodes in y direction");
       prm.declare_entry("Eigenmodes z",
-                        "0, 0, 0, 0, 0, 0, 0, 0",
+                        "0, 0, 0, 0, 0, 0, 0",
                         dealii::Patterns::Anything(),
                         "Select the eigenmodes in z direction");
       /** [Declare runtime parameter] */
@@ -153,22 +153,22 @@ namespace sapphirepp
       std::stringstream em_x(s);
       for (std::string tmp; std::getline(em_x, tmp, ',');)
         eigenmodes[0].push_back(std::stod(tmp));
-      AssertThrow(eigenmodes[0].size() == 8,
-                  dealii::ExcMessage("Size of Eigenmodes x must be 8."));
+      AssertThrow(eigenmodes[0].size() == 7,
+                  dealii::ExcMessage("Size of Eigenmodes x must be 7."));
 
       s = prm.get("Eigenmodes y");
       std::stringstream em_y(s);
       for (std::string tmp; std::getline(em_y, tmp, ',');)
         eigenmodes[1].push_back(std::stod(tmp));
-      AssertThrow(eigenmodes[1].size() == 8,
-                  dealii::ExcMessage("Size of Eigenmodes y must be 8."));
+      AssertThrow(eigenmodes[1].size() == 7,
+                  dealii::ExcMessage("Size of Eigenmodes y must be 7."));
 
       s = prm.get("Eigenmodes z");
       std::stringstream em_z(s);
       for (std::string tmp; std::getline(em_z, tmp, ',');)
         eigenmodes[2].push_back(std::stod(tmp));
-      AssertThrow(eigenmodes[2].size() == 8,
-                  dealii::ExcMessage("Size of Eigenmodes z must be 8."));
+      AssertThrow(eigenmodes[2].size() == 7,
+                  dealii::ExcMessage("Size of Eigenmodes z must be 7."));
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
@@ -203,7 +203,7 @@ namespace sapphirepp
         , mhd_equations(prm.adiabatic_index)
         , primitive_background_state(MHDEquations::n_components)
         , conserved_background_state(MHDEquations::n_components)
-        , primitive_eigenvectors(spacedim)
+        , eigenvectors(spacedim)
         , eigenvalues(spacedim)
       {
         // Helper variables
@@ -240,7 +240,6 @@ namespace sapphirepp
           }
 
 
-
         // Create normal vector
         dealii::Tensor<1, spacedim> normal, eps_b;
         for (unsigned int d = 0; d < spacedim; ++d)
@@ -263,17 +262,20 @@ namespace sapphirepp
             saplog << "a_s2=" << a_s2 << ", c_a2=" << c_a2 << ", d_n=" << d_n
                    << ", c_s2=" << c_s2 << ", c_f2=" << c_f2 << std::endl;
 
-            // const double a_s   = std::sqrt(a_s2);
+            const double a_s   = std::sqrt(a_s2);
+            const double c_a   = std::sqrt(c_a2);
             const double c_s   = std::sqrt(c_s2);
             const double c_f   = std::sqrt(c_f2);
             const double del_s = rho_0 * c_s2 - nb * nb;
             const double del_f = rho_0 * c_f2 - nb * nb;
 
-            saplog << "c_s=" << c_s << ", c_f=" << c_f << ", del_s=" << del_s
+            saplog << "a_s=" << a_s << ", c_a=" << c_a << ", c_s=" << c_s
+                   << ", c_f=" << c_f << ", del_s=" << del_s
                    << ", del_f=" << del_f << std::endl;
 
             // Calculate eigenvalues
-            eigenvalues[d] = dealii::Vector<double>(8);
+            eigenvalues[d] =
+              dealii::Vector<double>(MHD::MHDEquations::n_components - 1);
             mhd_equations.compute_normale_eigenvalues(
               conserved_background_state, normal, eigenvalues[d]);
             saplog << std::endl
@@ -283,158 +285,160 @@ namespace sapphirepp
 
 
             // Create eigenvectors
-            primitive_eigenvectors[d] =
-              std::vector<typename MHDEquations::state_type>(8);
-            for (unsigned int i = 0; i < 8; ++i)
+            eigenvectors[d] = std::vector<typename MHDEquations::state_type>(
+              MHDEquations::n_components - 1);
+            for (unsigned int i = 0; i < MHDEquations::n_components - 1; ++i)
               {
-                primitive_eigenvectors[d][i] =
+                eigenvectors[d][i] =
                   typename MHDEquations::state_type(MHDEquations::n_components);
-                primitive_eigenvectors[d][i] = 0;
+                eigenvectors[d][i] = 0;
               }
 
             // Left going fast magneto-sonic wave
-            primitive_eigenvectors[d][0][rho] = rho_0;
-            primitive_eigenvectors[d][0][P]   = rho_0 * a_s2;
+            eigenvectors[d][0][rho] = rho_0;
+            eigenvectors[d][0][P]   = rho_0 * a_s2;
             for (unsigned int i = 0; i < spacedim; ++i)
               {
-                primitive_eigenvectors[d][0][u + i] =
-                  -c_f * normal[i] +
-                  (1 - normal[i]) * c_f * b_0[d] * b_0[i] / del_f;
-                primitive_eigenvectors[d][0][b + i] =
+                eigenvectors[d][0][u + i] = -c_f * normal[i] + (1 - normal[i]) *
+                                                                 c_f * b_0[d] *
+                                                                 b_0[i] / del_f;
+                eigenvectors[d][0][b + i] =
                   (1 - normal[i]) * rho_0 * c_f2 * b_0[i] / del_f;
               }
             saplog << "Left going fast magneto-sonic wave in direction " << d
                    << ", eigenvalue=" << eigenvalues[d][0] << std::endl;
-            saplog << primitive_eigenvectors[d][0] << std::endl << std::endl;
+            saplog << eigenvectors[d][0] << std::endl << std::endl;
 
             // Left going fast Alfven wave
-            primitive_eigenvectors[d][1][rho] = 0;
-            primitive_eigenvectors[d][1][P]   = 0;
-            for (unsigned int i = 0; i < spacedim; ++i)
+            if (c_a2 > 0)
               {
-                primitive_eigenvectors[d][1][u + i] =
-                  -eps_b[i] / std::sqrt(rho_0);
-                primitive_eigenvectors[d][1][b + i] = -eps_b[i];
-              }
-            saplog << "Left going Alfven wave in direction " << d
-                   << ", eigenvalue=" << eigenvalues[d][1] << std::endl;
-            saplog << primitive_eigenvectors[d][1] << std::endl << std::endl;
-
-
-            // Left going slow magneto-sonic wave
-            if (del_s > 0)
-              {
-                primitive_eigenvectors[d][2][rho] = rho_0;
-                primitive_eigenvectors[d][2][P]   = rho_0 * a_s2;
+                eigenvectors[d][1][rho] = 0;
+                eigenvectors[d][1][P]   = 0;
                 for (unsigned int i = 0; i < spacedim; ++i)
                   {
-                    primitive_eigenvectors[d][2][u + i] =
+                    eigenvectors[d][1][u + i] = -eps_b[i] / std::sqrt(rho_0);
+                    eigenvectors[d][1][b + i] = -eps_b[i];
+                  }
+                saplog << "Left going Alfven wave in direction " << d
+                       << ", eigenvalue=" << eigenvalues[d][1] << std::endl;
+                saplog << eigenvectors[d][1] << std::endl << std::endl;
+              }
+            else
+              {
+                eigenvalues[d][1] = 0;
+              }
+
+            // Left going slow magneto-sonic wave
+            if (c_a2 > 0)
+              {
+                eigenvectors[d][2][rho] = rho_0;
+                eigenvectors[d][2][P]   = rho_0 * a_s2;
+                for (unsigned int i = 0; i < spacedim; ++i)
+                  {
+                    eigenvectors[d][2][u + i] =
                       -c_s * normal[i] +
                       (1 - normal[i]) * c_s * b_0[d] * b_0[i] / del_s;
-                    primitive_eigenvectors[d][2][b + i] =
+                    eigenvectors[d][2][b + i] =
                       (1 - normal[i]) * rho_0 * c_s2 * b_0[i] / del_s;
                   }
                 saplog << "Left going slow magneto-sonic wave in direction "
                        << d << ", eigenvalue=" << eigenvalues[d][2]
                        << std::endl;
-                saplog << primitive_eigenvectors[d][2] << std::endl
-                       << std::endl;
+                saplog << eigenvectors[d][2] << std::endl << std::endl;
               }
             else
               {
-                primitive_eigenvectors[d][2][rho] = 0;
-                primitive_eigenvectors[d][2][P]   = 0;
+                eigenvalues[d][2]       = eigenvalues[d][3];
+                eigenvectors[d][2][rho] = 0;
+                eigenvectors[d][2][P]   = 0;
                 for (unsigned int i = 0; i < spacedim; ++i)
                   {
-                    primitive_eigenvectors[d][2][u + i] = 0;
-                    primitive_eigenvectors[d][2][b + i] = 0;
+                    eigenvectors[d][2][u + i] = 0;
+                    eigenvectors[d][2][b + i] = 0;
                   }
-                primitive_eigenvectors[d][2][u + ((d - 1) % 3)] = 1;
+                eigenvectors[d][2][u + ((d - 1) % 3)] = 1;
                 saplog
                   << "Left going transverse velocity entropy wave in direction "
                   << d << ", eigenvalue=" << eigenvalues[d][2] << std::endl;
-                saplog << primitive_eigenvectors[d][2] << std::endl
-                       << std::endl;
+                saplog << eigenvectors[d][2] << std::endl << std::endl;
               }
 
 
             // Density entropy wave
-            primitive_eigenvectors[d][3][rho] = 1.;
+            eigenvectors[d][3][rho] = 1.;
             saplog << "Density entropy wave in direction " << d
                    << ", eigenvalue=" << eigenvalues[d][3] << std::endl;
-            saplog << primitive_eigenvectors[d][3] << std::endl << std::endl;
-
-            // TODO: Remove this mode, it represents divB \neq 0
-            // Magnetic entropy wave
-            primitive_eigenvectors[d][4][b + d] = 1.;
-            saplog << "Magnetic entropy wave in direction " << d
-                   << ", eigenvalue=" << eigenvalues[d][4] << std::endl;
-            saplog << primitive_eigenvectors[d][4] << std::endl << std::endl;
+            saplog << eigenvectors[d][3] << std::endl << std::endl;
 
 
             // Right going slow magneto-sonic wave
-            if (del_s > 0)
+            if (c_a2 > 0)
               {
-                primitive_eigenvectors[d][5][rho] = rho_0;
-                primitive_eigenvectors[d][5][P]   = rho_0 * a_s2;
+                eigenvectors[d][4][rho] = rho_0;
+                eigenvectors[d][4][P]   = rho_0 * a_s2;
                 for (unsigned int i = 0; i < spacedim; ++i)
                   {
-                    primitive_eigenvectors[d][5][u + i] =
+                    eigenvectors[d][4][u + i] =
                       c_s * normal[i] -
                       (1 - normal[i]) * c_s * b_0[d] * b_0[i] / del_s;
-                    primitive_eigenvectors[d][5][b + i] =
+                    eigenvectors[d][4][b + i] =
                       (1 - normal[i]) * rho_0 * c_s2 * b_0[i] / del_s;
                   }
                 saplog << "Right going slow magneto-sonic wave in direction "
-                       << d << ", eigenvalue=" << eigenvalues[d][5]
+                       << d << ", eigenvalue=" << eigenvalues[d][4]
                        << std::endl;
-                saplog << primitive_eigenvectors[d][5] << std::endl
-                       << std::endl;
+                saplog << eigenvectors[d][4] << std::endl << std::endl;
               }
             else
               {
-                primitive_eigenvectors[d][5][rho] = 0;
-                primitive_eigenvectors[d][5][P]   = 0;
+                eigenvalues[d][4]       = eigenvalues[d][3];
+                eigenvectors[d][4][rho] = 0;
+                eigenvectors[d][4][P]   = 0;
                 for (unsigned int i = 0; i < spacedim; ++i)
                   {
-                    primitive_eigenvectors[d][5][u + i] = 0;
-                    primitive_eigenvectors[d][5][b + i] = 0;
+                    eigenvectors[d][4][u + i] = 0;
+                    eigenvectors[d][4][b + i] = 0;
                   }
-                primitive_eigenvectors[d][5][u + ((d + 1) % 3)] = 1;
+                eigenvectors[d][4][u + ((d + 1) % 3)] = 1;
                 saplog
                   << "Right going transverse velocity entropy wave in direction "
-                  << d << ", eigenvalue=" << eigenvalues[d][5] << std::endl;
-                saplog << primitive_eigenvectors[d][5] << std::endl
-                       << std::endl;
+                  << d << ", eigenvalue=" << eigenvalues[d][4] << std::endl;
+                saplog << eigenvectors[d][4] << std::endl << std::endl;
               }
 
             // Right going fast Alfven wave
-            primitive_eigenvectors[d][6][rho] = 0;
-            primitive_eigenvectors[d][6][P]   = 0;
-            for (unsigned int i = 0; i < spacedim; ++i)
+            if (c_a2 > 0)
               {
-                primitive_eigenvectors[d][6][u + i] =
-                  eps_b[i] / std::sqrt(rho_0);
-                primitive_eigenvectors[d][6][b + i] = -eps_b[i];
+                eigenvectors[d][5][rho] = 0;
+                eigenvectors[d][5][P]   = 0;
+                for (unsigned int i = 0; i < spacedim; ++i)
+                  {
+                    eigenvectors[d][5][u + i] = eps_b[i] / std::sqrt(rho_0);
+                    eigenvectors[d][5][b + i] = -eps_b[i];
+                  }
+                saplog << "Right going Alfven wave in direction " << d
+                       << ", eigenvalue=" << eigenvalues[d][5] << std::endl;
+                saplog << eigenvectors[d][5] << std::endl << std::endl;
               }
-            saplog << "Right going Alfven wave in direction " << d
-                   << ", eigenvalue=" << eigenvalues[d][6] << std::endl;
-            saplog << primitive_eigenvectors[d][6] << std::endl << std::endl;
+            else
+              {
+                eigenvalues[d][5] = 0;
+              }
 
             // Right going fast magneto-sonic wave
-            primitive_eigenvectors[d][7][rho] = rho_0;
-            primitive_eigenvectors[d][7][P]   = rho_0 * a_s2;
+            eigenvectors[d][6][rho] = rho_0;
+            eigenvectors[d][6][P]   = rho_0 * a_s2;
             for (unsigned int i = 0; i < spacedim; ++i)
               {
-                primitive_eigenvectors[d][7][u + i] =
-                  c_f * normal[i] -
-                  (1 - normal[i]) * c_f * b_0[d] * b_0[i] / del_f;
-                primitive_eigenvectors[d][7][b + i] =
+                eigenvectors[d][6][u + i] = c_f * normal[i] - (1 - normal[i]) *
+                                                                c_f * b_0[d] *
+                                                                b_0[i] / del_f;
+                eigenvectors[d][6][b + i] =
                   (1 - normal[i]) * rho_0 * c_f2 * b_0[i] / del_f;
               }
             saplog << "Right going fast magneto-sonic wave in direction " << d
-                   << ", eigenvalue=" << eigenvalues[d][7] << std::endl;
-            saplog << primitive_eigenvectors[d][7] << std::endl << std::endl;
+                   << ", eigenvalue=" << eigenvalues[d][6] << std::endl;
+            saplog << eigenvectors[d][6] << std::endl << std::endl;
           }
       }
 
@@ -454,11 +458,10 @@ namespace sapphirepp
           primitive_background_state;
 
         for (unsigned int d = 0; d < dim_mhd; ++d)
-          for (unsigned int i = 0; i < 8; ++i)
+          for (unsigned int i = 0; i < MHDEquations::n_components - 1; ++i)
             for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
               primitive_state[c] +=
-                primitive_eigenvectors[d][i][c] * prm.amplitude *
-                prm.eigenmodes[d][i] *
+                eigenvectors[d][i][c] * prm.amplitude * prm.eigenmodes[d][i] *
                 std::sin(2. * M_PI / prm.box_length[d] *
                          (point[d] - eigenvalues[d][i] * t));
 
@@ -473,9 +476,8 @@ namespace sapphirepp
       const MHDEquations                mhd_equations;
       typename MHDEquations::state_type primitive_background_state;
       typename MHDEquations::state_type conserved_background_state;
-      std::vector<std::vector<typename MHDEquations::state_type>>
-                                          primitive_eigenvectors;
-      std::vector<dealii::Vector<double>> eigenvalues;
+      std::vector<std::vector<typename MHDEquations::state_type>> eigenvectors;
+      std::vector<dealii::Vector<double>>                         eigenvalues;
     };
 
   } // namespace MHD
