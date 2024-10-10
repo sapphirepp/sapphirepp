@@ -692,10 +692,13 @@ namespace sapphirepp
        * @brief Constructor
        *
        * @param physical_parameters User defined runtime parameters
+       * @param adiabatic_index Adiabatic index \f$ \gamma \f$
        */
-      InitialConditionMHD(const PhysicalParameters &physical_parameters)
+      InitialConditionMHD(const PhysicalParameters &physical_parameters,
+                          const double              adiabatic_index)
         : dealii::Function<spacedim>(MHDEquations::n_components)
         , prm{physical_parameters}
+        , mhd_equations(adiabatic_index)
       {}
 
 
@@ -799,6 +802,8 @@ namespace sapphirepp
     private:
       /** User defined runtime parameters */
       const PhysicalParameters prm;
+      /** @ref MHDEquations */
+      const MHDEquations mhd_equations;
     };
 
   } // namespace MHD
