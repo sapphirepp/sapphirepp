@@ -60,7 +60,6 @@ namespace sapphirepp
     std::vector<std::vector<double>> eigenmodes;
     // Copy of MHD parameters for InitialValueFunction
     std::vector<double> box_length;
-    double              adiabatic_index;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -197,10 +196,12 @@ namespace sapphirepp
     class InitialConditionMHD : public dealii::Function<spacedim>
     {
     public:
-      InitialConditionMHD(const PhysicalParameters &physical_parameters)
+      InitialConditionMHD(const PhysicalParameters &physical_parameters,
+                          const double              adiabatic_index)
+
         : dealii::Function<spacedim>(MHDEquations::n_components)
         , prm{physical_parameters}
-        , mhd_equations(prm.adiabatic_index)
+        , mhd_equations(adiabatic_index)
         , primitive_background_state(MHDEquations::n_components)
         , conserved_background_state(MHDEquations::n_components)
         , eigenvectors(spacedim)
@@ -251,7 +252,7 @@ namespace sapphirepp
             const double b2 = b_0 * b_0;
             const double nb = normal * b_0;
 
-            const double a_s2 = prm.adiabatic_index * P_0 / rho_0;
+            const double a_s2 = mhd_equations.adiabatic_index * P_0 / rho_0;
             const double c_a2 = b2 / rho_0;
             const double d_n =
               (a_s2 + c_a2) * (a_s2 + c_a2) - 4. * a_s2 * nb * nb / rho_0;

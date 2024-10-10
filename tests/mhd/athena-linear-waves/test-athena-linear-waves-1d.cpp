@@ -88,10 +88,9 @@ main(int argc, char *argv[])
 
 
       /** [Copy MHD parameter] */
-      const unsigned int spacedim         = MHDEquations::spacedim;
-      physical_parameters.dimension       = dim;
-      physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
-      physical_parameters.box_length      = std::vector<double>(dim);
+      const unsigned int spacedim    = MHDEquations::spacedim;
+      physical_parameters.dimension  = dim;
+      physical_parameters.box_length = std::vector<double>(dim);
       for (unsigned int d = 0; d < dim; ++d)
         {
           physical_parameters.box_length[d] =
@@ -132,7 +131,8 @@ main(int argc, char *argv[])
 
 
       /** [Setup analytic solution] */
-      InitialConditionMHD<spacedim> analytic_solution(physical_parameters);
+      InitialConditionMHD<spacedim> analytic_solution(
+        physical_parameters, mhd_parameters.adiabatic_index);
 
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(

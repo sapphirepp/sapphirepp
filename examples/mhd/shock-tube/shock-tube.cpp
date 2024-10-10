@@ -76,10 +76,6 @@ main(int argc, char *argv[])
       output_parameters.parse_parameters(prm);
       mhd_parameters.parse_parameters(prm);
 
-      /** [Copy MHD parameter] */
-      physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
-      /** [Copy MHD parameter] */
-
       MHDSolver<dim_mhd> mhd_solver(mhd_parameters,
                                     physical_parameters,
                                     output_parameters);

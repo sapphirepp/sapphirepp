@@ -77,9 +77,8 @@ main(int argc, char *argv[])
       mhd_parameters.parse_parameters(prm);
 
       /** [Copy MHD parameter] */
-      physical_parameters.dimension       = dim_mhd;
-      physical_parameters.adiabatic_index = mhd_parameters.adiabatic_index;
-      physical_parameters.box_length      = std::vector<double>(dim_mhd);
+      physical_parameters.dimension  = dim_mhd;
+      physical_parameters.box_length = std::vector<double>(dim_mhd);
       for (unsigned int d = 0; d < dim_mhd; ++d)
         {
           physical_parameters.box_length[d] =

@@ -57,7 +57,6 @@ namespace sapphirepp
     // Copy of MHD parameters for InitialValueFunction
     unsigned int        dimension;
     std::vector<double> box_length;
-    double              adiabatic_index;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -129,15 +128,16 @@ namespace sapphirepp
     class InitialConditionMHD : public dealii::Function<spacedim>
     {
     public:
-      InitialConditionMHD(const PhysicalParameters &physical_parameters)
+      InitialConditionMHD(const PhysicalParameters &physical_parameters,
+                          const double              adiabatic_index)
         : dealii::Function<spacedim>(MHDEquations::n_components)
         , prm{physical_parameters}
-        , mhd_equations(prm.adiabatic_index)
+        , mhd_equations(adiabatic_index)
         , background_state(MHDEquations::n_components)
         , eigenvector(MHDEquations::n_components)
       {
         const double density  = 1.;
-        const double pressure = 1. / prm.adiabatic_index;
+        const double pressure = 1. / mhd_equations.adiabatic_index;
         double       u_x      = 0.;
         double       u_y      = 0.;
         double       u_z      = 0.;
@@ -157,7 +157,7 @@ namespace sapphirepp
 
         const double energy =
           0.5 * density * (u_x * u_x + u_y * u_y + u_z * u_z) +
-          pressure / (prm.adiabatic_index - 1.) +
+          pressure / (mhd_equations.adiabatic_index - 1.) +
           0.5 * (b_x * b_x + b_y * b_y + b_z * b_z);
 
         // Background state in conserved variables

@@ -53,8 +53,6 @@ namespace sapphirepp
   public:
     /** [Define runtime parameter] */
     unsigned int test_case;
-    // Copy of MHD parameters for InitialValueFunction
-    double adiabatic_index;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -121,10 +119,11 @@ namespace sapphirepp
     class InitialConditionMHD : public dealii::Function<spacedim>
     {
     public:
-      InitialConditionMHD(const PhysicalParameters &physical_parameters)
+      InitialConditionMHD(const PhysicalParameters &physical_parameters,
+                          const double              adiabatic_index)
         : dealii::Function<spacedim>(MHDEquations::n_components)
         , prm{physical_parameters}
-        , mhd_equations(prm.adiabatic_index)
+        , mhd_equations(adiabatic_index)
         , primitive_left_state(MHDEquations::n_components)
         , primitive_right_state(MHDEquations::n_components)
       {
