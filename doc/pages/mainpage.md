@@ -101,9 +101,10 @@ following programs installed:
 
 To install @dealii and all necessary prerequisites for @sapphire, we provide an
 [installation script](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/install-dealii.sh).
-Run the script by executing:
+Download the script and it with run the script by executing:
 
 ```shell
+curl -O https://raw.githubusercontent.com/sapphirepp/sapphirepp/refs/heads/main/scripts/install-dealii.sh
 chmod u+x install-dealii.sh
 ./install-dealii.sh
 ```
