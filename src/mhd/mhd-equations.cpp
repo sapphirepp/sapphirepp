@@ -31,7 +31,13 @@
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
+
+#include "sapphirepp-logstream.h"
+
+
+
+/** Precision for safe double comparision */
+const double epsilon_d = 1e-6;
 
 
 
@@ -141,7 +147,7 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
   const dealii::Tensor<1, spacedim> &normal) const
 {
   AssertDimension(state.size(), n_components);
-  Assert(std::abs(normal.norm() - 1) < std::numeric_limits<double>::epsilon(),
+  Assert(std::abs(normal.norm() - 1) < epsilon_d,
          dealii::ExcMessage("Normal vector must be normalized."));
 
   const double pressure = compute_pressure(state);
@@ -215,7 +221,7 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
 {
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvalues.size(), n_components);
-  Assert(std::abs(normal.norm() - 1) < std::numeric_limits<double>::epsilon(),
+  Assert(std::abs(normal.norm() - 1) < epsilon_d,
          dealii::ExcMessage("Normal vector must be normalized."));
 
   const double pressure = compute_pressure(state);
@@ -258,6 +264,232 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
   eigenvalues[5] = nu + std::sqrt(c_s2);
   eigenvalues[6] = nu + std::sqrt(c_a2);
   eigenvalues[7] = nu + std::sqrt(c_f2);
+}
+
+
+
+void
+sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
+  const state_type                  &state,
+  const dealii::Tensor<1, spacedim> &normal,
+  dealii::FullMatrix<double>        &eigenvectors) const
+
+{
+  dealii::LogStream::Prefix p("MHDEquations", saplog);
+  saplog << "Calculate right eigenvector matrix:"
+         << "\n state = " << state << "\n normal = " << normal << std::endl;
+  AssertDimension(state.size(), n_components);
+  AssertDimension(eigenvectors.n(), n_components);
+  AssertDimension(eigenvectors.m(), n_components);
+  Assert(std::abs(normal.norm() - 1) < epsilon_d,
+         dealii::ExcMessage("Normal vector must be normalized."));
+
+  const double                pressure = compute_pressure(state);
+  dealii::Tensor<1, spacedim> u;
+  double                      b2 = 0.;
+  double                      u2 = 0.;
+  double                      nu = 0.;
+  double                      nb = 0.;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      u[d] = state[first_momentum_component + d] / state[density_component];
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+      u2 += state[first_momentum_component + d] / state[density_component] *
+            state[first_momentum_component + d] / state[density_component];
+      nu += normal[d] * state[first_momentum_component + d] /
+            state[density_component];
+      nb += normal[d] * state[first_magnetic_component + d];
+    }
+  const double b_perp = std::sqrt(b2 - nb * nb);
+  saplog << "pressure = " << pressure << ", u = " << u << ", b2 = " << b2
+         << ", u2 = " << u2 << ", nu = " << nu << ", nb = " << nb
+         << ", b_perp = " << b_perp << std::endl;
+
+  const double a_s2 = adiabatic_index * pressure / state[density_component];
+  const double c_a2 = nb * nb / state[density_component];
+  const double d_n  = (a_s2 + b2 / state[density_component]) *
+                       (a_s2 + b2 / state[density_component]) -
+                     4. * a_s2 * c_a2;
+  saplog << "a_s2 = " << a_s2 << ", c_a2 = " << c_a2 << ", d_n = " << d_n
+         << std::endl;
+  Assert(a_s2 >= 0.,
+         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(c_a2 >= 0.,
+         dealii::ExcMessage("Negative squared alfven speed warning."));
+  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
+  const double c_s2 =
+    0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
+  const double c_f2 =
+    0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
+  saplog << "c_s2 = " << c_s2 << ", c_f2 = " << c_f2 << std::endl;
+  Assert(c_s2 >= 0.,
+         dealii::ExcMessage("Negative squared slow speed warning."));
+  Assert(c_f2 >= 0.,
+         dealii::ExcMessage("Negative squared fast speed warning."));
+  const double a_s = std::sqrt(a_s2);
+  const double c_a = std::sqrt(c_a2);
+  const double c_s = std::sqrt(c_s2);
+  const double c_f = std::sqrt(c_f2);
+  saplog << "a_s = " << a_s << ", c_a = " << c_a << ", c_s = " << c_s
+         << ", c_f = " << c_f << std::endl;
+
+  double alp_s, alp_f;
+  if ((c_f2 - c_s2) < epsilon_d)
+    {
+      alp_s = 1.;
+      alp_f = 1.;
+    }
+  else
+    {
+      alp_s = std::sqrt((c_f2 - a_s2) / (c_f2 - c_s2));
+      alp_f = std::sqrt((c_f2 - c_a2) / (c_f2 - c_s2));
+    }
+  saplog << "alp_s = " << alp_s << ", alp_f = " << alp_f << std::endl;
+  Assert(alp_s >= 0., dealii::ExcMessage("Expect non-negative value."));
+  Assert(alp_f >= 0., dealii::ExcMessage("Expect non-negative value."));
+
+  // Construct perpendicular normal vector n_perp
+  dealii::Tensor<1, spacedim> n_perp;
+  if (b_perp > 0)
+    {
+      for (unsigned int d = 0; d < spacedim; ++d)
+        n_perp[d] = (state[first_magnetic_component + d] - nb * normal[d]);
+    }
+  else
+    {
+      n_perp         = 0; // tmp for e_j
+      unsigned int j = 0; // j = arg_min(normal)
+      for (unsigned int d = 1; d < spacedim; ++d)
+        if (std::abs(normal[d]) < std::abs(normal[j]))
+          j = d;
+      n_perp[j] = 1.;
+      saplog << "e_j = " << n_perp << ", ";
+      n_perp = dealii::cross_product_3d<spacedim>(n_perp, normal);
+    }
+  n_perp /= n_perp.norm();
+  saplog << "normal = " << normal << ", n_perp = " << n_perp
+         << ", |n_perp| = " << n_perp.norm()
+         << ", n*n_perp = " << normal * n_perp << std::endl;
+
+  Assert(std::abs(n_perp.norm() - 1) < epsilon_d,
+         dealii::ExcMessage("n_perp is not normalized."));
+  Assert(std::abs(normal * n_perp) < epsilon_d,
+         dealii::ExcMessage("n_perp is not perpendicular to normal"));
+
+  const double                      n_perp_u = n_perp * u;
+  const dealii::Tensor<1, spacedim> n_perp_cross_u =
+    dealii::cross_product_3d<spacedim>(n_perp, u);
+  const double                      sgn_nb = (nb >= 0.) ? 1. : -1.;
+  const dealii::Tensor<1, spacedim> n_perp_cross_normal =
+    dealii::cross_product_3d<spacedim>(n_perp, normal);
+  saplog << "n_perp_u = " << n_perp_u << ", n_perp_cross_u = " << n_perp_cross_u
+         << ", sgn_nb = " << sgn_nb
+         << ", n_perp_cross_normal = " << n_perp_cross_normal << std::endl;
+
+
+  // Left fast magnetosonic mode r_1
+  eigenvectors[density_component][0] = alp_f;
+  eigenvectors[energy_component][0] =
+    alp_f * u2 / 2. + alp_f * c_f2 / (adiabatic_index - 1.) +
+    sgn_nb * alp_s * c_a * n_perp_u - alp_f * c_f * nu -
+    (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_f * (c_f2 - a_s2);
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][0] =
+        alp_f * (u[d] - c_f * normal[d]) + sgn_nb * alp_s * c_a * n_perp[d];
+      eigenvectors[first_magnetic_component + d][0] =
+        alp_s * c_f / std::sqrt(state[density_component]) * n_perp[d];
+    }
+
+
+  // Left alfven mode r_2
+  eigenvectors[density_component][1] = 0;
+  eigenvectors[energy_component][1]  = -sgn_nb * normal * n_perp_cross_u;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][1] =
+        sgn_nb * n_perp_cross_normal[d];
+      eigenvectors[first_magnetic_component + d][1] =
+        n_perp_cross_normal[d] / state[density_component];
+    }
+
+
+  // Left slow magnetosonic mode r_3
+  eigenvectors[density_component][2] = alp_s;
+  eigenvectors[energy_component][2] =
+    alp_s * u2 / 2. + alp_s * c_s2 / (adiabatic_index - 1.) -
+    sgn_nb * alp_f * a_s * n_perp_u - alp_s * c_s * nu -
+    (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_s * (c_s2 - a_s2);
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][2] =
+        alp_s * (u[d] - c_s * normal[d]) - sgn_nb * alp_f * a_s * n_perp[d];
+      eigenvectors[first_magnetic_component + d][2] =
+        -alp_f * a_s2 / (std::sqrt(state[density_component]) * c_f) * n_perp[d];
+    }
+
+
+  // Density entropy mode r_4
+  eigenvectors[density_component][3] = 1.;
+  eigenvectors[energy_component][3]  = u2 / 2.;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][3] = u[d];
+      eigenvectors[first_magnetic_component + d][3] = 0;
+    }
+
+
+  // Magnetic entropy mode r_5
+  eigenvectors[density_component][4] = 0.;
+  eigenvectors[energy_component][4]  = 0.;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][4] = 0;
+      eigenvectors[first_magnetic_component + d][4] = normal[d];
+    }
+
+
+  // Right slow magnetosonic mode r_6
+  eigenvectors[density_component][5] = alp_s;
+  eigenvectors[energy_component][5] =
+    alp_s * u2 / 2. + alp_s * c_s2 / (adiabatic_index - 1.) +
+    sgn_nb * alp_f * a_s * n_perp_u + alp_s * c_s * nu -
+    (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_s * (c_s2 - a_s2);
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][5] =
+        alp_s * (u[d] + c_s * normal[d]) + sgn_nb * alp_f * a_s * n_perp[d];
+      eigenvectors[first_magnetic_component + d][5] =
+        -alp_f * a_s2 / (std::sqrt(state[density_component]) * c_f) * n_perp[d];
+    }
+
+
+  // Right alfven mode r_7
+  eigenvectors[density_component][6] = 0;
+  eigenvectors[energy_component][6]  = sgn_nb * normal * n_perp_cross_u;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][6] =
+        -sgn_nb * n_perp_cross_normal[d];
+      eigenvectors[first_magnetic_component + d][6] =
+        n_perp_cross_normal[d] / state[density_component];
+    }
+
+
+  // Right fast magnetosonic mode r_8
+  eigenvectors[density_component][7] = alp_f;
+  eigenvectors[energy_component][7] =
+    alp_f * u2 / 2. + alp_f * c_f2 / (adiabatic_index - 1.) -
+    sgn_nb * alp_s * c_a * n_perp_u + alp_f * c_f * nu -
+    (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_f * (c_f2 - a_s2);
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      eigenvectors[first_momentum_component + d][7] =
+        alp_f * (u[d] + c_f * normal[d]) - sgn_nb * alp_s * c_a * n_perp[d];
+      eigenvectors[first_magnetic_component + d][7] =
+        alp_s * c_f / std::sqrt(state[density_component]) * n_perp[d];
+    }
 }
 
 

@@ -30,6 +30,7 @@
 
 #include <deal.II/base/tensor.h>
 
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_component_interpretation.h>
@@ -227,6 +228,13 @@ namespace sapphirepp
       compute_normale_eigenvalues(const state_type                  &state,
                                   const dealii::Tensor<1, spacedim> &normal,
                                   dealii::Vector<double> &eigenvalues) const;
+
+
+      void
+      compute_right_eigenvector_matrix(
+        const state_type                  &state,
+        const dealii::Tensor<1, spacedim> &normal,
+        dealii::FullMatrix<double>        &eigenvectors) const;
       /** @} */
 
 
