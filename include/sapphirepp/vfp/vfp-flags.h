@@ -120,7 +120,9 @@ namespace sapphirepp
        */
       time_independent_source = 1 << 7,
 
-      steady_state = 1 << 8
+      steady_state = 1 << 8,
+
+      scaled_distribution_function = 1 << 9
     };
 
 
@@ -174,6 +176,10 @@ namespace sapphirepp
         }
       if ((f & VFPFlags::steady_state) != VFPFlags::none)
         os << "	 - Steady state solution\n";
+
+      if ((f & VFPFlags::scaled_distribution_function) != VFPFlags::none)
+        os
+          << "	 - The distribution funcion is scaled by p to the power of scaling spectral index\n";
 
       return os;
     }
