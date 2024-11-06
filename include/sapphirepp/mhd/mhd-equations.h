@@ -235,6 +235,13 @@ namespace sapphirepp
         const state_type                  &state,
         const dealii::Tensor<1, spacedim> &normal,
         dealii::FullMatrix<double>        &eigenvectors) const;
+
+
+      void
+      compute_left_eigenvector_matrix(
+        const state_type                  &state,
+        const dealii::Tensor<1, spacedim> &normal,
+        dealii::FullMatrix<double>        &eigenvectors) const;
       /** @} */
 
 
