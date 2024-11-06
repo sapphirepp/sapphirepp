@@ -629,7 +629,7 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
   eigenvectors[0][density_component] =
     alp_f * a_s2 * u2 / (4. * theta_1) +
     (sgn_nb * alp_f * a_s * nu - alp_s * c_s * n_perp_u) / (2. * theta_2);
-  eigenvectors[0][energy_component] = alp_s * a_s2 / (2. * theta_1);
+  eigenvectors[0][energy_component] = alp_f * a_s2 / (2. * theta_1);
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       eigenvectors[0][first_momentum_component + d] =
@@ -732,7 +732,7 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
   eigenvectors[7][density_component] =
     alp_f * a_s2 * u2 / (4. * theta_1) -
     (sgn_nb * alp_f * a_s * nu - alp_s * c_s * n_perp_u) / (2. * theta_2);
-  eigenvectors[7][energy_component] = alp_s * a_s2 / (2. * theta_1);
+  eigenvectors[7][energy_component] = alp_f * a_s2 / (2. * theta_1);
   for (unsigned int d = 0; d < spacedim; ++d)
     {
       eigenvectors[7][first_momentum_component + d] =

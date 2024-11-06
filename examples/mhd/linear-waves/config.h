@@ -260,53 +260,117 @@ namespace sapphirepp
         mhd_equations.compute_right_eigenvector_matrix(
           conserved_background_state, normal_vector, eigenvectors);
 
+        dealii::FullMatrix<double> left_eigenvectors(
+          MHDEquations::n_components);
+        mhd_equations.compute_left_eigenvector_matrix(
+          conserved_background_state, normal_vector, left_eigenvectors);
+
+
         saplog << "Left going fast magneto-sonic wave, eigenvalue=u-c_f="
                << eigenvalues[0] << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][0] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[0][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Left going Alfven wave, eigenvalue=u-c_a=" << eigenvalues[1]
                << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][1] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[1][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Left going slow magneto-sonic wave, eigenvalue=u-c_s="
                << eigenvalues[2] << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][2] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[2][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Density entropy mode, eigenvalue=u=" << eigenvalues[3]
                << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][3] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[3][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Magnetic entropy mode, eigenvalue=u=" << eigenvalues[4]
                << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][4] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[4][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Right going slow magneto-sonic wave, eigenvalue=u+c_s="
                << eigenvalues[5] << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][5] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[5][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Right going Alfven wave, eigenvalue=u+c_a=" << eigenvalues[6]
                << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][6] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[6][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Right going fast magneto-sonic wave, eigenvalue=u+c_f="
                << eigenvalues[7] << std::endl;
         for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
           saplog << eigenvectors[c][7] << " ";
+        saplog << std::endl;
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          saplog << left_eigenvectors[7][c] << " ";
         saplog << std::endl << std::endl;
+
+
+        saplog << "Test left and right eigenvector matrices:" << std::endl;
+        saplog << "Right eigenvector matrix R:" << std::endl;
+        eigenvectors.print(saplog, 12, 5);
+        saplog << "Left eigenvector matrix L:" << std::endl;
+        left_eigenvectors.print(saplog, 12, 5);
+
+        dealii::FullMatrix<double> result(MHDEquations::n_components);
+        dealii::IdentityMatrix     id_matrix(MHDEquations::n_components);
+        dealii::FullMatrix<double> identity(id_matrix);
+        const double               epsilon_d = 1e-6;
+
+        left_eigenvectors.mmult(result, eigenvectors);
+        saplog << "L*R:" << std::endl;
+        result.print(saplog, 12, 5);
+        for (unsigned int i = 0; i < MHDEquations::n_components; ++i)
+          for (unsigned int j = 0; j < MHDEquations::n_components; ++j)
+            AssertThrow(std::abs(result[i][j] - identity[i][j]) < epsilon_d,
+                        dealii::ExcMessage("Problem with eigenvectors: l_" +
+                                           std::to_string(i + 1) + " * r_" +
+                                           std::to_string(j + 1) +
+                                           " != delta_ij"));
+
+        eigenvectors.mmult(result, left_eigenvectors);
+        saplog << "R*L:" << std::endl;
+        result.print(saplog, 12, 5);
+        for (unsigned int i = 0; i < MHDEquations::n_components; ++i)
+          for (unsigned int j = 0; j < MHDEquations::n_components; ++j)
+            AssertThrow(std::abs(result[i][j] - identity[i][j]) < epsilon_d,
+                        dealii::ExcMessage("Problem with eigenvectors: (R*L)_" +
+                                           std::to_string(i + 1) +
+                                           std::to_string(j + 1) +
+                                           " != delta_ij"));
       }
 
 
