@@ -32,6 +32,7 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/patterns.h>
 #include <deal.II/base/point.h>
 
 #include <deal.II/lac/vector.h>
@@ -54,7 +55,9 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    // !!!EDIT HERE!!!
+    double standard_deviation;
+    double magnetic_field_strength;
+    double scattering_frequency;
     /** [Define runtime parameter] */
 
 
@@ -78,9 +81,22 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      // !!!EDIT HERE!!!
-      /** [Declare runtime parameter] */
 
+      prm.declare_entry(
+        "Standard deviation",
+        "1.",
+        dealii::Patterns::Double(),
+        "The standard deviation of the isotropic and normal particle distribution at t = 0.");
+      prm.declare_entry(
+        "Magnetic field strength",
+        "1.",
+        dealii::Patterns::Double(),
+        "The strength of the magnetic field in the x-direction.");
+      prm.declare_entry("Scattering frequency",
+                        "1.",
+                        dealii::Patterns::Double(),
+                        "The scattering frequency.");
+      /** [Declare runtime parameter] */
       prm.leave_subsection();
     }
 
@@ -100,7 +116,9 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      // !!!EDIT HERE!!!
+      standard_deviation      = prm.get_double("Standard deviation");
+      magnetic_field_strength = prm.get_double("Magnetic field strength");
+      scattering_frequency    = prm.get_double("Scattering frequency");
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -114,7 +132,7 @@ namespace sapphirepp
     /** [Dimension] */
     // !!!EDIT HERE!!!
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 2;
+    static constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
 
@@ -123,9 +141,8 @@ namespace sapphirepp
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
-      VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
-      VFPFlags::source | VFPFlags::time_independent_fields |
-      VFPFlags::time_independent_source;
+	VFPFlags::spatial_advection | VFPFlags::rotation | VFPFlags::collision |
+	VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -196,13 +213,12 @@ namespace sapphirepp
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
-        for (unsigned int i = 0; i < f.size(); ++i)
-          {
-            /** [Initial value] */
-            // !!!EDIT HERE!!!
-            f[i] = 0.;
-            /** [Initial value] */
-          }
+        /** [Initial value] */
+        // !!!EDIT HERE!!!
+        f[0] = 1. / (std::sqrt(2 * std::acos(0)) * prm.standard_deviation) *
+               std::exp(-point[0] * point[0] /
+                        (2 * prm.standard_deviation * prm.standard_deviation));
+        /** [Initial value] */
       }
 
 
@@ -274,7 +290,7 @@ namespace sapphirepp
           {
             /** [Scattering frequency] */
             // !!!EDIT HERE!!!
-            scattering_frequencies[q_index] = 100.;
+            scattering_frequencies[q_index] = prm.scattering_frequency;
             /** [Scattering frequency] */
           }
       }
@@ -446,7 +462,7 @@ namespace sapphirepp
 
         /** [Magnetic field] */
         // !!!EDIT HERE!!!
-        magnetic_field[0] = 0.; // B_x
+        magnetic_field[0] = prm.magnetic_field_strength; // B_x
         magnetic_field[1] = 0.; // B_y
         magnetic_field[2] = 0.; // B_z
         /** [Magnetic field] */
@@ -503,13 +519,9 @@ namespace sapphirepp
         /** [Background velocity value] */
         // !!!EDIT HERE!!!
         // u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
-        const double r    = 4.;
-        const double d_sh = 0.001;
-        const double u_sh = 0.1;
 
         // u_x
-        velocity[0] =
-          u_sh / (2 * r) * ((1 - r) * std::tanh(point[0] / d_sh) + (1 + r));
+        velocity[0] = 0.;
         velocity[1] = 0.; // u_y
         velocity[2] = 0.; // u_z
         /** [Background velocity value] */
@@ -539,19 +551,8 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity divergence] */
-            // !!!EDIT HERE!!!
-            // u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
-            // => d/dx u(x) = u_sh/2r 1/d_sh (1-r) (1-tanh(x/d_sh)^2)
-            const double r    = 4.;
-            const double d_sh = 0.001;
-            const double u_sh = 0.1;
-
-            const double x = points[q_index][0];
-
             // div u
-            divergence[q_index] =
-              u_sh / (2 * r) * (1 - r) / d_sh *
-              (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            divergence[q_index] = 0;
             /** [Background velocity divergence] */
           }
       }
@@ -584,21 +585,9 @@ namespace sapphirepp
           {
             /** [Background velocity material derivative] */
             // !!!EDIT HERE!!!
-            // u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
-            // => D/Dt u(x) = d/dt u(x) + u d/dx u(x)
-            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/d_sh) + (1+r)) *
-            //        1/d_sh (1-r) (1-tanh(x/d_sh)^2)
-            const double r    = 4.;
-            const double d_sh = 0.001;
-            const double u_sh = 0.1;
-
-            const double x = points[q_index][0];
 
             // D/Dt u_x
-            material_derivatives[q_index][0] =
-              u_sh * u_sh / (4 * r * r) / d_sh * (1 - r) *
-              ((1 - r) * std::tanh(x / d_sh) + (1 + r)) *
-              (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            material_derivatives[q_index][0] = 0.;
             material_derivatives[q_index][1] = 0.; // D/Dt u_y
             material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
@@ -635,18 +624,9 @@ namespace sapphirepp
           {
             /** [Background velocity Jacobian] */
             // !!!EDIT HERE!!!
-            //  u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
-            //  => u_00 = du/dx = u_sh/2r 1/d_sh (1-r) (1-tanh(x/d_sh)^2)
-            const double r    = 4.;
-            const double d_sh = 0.001;
-            const double u_sh = 0.1;
-
-            const double x = points[q_index][0];
 
             // \partial u_x / \partial x
-            jacobians[q_index][0][0] =
-              u_sh / (2 * r) * (1 - r) / d_sh *
-              (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            jacobians[q_index][0][0] = 0.;
             jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
             jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 

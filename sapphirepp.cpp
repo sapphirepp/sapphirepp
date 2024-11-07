@@ -50,9 +50,9 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      saplog.init(2);
+      saplog.init(-1);
 
-      std::string parameter_filename = "parameter-template.prm";
+      std::string parameter_filename = "parameter-closure.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
