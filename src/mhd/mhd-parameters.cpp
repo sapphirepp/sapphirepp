@@ -146,7 +146,7 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   {
     prm.declare_entry("Adiabatic index",
                       "1.666666",
-                      Patterns::Double(1),
+                      Patterns::Double(1, 2),
                       "Adiabatic index (gamma) of the plasma.");
   } // Plasma properties
   prm.leave_subsection();
