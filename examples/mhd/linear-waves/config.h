@@ -60,10 +60,13 @@ namespace sapphirepp
     std::vector<double> eigenmodes;
     std::vector<int>    direction;
     // Copy of MHD parameters for InitialValueFunction
+    const unsigned int  dimension;
     std::vector<double> box_length;
     /** [Define runtime parameter] */
 
-    PhysicalParameters() = default;
+    PhysicalParameters(const unsigned int dimension)
+      : dimension{dimension}
+    {}
 
 
 
@@ -156,6 +159,16 @@ namespace sapphirepp
       std::stringstream direction_string(s);
       for (std::string n; std::getline(direction_string, n, ',');)
         direction.push_back(std::stoi(n));
+      AssertThrow(
+        dimension <= direction.size(),
+        dealii::ExcMessage(
+          "Direction does not specify value in each dimension."
+          "Please enter the multiple of wavelength in each direction: \n"
+          "\tset Direction = n_x (, n_y) (, n_z)"));
+      if (direction.size() != dimension)
+        saplog << "WARNING: Direction specification does not match dimension!"
+               << std::endl;
+      direction.resize(dimension);
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
@@ -195,6 +208,8 @@ namespace sapphirepp
         , eigenvalues(MHDEquations::n_components)
         , eigenvectors(MHDEquations::n_components)
       {
+        dealii::LogStream::Prefix pre1("InitialConditionMHD", saplog);
+
         primitive_background_state[MHDEquations::density_component] = prm.rho_0;
         primitive_background_state[MHDEquations::pressure_component] = prm.P_0;
         for (unsigned int d = 0; d < spacedim; ++d)
@@ -213,33 +228,24 @@ namespace sapphirepp
         saplog << "Conserved background state: " << std::endl;
         saplog << conserved_background_state << std::endl;
 
-        AssertThrow(
-          dim_mhd <= prm.direction.size(),
-          dealii::ExcMessage(
-            "Direction does not specify value in each dimension."
-            "Please enter the multiple of wavelength in each direction: \n"
-            "\tset Number of cells = n_x (, n_y) (, n_z)"));
-        if (prm.direction.size() != dim_mhd)
-          saplog << "WARNING: Direction specification does not match dimension!"
-                 << std::endl;
         saplog << "Direction: ";
         for (unsigned int i = 0; i < prm.direction.size(); i++)
           saplog << prm.direction[i] << ", ";
         saplog << std::endl;
-        AssertThrow(dim_mhd <= prm.box_length.size(),
+        AssertThrow(prm.direction.size() == prm.dimension,
                     dealii::ExcMessage(
-                      "Box length does not specify value in each dimension."));
-        if (prm.box_length.size() != dim_mhd)
-          saplog
-            << "WARNING: Box length specification does not match dimension!"
-            << std::endl;
+                      "Direction specification does not match dimension!"));
+
         saplog << "Box length: ";
         for (unsigned int i = 0; i < prm.box_length.size(); i++)
           saplog << prm.box_length[i] << ", ";
         saplog << std::endl;
+        AssertThrow(prm.box_length.size() == prm.dimension,
+                    dealii::ExcMessage(
+                      "Box length specification does not match dimension!"));
 
         wave_vector = 0;
-        for (unsigned int d = 0; d < dim_mhd; ++d)
+        for (unsigned int d = 0; d < prm.dimension; ++d)
           wave_vector[d] = prm.direction[d] * 2 * M_PI / prm.box_length[d];
         saplog << "Wave vector: " << wave_vector
                << ", norm = " << wave_vector.norm() << std::endl;

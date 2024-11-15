@@ -64,7 +64,7 @@ main(int argc, char *argv[])
         parameter_filename = argv[1];
 
       dealii::ParameterHandler prm;
-      PhysicalParameters       physical_parameters;
+      PhysicalParameters       physical_parameters(dim_mhd);
       Utils::OutputParameters  output_parameters;
       MHDParameters<dim_mhd>   mhd_parameters;
 
@@ -80,10 +80,11 @@ main(int argc, char *argv[])
       /** [Main function setup] */
 
 
-      /** [Copy VFP parameter] */
+      /** [Copy MHD parameter] */
       const unsigned int spacedim    = MHDEquations::spacedim;
-      physical_parameters.box_length = std::vector<double>(spacedim, 1.);
-      for (unsigned int d = 0; d < dim_mhd; ++d)
+      const unsigned int dimension   = dim_mhd;
+      physical_parameters.box_length = std::vector<double>(dimension, 1.);
+      for (unsigned int d = 0; d < dimension; ++d)
         {
           physical_parameters.box_length[d] =
             std::abs(mhd_parameters.p1[d] - mhd_parameters.p2[d]);
@@ -94,7 +95,7 @@ main(int argc, char *argv[])
                          MHD::BoundaryConditionsMHD::periodic),
                       dealii::ExcMessage("This example assumes periodic BC."));
         }
-      /** [Copy VFP parameter] */
+      /** [Copy MHD parameter] */
 
 
       /** [Create error file] */
