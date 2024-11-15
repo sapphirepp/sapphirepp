@@ -1,5 +1,5 @@
 subsection Output
-  set Simulation identifier = 1d-alfven-wave
+  set Simulation identifier = 3d-sound-wave
 end
 subsection MHD
   subsection Finite element
@@ -7,26 +7,30 @@ subsection MHD
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 32
-    set Point 1         = 0.
-    set Point 2         = 1.
+    set Number of cells = 16, 8, 8
+    set Point 1         = 0., 0., 0.
+    set Point 2         = 3., 1.5, 1.5
     subsection Boundary conditions
       set lower x = periodic
       set upper x = periodic
+      set lower y = periodic
+      set upper y = periodic
+      set lower z = periodic
+      set upper z = periodic
     end
   end
   subsection Time stepping
-    set Final time     = 2
+    set Final time     = 3
     set Method         = ERK4
-    set Time step size = 0.01
+    set Time step size = 0.02
   end
 end
 subsection Physical parameters
   set rho_0      = 1.
   set P_0        = 0.6
   set u_0        = 0., 0., 0.
-  set b_0        = 1., 1.4142135624, 0.5
+  set b_0        = 0., 0., 0.
   set Amplitude  = 1e-4
-  set Eigenmodes = 0, 1, 0, 0, 0, 0, 0, 0
-  set Direction  = 1, 0, 0
+  set Eigenmodes = 1, 0, 0, 0, 0, 0, 0, 0
+  set Direction  = 1, 1, 1
 end

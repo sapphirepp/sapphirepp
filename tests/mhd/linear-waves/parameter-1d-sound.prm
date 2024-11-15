@@ -1,5 +1,5 @@
 subsection Output
-  set Simulation identifier = 1d-alfven-wave
+  set Simulation identifier = 1d-sound-wave
 end
 subsection MHD
   subsection Finite element
@@ -25,8 +25,8 @@ subsection Physical parameters
   set rho_0      = 1.
   set P_0        = 0.6
   set u_0        = 0., 0., 0.
-  set b_0        = 1., 1.4142135624, 0.5
+  set b_0        = 0., 0., 0.
   set Amplitude  = 1e-4
-  set Eigenmodes = 0, 1, 0, 0, 0, 0, 0, 0
+  set Eigenmodes = 1, 0, 0, 0, 0, 0, 0, 0
   set Direction  = 1, 0, 0
 end
