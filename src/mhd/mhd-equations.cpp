@@ -277,9 +277,6 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
   dealii::FullMatrix<double>        &eigenvectors) const
 
 {
-  dealii::LogStream::Prefix p("MHDEquations", saplog);
-  saplog << "Calculate right eigenvector matrix:"
-         << "\n state = " << state << "\n normal = " << normal << std::endl;
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvectors.n(), n_components);
   AssertDimension(eigenvectors.m(), n_components);
@@ -304,17 +301,12 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
       nb += normal[d] * state[first_magnetic_component + d];
     }
   const double b_perp = std::sqrt(b2 - nb * nb);
-  saplog << "pressure = " << pressure << ", u = " << u << ", b2 = " << b2
-         << ", u2 = " << u2 << ", nu = " << nu << ", nb = " << nb
-         << ", b_perp = " << b_perp << std::endl;
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
   const double c_a2 = nb * nb / state[density_component];
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  saplog << "a_s2 = " << a_s2 << ", c_a2 = " << c_a2 << ", d_n = " << d_n
-         << std::endl;
   Assert(a_s2 >= 0.,
          dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
   Assert(c_a2 >= 0.,
@@ -324,7 +316,6 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
     0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
-  saplog << "c_s2 = " << c_s2 << ", c_f2 = " << c_f2 << std::endl;
   Assert(c_s2 >= 0.,
          dealii::ExcMessage("Negative squared slow speed warning."));
   Assert(c_f2 >= 0.,
@@ -333,8 +324,6 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
   const double c_a = std::sqrt(c_a2);
   const double c_s = std::sqrt(c_s2);
   const double c_f = std::sqrt(c_f2);
-  saplog << "a_s = " << a_s << ", c_a = " << c_a << ", c_s = " << c_s
-         << ", c_f = " << c_f << std::endl;
 
   double alp_s, alp_f;
   if ((c_f2 - c_s2) < epsilon_d)
@@ -347,7 +336,6 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
       alp_s = std::sqrt((c_f2 - a_s2) / (c_f2 - c_s2));
       alp_f = std::sqrt((c_f2 - c_a2) / (c_f2 - c_s2));
     }
-  saplog << "alp_s = " << alp_s << ", alp_f = " << alp_f << std::endl;
   Assert(alp_s >= 0., dealii::ExcMessage("Expect non-negative value."));
   Assert(alp_f >= 0., dealii::ExcMessage("Expect non-negative value."));
 
@@ -366,13 +354,9 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
         if (std::abs(normal[d]) < std::abs(normal[j]))
           j = d;
       n_perp[j] = 1.;
-      saplog << "e_j = " << n_perp << ", ";
-      n_perp = dealii::cross_product_3d<spacedim>(n_perp, normal);
+      n_perp    = dealii::cross_product_3d<spacedim>(n_perp, normal);
     }
   n_perp /= n_perp.norm();
-  saplog << "normal = " << normal << ", n_perp = " << n_perp
-         << ", |n_perp| = " << n_perp.norm()
-         << ", n*n_perp = " << normal * n_perp << std::endl;
 
   Assert(std::abs(n_perp.norm() - 1) < epsilon_d,
          dealii::ExcMessage("n_perp is not normalized."));
@@ -385,9 +369,6 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
   const double                      sgn_nb = (nb >= 0.) ? 1. : -1.;
   const dealii::Tensor<1, spacedim> n_perp_cross_normal =
     dealii::cross_product_3d<spacedim>(n_perp, normal);
-  saplog << "n_perp_u = " << n_perp_u << ", n_perp_cross_u = " << n_perp_cross_u
-         << ", sgn_nb = " << sgn_nb
-         << ", n_perp_cross_normal = " << n_perp_cross_normal << std::endl;
 
 
   // Left fast magnetosonic mode r_1
@@ -503,9 +484,6 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
   dealii::FullMatrix<double>        &eigenvectors) const
 
 {
-  dealii::LogStream::Prefix p("MHDEquations", saplog);
-  saplog << "Calculate left eigenvector matrix:"
-         << "\n state = " << state << "\n normal = " << normal << std::endl;
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvectors.n(), n_components);
   AssertDimension(eigenvectors.m(), n_components);
@@ -530,17 +508,12 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
       nb += normal[d] * state[first_magnetic_component + d];
     }
   const double b_perp = std::sqrt(b2 - nb * nb);
-  saplog << "pressure = " << pressure << ", u = " << u << ", b2 = " << b2
-         << ", u2 = " << u2 << ", nu = " << nu << ", nb = " << nb
-         << ", b_perp = " << b_perp << std::endl;
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
   const double c_a2 = nb * nb / state[density_component];
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  saplog << "a_s2 = " << a_s2 << ", c_a2 = " << c_a2 << ", d_n = " << d_n
-         << std::endl;
   Assert(a_s2 >= 0.,
          dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
   Assert(c_a2 >= 0.,
@@ -550,7 +523,6 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
     0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
-  saplog << "c_s2 = " << c_s2 << ", c_f2 = " << c_f2 << std::endl;
   Assert(c_s2 >= 0.,
          dealii::ExcMessage("Negative squared slow speed warning."));
   Assert(c_f2 >= 0.,
@@ -559,8 +531,6 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
   const double c_a = std::sqrt(c_a2);
   const double c_s = std::sqrt(c_s2);
   const double c_f = std::sqrt(c_f2);
-  saplog << "a_s = " << a_s << ", c_a = " << c_a << ", c_s = " << c_s
-         << ", c_f = " << c_f << std::endl;
 
   double alp_s, alp_f;
   if ((c_f2 - c_s2) < epsilon_d)
@@ -573,7 +543,6 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
       alp_s = std::sqrt((c_f2 - a_s2) / (c_f2 - c_s2));
       alp_f = std::sqrt((c_f2 - c_a2) / (c_f2 - c_s2));
     }
-  saplog << "alp_s = " << alp_s << ", alp_f = " << alp_f << std::endl;
   Assert(alp_s >= 0., dealii::ExcMessage("Expect non-negative value."));
   Assert(alp_f >= 0., dealii::ExcMessage("Expect non-negative value."));
 
@@ -592,13 +561,9 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
         if (std::abs(normal[d]) < std::abs(normal[j]))
           j = d;
       n_perp[j] = 1.;
-      saplog << "e_j = " << n_perp << ", ";
-      n_perp = dealii::cross_product_3d<spacedim>(n_perp, normal);
+      n_perp    = dealii::cross_product_3d<spacedim>(n_perp, normal);
     }
   n_perp /= n_perp.norm();
-  saplog << "normal = " << normal << ", n_perp = " << n_perp
-         << ", |n_perp| = " << n_perp.norm()
-         << ", n*n_perp = " << normal * n_perp << std::endl;
 
   Assert(std::abs(n_perp.norm() - 1) < epsilon_d,
          dealii::ExcMessage("n_perp is not normalized."));
@@ -611,9 +576,6 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
   const double                      sgn_nb = (nb >= 0.) ? 1. : -1.;
   const dealii::Tensor<1, spacedim> n_perp_cross_normal =
     dealii::cross_product_3d<spacedim>(n_perp, normal);
-  saplog << "n_perp_u = " << n_perp_u << ", n_perp_cross_u = " << n_perp_cross_u
-         << ", sgn_nb = " << sgn_nb
-         << ", n_perp_cross_normal = " << n_perp_cross_normal << std::endl;
 
   const double theta_1 =
     alp_f * alp_f * a_s2 *
@@ -622,7 +584,6 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
       (c_s2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2);
   const double theta_2 =
     (sgn_nb * alp_f * alp_f * c_f * a_s + sgn_nb * alp_s * alp_s * c_s * c_a);
-  saplog << "theta_1 = " << theta_1 << ", theta_2 = " << theta_2 << std::endl;
   Assert(theta_1 > 0., dealii::ExcMessage("Expect positive value."));
   Assert(theta_2 > 0., dealii::ExcMessage("Expect positive value."));
 
