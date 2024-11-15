@@ -160,7 +160,8 @@ namespace sapphirepp
       /**
        * @brief Compute the MHD flux matrix.
        *
-       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
        * @param flux_matrix The MHD flux \f$ \mathbf{F}(\mathbf{w}) \f$.
        */
       void
@@ -173,7 +174,8 @@ namespace sapphirepp
        * @brief Computes the absolute value of maximum eigenvalue in normal
        *        direction.
        *
-       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
        * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
        * @return double The absolute value of maximum eigenvalue in normal
        *         direction.
@@ -190,7 +192,8 @@ namespace sapphirepp
        * @brief Compute the pressure \f$ P \f$ from the MHD state
        *        \f$ \mathbf{w} \f$.
        *
-       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
        * @return double The pressure \f$ P \f$.
        */
       double
@@ -219,7 +222,8 @@ namespace sapphirepp
        * where \f$ c_f \f$ and \f$ c_s \f$ are the fast and slow magnetosonic
        * speeds respectively, and \f$ c_a \f$ is the Alfven speed.
        *
-       * @param state The MHD state in conservative form \f$ \mathbf{w} \f$.
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
        * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
        * @param eigenvalues List of the eigenvalues.
        *
@@ -230,13 +234,79 @@ namespace sapphirepp
                                   dealii::Vector<double> &eigenvalues) const;
 
 
+      /**
+       * @brief Compute the right eigenvector matrix \f$ \mathbf{R} \f$ for the
+       *        MHD equations in conserved variables.
+       *
+       * This function computes the right eigenvector matrix \f$ \mathbf{R} \f$
+       * in the normal direction. The matrix \f$ \mathbf{R} \f$ is defined as:
+       * \f[
+       *   \mathbf{R} =
+       *   \begin{pmatrix}
+       *      \mathbf{r}_{1} \,, &
+       *      \mathbf{r}_{2} \,, &
+       *      \dots          \,, &
+       *      \mathbf{r}_{8}
+       *   \end{pmatrix} \,,
+       * \f]
+       * where \f$ \mathbf{r}_{n} \f$ is the right eigenvector corresponding to
+       * the eigenvalue \f$ \lambda_{n} \f$.
+       *
+       * The eigenvectors correspond to the following modes:
+       * - \f$ \mathbf{r}_{1/8} \f$: Left- and right-going fast magneto-sonic
+       *   modes.
+       * - \f$ \mathbf{r}_{2/7} \f$: Alfven modes.
+       * - \f$ \mathbf{r}_{3/6} \f$: Slow magneto-sonic modes.
+       * - \f$ \mathbf{r}_{4} \f$: Density entropy mode.
+       * - \f$ \mathbf{r}_{5} \f$: Unphysical \f$ \nabla \cdot \mathbf{B} \f$
+       *   mode.
+       *
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
+       * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
+       * @param eigenvectors Returns a @dealref{FullMatrix} of the right
+       *                     eigenvectors, \f$ \mathbf{R} \f$.
+       *
+       * @see compute_normale_eigenvalues()
+       */
       void
       compute_right_eigenvector_matrix(
         const state_type                  &state,
         const dealii::Tensor<1, spacedim> &normal,
         dealii::FullMatrix<double>        &eigenvectors) const;
 
-
+      /**
+       * @brief Compute the left eigenvector matrix \f$ \mathbf{L} \f$ for the
+       *        MHD equations in conserved variables.
+       *
+       * This function computes the left eigenvector matrix \f$ \mathbf{L} \f$
+       * in the normal direction. The matrix \f$ \mathbf{L} \f$ is defined as:
+       * \f[
+       *   \mathbf{L} =
+       *   \begin{pmatrix}
+       *      \mathbf{l}_{1} \\
+       *      \mathbf{l}_{2} \\
+       *      \vdots         \\
+       *      \mathbf{l}_{8}
+       *   \end{pmatrix} \,,
+       * \f]
+       * where \f$ \mathbf{l}_{n} \f$ is the left eigenvector (row-vector)
+       * corresponding to the eigenvalue \f$ \lambda_{n} \f$.
+       *
+       * The vectors are normalized such that
+       * \f[
+       *   \mathbf{L} \mathbf{R} = \mathbf{1} \,.
+       * \f]
+       *
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
+       * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
+       * @param eigenvectors Returns a @dealref{FullMatrix} of the left
+       *                     eigenvectors, \f$ \mathbf{L} \f$.
+       *
+       * @see compute_normale_eigenvalues()
+       * @see compute_right_eigenvector_matrix()
+       */
       void
       compute_left_eigenvector_matrix(
         const state_type                  &state,

@@ -424,6 +424,12 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
 
 
   // Magnetic entropy mode r_5
+  /**
+   * @note The eigenvector \f$ \mathbf{r}_{5} \f$ is not an eigenvector of the
+   * conserved system. Instead it is choosen such that left and right
+   * eigenvectors build an orthonormal system,
+   * \f$ \mathbf{L} \mathbf{R} = \mathbf{1} \f$.
+   */
   eigenvectors[density_component][4] = 0.;
   eigenvectors[energy_component][4]  = 0.;
   for (unsigned int d = 0; d < spacedim; ++d)
