@@ -983,6 +983,17 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
     DataOut<dim, spacedim>::type_dof_data,
     MHDEquations::create_component_interpretation_list());
 
+  /** @todo [Remove Debug] */
+  // Get one component of cell_averages
+  Vector<double> cell_average_component(triangulation.n_active_cells());
+  for (unsigned int i = 0; i < cell_average_component.size(); ++i)
+    cell_average_component[i] = cell_average[i][0];
+
+  data_out.add_data_vector(cell_average_component,
+                           "average_roh",
+                           DataOut<dim, spacedim>::type_cell_data);
+  /** @todo [Remove Debug] */
+
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());
   for (unsigned int i = 0; i < subdomain.size(); ++i)
