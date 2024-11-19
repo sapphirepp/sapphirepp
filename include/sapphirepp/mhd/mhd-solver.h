@@ -408,6 +408,8 @@ namespace sapphirepp
       PETScWrappers::MPI::Vector locally_owned_solution;
       /** Current solution */
       PETScWrappers::MPI::Vector locally_relevant_current_solution;
+      /** Component wise cell average of the solution. */
+      std::vector<Vector<double>> cell_average;
       /** @} */
 
       /** @{ */

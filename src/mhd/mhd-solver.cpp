@@ -183,7 +183,7 @@ namespace sapphirepp
         }
       };
     } // namespace MHDSolver
-  } // namespace internal
+  }   // namespace internal
 } // namespace sapphirepp
 
 
@@ -413,6 +413,9 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
                                            mpi_communicator);
   dg_rhs.reinit(locally_owned_dofs, mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
+
+  cell_average.resize(triangulation.n_active_cells(),
+                      Vector<double>(MHDEquations::n_components));
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
