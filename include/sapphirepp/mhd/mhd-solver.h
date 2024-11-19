@@ -461,12 +461,51 @@ namespace sapphirepp
       /** @} */
 
 
-
+      /**
+       * @name CellAverages
+       * @{
+       */
       /**
        * @brief Computes @ref cell_average of the current solution
        */
       void
       compute_cell_average();
+
+
+      /**
+       * @brief Retrieves the precomputed cell average for a given cell.
+       *
+       * @param cell The cell for which to compute the average.
+       * @return Returns the cell average of the
+       *         @ref MHDEquations::state_type "MHD state".
+       */
+      inline typename MHDEquations::state_type
+      get_cell_average(
+        const typename dealii::DoFHandler<dim, spacedim>::cell_iterator &cell)
+        const
+      {
+        if (cell->is_active())
+          {
+            Assert(!cell->is_artificial(),
+                   dealii::ExcMessage("Cell average is only calculated for "
+                                      "locally active or ghost cells."));
+
+            return cell_average[cell->active_cell_index()];
+          }
+        else
+          {
+            MHDEquations::state_type avg(MHDEquations::n_components);
+            double                   measure = 0;
+            for (const auto &child_cell : cell->child_iterators())
+              {
+                avg.add(child_cell->measure(), get_cell_average(cell));
+                measure += child_cell->measure();
+              }
+            avg /= measure;
+            return avg;
+          }
+      }
+      /** @} */
     };
 
   } // namespace MHD
