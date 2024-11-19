@@ -459,6 +459,14 @@ namespace sapphirepp
       void
       assemble_dg_rhs(const double time);
       /** @} */
+
+
+
+      /**
+       * @brief Computes @ref cell_average of the current solution
+       */
+      void
+      compute_cell_average();
     };
 
   } // namespace MHD

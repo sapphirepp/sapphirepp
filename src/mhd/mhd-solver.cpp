@@ -248,6 +248,8 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
     // that is the moment where the ghost cells are filled.
     locally_relevant_current_solution = locally_owned_solution;
   }
+
+  compute_cell_average();
 }
 
 
@@ -466,6 +468,47 @@ sapphirepp::MHD::MHDSolver<dim>::project(
   // At the moment I am assuming, that I do not have constraints. Hence, I
   // do not need the following line.
   // constraints.distribute(projected_function);
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
+{
+  TimerOutput::Scope t(timer, "Cell average");
+  saplog << "Compute cell average" << std::endl;
+  AssertDimension(cell_average.size(), triangulation.n_active_cells());
+
+  FEValues<dim, spacedim> fe_v(mapping,
+                               fe,
+                               quadrature,
+                               update_values | update_JxW_values);
+
+  const unsigned int          n_q_points = quadrature.size();
+  std::vector<Vector<double>> solution_values(
+    n_q_points, Vector<double>(MHDEquations::n_components));
+
+  // Compute cell_average for locally_active and gost cells
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    if (!cell->is_artificial())
+      {
+        fe_v.reinit(cell);
+        const unsigned int cell_index = cell->active_cell_index();
+
+        fe_v.get_function_values(locally_relevant_current_solution,
+                                 solution_values);
+        const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+        cell_average[cell_index] = 0.;
+
+        for (const unsigned int q_index : fe_v.quadrature_point_indices())
+          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+            cell_average[cell_index][c] +=
+              solution_values[q_index][c] * JxW[q_index];
+
+        cell_average[cell_index] /= cell->measure();
+      }
 }
 
 
@@ -1073,7 +1116,6 @@ sapphirepp::MHD::MHDSolver<dim>::get_timer() const
 {
   return timer;
 }
-
 
 
 // Explicit instantiations
