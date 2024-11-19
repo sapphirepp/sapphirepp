@@ -249,7 +249,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
-  , fe(FE_DGQ<dim, spacedim>(mhd_parameters.polynomial_degree),
+  , fe(FE_DGQLegendre<dim, spacedim>(mhd_parameters.polynomial_degree),
        MHDEquations::n_components)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
@@ -524,38 +524,43 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
 {
+  /** @todo Add compute_cell_average() function to @dealii library? */
+  /**
+   * @note This function assumes the @ref fe "FESystem" is made up of primitive
+   *       @dealref{FE_DGQLegendre,classFE__DGQLegendre} polynomials. The cell
+   *       average is then given by the 0th index of each component.
+   */
   TimerOutput::Scope t(timer, "Cell average");
   saplog << "Compute cell average" << std::endl;
   AssertDimension(cell_average.size(), triangulation.n_active_cells());
+  Assert(fe.is_primitive() && (fe.n_base_elements() == 1) &&
+           Utilities::match_at_string_start(fe.base_element(0).get_name(),
+                                            "FE_DGQLegendre"),
+         ExcMessage("This function assumes that the FESystem is composed of "
+                    "primitive FE_DGQLegendre elements."));
 
-  FEValues<dim, spacedim> fe_v(mapping,
-                               fe,
-                               quadrature,
-                               update_values | update_JxW_values);
+  Vector<double> local_dof_values(fe.n_dofs_per_cell());
 
-  const unsigned int          n_q_points = quadrature.size();
-  std::vector<Vector<double>> solution_values(
-    n_q_points, Vector<double>(MHDEquations::n_components));
-
+  /**
+   * @todo Use
+   *       @dealref{mesh_loop,group__MeshWorker,ga76ec61fbd188fb320fe8ca166a79b322}
+   *       for the cell loop?
+   */
   // Compute cell_average for locally_active and gost cells
   for (const auto &cell : dof_handler.active_cell_iterators())
     if (!cell->is_artificial())
       {
-        fe_v.reinit(cell);
         const unsigned int cell_index = cell->active_cell_index();
 
-        fe_v.get_function_values(locally_relevant_current_solution,
-                                 solution_values);
-        const std::vector<double> &JxW = fe_v.get_JxW_values();
-
-        cell_average[cell_index] = 0.;
-
-        for (const unsigned int q_index : fe_v.quadrature_point_indices())
-          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-            cell_average[cell_index][c] +=
-              solution_values[q_index][c] * JxW[q_index];
-
-        cell_average[cell_index] /= cell->measure();
+        // Use 0th Legendre polynomial
+        const auto cell_dofs = cell->as_dof_handler_iterator(dof_handler);
+        cell_dofs->get_dof_values(locally_relevant_current_solution,
+                                  local_dof_values);
+        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          {
+            const unsigned int i_avg    = fe.component_to_system_index(c, 0);
+            cell_average[cell_index][c] = local_dof_values[i_avg];
+          }
       }
 }
 
