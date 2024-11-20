@@ -182,6 +182,53 @@ namespace sapphirepp
           cell->get_dof_indices(local_dof_indices);
         }
       };
+
+
+
+      // The helper data types for slope limiter mesh_loop
+      template <unsigned int dim, unsigned int spacedim>
+      class ScratchDataSlopeLimiter
+      {
+      public:
+        // Constructor
+        ScratchDataSlopeLimiter(const Mapping<dim, spacedim>       &mapping,
+                                const FiniteElement<dim, spacedim> &fe,
+                                const Quadrature<dim>              &quadrature,
+                                const UpdateFlags update_flags =
+                                  update_values | update_gradients |
+                                  update_quadrature_points | update_JxW_values)
+          : fe_values(mapping, fe, quadrature, update_flags)
+        {}
+
+        // Copy Constructor
+        ScratchDataSlopeLimiter(
+          const ScratchDataSlopeLimiter<dim, spacedim> &scratch_data)
+          : fe_values(scratch_data.fe_values.get_mapping(),
+                      scratch_data.fe_values.get_fe(),
+                      scratch_data.fe_values.get_quadrature(),
+                      scratch_data.fe_values.get_update_flags())
+        {}
+
+        FEValues<dim, spacedim> fe_values;
+      };
+
+
+
+      struct CopyDataSlopeLimiter
+      {
+        Vector<double>                       cell_system_rhs;
+        std::vector<types::global_dof_index> local_dof_indices;
+
+        template <typename Iterator>
+        void
+        reinit(const Iterator &cell, unsigned int dofs_per_cell)
+        {
+          cell_system_rhs.reinit(dofs_per_cell);
+
+          local_dof_indices.resize(dofs_per_cell);
+          cell->get_dof_indices(local_dof_indices);
+        }
+      };
     } // namespace MHDSolver
   }   // namespace internal
 } // namespace sapphirepp
