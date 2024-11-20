@@ -249,7 +249,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
     locally_relevant_current_solution = locally_owned_solution;
   }
 
-  compute_cell_average();
+  apply_limiter();
 }
 
 
@@ -826,6 +826,8 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
 
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
+
+  apply_limiter();
 }
 
 
