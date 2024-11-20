@@ -67,6 +67,7 @@
 #include <vector>
 
 #include "sapphirepp-logstream.h"
+#include "slope-limiter.h"
 
 
 namespace sapphirepp
@@ -586,60 +587,160 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
    *         \f$ f \f$ using the @ref mass_matrix \f$ M \f$ and the
    *         @ref system_rhs \f$ b \f$, \f$ M f = b \f$.
    *   4. Distribute to the @ref locally_relevant_current_solution.
+   *
+   * There are some competing alternative ways to perform step 3 cell-wise:
+   *
+   *   - Use support points to convert point values to DoF values using
+   *     @dealref{convert_generalized_support_point_values_to_dof_values(),classFiniteElement,a8f2b9817bcf98ebd43239c6da46de809}.
+   *     This only works for basis functions that have support points,
+   *     i.e. for LagrangePolynomials, but not for Legendre polynomials.
+   *   - Locally invert the mass matrix. Disadvantage is, that we need to solve
+   *     a (small) linear system on each cell.
+   *   - If one has basis functions with a diagonal mass matrix, the inversion
+   *     is trivial.
+   *
+   * One general advantage of doing this cell wise is, that we only have to
+   * update the solution in cells that are actually limited.
    */
 
   compute_cell_average();
+  // return; // Debug: no limiter
 
   system_rhs = 0;
 
   // assemble cell terms
-  const auto cell_worker = [&](const Iterator             &cell,
-                               ScratchData<dim, spacedim> &scratch_data,
-                               CopyData                   &copy_data) {
-    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
-    // reinit cell
-    fe_v.reinit(cell);
+  const auto cell_worker =
+    [&](const Iterator                         &cell,
+        ScratchDataSlopeLimiter<dim, spacedim> &scratch_data,
+        CopyDataSlopeLimiter                   &copy_data) {
+      FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+      // reinit cell
+      fe_v.reinit(cell);
 
-    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
-    // reinit the cell_matrix
-    copy_data.reinit(cell, n_dofs);
+      saplog << "Limit cell " << cell->active_cell_index() << std::endl;
 
-    const std::vector<Point<spacedim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double>          &JxW      = fe_v.get_JxW_values();
+      const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
+      // reinit copy_data
+      copy_data.reinit(cell, n_dofs);
 
-    std::vector<Vector<double>> states(
-      q_points.size(), Vector<double>(MHDEquations::n_components));
-    typename MHDEquations::state_type avg(MHDEquations::n_components);
-    get_cell_average(cell, avg);
+      const std::vector<Point<spacedim>> &q_points =
+        fe_v.get_quadrature_points();
+      const std::vector<double> &JxW = fe_v.get_JxW_values();
 
-    fe_v.get_function_values(locally_relevant_current_solution, states);
+      const MHDEquations::state_type &cell_avg = get_cell_average(cell);
+      saplog << "cell average: " << cell_avg << std::endl;
 
-    for (const unsigned int q_index : fe_v.quadrature_point_indices())
-      {
+
+      // Compute cell average gradient
+      MHDEquations::flux_type                       cell_avg_gradient;
+      std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
+        fe_v.n_quadrature_points,
+        std::vector<Tensor<1, spacedim>>(MHDEquations::n_components));
+      fe_v.get_function_gradients(locally_relevant_current_solution,
+                                  solution_gradients);
+      for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+        {
+          for (const unsigned int q_index : fe_v.quadrature_point_indices())
+            cell_avg_gradient[c] +=
+              solution_gradients[q_index][c] * JxW[q_index];
+          cell_avg_gradient[c] /= cell->measure();
+          saplog << "cell average gradient[" << c
+                 << "]: " << cell_avg_gradient[c] << std::endl;
+        }
+
+      // Compute gradients by neighbor cells
+      unsigned int                         n_neighbors = 0;
+      MHDEquations::flux_type              tmp_gradient;
+      std::vector<MHDEquations::flux_type> neighbor_gradients;
+      neighbor_gradients.reserve(cell->n_faces());
+      for (const auto face_no : cell->face_indices())
+        {
+          // TODO periodic BC
+          if (!cell->at_boundary(face_no) &&
+              cell->neighbor(face_no)->is_active())
+            {
+              auto neighbor = cell->neighbor(face_no);
+              const MHDEquations::state_type &neighbor_avg =
+                get_cell_average(neighbor);
+              const Tensor<1, spacedim> distance =
+                neighbor->center() - cell->center();
+
+              saplog << "neighbor " << face_no << ": " << distance << std::endl;
+              saplog << "avg: " << neighbor_avg << std::endl;
+
+              for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+                {
+                  for (unsigned int d = 0; d < spacedim; ++d)
+                    tmp_gradient[c][d] =
+                      (neighbor_avg[c] - cell_avg[c]) / distance[d];
+
+                  saplog << "neighbor gradient[" << c
+                         << "]: " << tmp_gradient[c] << std::endl;
+                }
+              neighbor_gradients.push_back(tmp_gradient);
+
+              n_neighbors++;
+            }
+        }
+      saplog << "n_neighbors = " << n_neighbors
+             << ", size = " << neighbor_gradients.size() << std::endl;
+
+
+      // Computed limited gradient
+      MHDEquations::flux_type limited_gradient;
+      const double diff = SlopeLimiter::minmod_gradients(cell_avg_gradient,
+                                                         neighbor_gradients,
+                                                         limited_gradient);
+      saplog << "Difference between cell and limited gradient:" << diff
+             << std::endl;
+      for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+        saplog << "limited_gradient[" << c << "]: " << limited_gradient[c]
+               << std::endl;
+
+
+      // Compute limited solution values at q_points
+      std::vector<Vector<double>> limited_solution_values(
+        fe_v.n_quadrature_points, Vector<double>(MHDEquations::n_components));
+
+      for (const unsigned int q_index : fe_v.quadrature_point_indices())
+        {
+          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+            {
+              /** Use limited_gradient */
+              limited_solution_values[q_index][c] =
+                cell_avg[c] +
+                limited_gradient[c] * (q_points[q_index] - cell->center());
+
+              // /** Use cell average */
+              // limited_solution_values[q_index][c] = cell_avg[c];
+            }
+        }
+      // /** Reconstruct unlimited solution */
+      // fe_v.get_function_values(locally_relevant_current_solution,
+      //                          limited_solution_values);
+
+
+      // Integrate with basis functions
+      for (const unsigned int q_index : fe_v.quadrature_point_indices())
         for (unsigned int i : fe_v.dof_indices())
-          {
-            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-              {
-                copy_data.cell_dg_rhs(i) +=
-                  avg[c] * fe_v.shape_value_component(i, q_index, c) *
-                  JxW[q_index];
-              }
-          }
-      }
-  };
+          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+            copy_data.cell_system_rhs(i) +=
+              limited_solution_values[q_index][c] *
+              fe_v.shape_value_component(i, q_index, c) * JxW[q_index];
+
+
+      saplog << "End cell" << std::endl << std::endl;
+    };
 
   // copier for the mesh_loop function
-  const auto copier = [&](const CopyData &c) {
-    constraints.distribute_local_to_global(c.cell_dg_rhs,
+  const auto copier = [&](const CopyDataSlopeLimiter &c) {
+    constraints.distribute_local_to_global(c.cell_system_rhs,
                                            c.local_dof_indices,
                                            system_rhs);
   };
 
-  ScratchData<dim, spacedim> scratch_data(mapping,
-                                          fe,
-                                          quadrature,
-                                          quadrature_face);
-  CopyData                   copy_data;
+  ScratchDataSlopeLimiter<dim, spacedim> scratch_data(mapping, fe, quadrature);
+  CopyDataSlopeLimiter                   copy_data;
   saplog << "Begin the assembly of the system rhs for projection." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
@@ -652,23 +753,29 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   system_rhs.compress(VectorOperation::add);
   saplog << "The system rhs was assembled." << std::endl;
 
+  {
+    TimerOutput::Scope t2(timer, "Limiter - Project");
 
-  // Globally project limited solution onto locallY_owned_solution
-  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
-  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+    // Globally project limited solution onto locallY_owned_solution
+    SolverControl solver_control(1000, 1e-6 * system_rhs.l2_norm());
+    PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
-  PETScWrappers::PreconditionBlockJacobi preconditioner;
-  preconditioner.initialize(mass_matrix);
+    PETScWrappers::PreconditionBlockJacobi preconditioner;
+    preconditioner.initialize(mass_matrix);
 
-  // The x vector has to be a vector of locally_owned_dofs, so we make use of
-  // the locally_owned_solution
-  solver.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
+    // The x vector has to be a vector of locally_owned_dofs, so we make use of
+    // the locally_owned_solution
+    solver.solve(mass_matrix,
+                 locally_owned_solution,
+                 system_rhs,
+                 preconditioner);
 
-  // Update the solution
-  locally_relevant_current_solution = locally_owned_solution;
+    // Update the solution
+    locally_relevant_current_solution = locally_owned_solution;
 
-  saplog << "Solver converged in " << solver_control.last_step()
-         << " iterations." << std::endl;
+    saplog << "Solver converged in " << solver_control.last_step()
+           << " iterations." << std::endl;
+  }
 }
 
 
