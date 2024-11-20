@@ -521,12 +521,107 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   saplog << "Limit solution" << std::endl;
   LogStream::Prefix p("Limiter", saplog);
 
+  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using namespace sapphirepp::internal::MHDSolver;
+
+
+  /**
+   * To limit the solution we use the following procedure:
+   *
+   *   1. Precompute cell averages using @ref compute_cell_average().
+   *   2. Compute the limited solution/limited gradient using neighbor cells
+   *      in @ref cell_worker.
+   *   3. Compute the projection of the limited solution onto the DoFs:
+   *      1. Compute the RHS for the projection by folding with the basis
+   *         functions solution in @ref cell_worker.
+   *      2. Distribute the RHS to the global @ref system_rhs in @ref copier.
+   *      3. Project the limited solution on the @ref locally_owned_solution
+   *         \f$ f \f$ using the @ref mass_matrix \f$ M \f$ and the
+   *         @ref system_rhs \f$ b \f$, \f$ M f = b \f$.
+   *   4. Distribute to the @ref locally_relevant_current_solution.
+   */
+
   compute_cell_average();
 
-  // TODO limit solution, working on locally_owned_solution
+  system_rhs = 0;
+
+  // assemble cell terms
+  const auto cell_worker = [&](const Iterator             &cell,
+                               ScratchData<dim, spacedim> &scratch_data,
+                               CopyData                   &copy_data) {
+    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+    // reinit cell
+    fe_v.reinit(cell);
+
+    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
+    // reinit the cell_matrix
+    copy_data.reinit(cell, n_dofs);
+
+    const std::vector<Point<spacedim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double>          &JxW      = fe_v.get_JxW_values();
+
+    std::vector<Vector<double>> states(
+      q_points.size(), Vector<double>(MHDEquations::n_components));
+    typename MHDEquations::state_type avg(MHDEquations::n_components);
+    get_cell_average(cell, avg);
+
+    fe_v.get_function_values(locally_relevant_current_solution, states);
+
+    for (const unsigned int q_index : fe_v.quadrature_point_indices())
+      {
+        for (unsigned int i : fe_v.dof_indices())
+          {
+            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+              {
+                copy_data.cell_dg_rhs(i) +=
+                  avg[c] * fe_v.shape_value_component(i, q_index, c) *
+                  JxW[q_index];
+              }
+          }
+      }
+  };
+
+  // copier for the mesh_loop function
+  const auto copier = [&](const CopyData &c) {
+    constraints.distribute_local_to_global(c.cell_dg_rhs,
+                                           c.local_dof_indices,
+                                           system_rhs);
+  };
+
+  ScratchData<dim, spacedim> scratch_data(mapping,
+                                          fe,
+                                          quadrature,
+                                          quadrature_face);
+  CopyData                   copy_data;
+  saplog << "Begin the assembly of the system rhs for projection." << std::endl;
+  const auto filtered_iterator_range =
+    dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
+  MeshWorker::mesh_loop(filtered_iterator_range,
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells);
+  system_rhs.compress(VectorOperation::add);
+  saplog << "The system rhs was assembled." << std::endl;
+
+
+  // Globally project limited solution onto locallY_owned_solution
+  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
+  preconditioner.initialize(mass_matrix);
+
+  // The x vector has to be a vector of locally_owned_dofs, so we make use of
+  // the locally_owned_solution
+  solver.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
 
   // Update the solution
   locally_relevant_current_solution = locally_owned_solution;
+
+  saplog << "Solver converged in " << solver_control.last_step()
+         << " iterations." << std::endl;
 }
 
 
