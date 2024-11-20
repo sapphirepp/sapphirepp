@@ -462,7 +462,7 @@ namespace sapphirepp
 
 
       /**
-       * @name CellAverages
+       * @name Limiter
        * @{
        */
       /**
@@ -505,6 +505,13 @@ namespace sapphirepp
             return avg;
           }
       }
+
+
+      /**
+       * @brief Applys a slope limiter to the current solution.
+       */
+      void
+      apply_limiter();
       /** @} */
     };
 

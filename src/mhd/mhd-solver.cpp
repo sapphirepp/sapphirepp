@@ -515,6 +515,24 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
 
 template <unsigned int dim>
 void
+sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
+{
+  TimerOutput::Scope t(timer, "Limiter");
+  saplog << "Limit solution" << std::endl;
+  LogStream::Prefix p("Limiter", saplog);
+
+  compute_cell_average();
+
+  // TODO limit solution, working on locally_owned_solution
+
+  // Update the solution
+  locally_relevant_current_solution = locally_owned_solution;
+}
+
+
+
+template <unsigned int dim>
+void
 sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 {
   TimerOutput::Scope timer_section(timer, "DG rhs - MHD");
