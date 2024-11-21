@@ -44,3 +44,38 @@ sapphirepp::MHD::SlopeLimiter::minmod(const std::vector<double> &values)
   else
     return *max_it;
 }
+
+
+
+double
+sapphirepp::MHD::SlopeLimiter::minmod_gradients(
+  const MHDEquations::flux_type              &cell_gradient,
+  const std::vector<MHDEquations::flux_type> &neighbor_gradients,
+  MHDEquations::flux_type                    &limited_gradient)
+{
+  double              difference = 0.;
+  std::vector<double> values;
+  values.reserve(neighbor_gradients.size() + 1);
+  for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+    {
+      for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+        {
+          AssertIsFinite(cell_gradient[c][d]);
+          values.push_back(cell_gradient[c][d]);
+
+          for (const auto &tmp : neighbor_gradients)
+            if (std::isfinite(tmp[c][d]))
+              values.push_back(tmp[c][d]);
+
+          limited_gradient[c][d] = minmod(values);
+          AssertIsFinite(limited_gradient[c][d]);
+
+          difference += std::fabs(cell_gradient[c][d] - limited_gradient[c][d]);
+
+          values.clear();
+        }
+    }
+
+  difference /= static_cast<double>(MHDEquations::n_components);
+  return difference;
+}
