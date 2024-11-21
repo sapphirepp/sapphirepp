@@ -28,7 +28,10 @@
 #ifndef MHD_SLOPELIMITER_H
 #define MHD_SLOPELIMITER_H
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
+
+#include <deal.II/grid/tria_accessor.h>
 
 #include <deal.II/lac/vector.h>
 
@@ -92,6 +95,34 @@ namespace sapphirepp
         const MHDEquations::flux_type              &cell_gradient,
         const std::vector<MHDEquations::flux_type> &neighbor_gradients,
         MHDEquations::flux_type                    &limited_gradient);
+
+
+
+      /**
+       * @brief Computes the distance form the neighbor cell to this cell in
+       *        direction of face `face_no`, accounting for periodic boundaries.
+       *
+       * @tparam TriaIterator @dealref{TriaIterator}
+       * @tparam spacedim Spacial dimensions
+       * @param cell Current cell.
+       * @param face_no Face number for direction of neighbor.
+       * @return dealii::Tensor<1, spacedim> Distance between this cell and the
+       *         neighbor cell, accounting for periodic boundaries.
+       */
+      template <typename TriaIterator,
+                unsigned int spacedim = MHDEquations::spacedim>
+      inline dealii::Tensor<1, spacedim>
+      compute_periodic_distance_cell_neighbor(const TriaIterator &cell,
+                                              const unsigned int  face_no)
+      {
+        if (cell->has_periodic_neighbor(face_no))
+          return (cell->face(face_no)->center() - cell->center()) * 2.;
+
+        Assert(!cell->at_boundary(face_no),
+               dealii::ExcMessage("Can not compute distance for non-periodic "
+                                  "boundary cells."));
+        return cell->neighbor(face_no)->center() - cell->center();
+      }
     } // namespace SlopeLimiter
   }   // namespace MHD
 } // namespace sapphirepp
