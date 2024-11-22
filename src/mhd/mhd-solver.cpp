@@ -640,6 +640,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     std::vector<MHDEquations::flux_type> neighbor_gradients;
     neighbor_gradients.reserve(cell->n_faces());
 
+    Vector<double> local_dof_values(fe.n_dofs_per_cell());
+    const auto     cell_dofs = cell->as_dof_handler_iterator(dof_handler);
+    cell_dofs->get_dof_values(locally_relevant_current_solution,
+                              local_dof_values);
+    saplog << "local dofs: " << local_dof_values << std::endl;
 
     // Compute cell average gradient
     {
@@ -656,6 +661,35 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
               solution_gradients[q_index][c] * JxW[q_index];
           cell_avg_gradient[c] /= cell->measure();
           saplog << "cell average gradient[" << c
+                 << "]: " << cell_avg_gradient[c] << std::endl;
+        }
+
+      /**
+       * The calculation of the average gradient is not as simple as shown here,
+       * since the derivatives of the Legendre polynomials do *not* form a
+       * orthonormal basis. Instead, we could use recurrence relations for the
+       * derivatives, to sum the different DoFs and find the average gradient.
+       * (This is probably very hard for d>1, so it might be easiest to stay
+       * with just integrating the average.)
+       *
+       * To set the limited solution, we could however use the reverse logic to
+       * whats implemented below. In that case, we explicitly want to set all
+       * higher orders to 0. Therefore, the gradient is set by the polynomial 1.
+       */
+      for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+        {
+          cell_avg_gradient[c] = 0;
+          for (unsigned int d = 0; d < dim; ++d)
+            {
+              const unsigned int k            = fe.tensor_degree();
+              const unsigned int tensor_index = std::pow(k + 1, d);
+              const unsigned int index_grad =
+                fe.component_to_system_index(c, tensor_index);
+              // TODO: check Normalization: 4^2*sqrt(3)
+              cell_avg_gradient[c][d] =
+                local_dof_values[index_grad] * (16. * std::sqrt(3.));
+            }
+          saplog << "cell average gradient new[" << c
                  << "]: " << cell_avg_gradient[c] << std::endl;
         }
     }
