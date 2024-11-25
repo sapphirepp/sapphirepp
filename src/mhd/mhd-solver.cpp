@@ -194,37 +194,48 @@ namespace sapphirepp
         // Constructor
         ScratchDataSlopeLimiter(const Mapping<dim, spacedim>       &mapping,
                                 const FiniteElement<dim, spacedim> &fe,
-                                const Quadrature<dim>              &quadrature,
-                                const UpdateFlags update_flags =
-                                  update_values | update_gradients |
-                                  update_quadrature_points | update_JxW_values)
-          : fe_values(mapping, fe, quadrature, update_flags)
+                                const Quadrature<dim>              &quadrature)
+          : fe_values_gradient(mapping,
+                               fe,
+                               quadrature,
+                               update_gradients | update_JxW_values)
+          , fe_values_support(mapping,
+                              fe,
+                              Quadrature<dim>(
+                                fe.get_generalized_support_points()),
+                              update_quadrature_points)
         {}
 
         // Copy Constructor
         ScratchDataSlopeLimiter(
           const ScratchDataSlopeLimiter<dim, spacedim> &scratch_data)
-          : fe_values(scratch_data.fe_values.get_mapping(),
-                      scratch_data.fe_values.get_fe(),
-                      scratch_data.fe_values.get_quadrature(),
-                      scratch_data.fe_values.get_update_flags())
+          : fe_values_gradient(
+              scratch_data.fe_values_gradient.get_mapping(),
+              scratch_data.fe_values_gradient.get_fe(),
+              scratch_data.fe_values_gradient.get_quadrature(),
+              scratch_data.fe_values_gradient.get_update_flags())
+          , fe_values_support(scratch_data.fe_values_support.get_mapping(),
+                              scratch_data.fe_values_support.get_fe(),
+                              scratch_data.fe_values_support.get_quadrature(),
+                              scratch_data.fe_values_support.get_update_flags())
         {}
 
-        FEValues<dim, spacedim> fe_values;
+        FEValues<dim, spacedim> fe_values_gradient;
+        FEValues<dim, spacedim> fe_values_support;
       };
 
 
 
       struct CopyDataSlopeLimiter
       {
-        Vector<double>                       cell_system_rhs;
+        std::vector<double>                  cell_dof_values;
         std::vector<types::global_dof_index> local_dof_indices;
 
         template <typename Iterator>
         void
         reinit(const Iterator &cell, unsigned int dofs_per_cell)
         {
-          cell_system_rhs.reinit(dofs_per_cell);
+          cell_dof_values.resize(dofs_per_cell);
 
           local_dof_indices.resize(dofs_per_cell);
           cell->get_dof_indices(local_dof_indices);
@@ -617,7 +628,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                                ScratchDataSlopeLimiter<dim, spacedim>
                                                     &scratch_data,
                                CopyDataSlopeLimiter &copy_data) {
-    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values_gradient;
     FEValues<dim, spacedim>  fe_v_support(mapping,
                                          fe,
                                          Quadrature<dim>(
@@ -767,7 +778,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
   // copier for the mesh_loop function
   const auto copier = [&](const CopyDataSlopeLimiter &c) {
-    constraints.distribute_local_to_global(c.cell_system_rhs,
+    constraints.distribute_local_to_global(c.cell_dof_values,
                                            c.local_dof_indices,
                                            system_rhs);
   };
