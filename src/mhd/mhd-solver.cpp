@@ -477,6 +477,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
 
   cell_average.resize(triangulation.n_active_cells(),
                       Vector<double>(MHDEquations::n_components));
+  shock_indicator.reinit(triangulation.n_active_cells());
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -617,6 +618,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   compute_cell_average();
   // return; // Debug: no limiter
 
+  AssertDimension(shock_indicator.size(), triangulation.n_active_cells());
   Assert(fe.has_generalized_support_points(),
          ExcMessage("The slope limiter uses generalized support points "
                     "to compute the limited DoFs."));
@@ -723,6 +725,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
       for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
         saplog << "limited_gradient[" << c << "]: " << limited_gradient[c]
                << std::endl;
+      shock_indicator[cell->active_cell_index()] = diff;
     }
 
 
@@ -1272,6 +1275,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
 
   data_out.add_data_vector(cell_average_component,
                            "average_roh",
+                           DataOut<dim, spacedim>::type_cell_data);
+  data_out.add_data_vector(shock_indicator,
+                           "shock_indicator",
                            DataOut<dim, spacedim>::type_cell_data);
   /** @todo [Remove Debug] */
 
