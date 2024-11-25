@@ -617,38 +617,31 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   compute_cell_average();
   // return; // Debug: no limiter
 
-  system_rhs             = 0;
-  locally_owned_solution = 0;
   Assert(fe.has_generalized_support_points(),
          ExcMessage("The slope limiter uses generalized support points "
                     "to compute the limited DoFs."));
+
+  locally_owned_solution = 0;
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator &cell,
                                ScratchDataSlopeLimiter<dim, spacedim>
                                                     &scratch_data,
                                CopyDataSlopeLimiter &copy_data) {
-    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values_gradient;
-    FEValues<dim, spacedim>  fe_v_support(mapping,
-                                         fe,
-                                         Quadrature<dim>(
-                                           fe.get_generalized_support_points()),
-                                         update_quadrature_points);
+    FEValues<dim, spacedim> &fe_v_grad    = scratch_data.fe_values_gradient;
+    FEValues<dim, spacedim> &fe_v_support = scratch_data.fe_values_support;
     // reinit cell
-    fe_v.reinit(cell);
+    fe_v_grad.reinit(cell);
     fe_v_support.reinit(cell);
 
     saplog << "Limit cell " << cell->active_cell_index() << std::endl;
 
-    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
+    const unsigned int n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
     // reinit copy_data
     copy_data.reinit(cell, n_dofs);
 
-    std::vector<double> cell_limited_dof_values;
-    cell_limited_dof_values.resize(n_dofs);
 
-
-    const std::vector<double>          &JxW = fe_v.get_JxW_values();
+    const std::vector<double>          &JxW = fe_v_grad.get_JxW_values();
     const std::vector<Point<spacedim>> &support_points =
       fe_v_support.get_quadrature_points();
 
@@ -661,18 +654,23 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     std::vector<MHDEquations::flux_type> neighbor_gradients;
     neighbor_gradients.reserve(cell->n_faces());
 
+    std::vector<Vector<double>> limited_support_point_values(
+      fe_v_support.n_quadrature_points,
+      Vector<double>(MHDEquations::n_components));
+
 
     // Compute cell average gradient
     {
       TimerOutput::Scope t2(timer, "Limiter - AvgGrad");
       std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
-        fe_v.n_quadrature_points,
+        fe_v_grad.n_quadrature_points,
         std::vector<Tensor<1, spacedim>>(MHDEquations::n_components));
-      fe_v.get_function_gradients(locally_relevant_current_solution,
-                                  solution_gradients);
+      fe_v_grad.get_function_gradients(locally_relevant_current_solution,
+                                       solution_gradients);
       for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
         {
-          for (const unsigned int q_index : fe_v.quadrature_point_indices())
+          for (const unsigned int q_index :
+               fe_v_grad.quadrature_point_indices())
             cell_avg_gradient[c] +=
               solution_gradients[q_index][c] * JxW[q_index];
           cell_avg_gradient[c] /= cell->measure();
@@ -728,13 +726,10 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     }
 
 
+    // Compute limited solution DoF values
     {
       TimerOutput::Scope t2(timer, "Limiter - LimitSolution");
       // Compute limited solution values at support points
-      std::vector<Vector<double>> limited_support_point_values(
-        fe_v_support.n_quadrature_points,
-        Vector<double>(MHDEquations::n_components));
-
       for (const unsigned int q_index : fe_v_support.quadrature_point_indices())
         {
           saplog << "q_point [" << q_index << "] :" << support_points[q_index]
@@ -759,17 +754,13 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
 
       fe.convert_generalized_support_point_values_to_dof_values(
-        limited_support_point_values, cell_limited_dof_values);
+        limited_support_point_values, copy_data.cell_dof_values);
       saplog << "Limited dofs:";
-      for (const auto &tmp : cell_limited_dof_values)
+      for (const auto &tmp : copy_data.cell_dof_values)
         {
           saplog << " " << tmp;
         }
       saplog << std::endl;
-
-      constraints.distribute_local_to_global(cell_limited_dof_values,
-                                             copy_data.local_dof_indices,
-                                             locally_owned_solution);
     }
 
 
@@ -780,7 +771,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   const auto copier = [&](const CopyDataSlopeLimiter &c) {
     constraints.distribute_local_to_global(c.cell_dof_values,
                                            c.local_dof_indices,
-                                           system_rhs);
+                                           locally_owned_solution);
   };
 
   ScratchDataSlopeLimiter<dim, spacedim> scratch_data(mapping, fe, quadrature);
@@ -794,7 +785,6 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                         scratch_data,
                         copy_data,
                         MeshWorker::assemble_own_cells);
-  system_rhs.compress(VectorOperation::add);
   locally_owned_solution.compress(VectorOperation::add);
   locally_relevant_current_solution = locally_owned_solution;
   saplog << "The solution was limited." << std::endl;
