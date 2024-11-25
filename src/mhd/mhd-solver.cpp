@@ -579,21 +579,21 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
    *   1. Precompute cell averages using @ref compute_cell_average().
    *   2. Compute the limited solution/limited gradient using neighbor cells
    *      in @ref cell_worker.
-   *   3. Compute the projection of the limited solution onto the DoFs:
-   *      1. Compute the RHS for the projection by folding with the basis
-   *         functions solution in @ref cell_worker.
-   *      2. Distribute the RHS to the global @ref system_rhs in @ref copier.
-   *      3. Project the limited solution on the @ref locally_owned_solution
-   *         \f$ f \f$ using the @ref mass_matrix \f$ M \f$ and the
-   *         @ref system_rhs \f$ b \f$, \f$ M f = b \f$.
+   *   3. Update DoFs on each cell using generalized support points
+   *      @dealref{convert_generalized_support_point_values_to_dof_values(),classFiniteElement,a8f2b9817bcf98ebd43239c6da46de809}.
+   *      This only works for basis functions that have support points,
+   *      i.e. for LagrangePolynomials, but not for Legendre polynomials.
    *   4. Distribute to the @ref locally_relevant_current_solution.
    *
-   * There are some competing alternative ways to perform step 3 cell-wise:
+   * There are some competing alternative ways to perform step 3:
    *
-   *   - Use support points to convert point values to DoF values using
-   *     @dealref{convert_generalized_support_point_values_to_dof_values(),classFiniteElement,a8f2b9817bcf98ebd43239c6da46de809}.
-   *     This only works for basis functions that have support points,
-   *     i.e. for LagrangePolynomials, but not for Legendre polynomials.
+   *   - Compute the projection of the limited solution onto the DoFs:
+   *     1. Compute the RHS for the projection by folding with the basis
+   *        functions solution in @ref cell_worker.
+   *     2. Distribute the RHS to the global @ref system_rhs in @ref copier.
+   *     3. Project the limited solution on the @ref locally_owned_solution
+   *        \f$ f \f$ using the @ref mass_matrix \f$ M \f$ and the
+   *        @ref system_rhs \f$ b \f$, \f$ M f = b \f$.
    *   - Locally invert the mass matrix. Disadvantage is, that we need to solve
    *     a (small) linear system on each cell.
    *   - If one has basis functions with a diagonal mass matrix, the inversion
@@ -606,7 +606,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   compute_cell_average();
   // return; // Debug: no limiter
 
-  system_rhs = 0;
+  system_rhs             = 0;
+  locally_owned_solution = 0;
+  Assert(fe.has_generalized_support_points(),
+         ExcMessage("The slope limiter uses generalized support points "
+                    "to compute the limited DoFs."));
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator &cell,
@@ -614,8 +618,14 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                                                     &scratch_data,
                                CopyDataSlopeLimiter &copy_data) {
     FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+    FEValues<dim, spacedim>  fe_v_support(mapping,
+                                         fe,
+                                         Quadrature<dim>(
+                                           fe.get_generalized_support_points()),
+                                         update_quadrature_points);
     // reinit cell
     fe_v.reinit(cell);
+    fe_v_support.reinit(cell);
 
     saplog << "Limit cell " << cell->active_cell_index() << std::endl;
 
@@ -623,8 +633,13 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     // reinit copy_data
     copy_data.reinit(cell, n_dofs);
 
-    const std::vector<Point<spacedim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double>          &JxW      = fe_v.get_JxW_values();
+    std::vector<double> cell_limited_dof_values;
+    cell_limited_dof_values.resize(n_dofs);
+
+
+    const std::vector<double>          &JxW = fe_v.get_JxW_values();
+    const std::vector<Point<spacedim>> &support_points =
+      fe_v_support.get_quadrature_points();
 
     const MHDEquations::state_type &cell_avg = get_cell_average(cell);
     saplog << "cell average: " << cell_avg << std::endl;
@@ -704,35 +719,46 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
     {
       TimerOutput::Scope t2(timer, "Limiter - LimitSolution");
-      // Compute limited solution values at q_points
-      std::vector<Vector<double>> limited_solution_values(
-        fe_v.n_quadrature_points, Vector<double>(MHDEquations::n_components));
+      // Compute limited solution values at support points
+      std::vector<Vector<double>> limited_support_point_values(
+        fe_v_support.n_quadrature_points,
+        Vector<double>(MHDEquations::n_components));
 
-      for (const unsigned int q_index : fe_v.quadrature_point_indices())
+      for (const unsigned int q_index : fe_v_support.quadrature_point_indices())
         {
+          saplog << "q_point [" << q_index << "] :" << support_points[q_index]
+                 << std::endl;
           for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
             {
               /** Use limited_gradient */
-              limited_solution_values[q_index][c] =
-                cell_avg[c] +
-                limited_gradient[c] * (q_points[q_index] - cell->center());
+              limited_support_point_values[q_index][c] +=
+                cell_avg[c] + limited_gradient[c] *
+                                (support_points[q_index] - cell->center());
 
               // /** Use cell average */
-              // limited_solution_values[q_index][c] = cell_avg[c];
+              // limited_support_point_values[q_index][c] = cell_avg[c];
+
+              saplog << " " << limited_support_point_values[q_index][c];
             }
+          saplog << std::endl;
         }
       // /** Reconstruct unlimited solution */
-      // fe_v.get_function_values(locally_relevant_current_solution,
-      //                          limited_solution_values);
+      // fe_v_support.get_function_values(locally_relevant_current_solution,
+      //                                  limited_support_point_values);
 
 
-      // Integrate with basis functions
-      for (const unsigned int q_index : fe_v.quadrature_point_indices())
-        for (unsigned int i : fe_v.dof_indices())
-          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-            copy_data.cell_system_rhs(i) +=
-              limited_solution_values[q_index][c] *
-              fe_v.shape_value_component(i, q_index, c) * JxW[q_index];
+      fe.convert_generalized_support_point_values_to_dof_values(
+        limited_support_point_values, cell_limited_dof_values);
+      saplog << "Limited dofs:";
+      for (const auto &tmp : cell_limited_dof_values)
+        {
+          saplog << " " << tmp;
+        }
+      saplog << std::endl;
+
+      constraints.distribute_local_to_global(cell_limited_dof_values,
+                                             copy_data.local_dof_indices,
+                                             locally_owned_solution);
     }
 
 
@@ -748,7 +774,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
   ScratchDataSlopeLimiter<dim, spacedim> scratch_data(mapping, fe, quadrature);
   CopyDataSlopeLimiter                   copy_data;
-  saplog << "Begin the assembly of the system rhs for projection." << std::endl;
+  saplog << "Begin limiting of solution." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
   MeshWorker::mesh_loop(filtered_iterator_range,
@@ -758,31 +784,9 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                         copy_data,
                         MeshWorker::assemble_own_cells);
   system_rhs.compress(VectorOperation::add);
-  saplog << "The system rhs was assembled." << std::endl;
-
-  {
-    TimerOutput::Scope t2(timer, "Limiter - Project");
-
-    // Globally project limited solution onto locallY_owned_solution
-    SolverControl solver_control(1000, 1e-6 * system_rhs.l2_norm());
-    PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
-
-    PETScWrappers::PreconditionBlockJacobi preconditioner;
-    preconditioner.initialize(mass_matrix);
-
-    // The x vector has to be a vector of locally_owned_dofs, so we make use of
-    // the locally_owned_solution
-    solver.solve(mass_matrix,
-                 locally_owned_solution,
-                 system_rhs,
-                 preconditioner);
-
-    // Update the solution
-    locally_relevant_current_solution = locally_owned_solution;
-
-    saplog << "Solver converged in " << solver_control.last_step()
-           << " iterations." << std::endl;
-  }
+  locally_owned_solution.compress(VectorOperation::add);
+  locally_relevant_current_solution = locally_owned_solution;
+  saplog << "The solution was limited." << std::endl;
 }
 
 
