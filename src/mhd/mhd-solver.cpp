@@ -636,7 +636,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     fe_v_grad.reinit(cell);
     fe_v_support.reinit(cell);
 
-    saplog << "Limit cell " << cell->active_cell_index() << std::endl;
+    const unsigned int cell_index = cell->active_cell_index();
+    saplog << "Limit cell " << cell_index << std::endl;
 
     const unsigned int n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
     // reinit copy_data
@@ -725,46 +726,58 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
       for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
         saplog << "limited_gradient[" << c << "]: " << limited_gradient[c]
                << std::endl;
-      shock_indicator[cell->active_cell_index()] = diff;
+      shock_indicator[cell_index] = diff;
     }
 
 
     // Compute limited solution DoF values
-    {
-      TimerOutput::Scope t2(timer, "Limiter - LimitSolution");
-      // Compute limited solution values at support points
-      for (const unsigned int q_index : fe_v_support.quadrature_point_indices())
+    // TODO: Use real indicator
+    if (shock_indicator[cell_index] > 1e-3)
+      {
         {
-          saplog << "q_point [" << q_index << "] :" << support_points[q_index]
-                 << std::endl;
-          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          TimerOutput::Scope t2(timer, "Limiter - LimitSolution");
+          // Compute limited solution values at support points
+          for (const unsigned int q_index :
+               fe_v_support.quadrature_point_indices())
             {
-              /** Use limited_gradient */
-              limited_support_point_values[q_index][c] +=
-                cell_avg[c] + limited_gradient[c] *
-                                (support_points[q_index] - cell->center());
+              saplog << "q_point [" << q_index
+                     << "] :" << support_points[q_index] << std::endl;
+              for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+                {
+                  /** Use limited_gradient */
+                  limited_support_point_values[q_index][c] +=
+                    cell_avg[c] + limited_gradient[c] *
+                                    (support_points[q_index] - cell->center());
 
-              // /** Use cell average */
-              // limited_support_point_values[q_index][c] = cell_avg[c];
+                  // /** Use cell average */
+                  // limited_support_point_values[q_index][c] = cell_avg[c];
 
-              saplog << " " << limited_support_point_values[q_index][c];
+                  saplog << " " << limited_support_point_values[q_index][c];
+                }
+              saplog << std::endl;
+            }
+          // /** Reconstruct unlimited solution */
+          // fe_v_support.get_function_values(locally_relevant_current_solution,
+          //                                  limited_support_point_values);
+
+
+          fe.convert_generalized_support_point_values_to_dof_values(
+            limited_support_point_values, copy_data.cell_dof_values);
+          saplog << "Limited dofs:";
+          for (const auto &tmp : copy_data.cell_dof_values)
+            {
+              saplog << " " << tmp;
             }
           saplog << std::endl;
         }
-      // /** Reconstruct unlimited solution */
-      // fe_v_support.get_function_values(locally_relevant_current_solution,
-      //                                  limited_support_point_values);
-
-
-      fe.convert_generalized_support_point_values_to_dof_values(
-        limited_support_point_values, copy_data.cell_dof_values);
-      saplog << "Limited dofs:";
-      for (const auto &tmp : copy_data.cell_dof_values)
-        {
-          saplog << " " << tmp;
-        }
-      saplog << std::endl;
-    }
+      }
+    else
+      {
+        // Use unlimited DoFs
+        for (unsigned int i = 0; i < n_dofs; ++i)
+          copy_data.cell_dof_values[i] =
+            locally_relevant_current_solution(copy_data.local_dof_indices[i]);
+      }
 
 
     saplog << "End cell" << std::endl << std::endl;
@@ -939,8 +952,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                                const unsigned int         &neighbor_subface_no,
                                ScratchData<dim, spacedim> &scratch_data,
                                CopyData                   &copy_data) {
-    // We assumes that faces are only  assembled once. And hence subface_no, can
-    // be ignored.
+    // We assumes that faces are only  assembled once. And hence subface_no,
+    // can be ignored.
     static_cast<void>(subface_no);
     // We are not using mesh refinement yet. Hence neighbor_subface_no can be
     // ignored.
