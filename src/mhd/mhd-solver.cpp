@@ -536,7 +536,7 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
 {
-  TimerOutput::Scope t(timer, "Cell average");
+  TimerOutput::Scope t(timer, "Cell average - MHD");
   saplog << "Compute cell average" << std::endl;
   AssertDimension(cell_average.size(), triangulation.n_active_cells());
 
@@ -577,7 +577,7 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 {
-  TimerOutput::Scope t(timer, "Limiter");
+  TimerOutput::Scope t(timer, "Limiter - MHD");
   saplog << "Limit solution" << std::endl;
   LogStream::Prefix p("Limiter", saplog);
 
@@ -661,67 +661,56 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
 
       // Compute cell average gradient
-      {
-        TimerOutput::Scope t2(timer, "Limiter - AvgGrad");
-        std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
-          fe_v_grad.n_quadrature_points,
-          std::vector<Tensor<1, spacedim>>(MHDEquations::n_components));
-        fe_v_grad.get_function_gradients(locally_relevant_current_solution,
-                                         solution_gradients);
-        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-          {
-            for (const unsigned int q_index :
-                 fe_v_grad.quadrature_point_indices())
-              cell_avg_gradient[c] +=
-                solution_gradients[q_index][c] * JxW[q_index];
-            cell_avg_gradient[c] /= cell->measure();
-          }
-      }
+      std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
+        fe_v_grad.n_quadrature_points,
+        std::vector<Tensor<1, spacedim>>(MHDEquations::n_components));
+      fe_v_grad.get_function_gradients(locally_relevant_current_solution,
+                                       solution_gradients);
+      for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+        {
+          for (const unsigned int q_index :
+               fe_v_grad.quadrature_point_indices())
+            cell_avg_gradient[c] +=
+              solution_gradients[q_index][c] * JxW[q_index];
+          cell_avg_gradient[c] /= cell->measure();
+        }
 
       // Compute gradients by neighbor cells (ignore non-periodic boundary)
-      {
-        TimerOutput::Scope t2(timer, "Limiter - Neighbors");
-        for (const auto face_no : cell->face_indices())
-          {
-            if (!cell->at_boundary(face_no) ||
-                cell->has_periodic_neighbor(face_no))
-              {
-                auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
-                const MHDEquations::state_type &neighbor_avg =
-                  get_cell_average(neighbor);
-                const Tensor<1, spacedim> distance =
-                  SlopeLimiter::compute_periodic_distance_cell_neighbor(
-                    cell, face_no);
+      for (const auto face_no : cell->face_indices())
+        {
+          if (!cell->at_boundary(face_no) ||
+              cell->has_periodic_neighbor(face_no))
+            {
+              auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
+              const MHDEquations::state_type &neighbor_avg =
+                get_cell_average(neighbor);
+              const Tensor<1, spacedim> distance =
+                SlopeLimiter::compute_periodic_distance_cell_neighbor(cell,
+                                                                      face_no);
 
-                for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-                  for (unsigned int d = 0; d < spacedim; ++d)
-                    tmp_gradient[c][d] =
-                      (neighbor_avg[c] - cell_avg[c]) / distance[d];
-                neighbor_gradients.push_back(tmp_gradient);
-              }
-          }
-      }
+              for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+                for (unsigned int d = 0; d < spacedim; ++d)
+                  tmp_gradient[c][d] =
+                    (neighbor_avg[c] - cell_avg[c]) / distance[d];
+              neighbor_gradients.push_back(tmp_gradient);
+            }
+        }
 
 
       // Computed limited gradient
-      {
-        TimerOutput::Scope t2(timer, "Limiter - MinMod");
-        const double       diff =
-          SlopeLimiter::minmod_gradients(cell_avg_gradient,
-                                         neighbor_gradients,
-                                         limited_gradient,
-                                         cell->diameter() /
-                                           std::sqrt(static_cast<double>(dim)));
+      const double diff =
+        SlopeLimiter::minmod_gradients(cell_avg_gradient,
+                                       neighbor_gradients,
+                                       limited_gradient,
+                                       cell->diameter() /
+                                         std::sqrt(static_cast<double>(dim)));
 
-        shock_indicator[cell_index] = diff;
-      }
+      shock_indicator[cell_index] = diff;
 
 
       // Only limit if average gradient was changed
-      if (shock_indicator[cell_index] > 1e-10)
+      if (diff > 1e-10)
         {
-          // Compute limited solution DoF values
-          TimerOutput::Scope t2(timer, "Limiter - LimitSolution");
           // Compute limited solution values at support points
           for (const unsigned int q_index :
                fe_v_support.quadrature_point_indices())
@@ -730,6 +719,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                 cell_avg[c] + limited_gradient[c] *
                                 (support_points[q_index] - cell->center());
 
+          // Compute limited solution DoF values
           fe.convert_generalized_support_point_values_to_dof_values(
             limited_support_point_values, copy_data.cell_dof_values);
         }
