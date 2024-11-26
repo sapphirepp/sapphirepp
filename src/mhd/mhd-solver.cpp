@@ -718,9 +718,12 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     // Computed limited gradient
     {
       TimerOutput::Scope t2(timer, "Limiter - MinMod");
-      const double diff = SlopeLimiter::minmod_gradients(cell_avg_gradient,
-                                                         neighbor_gradients,
-                                                         limited_gradient);
+      const double       diff =
+        SlopeLimiter::minmod_gradients(cell_avg_gradient,
+                                       neighbor_gradients,
+                                       limited_gradient,
+                                       cell->diameter() /
+                                         std::sqrt(static_cast<double>(dim)));
       saplog << "Difference between cell and limited gradient:" << diff
              << std::endl;
       for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
@@ -730,10 +733,10 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     }
 
 
-    // Compute limited solution DoF values
-    // TODO: Use real indicator
-    if (shock_indicator[cell_index] > 1e-3)
+    // Only limit if average gradient was changed
+    if (shock_indicator[cell_index] > 1e-10)
       {
+        // Compute limited solution DoF values
         {
           TimerOutput::Scope t2(timer, "Limiter - LimitSolution");
           // Compute limited solution values at support points

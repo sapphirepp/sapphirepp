@@ -51,8 +51,12 @@ double
 sapphirepp::MHD::SlopeLimiter::minmod_gradients(
   const MHDEquations::flux_type              &cell_gradient,
   const std::vector<MHDEquations::flux_type> &neighbor_gradients,
-  MHDEquations::flux_type                    &limited_gradient)
+  MHDEquations::flux_type                    &limited_gradient,
+  const double                                dx)
 {
+  const double beta = 2.;
+  const double M    = 0.;
+
   double              difference = 0.;
   std::vector<double> values;
   values.reserve(neighbor_gradients.size() + 1);
@@ -61,11 +65,17 @@ sapphirepp::MHD::SlopeLimiter::minmod_gradients(
       for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
         {
           AssertIsFinite(cell_gradient[c][d]);
+          if (std::abs(cell_gradient[c][d]) < M * dx * dx)
+            {
+              limited_gradient[c][d] = cell_gradient[c][d];
+              continue;
+            }
+
           values.push_back(cell_gradient[c][d]);
 
           for (const auto &tmp : neighbor_gradients)
             if (std::isfinite(tmp[c][d]))
-              values.push_back(tmp[c][d]);
+              values.push_back(beta * tmp[c][d]);
 
           limited_gradient[c][d] = minmod(values);
           AssertIsFinite(limited_gradient[c][d]);

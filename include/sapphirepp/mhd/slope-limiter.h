@@ -77,16 +77,18 @@ namespace sapphirepp
 
 
       /**
-       * @brief Calculate the component and direction wise minmod function for a
-       *        list of gradients.
+       * @brief Calculate the component and direction wise modified minmod
+       *        function for a list of gradients.
        *
        * This functions ignores `nan`/`inf` values, and only takes the finite
-       * entires into account.
+       * entires into account. It furthermore uses only the modified minmod
+       * function.
        *
        * @param cell_gradient Average gradient on the cell.
        * @param neighbor_gradients Gradients to neighbor cells.
        * @param limited_gradient Component and direction wise minmod function,
        *                         `minmod(cell_gradient, neighbor_gradients)`.
+       * @param dx Cell size \f$ \Delta x \f$ for modified minmod.
        * @return double Average difference between cell_gradient and limited_gradient
        *                per component and direction.
        */
@@ -94,7 +96,8 @@ namespace sapphirepp
       minmod_gradients(
         const MHDEquations::flux_type              &cell_gradient,
         const std::vector<MHDEquations::flux_type> &neighbor_gradients,
-        MHDEquations::flux_type                    &limited_gradient);
+        MHDEquations::flux_type                    &limited_gradient,
+        const double                                dx);
 
 
 
