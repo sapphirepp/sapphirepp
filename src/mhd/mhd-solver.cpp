@@ -1230,12 +1230,8 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
     MHDEquations::create_component_interpretation_list());
 
   /** @todo [Remove Debug] */
-  // Get one component of cell_averages
-  Vector<double> cell_average_component(triangulation.n_active_cells());
-  for (unsigned int i = 0; i < cell_average_component.size(); ++i)
-    cell_average_component[i] = cell_average[i][0];
-
-  data_out.add_data_vector(cell_average_component,
+  data_out.add_data_vector(get_cell_average_component(
+                             MHDEquations::density_component),
                            "average_roh",
                            DataOut<dim, spacedim>::type_cell_data);
   data_out.add_data_vector(shock_indicator,
@@ -1366,6 +1362,41 @@ const dealii::PETScWrappers::MPI::Vector &
 sapphirepp::MHD::MHDSolver<dim>::get_current_solution() const
 {
   return locally_relevant_current_solution;
+}
+
+
+
+template <unsigned int dim>
+const std::vector<dealii::Vector<double>> &
+sapphirepp::MHD::MHDSolver<dim>::get_cell_average() const
+{
+  return cell_average;
+}
+
+
+
+template <unsigned int dim>
+dealii::Vector<double>
+sapphirepp::MHD::MHDSolver<dim>::get_cell_average_component(
+  unsigned int component) const
+{
+  AssertIndexRange(component, MHDEquations::n_components);
+
+  Vector<double> cell_average_component(triangulation.n_active_cells());
+
+  for (unsigned int i = 0; i < cell_average_component.size(); ++i)
+    cell_average_component[i] = cell_average[i][component];
+
+  return cell_average_component;
+}
+
+
+
+template <unsigned int dim>
+const dealii::Vector<double> &
+sapphirepp::MHD::MHDSolver<dim>::get_shock_indicator() const
+{
+  return shock_indicator;
 }
 
 

@@ -310,6 +310,30 @@ namespace sapphirepp
       get_current_solution() const;
 
       /**
+       * @brief Get the cell average of the solution
+       *
+       * @return const std::vector<Vector<double>>&
+       */
+      const std::vector<Vector<double>> &
+      get_cell_average() const;
+
+      /**
+       * @brief Get the cell average of one component the solution
+       *
+       * @return const Vector<double>
+       */
+      Vector<double>
+      get_cell_average_component(unsigned int component) const;
+
+      /**
+       * @brief Get the shock_indicator
+       *
+       * @return const Vector<double>&
+       */
+      const Vector<double> &
+      get_shock_indicator() const;
+
+      /**
        * @brief Get the timer object
        *
        * @return const TimerOutput&
