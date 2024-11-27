@@ -497,6 +497,15 @@ namespace sapphirepp
       void
       compute_cell_average();
 
+      /**
+       * @brief Computes the @ref shock_indicator using the KXRCF method
+       *
+       * @note This function can only be called after updating the
+       *       @ref cell_average using  @ref compute_cell_average().
+       */
+      void
+      compute_shock_indicator();
+
 
       /**
        * @brief Retrieves the precomputed cell average for a given cell.

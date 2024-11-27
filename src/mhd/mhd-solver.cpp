@@ -63,6 +63,7 @@
 #include <array>
 #include <cmath>
 #include <fstream>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -575,6 +576,161 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
 
 template <unsigned int dim>
 void
+sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
+{
+  TimerOutput::Scope timer_section(timer, "Shock indicator - MHD");
+  saplog << "Compute shock indicator" << std::endl;
+  LogStream::Prefix p("ShockIndicator", saplog);
+
+  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using namespace sapphirepp::internal::MHDSolver;
+
+  shock_indicator = 0;
+
+  // empty cell and boundary worker
+  std::function<
+    void(const Iterator &, ScratchData<dim, spacedim> &, CopyData &)>
+    empty_cell_worker;
+  std::function<void(const Iterator &,
+                     const unsigned int &,
+                     ScratchData<dim, spacedim> &,
+                     CopyData &)>
+    empty_boundary_worker;
+
+  // assemble interior face terms
+  const auto face_worker = [&](const Iterator             &cell,
+                               const unsigned int         &face_no,
+                               const unsigned int         &subface_no,
+                               const Iterator             &neighbor_cell,
+                               const unsigned int         &neighbor_face_no,
+                               const unsigned int         &neighbor_subface_no,
+                               ScratchData<dim, spacedim> &scratch_data,
+                               CopyData                   &copy_data) {
+    static_cast<void>(copy_data);
+    Assert((cell->level() == neighbor_cell->level()) &&
+             (neighbor_cell->has_children() == false),
+           ExcNotImplemented("Mesh refinement not yet implemented."));
+    static_cast<void>(subface_no);
+    static_cast<void>(neighbor_subface_no);
+
+    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
+    fe_v_face.reinit(cell, face_no);
+    const unsigned int cell_index           = cell->active_cell_index();
+    double             cell_shock_indicator = 0.;
+
+    saplog << "Indicator in cell " << cell_index << " on face " << face_no
+           << std::endl;
+
+
+    // Only integrate over inflow cell boundaries.
+    // We use face by face discrimination using the cell_average flow and an
+    // abitany face normal
+    /**
+     * @todo Should we use the MHD flux instead of momentum to discriminate
+     *       outflow faces? For the energy component, there is an additional
+     *       contribution pointing in direction of the B-field.
+     */
+    Tensor<1, spacedim> momentum;
+    for (unsigned int d = 0; d < spacedim; ++d)
+      momentum[d] =
+        cell_average[cell_index][MHDEquations::first_momentum_component + d];
+    // Return in case of outflow face
+    if (momentum * fe_v_face.normal_vector(0) >= 0)
+      {
+        saplog << "Outflow face" << std::endl;
+        return;
+      }
+    // Continue on inflow faces
+    saplog << "Inflow face" << std::endl;
+
+
+    FEFaceValues<dim, spacedim> &fe_v_face_neighbor =
+      scratch_data.fe_values_face_neighbor;
+    fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
+
+    // Use Extractor for indicator variable y, e.g.energy or density
+    const FEValuesExtractors::Scalar variable(MHDEquations::energy_component);
+    const unsigned int               n_q_points = fe_v_face.n_quadrature_points;
+    const std::vector<double>       &JxW        = fe_v_face.get_JxW_values();
+    double                           face_norm  = 0.;
+    std::vector<double>              face_values(n_q_points);
+    std::vector<double>              face_values_neighbor(n_q_points);
+
+
+    fe_v_face[variable].get_function_values(locally_relevant_current_solution,
+                                            face_values);
+    fe_v_face_neighbor[variable].get_function_values(
+      locally_relevant_current_solution, face_values_neighbor);
+
+    saplog << "Values face:";
+    for (const auto &tmp : face_values)
+      saplog << " " << tmp;
+    saplog << std::endl;
+    saplog << "Values neighbor:";
+    for (const auto &tmp : face_values_neighbor)
+      saplog << " " << tmp;
+    saplog << std::endl;
+
+
+    for (unsigned int q_index : fe_v_face.quadrature_point_indices())
+      {
+        // (y_j - y_nb)
+        cell_shock_indicator +=
+          (face_values[q_index] - face_values_neighbor[q_index]) * JxW[q_index];
+        face_norm += JxW[q_index];
+      }
+    saplog << "indicator value: " << cell_shock_indicator << std::endl;
+
+
+    // WNormalize the indicator variable
+    const double dx = cell->diameter() / std::sqrt(static_cast<double>(dim));
+    const double degree = fe_v_face.get_fe().tensor_degree();
+    saplog << "degree=" << degree << ", dx=" << dx << std::endl;
+    const double cell_norm =
+      std::fabs(cell_average[cell_index][MHDEquations::energy_component]);
+    const double normalization =
+      std::pow(dx, 0.5 * (degree + 1)) * face_norm * cell_norm;
+
+    cell_shock_indicator = std::fabs(cell_shock_indicator) / normalization;
+    saplog << "indicator value: " << cell_shock_indicator << std::endl;
+    shock_indicator[cell_index] += cell_shock_indicator;
+    saplog << "shock indicator: " << shock_indicator[cell_index] << std::endl;
+  };
+
+  /** @todo Use valid or empty copier? */
+  // copier for the mesh_loop function
+  const auto copier = [&](const CopyData &c) {
+    static_cast<void>(c);
+    // Empty
+  };
+  static_cast<void>(copier);
+  // empty copier
+  std::function<void(const CopyData &)> empty_copier;
+
+  ScratchData<dim, spacedim> scratch_data(mapping,
+                                          fe,
+                                          quadrature,
+                                          quadrature_face);
+  CopyData                   copy_data;
+  saplog << "Begin the assembly of the shock indicator." << std::endl;
+  const auto filtered_iterator_range =
+    dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
+  MeshWorker::mesh_loop(filtered_iterator_range,
+                        empty_cell_worker,
+                        empty_copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_ghost_faces_both |
+                          MeshWorker::assemble_own_interior_faces_both,
+                        empty_boundary_worker,
+                        face_worker);
+  saplog << "The shock indicator was assembled." << std::endl;
+}
+
+
+
+template <unsigned int dim>
+void
 sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 {
   TimerOutput::Scope t(timer, "Limiter - MHD");
@@ -616,6 +772,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
    */
 
   compute_cell_average();
+  compute_shock_indicator();
   // return; // Debug: no limiter
 
   AssertDimension(shock_indicator.size(), triangulation.n_active_cells());
@@ -636,7 +793,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
       fe_v_grad.reinit(cell);
       fe_v_support.reinit(cell);
 
-      const unsigned int cell_index = cell->active_cell_index();
+      // const unsigned int cell_index = cell->active_cell_index();
 
       const unsigned int n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
       // reinit copy_data
@@ -704,8 +861,6 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                                        limited_gradient,
                                        cell->diameter() /
                                          std::sqrt(static_cast<double>(dim)));
-
-      shock_indicator[cell_index] = diff;
 
 
       // Only limit if average gradient was changed
