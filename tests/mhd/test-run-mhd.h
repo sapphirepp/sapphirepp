@@ -147,6 +147,23 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                 dealii::DataOut<dim, spacedim>::type_dof_data,
                 MHDEquations::create_component_interpretation_list());
 
+              // Output cell average and shock indicator
+              data_out.add_data_vector(mhd_solver.get_cell_average_component(
+                                         MHDEquations::density_component),
+                                       "average_roh",
+                                       DataOut<dim, spacedim>::type_cell_data);
+              data_out.add_data_vector(mhd_solver.get_shock_indicator(),
+                                       "shock_indicator",
+                                       DataOut<dim, spacedim>::type_cell_data);
+
+              // Output the partition of the mesh
+              const auto &triangulation = mhd_solver.get_triangulation();
+              dealii::Vector<float> subdomain(triangulation.n_active_cells());
+              for (unsigned int i = 0; i < subdomain.size(); ++i)
+                subdomain(i) =
+                  static_cast<float>(triangulation.locally_owned_subdomain());
+              data_out.add_data_vector(subdomain, "subdomain");
+
               data_out.build_patches(mhd_parameters.polynomial_degree);
               output_parameters.write_results<dim, spacedim>(
                 data_out,
@@ -236,6 +253,23 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
           dealii::DataOut<dim, spacedim>::type_dof_data,
           MHDEquations::create_component_interpretation_list());
 
+        // Output cell average and shock indicator
+        data_out.add_data_vector(mhd_solver.get_cell_average_component(
+                                   MHDEquations::density_component),
+                                 "average_roh",
+                                 DataOut<dim, spacedim>::type_cell_data);
+        data_out.add_data_vector(mhd_solver.get_shock_indicator(),
+                                 "shock_indicator",
+                                 DataOut<dim, spacedim>::type_cell_data);
+
+        // Output the partition of the mesh
+        const auto           &triangulation = mhd_solver.get_triangulation();
+        dealii::Vector<float> subdomain(triangulation.n_active_cells());
+        for (unsigned int i = 0; i < subdomain.size(); ++i)
+          subdomain(i) =
+            static_cast<float>(triangulation.locally_owned_subdomain());
+        data_out.add_data_vector(subdomain, "subdomain");
+
         data_out.build_patches(mhd_parameters.polynomial_degree);
         output_parameters.write_results<dim, spacedim>(
           data_out,
@@ -273,10 +307,12 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
 
 
       /** [End simulation] */
+      error_file.close();
+
       saplog << "Simulation ended at t = " << discrete_time.get_current_time()
              << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
-      error_file.close();
+      mhd_solver.get_timer().print_wall_time_statistics(MPI_COMM_WORLD);
       /** [End simulation] */
     }
   catch (std::exception &exc)
