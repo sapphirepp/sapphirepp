@@ -132,7 +132,7 @@ namespace sapphirepp
     /** [Dimension] */
     // !!!EDIT HERE!!!
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 2;
+    static constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
 
@@ -141,8 +141,7 @@ namespace sapphirepp
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
-	VFPFlags::spatial_advection | VFPFlags::rotation | VFPFlags::collision |
-	VFPFlags::time_independent_fields;
+      VFPFlags::spatial_advection | VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -215,8 +214,10 @@ namespace sapphirepp
 
         /** [Initial value] */
         // !!!EDIT HERE!!!
-        f[0] = 1. / (std::sqrt(2 * std::acos(0)) * prm.standard_deviation * prm.standard_deviation) *
-	    std::exp(-(point[0] * point[0] + point[1] * point[1]) /
+        f[0] = 1. /
+               (std::sqrt(2 * std::acos(-1)) * prm.standard_deviation *
+                prm.standard_deviation) *
+               std::exp(-(point[0] * point[0]) /
                         (2 * prm.standard_deviation * prm.standard_deviation));
         /** [Initial value] */
       }
@@ -463,8 +464,8 @@ namespace sapphirepp
         /** [Magnetic field] */
         // !!!EDIT HERE!!!
         magnetic_field[0] = prm.magnetic_field_strength; // B_x
-        magnetic_field[1] = 0.; // B_y
-        magnetic_field[2] = 0.; // B_z
+        magnetic_field[1] = 0.;                          // B_y
+        magnetic_field[2] = 0.;                          // B_z
         /** [Magnetic field] */
       }
 
