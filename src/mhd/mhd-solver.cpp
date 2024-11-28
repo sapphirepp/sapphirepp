@@ -789,16 +789,26 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         CopyDataSlopeLimiter                   &copy_data) {
       FEValues<dim, spacedim> &fe_v_grad    = scratch_data.fe_values_gradient;
       FEValues<dim, spacedim> &fe_v_support = scratch_data.fe_values_support;
-      // reinit cell
-      fe_v_grad.reinit(cell);
-      fe_v_support.reinit(cell);
+      const unsigned int       cell_index   = cell->active_cell_index();
+      const unsigned int       n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
 
-      // const unsigned int cell_index = cell->active_cell_index();
-
-      const unsigned int n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
       // reinit copy_data
       copy_data.reinit(cell, n_dofs);
 
+      // Only limit shock indicated cells. Return otherwise
+      if (shock_indicator[cell_index] < 1.)
+        {
+          // Use unlimited DoFs
+          for (unsigned int i = 0; i < n_dofs; ++i)
+            copy_data.cell_dof_values[i] =
+              locally_relevant_current_solution(copy_data.local_dof_indices[i]);
+          return;
+        }
+
+
+      // reinit cell
+      fe_v_grad.reinit(cell);
+      fe_v_support.reinit(cell);
 
       const std::vector<double>          &JxW = fe_v_grad.get_JxW_values();
       const std::vector<Point<spacedim>> &support_points =
