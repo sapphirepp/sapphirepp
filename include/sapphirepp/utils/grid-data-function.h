@@ -30,6 +30,7 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/function_lib.h>
+#include <deal.II/base/table.h>
 #include <deal.II/base/tensor.h>
 
 #include <filesystem>
@@ -239,6 +240,41 @@ namespace sapphirepp
 
       virtual void
       set_time(const double new_time) override;
+
+
+      /**
+       * @brief Read in data from a Athena tabular data file.
+       *
+       * Returns the interval endpoints, number of subintervals and data values
+       * of a Uniform grid in the format used for the
+       * @dealref{InterpolatedUniformGridData,classFunctions_1_1InterpolatedUniformGridData}.
+       * function.
+       *
+       * @param input_path Path to the file
+       * @param filename Filename
+       * @param interval_endpoints Returns the grid start and end points in
+       *                           each dimension.
+       * @param n_subintervals Returns the number of intervals in each dimension
+       * @param data_values Returns the data as a table for each component.
+       * @param n_components Number of components in the file
+       */
+      static void
+      read_data_tab(
+        const std::filesystem::path                &input_path,
+        const std::string                          &filename,
+        std::array<std::pair<double, double>, dim> &interval_endpoints,
+        std::array<unsigned int, dim>              &n_subintervals,
+        std::vector<Table<dim, double>>            &data_values,
+        unsigned int                                n_components = 1);
+
+
+
+    private:
+      const unsigned int           n_components_data;
+      const std::filesystem::path &input_path;
+      const std::string           &filename;
+
+      std::vector<InterpolatedUniformGridData2<dim>> grid_functions;
     };
 
   } // namespace Utils

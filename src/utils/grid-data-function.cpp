@@ -29,8 +29,13 @@
 
 // #include <deal.II/grid/grid_out.h>
 
+#include <deal.II/base/exceptions.h>
+#include <deal.II/base/table_indices.h>
+#include <deal.II/base/utilities.h>
+
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "sapphirepp-logstream.h"
 
@@ -446,6 +451,101 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::set_time(
   const double new_time)
 {
   Function<spacedim>::set_time(new_time);
+}
+
+
+
+template <unsigned int dim, unsigned int spacedim>
+void
+sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_tab(
+  const std::filesystem::path                &input_path,
+  const std::string                          &filename,
+  std::array<std::pair<double, double>, dim> &interval_endpoints,
+  std::array<unsigned int, dim>              &n_subintervals,
+  std::vector<Table<dim, double>>            &data_values,
+  unsigned int                                n_components)
+{
+  AssertDimension(data_values.size(), n_components);
+  Assert(dim == 1, ExcNotImplemented());
+  saplog << "Read data from file: " << input_path / filename << std::endl;
+  std::ifstream input_file(input_path / filename);
+  AssertThrow(input_file.is_open(), ExcFileNotOpen(input_path / filename));
+
+  // Table<2, double> data_table;
+  // data_table.resize(N, M);
+
+  std::vector<std::vector<double>> values(n_components);
+  unsigned int                     index = 0;
+  std::vector<std::string>         string_list;
+  std::vector<double>              double_list;
+  double                           x_min  = 0.;
+  double                           x_max  = 0.;
+  double                           x_last = 0.;
+  unsigned int                     N;
+
+  std::string line;
+  while (std::getline(input_file, line))
+    {
+      // Skip lines that start with '#'
+      if (line.empty() || line[0] == '#')
+        continue;
+
+      // string_list = Utilities::split_string_list(line, " ");
+      string_list.clear();
+      std::istringstream iss(line);
+      std::string        token;
+      while (iss >> token)
+        string_list.push_back(token);
+
+      double_list = Utilities::string_to_double(string_list);
+      AssertDimension(double_list.size(), 1 + dim + n_components);
+
+      for (unsigned int c = 0; c < n_components; ++c)
+        values[c].push_back(double_list[2 + c]);
+
+      const double x_coord = double_list[1];
+      if (index == 0)
+        {
+          x_min  = x_coord;
+          x_max  = x_coord;
+          x_last = x_coord;
+        }
+      else
+        {
+          x_max                  = std::max(x_max, x_coord);
+          N                      = index;
+          const double dx        = x_coord - x_last;
+          const double global_dx = (x_max - x_min) / static_cast<double>(N);
+          const double eps       = 1e-6;
+          AssertThrow(std::abs(dx - global_dx) < eps,
+                      ExcMessage(
+                        "Non-uniform grid detected in " +
+                        std::string(input_path / filename) +
+                        ": x_n - x_{n-1} = " + std::to_string(x_coord) + " - " +
+                        std::to_string(x_last) + " = " + std::to_string(dx) +
+                        " != dx = " + std::to_string(global_dx)));
+        }
+
+      x_last = x_coord;
+      index++;
+    }
+  N = index;
+
+
+  TableIndices<dim> table_indices;
+  for (unsigned int d = 0; d < dim; ++d)
+    table_indices[d] = 0;
+  table_indices[0]             = N;
+  n_subintervals[0]            = N - 1;
+  interval_endpoints[0].first  = x_min;
+  interval_endpoints[0].second = x_max;
+
+  for (unsigned int c = 0; c < n_components; ++c)
+    {
+      AssertDimension(values[c].size(), N);
+      data_values[c].reinit(table_indices);
+      data_values[c].fill(values[c].begin());
+    }
 }
 
 
