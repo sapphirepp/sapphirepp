@@ -57,6 +57,7 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/vector_tools_evaluate.h>
 #include <deal.II/numerics/vector_tools_integrate_difference.h>
 #include <deal.II/numerics/vector_tools_project.h>
 
@@ -69,8 +70,8 @@
 #include <vector>
 
 #include "particle-functions.h"
+#include "phase-space-reconstruction.h"
 #include "sapphirepp-logstream.h"
-
 
 namespace sapphirepp
 {
@@ -192,7 +193,7 @@ namespace sapphirepp
         }
       };
     } // namespace VFPSolver
-  }   // namespace internal
+  } // namespace internal
 } // namespace sapphirepp
 
 
@@ -1745,6 +1746,90 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);
   output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
+
+  try
+    {
+      // !!!EDIT HERE!!!
+      Point<dim>     point_1(3.);
+      Vector<double> expansion_coefficients_values(pde_system.system_size);
+
+      VectorTools::point_value(mapping,
+                               dof_handler,
+                               locally_relevant_current_solution,
+                               point_1,
+                               expansion_coefficients_values);
+
+      saplog << "Solution at (" << point_1 << ") available at proc. "
+             << Utilities::MPI::this_mpi_process(mpi_communicator) << ": "
+             << expansion_coefficients_values << std::endl;
+
+      const unsigned int n_mu_intervals =
+        75.; // Results in n_intervals + 1 points
+      const double        mu_min   = -1;
+      const double        mu_max   = 1;
+      const double        delta_mu = (mu_max - mu_min) / n_mu_intervals;
+      std::vector<double> mu_values =
+        PhaseSpace::create_range(mu_min, delta_mu, n_mu_intervals);
+
+      // Sanitize mu range: If, for example, a mu range is computed it is
+      // necessary to make sure that mu <=1 exactly and not to double precision.
+      // If it is only true to double precision, the GSL function sphPlm throws
+      // an error.
+      mu_values.front() = mu_min;
+      mu_values.back()  = mu_max;
+
+      const unsigned int n_phi_intervals = n_mu_intervals;
+      const double       phi_min         = 0.;
+      const double       phi_max         = 2 * std::acos(-1); // 2π
+      const double       delta_phi = (phi_max - phi_min) / n_phi_intervals;
+      const std::vector<double> phi_values =
+        PhaseSpace::create_range(phi_min, delta_phi, n_phi_intervals);
+
+      std::vector<double> f_values =
+        PhaseSpace::compute_phase_space_distribution(
+	    mu_values, phi_values, pde_system.lms_indices, expansion_coefficients_values);
+      std::string  path = output_parameters.output_path;
+      PhaseSpace::output_gnu_splot_data(path + "/surface_plot_distribution_function_" +
+                                          Utilities::to_string(time_step_number) +
+                                          ".dat",
+                                        mu_values,
+                                        phi_values,
+                                        f_values);
+      PhaseSpace::output_gnu_splot_spherical_density_map(
+	  path + "/spherical_density_map_" + Utilities::to_string(time_step_number) + ".dat",
+        mu_values,
+        phi_values,
+        f_values);
+
+      // std::ofstream outfile;
+      // outfile.open(output_parameters.output_path / "solution_at_x.csv",
+      //              std::ios_base::app);
+      // outfile << time_step_number << "; " << cur_time << "; "
+      //         << solution_at_p[0] << std::endl;
+      // outfile.close();
+
+      // Point<dim>     point_2(3.);
+      // Vector<double> solution_at_p2(pde_system.system_size);
+
+      // VectorTools::point_value(mapping,
+      //                          dof_handler,
+      //                          locally_relevant_current_solution,
+      //                          point_2,
+      //                          solution_at_p2);
+
+      // saplog << "Solution at (" << point_2 << ") available at proc. "
+      //        << Utilities::MPI::this_mpi_process(mpi_communicator) << ": "
+      //        << solution_at_p2 << std::endl;
+      // outfile.open(output_parameters.output_path / "solution_two_at_x.csv",
+      //              std::ios_base::app);
+      // outfile << time_step_number << "; " << cur_time << "; "
+      //         << solution_at_p2[0] << std::endl;
+      // outfile.close();
+    }
+  catch (VectorTools::ExcPointNotAvailableHere &exec)
+    {
+      std::cout << "test"; // Point not available on this process, so do nothing
+    }
 }
 
 
