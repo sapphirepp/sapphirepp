@@ -31,6 +31,7 @@
 #include <mpi.h>
 
 #include "config.h"
+#include "grid-data-function.h"
 #include "mhd-parameters.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
@@ -56,11 +57,13 @@ main(int argc, char *argv[])
 
       saplog.init(100, true);
 
-      std::string parameter_filename = "parameter.prm";
+      // std::string parameter_filename = "parameter.prm";
+      std::string parameter_filename = "parameter-sod.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = 1e-10;
+      // double max_L2_error = 1e-10;
+      double max_L2_error = 1e10;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 
@@ -80,16 +83,20 @@ main(int argc, char *argv[])
       mhd_parameters.parse_parameters(prm);
       /** [Main function setup] */
 
-      /** [Setup analytic solution] */
-      // TODO: solution
-      InitialConditionMHD<MHDEquations::spacedim> analytic_solution(
-        physical_parameters, mhd_parameters.adiabatic_index);
-      /** [Setup analytic solution] */
+      /** [Setup exact solution] */
+      Utils::GridDataFunction<dim_mhd, MHDEquations::spacedim> exact_solution(
+        // "/home/schulze/Documents/PhD/Code/athena-results",
+        "/Users/flo/Documents/PhD/Code/athena-results",
+        "Sod",
+        MHDEquations::n_components,
+        0.,
+        5);
+      /** [Setup exact solution] */
 
       return test_run_mhd(mhd_parameters,
                           physical_parameters,
                           output_parameters,
-                          analytic_solution,
+                          exact_solution,
                           max_L2_error);
     }
   catch (std::exception &exc)
