@@ -221,8 +221,11 @@ namespace sapphirepp
     {
     public:
       /** @brief Constructor */
-      GridDataFunction(const unsigned int n_components = 1,
-                       const double       inital_time  = 0.0);
+      GridDataFunction(const std::filesystem::path &input_path,
+                       const std::string           &base_filename,
+                       const unsigned int           n_components      = 1,
+                       const double                 inital_time       = 0.0,
+                       const unsigned int           n_components_data = 0);
 
 
 
@@ -242,11 +245,17 @@ namespace sapphirepp
       set_time(const double new_time) override;
 
 
+
+      void
+      load_data_from_file(const std::string &filename);
+
+
+
       /**
        * @brief Read in data from a Athena tabular data file.
        *
-       * Returns the interval endpoints, number of subintervals and data values
-       * of a Uniform grid in the format used for the
+       * Returns the interval endpoints, number of subintervals and data
+       * values of a Uniform grid in the format used for the
        * @dealref{InterpolatedUniformGridData,classFunctions_1_1InterpolatedUniformGridData}.
        * function.
        *
@@ -284,10 +293,12 @@ namespace sapphirepp
 
 
     private:
-      const unsigned int           n_components_data;
-      const std::filesystem::path &input_path;
-      const std::string           &filename;
+      const unsigned int          n_components_data;
+      const std::filesystem::path input_path;
+      const std::string           base_filename;
 
+      unsigned int                                   time_index;
+      std::vector<double>                            time_series;
       std::vector<InterpolatedUniformGridData2<dim>> grid_functions;
     };
 

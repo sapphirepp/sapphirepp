@@ -395,11 +395,28 @@ template class sapphirepp::Utils::InterpolatedUniformGridData2<3>;
 
 template <unsigned int dim, unsigned int spacedim>
 sapphirepp::Utils::GridDataFunction<dim, spacedim>::GridDataFunction(
-  const unsigned int n_components,
-  const double       inital_time)
+  const std::filesystem::path &input_path,
+  const std::string           &base_filename,
+  const unsigned int           n_components,
+  const double                 inital_time,
+  const unsigned int           n_components_input)
   : Function<spacedim>(n_components, inital_time)
+  , n_components_data(n_components_input == 0 ? n_components :
+                                                n_components_input)
+  , input_path(input_path)
+  , base_filename(base_filename)
+  , time_index(0)
+  , grid_functions(n_components_data)
 {
-  saplog << "Constructor" << std::endl;
+  {
+    LogStream::Prefix p("GridDataFunction", saplog);
+    read_data_hst(input_path, base_filename + ".hst", time_series);
+  }
+
+  const std::string filename = base_filename + ".block0.out1." +
+                               Utilities::int_to_string(time_index, 5) + ".tab";
+  load_data_from_file(filename);
+  set_time(inital_time);
 }
 
 
@@ -410,13 +427,14 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::value(
   const Point<spacedim> &p,
   const unsigned int     component) const
 {
+  if (component >= n_components_data)
+    return 0.0;
+
   Point<dim> point;
   for (unsigned int d = 0; d < dim; ++d)
     point[d] = p[d];
 
-  static_cast<void>(point);
-  static_cast<void>(component);
-  return 0.0;
+  return grid_functions[component].value(point);
 }
 
 
@@ -427,16 +445,16 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::gradient(
   const Point<spacedim> &p,
   const unsigned int     component) const
 {
+  Tensor<1, spacedim> return_gradient;
+  if (component >= n_components_data)
+    return return_gradient;
+
   Point<dim> point;
   for (unsigned int d = 0; d < dim; ++d)
     point[d] = p[d];
 
-  static_cast<void>(point);
-  static_cast<void>(component);
+  const Tensor<1, dim> gradient = grid_functions[component].gradient(point);
 
-  Tensor<1, dim> gradient;
-
-  Tensor<1, spacedim> return_gradient;
   for (unsigned int d = 0; d < dim; ++d)
     return_gradient[d] = gradient[d];
 
@@ -451,6 +469,85 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::set_time(
   const double new_time)
 {
   Function<spacedim>::set_time(new_time);
+
+  // Skip if in same time interval
+  if (time_index == time_series.size() - 1)
+    {
+      if (new_time >= time_series[time_index])
+        return;
+    }
+  else
+    {
+      AssertIndexRange(time_index + 1, time_series.size());
+      if ((new_time >= time_series[time_index]) &&
+          (new_time < time_series[time_index + 1]))
+        return;
+    }
+
+  // Find new index
+  // TODO: Improve
+  for (time_index = 0; time_index < time_series.size(); ++time_index)
+    {
+      if (time_series[time_index] > new_time)
+        {
+          time_index--;
+          break;
+        }
+    }
+  if (time_index >= time_series.size())
+    time_index = static_cast<unsigned int>(time_series.size() - 1);
+  AssertIndexRange(time_index, time_series.size());
+
+  // Load new data
+  const std::string filename = base_filename + ".block0.out1." +
+                               Utilities::int_to_string(time_index, 5) + ".tab";
+  load_data_from_file(filename);
+}
+
+
+
+template <unsigned int dim, unsigned int spacedim>
+void
+sapphirepp::Utils::GridDataFunction<dim, spacedim>::load_data_from_file(
+  const std::string &filename)
+{
+  LogStream::Prefix p("GridDataFunction", saplog);
+  saplog << "Load data from file: " << filename << std::endl;
+
+  std::array<std::pair<double, double>, dim> interval_endpoints;
+  std::array<unsigned int, dim>              n_subintervals;
+  std::vector<Table<dim, double>>            data_values(n_components_data);
+  read_data_tab(input_path,
+                filename,
+                interval_endpoints,
+                n_subintervals,
+                data_values,
+                n_components_data);
+
+
+  if (n_components_data == 5)
+    {
+      // Density
+      grid_functions[0].set_data(std::move(interval_endpoints),
+                                 std::move(n_subintervals),
+                                 std::move(data_values[0]));
+      // Energy
+      grid_functions[1 + spacedim].set_data(std::move(interval_endpoints),
+                                            std::move(n_subintervals),
+                                            std::move(data_values[1]));
+      // Momentum
+      for (unsigned int d = 0; d < spacedim; ++d)
+        grid_functions[1 + d].set_data(std::move(interval_endpoints),
+                                       std::move(n_subintervals),
+                                       std::move(data_values[2 + d]));
+    }
+  else
+    {
+      for (unsigned int c = 0; c < n_components_data; c++)
+        grid_functions[c].set_data(std::move(interval_endpoints),
+                                   std::move(n_subintervals),
+                                   std::move(data_values[c]));
+    }
 }
 
 
