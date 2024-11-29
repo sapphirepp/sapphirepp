@@ -328,6 +328,60 @@ sapphirepp::Utils::InterpolatedUniformGridData2<dim>::get_data() const
 
 
 
+template <int dim>
+void
+sapphirepp::Utils::InterpolatedUniformGridData2<dim>::set_data(
+  const std::array<std::pair<double, double>, dim> &new_interval_endpoints,
+  const std::array<unsigned int, dim>              &new_n_subintervals,
+  const dealii::Table<dim, double>                 &new_data_values)
+{
+  interval_endpoints = new_interval_endpoints;
+  n_subintervals     = new_n_subintervals;
+  data_values        = new_data_values;
+
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      Assert(n_subintervals[d] >= 1,
+             ExcMessage("There needs to be at least one subinterval in each "
+                        "coordinate direction."));
+      Assert(interval_endpoints[d].first < interval_endpoints[d].second,
+             ExcMessage("The interval in each coordinate direction needs "
+                        "to have positive size"));
+      Assert(data_values.size()[d] == n_subintervals[d] + 1,
+             ExcMessage("The data table does not have the correct size."));
+    }
+}
+
+
+
+template <int dim>
+void
+sapphirepp::Utils::InterpolatedUniformGridData2<dim>::set_data(
+  std::array<std::pair<double, double>, dim> &&new_interval_endpoints,
+  std::array<unsigned int, dim>              &&new_n_subintervals,
+  dealii::Table<dim, double>                 &&new_data_values)
+
+{
+  interval_endpoints = std::move(new_interval_endpoints);
+  n_subintervals     = std::move(new_n_subintervals);
+  data_values        = std::move(new_data_values);
+
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      Assert(this->n_subintervals[d] >= 1,
+             ExcMessage("There needs to be at least one subinterval in each "
+                        "coordinate direction."));
+      Assert(this->interval_endpoints[d].first <
+               this->interval_endpoints[d].second,
+             ExcMessage("The interval in each coordinate direction needs "
+                        "to have positive size"));
+      Assert(this->data_values.size()[d] == this->n_subintervals[d] + 1,
+             ExcMessage("The data table does not have the correct size."));
+    }
+}
+
+
+
 template class sapphirepp::Utils::InterpolatedUniformGridData2<1>;
 template class sapphirepp::Utils::InterpolatedUniformGridData2<2>;
 template class sapphirepp::Utils::InterpolatedUniformGridData2<3>;
