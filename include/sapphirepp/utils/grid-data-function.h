@@ -269,6 +269,20 @@ namespace sapphirepp
 
 
 
+      /**
+       * @brief Read time series information from a Athena history file.
+       *
+       * @param input_path Path to the file
+       * @param filename Filename
+       * @param time_series Returns the time series.
+       */
+      static void
+      read_data_hst(const std::filesystem::path &input_path,
+                    const std::string           &filename,
+                    std::vector<double>         &time_series);
+
+
+
     private:
       const unsigned int           n_components_data;
       const std::filesystem::path &input_path;

@@ -550,6 +550,52 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_tab(
 
 
 
+template <unsigned int dim, unsigned int spacedim>
+void
+sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_hst(
+  const std::filesystem::path &input_path,
+  const std::string           &filename,
+  std::vector<double>         &time_series)
+{
+  saplog << "Read time series from file: " << input_path / filename
+         << std::endl;
+  time_series.clear();
+  std::ifstream input_file(input_path / filename);
+  AssertThrow(input_file.is_open(), ExcFileNotOpen(input_path / filename));
+
+  unsigned int index  = 0;
+  double       t_last = 0.;
+
+  std::string line;
+  while (std::getline(input_file, line))
+    {
+      // Skip lines that start with '#'
+      if (line.empty() || line[0] == '#')
+        continue;
+
+      saplog << line << std::endl;
+
+      std::istringstream iss(line);
+      std::string        token;
+      iss >> token;
+
+      const double t_now = Utilities::string_to_double(token);
+
+      if (index > 0)
+        AssertThrow(t_now > t_last,
+                    ExcMessage("Non-increasing time series detected in " +
+                               std::string(input_path / filename) +
+                               ": t_n = " + std::to_string(t_now) +
+                               ",  t_{n-1} =  " + std::to_string(t_last)));
+
+      time_series.push_back(t_now);
+      t_last = t_now;
+      index++;
+    }
+}
+
+
+
 template class sapphirepp::Utils::GridDataFunction<1, 1>;
 template class sapphirepp::Utils::GridDataFunction<1, 2>;
 template class sapphirepp::Utils::GridDataFunction<1, 3>;
