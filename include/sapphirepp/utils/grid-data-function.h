@@ -43,6 +43,119 @@ namespace sapphirepp
     using namespace dealii;
 
     /**
+     * Like
+     * @dealref{InterpolatedUniformGridData,classFunctions_1_1InterpolatedUniformGridData}
+     * but for with the option to update data.
+     *
+     * @todo Implement in @dealii.
+     * @tparam dim Dimension of the data in the file.
+     */
+    template <int dim>
+    class InterpolatedUniformGridData2 : public Function<dim>
+    {
+    public:
+      /**
+       * Constructor
+       * @param interval_endpoints The left and right end points of the
+       * (uniformly subdivided) intervals in each of the coordinate directions.
+       * @param n_subintervals The number of subintervals in each coordinate
+       * direction. A value of one for a coordinate means that the interval is
+       * considered as one subinterval consisting of the entire range. A value
+       * of two means that there are two subintervals each with one half of the
+       * range, etc.
+       * @param data_values A dim-dimensional table of data at each of the mesh
+       * points defined by the coordinate arrays above. Note that the Table
+       * class has a number of conversion constructors that allow converting
+       * other data types into a table where you specify this argument.
+       */
+      InterpolatedUniformGridData2(
+        const std::array<std::pair<double, double>, dim> &interval_endpoints,
+        const std::array<unsigned int, dim>              &n_subintervals,
+        const dealii::Table<dim, double>                 &data_values);
+
+      /**
+       * Like the previous constructor, but take the arguments as rvalue
+       * references and *move*, instead of *copy* the data. This is often useful
+       * in cases where the data stored in these tables is large and the
+       * information used to initialize the current object is no longer needed
+       * separately. In other words, there is no need to keep the original
+       * object from which this object could copy its information, but it might
+       * as well take over ("move") the data.
+       *
+       * Moving data also enables using tables that are located in shared memory
+       * between multiple MPI processes, rather than copying the data from
+       * shared memory into local memory whenever one creates an
+       * InterpolatedUniformGridData object. See the
+       * TableBase::replicate_across_communicator() function on how to share a
+       * data set between multiple processes.
+       */
+      InterpolatedUniformGridData2(
+        std::array<std::pair<double, double>, dim> &&interval_endpoints,
+        std::array<unsigned int, dim>              &&n_subintervals,
+        dealii::Table<dim, double>                 &&data_values);
+
+      /**
+       * Compute the value of the function set by bilinear interpolation of the
+       * given data set.
+       *
+       * @param p The point at which the function is to be evaluated.
+       * @param component The vector component. Since this function is scalar,
+       * only zero is a valid argument here.
+       * @return The interpolated value at this point. If the point lies outside
+       * the set of coordinates, the function is extended by a constant.
+       */
+      virtual double
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override;
+
+      /**
+       * Compute the gradient of the function set by bilinear interpolation of
+       * the given data set.
+       *
+       * @param p The point at which the function is to be evaluated.
+       * @param component The vector component. Since this function is scalar,
+       *   only zero is a valid argument here.
+       * @return The gradient of the interpolated function at this point. If the
+       *   point lies outside the set of coordinates, the function is extended
+       *   by a constant whose gradient is then of course zero.
+       */
+      virtual Tensor<1, dim>
+      gradient(const Point<dim>  &p,
+               const unsigned int component = 0) const override;
+
+      /**
+       * Return an estimate for the memory consumption, in bytes, of this
+       * object.
+       */
+      virtual std::size_t
+      memory_consumption() const override;
+
+      /**
+       * Return a reference to the internally stored data.
+       */
+      const Table<dim, double> &
+      get_data() const;
+
+    private:
+      /**
+       * The set of interval endpoints in each of the coordinate directions.
+       */
+      const std::array<std::pair<double, double>, dim> interval_endpoints;
+
+      /**
+       * The number of subintervals in each of the coordinate directions.
+       */
+      const std::array<unsigned int, dim> n_subintervals;
+
+      /**
+       * The data that is to be interpolated.
+       */
+      const Table<dim, double> data_values;
+    };
+
+
+
+    /**
      * @brief @dealref{Function} created from data in a file.
      *
      * This function reads data from a file and uses the
