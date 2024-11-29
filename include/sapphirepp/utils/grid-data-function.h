@@ -95,6 +95,11 @@ namespace sapphirepp
         dealii::Table<dim, double>                 &&data_values);
 
       /**
+       * Empty constructor
+       */
+      InterpolatedUniformGridData2() = default;
+
+      /**
        * Compute the value of the function set by bilinear interpolation of the
        * given data set.
        *
