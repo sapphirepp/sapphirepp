@@ -864,13 +864,64 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         }
 
 
+      MHDEquations::flux_type              char_cell_avg_gradient;
+      MHDEquations::flux_type              char_limited_gradient;
+      std::vector<MHDEquations::flux_type> char_neighbor_gradients(
+        neighbor_gradients.size());
+
+      std::array<dealii::FullMatrix<double>, spacedim> left_matrices{
+        {FullMatrix<double>(MHDEquations::n_components),
+         FullMatrix<double>(MHDEquations::n_components),
+         FullMatrix<double>(MHDEquations::n_components)}};
+      std::array<dealii::FullMatrix<double>, spacedim> right_matrices{
+        {FullMatrix<double>(MHDEquations::n_components),
+         FullMatrix<double>(MHDEquations::n_components),
+         FullMatrix<double>(MHDEquations::n_components)}};
+
+      mhd_equations.compute_transformation_matrices(cell_avg,
+                                                    left_matrices,
+                                                    right_matrices);
+
+      mhd_equations.convert_gradient_characteristic_to_conserved(
+        cell_avg_gradient, left_matrices, char_cell_avg_gradient);
+      for (unsigned int i = 0; i < neighbor_gradients.size(); ++i)
+        mhd_equations.convert_gradient_characteristic_to_conserved(
+          neighbor_gradients[i], left_matrices, char_neighbor_gradients[i]);
+
+      // saplog << "cell_gradient | char_cell_gradient" << std::endl;
+      // for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+      //   saplog << cell_avg_gradient[c] << " | " << char_cell_avg_gradient[c]
+      //          << std::endl;
+
+
       // Computed limited gradient
       const double diff =
-        SlopeLimiter::minmod_gradients(cell_avg_gradient,
-                                       neighbor_gradients,
-                                       limited_gradient,
+        SlopeLimiter::minmod_gradients(char_cell_avg_gradient,
+                                       char_neighbor_gradients,
+                                       char_limited_gradient,
                                        cell->diameter() /
                                          std::sqrt(static_cast<double>(dim)));
+
+
+      // Convert back to conserved variables
+      // for (unsigned int c1 = 0; c1 < MHDEquations::n_components; ++c1)
+      //   {
+      //     for (unsigned int c2 = 0; c2 < MHDEquations::n_components; ++c2)
+      //       {
+      //         for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+      //           {
+      //             limited_gradient[c1][d] +=
+      //               right_matrix[c1][c2] * char_limited_gradient[c2][d];
+      //           }
+      //       }
+      //   }
+      mhd_equations.convert_gradient_characteristic_to_conserved(
+        char_limited_gradient, right_matrices, limited_gradient);
+
+      // saplog << "limited_gradient | char_limited_gradient" << std::endl;
+      // for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+      //   saplog << limited_gradient[c] << " | " << char_limited_gradient[c]
+      //          << std::endl;
 
 
       // Only limit if average gradient was changed
