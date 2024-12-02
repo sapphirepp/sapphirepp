@@ -393,6 +393,25 @@ namespace sapphirepp
       void
       convert_conserved_to_primitive(const state_type &conserved_state,
                                      state_type       &primitive_state) const;
+
+
+      /**
+       * @brief Convert gradient in characteristic to conserved variables.
+       *
+       * @param characteristic_gradient Gradient in characteristic variables,
+       *        \f$ \partial_j \omega \f$.
+       * @param right_matrices Array of right eigenvector matrices
+       *        \f$ \mathbf{R}_j \f$ in each space direction \f$ j \f$.
+       * @param conserved_gradient Returns the gradient in conserved variables,
+       *        \f$ \partial_j \mathbf{w} \f$.
+       *
+       * @see compute_transformation_matrices()
+       */
+      void
+      convert_gradient_characteristic_to_conserved(
+        const flux_type &characteristic_gradient,
+        std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
+        flux_type &conserved_gradient) const;
       /** @} */
     };
   } // namespace MHD

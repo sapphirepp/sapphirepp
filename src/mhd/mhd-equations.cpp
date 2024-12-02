@@ -804,3 +804,28 @@ sapphirepp::MHD::MHDEquations::convert_conserved_to_primitive(
         conserved_state[first_magnetic_component + d];
     }
 }
+
+
+
+void
+sapphirepp::MHD::MHDEquations::convert_gradient_characteristic_to_conserved(
+  const flux_type                                  &characteristic_gradient,
+  std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
+  flux_type                                        &conserved_gradient) const
+{
+  for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+    {
+      AssertDimension(right_matrices[d].n(), n_components);
+      AssertDimension(right_matrices[d].m(), n_components);
+
+      for (unsigned int c1 = 0; c1 < MHDEquations::n_components; ++c1)
+        {
+          conserved_gradient[c1][d] = 0.;
+          for (unsigned int c2 = 0; c2 < MHDEquations::n_components; ++c2)
+            {
+              conserved_gradient[c1][d] +=
+                right_matrices[d][c1][c2] * characteristic_gradient[c2][d];
+            }
+        }
+    }
+}
