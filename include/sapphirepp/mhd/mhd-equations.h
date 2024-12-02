@@ -312,6 +312,27 @@ namespace sapphirepp
         const state_type                  &state,
         const dealii::Tensor<1, spacedim> &normal,
         dealii::FullMatrix<double>        &eigenvectors) const;
+
+      /**
+       * @brief Computes the transformation matrices to convert between
+       *        conserved variables \f$ \mathbf{w} \f$ and characteristic
+       *        variables \f$ \omega \f$ in each space direction \f$ j \f$.
+       *
+       * @param state Conserved state \f$ \mathbf{w} \f$ to use for the
+       *        linearized computation of the eigenstates.
+       * @param left_matrices Array of left eigenvector matrices
+       *        \f$ \mathbf{L}_j \f$ in each space direction \f$ j \f$.
+       * @param right_matrices Array of right eigenvector matrices
+       *        \f$ \mathbf{R}_j \f$ in each space direction \f$ j \f$.
+       *
+       * @see compute_right_eigenvector_matrix()
+       * @see compute_left_eigenvector_matrix()
+       */
+      void
+      compute_transformation_matrices(
+        const state_type                                 &state,
+        std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
+        std::array<dealii::FullMatrix<double>, spacedim> &right_matrices) const;
       /** @} */
 
 

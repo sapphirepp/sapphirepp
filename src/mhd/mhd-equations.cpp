@@ -718,6 +718,33 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
 
 
 void
+sapphirepp::MHD::MHDEquations::compute_transformation_matrices(
+  const state_type                                 &state,
+  std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
+  std::array<dealii::FullMatrix<double>, spacedim> &right_matrices) const
+{
+  AssertDimension(state.size(), n_components);
+
+  dealii::Tensor<1, spacedim> direction;
+
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      AssertDimension(left_matrices[d].n(), n_components);
+      AssertDimension(left_matrices[d].m(), n_components);
+      AssertDimension(right_matrices[d].n(), n_components);
+      AssertDimension(right_matrices[d].m(), n_components);
+
+      direction    = 0.;
+      direction[d] = 1.;
+
+      compute_left_eigenvector_matrix(state, direction, left_matrices[d]);
+      compute_right_eigenvector_matrix(state, direction, right_matrices[d]);
+    }
+}
+
+
+
+void
 sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
   const state_type &primitive_state,
   state_type       &conserved_state) const
