@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <limits>
 
 #include "gsl/gsl_sf_legendre.h"
 
@@ -75,6 +76,8 @@ sapphirepp::VFP::PhaseSpace::output_gnu_splot_data(
   const std::vector<double>   &f_values)
 {
   std::ofstream data_file(path);
+  // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
+  data_file.precision(std::numeric_limits<double>::digits10);
   for (std::size_t i = 0; i < x_values.size(); ++i)
     {
       for (std::size_t j = 0; j < y_values.size(); ++j)
@@ -95,6 +98,7 @@ sapphirepp::VFP::PhaseSpace::output_gnu_splot_spherical_density_map(
   const std::vector<double>   &f_values)
 {
   std::ofstream data_file(path);
+  data_file.precision(std::numeric_limits<double>::digits10);
   // x = mu
   double y = 0;
   double z = 0;

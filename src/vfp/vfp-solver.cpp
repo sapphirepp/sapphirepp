@@ -1773,7 +1773,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // TODO: Find a workaround. Probably a lambda that is passed to
   // rpe.evaluate_and_process() that does not use FEPointEvaluation, which
   // requires the template argument.
-  constexpr unsigned int n_components = (14 + 1) * (14 + 1);
+  constexpr unsigned int n_components = (4 + 1) * (4 + 1);
   // Return value: std::vector<dealii::Tensor<1,n_components,double>>
   const auto coefficients_at_all_points =
     VectorTools::point_values<n_components>(rpe_cache,
@@ -1781,7 +1781,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
                                             locally_relevant_current_solution);
 
   // NOTE: In an actual implementaion, the computation of phi and mu ranges and
-  // aslo the values of cos phi, sin phi and Plm(mu) should only be done once.
+  // also the values of cos phi, sin phi and Plm(mu) should only be done once.
   // For example, in the setup up phase of a PostProcessing Object.
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
