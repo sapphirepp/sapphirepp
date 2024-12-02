@@ -1350,6 +1350,7 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
              << solver_control.last_step() << " iterations." << std::endl;
 
       locally_relevant_current_solution = locally_owned_staged_solution[i];
+      apply_limiter();
       assemble_dg_rhs(time + gamma[i] * time_step);
       locally_owned_staged_dg_rhs[i] = dg_rhs;
     }
@@ -1375,6 +1376,8 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
 
   // Update the solution
   locally_relevant_current_solution = locally_owned_solution;
+
+  apply_limiter();
 }
 
 
