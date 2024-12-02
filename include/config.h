@@ -214,8 +214,8 @@ namespace sapphirepp
 
         /** [Initial value] */
         // !!!EDIT HERE!!!
-        f[0] = 1. /
-               (std::sqrt(2 * std::acos(-1)) * prm.standard_deviation) *
+        // f_000(t = 0) = \sqrt(4 pi) * f(t=0)
+        f[0] = std::sqrt(2) / prm.standard_deviation *
                std::exp(-(point[0] * point[0]) /
                         (2 * prm.standard_deviation * prm.standard_deviation));
         /** [Initial value] */
