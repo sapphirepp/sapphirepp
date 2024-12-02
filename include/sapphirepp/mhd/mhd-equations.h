@@ -412,6 +412,25 @@ namespace sapphirepp
         const flux_type &characteristic_gradient,
         std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
         flux_type &conserved_gradient) const;
+
+
+      /**
+       * @brief Convert gradient in conserved to characteristic variables.
+       *
+       * @param conserved_gradient Gradient in conserved variables,
+       *        \f$ \partial_j \mathbf{w} \f$.
+       * @param left_matrices Array of left eigenvector matrices
+       *        \f$ \mathbf{L}_j \f$ in each space direction \f$ j \f$.
+       * @param characteristic_gradient Returns the gradient in characteristic
+       *        variables, \f$ \partial_j \omega \f$.
+       *
+       * @see compute_transformation_matrices()
+       */
+      void
+      convert_gradient_conserved_to_characteristic(
+        const flux_type                                  &conserved_gradient,
+        std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
+        flux_type &characteristic_gradient) const;
       /** @} */
     };
   } // namespace MHD
