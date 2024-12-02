@@ -38,6 +38,7 @@
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/types.h>
+#include <deal.II/base/mpi_remote_point_evaluation.h>
 
 #include <deal.II/distributed/shared_tria.h>
 #include <deal.II/distributed/tria.h>
@@ -428,7 +429,11 @@ namespace sapphirepp
        */
       const AffineConstraints<double> constraints;
 
-
+      /**
+       * Use to reconstruct phase space at predefined points
+       */
+      Utilities::MPI::RemotePointEvaluation<dim_ps, dim_ps> rpe_cache;
+      
       /** @{ */
       /** @dealref{SparsityPattern} */
       SparsityPattern sparsity_pattern;
