@@ -1,0 +1,40 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = pvtu
+  set Number of digits for counter = 5
+  set Output frequency             = 1
+  set Results folder               = ./results
+  set Simulation identifier        = orszag-tang
+end
+subsection MHD
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    # set Number of cells = 512, 512
+    set Number of cells = 32, 32
+    set Point 1         = 0., 0.
+    set Point 2         = 1., 1.
+    subsection Boundary conditions
+      set lower x = periodic
+      set upper x = periodic
+      set lower y = periodic
+      set upper y = periodic
+    end
+  end
+  subsection Plasma properties
+    set Adiabatic index = 1.666666666
+  end
+  subsection Time stepping
+    set Final time     = 0.0010
+    # set Final time     = 1.0
+    set Method         = FE
+    set Time step size = 0.0005
+    #c_max = 2.5
+    #dx = 0.001953125
+    #dt = 0.0005
+  end
+end
+subsection Physical parameters
+end
