@@ -395,6 +395,77 @@ namespace sapphirepp
                                      state_type       &primitive_state) const;
 
 
+
+      /**
+       * @brief Convert characteristic to conserved state.
+       *
+       * @param characteristic_state Characteristic state
+       *        \f[
+       *          \omega_{\hat{\mathbf{n}}} =
+       *          \begin{pmatrix}
+       *            \omega_{1, \hat{\mathbf{n}}} \\
+       *            \omega_{2, \hat{\mathbf{n}}} \\
+       *            \vdots                       \\
+       *            \omega_{8, \hat{\mathbf{n}}} \\
+       *          \end{pmatrix} \,.
+       *        \f]
+       * @param normal Normal vector \f$ \hat{\mathbf{n}} \f$
+       * @param conserved_state Returns the conserved state
+       *        \f[
+       *          \mathbf{w} =
+       *          \begin{pmatrix}
+       *            \rho        \\
+       *            \mathbf{p}  \\
+       *            \mathcal{E} \\
+       *            \mathbf{b}
+       *          \end{pmatrix} \,.
+       *        \f]
+       *       This state is also used as input to calculate the transformation
+       *       matrix.
+       *
+       * @see compute_right_eigenvector_matrix()
+       */
+      void
+      convert_characteristic_to_conserved(
+        const state_type                  &characteristic_state,
+        const dealii::Tensor<1, spacedim> &normal,
+        state_type                        &conserved_state) const;
+
+
+      /**
+       * @brief Convert conserved to characteristic state.
+       *
+       * @param conserved_state Conserved state
+       *        \f[
+       *          \mathbf{w} =
+       *          \begin{pmatrix}
+       *            \rho        \\
+       *            \mathbf{p}  \\
+       *            \mathcal{E} \\
+       *            \mathbf{b}
+       *          \end{pmatrix} \,.
+       *        \f]
+       * @param normal Normal vector \f$ \hat{\mathbf{n}} \f$
+       * @param characteristic_state Returns the characteristic state
+       *        \f[
+       *          \omega_{\hat{\mathbf{n}}} =
+       *          \begin{pmatrix}
+       *            \omega_{1, \hat{\mathbf{n}}} \\
+       *            \omega_{2, \hat{\mathbf{n}}} \\
+       *            \vdots                       \\
+       *            \omega_{8, \hat{\mathbf{n}}} \\
+       *          \end{pmatrix} \,.
+       *        \f]
+       *
+       * @see compute_left_eigenvector_matrix()
+       */
+      void
+      convert_conserved_to_characteristic(
+        const state_type                  &conserved_state,
+        const dealii::Tensor<1, spacedim> &normal,
+        state_type                        &characteristic_state) const;
+
+
       /**
        * @brief Convert gradient in characteristic to conserved variables.
        *

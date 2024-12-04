@@ -808,6 +808,34 @@ sapphirepp::MHD::MHDEquations::convert_conserved_to_primitive(
 
 
 void
+sapphirepp::MHD::MHDEquations::convert_characteristic_to_conserved(
+  const state_type                  &characteristic_state,
+  const dealii::Tensor<1, spacedim> &normal,
+  state_type                        &conserved_state) const
+{
+  dealii::FullMatrix<double> right_matrix(n_components);
+  compute_right_eigenvector_matrix(conserved_state, normal, right_matrix);
+
+  right_matrix.vmult(conserved_state, characteristic_state, false);
+}
+
+
+
+void
+sapphirepp::MHD::MHDEquations::convert_conserved_to_characteristic(
+  const state_type                  &conserved_state,
+  const dealii::Tensor<1, spacedim> &normal,
+  state_type                        &characteristic_state) const
+{
+  dealii::FullMatrix<double> left_matrix(n_components);
+  compute_left_eigenvector_matrix(conserved_state, normal, left_matrix);
+
+  left_matrix.vmult(characteristic_state, conserved_state, false);
+}
+
+
+
+void
 sapphirepp::MHD::MHDEquations::convert_gradient_characteristic_to_conserved(
   const flux_type                                  &characteristic_gradient,
   std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
