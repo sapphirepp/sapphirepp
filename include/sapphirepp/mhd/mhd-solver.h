@@ -508,6 +508,18 @@ namespace sapphirepp
 
 
       /**
+       * @brief Indicates if the solution needs positivity limiting.
+       *
+       * @param states Vector of states on the cell.
+       * @return bool `true` if one of the state is in an non-admissible state,
+       *              `false` otherwise.
+       */
+      bool
+      indicate_positivity_limiting(
+        const std::vector<MHDEquations::state_type> &states) const;
+
+
+      /**
        * @brief Retrieves the precomputed cell average for a given cell.
        *
        * @param cell The cell for which to compute the average.

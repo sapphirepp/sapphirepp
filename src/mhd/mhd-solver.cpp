@@ -748,6 +748,27 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
 
 
 template <unsigned int dim>
+bool
+sapphirepp::MHD::MHDSolver<dim>::indicate_positivity_limiting(
+  const std::vector<MHDEquations::state_type> &states) const
+{
+  const double eps = 1e-10;
+
+  for (const MHDEquations::state_type &state : states)
+    {
+      const double pressure = mhd_equations.compute_pressure_unsafe(state);
+
+      if ((state[MHDEquations::density_component] <= eps) ||
+          (state[MHDEquations::energy_component] <= eps) || (pressure <= eps))
+        return true;
+    }
+
+  return false;
+}
+
+
+
+template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 {
