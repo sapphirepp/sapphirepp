@@ -229,17 +229,35 @@ namespace sapphirepp
 
       struct CopyDataSlopeLimiter
       {
-        std::vector<double>                  cell_dof_values;
-        std::vector<types::global_dof_index> local_dof_indices;
+        /**
+         * @todo Use a `dealii::Vector<double>` for `cell_dof_values`. At the
+         *       moment using
+         *       `convert_generalized_support_point_values_to_dof_values` forces
+         *       us to use `std::vector`.
+         */
+        std::vector<types::global_dof_index>     local_dof_indices;
+        std::vector<double>                      cell_dof_values;
+        ArrayView<const types::global_dof_index> cell_indices; // unused
 
         template <typename Iterator>
         void
-        reinit(const Iterator &cell, unsigned int dofs_per_cell)
+        reinit(const Iterator                   &cell,
+               unsigned int                      dofs_per_cell,
+               const PETScWrappers::MPI::Vector &solution)
         {
-          cell_dof_values.resize(dofs_per_cell);
-
           local_dof_indices.resize(dofs_per_cell);
           cell->get_dof_indices(local_dof_indices);
+
+          cell_dof_values.resize(dofs_per_cell);
+          cell->get_dof_values(solution,
+                               cell_dof_values.begin(),
+                               cell_dof_values.end());
+
+          // std::vector<types::global_dof_index> indices_vector(dofs_per_cell);
+          // std::iota(indices_vector.begin(), indices_vector.end(), 0);
+          // cell_indices =
+          //   ArrayView<types::global_dof_index>(indices_vector.data(),
+          //                                      indices_vector.size());
         }
       };
     } // namespace MHDSolver
@@ -792,8 +810,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
       const unsigned int       cell_index   = cell->active_cell_index();
       const unsigned int       n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
 
-      // reinit copy_data
-      copy_data.reinit(cell, n_dofs);
+      // reinit copy_data, copies unlimited DoFs
+      copy_data.reinit(cell, n_dofs, locally_relevant_current_solution);
 
       // Only limit shock indicated cells. Return otherwise
       if (shock_indicator[cell_index] < 1.)
