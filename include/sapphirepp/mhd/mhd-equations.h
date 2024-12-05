@@ -28,6 +28,8 @@
 #ifndef MHD_MHDEQUATIONS_H
 #define MHD_MHDEQUATIONS_H
 
+#include <deal.II/base/exceptions.h>
+#include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 
 #include <deal.II/lac/full_matrix.h>
@@ -36,6 +38,8 @@
 #include <deal.II/numerics/data_component_interpretation.h>
 
 #include <array>
+#include <exception>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -43,6 +47,46 @@ namespace sapphirepp
 {
   namespace MHD
   {
+    /**
+     * @brief This exception is raised if a non-admissible MHD state is
+     *        encountered, e.g. due to negative energy or pressure.
+     */
+    class ExcNonAdmissibleState : public dealii::ExceptionBase
+    {
+    public:
+      ExcNonAdmissibleState(
+        const dealii::Vector<double>   &state,
+        const std::string              &msg   = "",
+        const dealii::Point<3, double> &point = dealii::Point<3, double>())
+        : state(state)
+        , msg(msg)
+        , point(point)
+      {}
+
+      virtual ~ExcNonAdmissibleState() noexcept
+      {}
+
+      virtual void
+      print_info(std::ostream &out) const override
+      {
+        if (!msg.empty())
+          out << "    " << msg << "\n";
+        out << "    "
+            << "Non-admissible MHD state encountered";
+        if (point.norm_square() > 0.)
+          out << " at (" << point << ")";
+        out << ": \n"
+            << "    " << state << std::endl;
+      }
+
+    private:
+      const dealii::Vector<double>   state;
+      const std::string              msg;
+      const dealii::Point<3, double> point;
+    };
+
+
+
     /**
      * @brief Define functions related to MHD equations.
      *
