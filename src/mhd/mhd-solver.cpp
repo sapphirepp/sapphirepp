@@ -810,159 +810,171 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
       const unsigned int       cell_index   = cell->active_cell_index();
       const unsigned int       n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
 
+      // Check if cell avg is valid state
+      const MHDEquations::state_type &cell_avg = get_cell_average(cell);
+      Assert(cell_avg[MHDEquations::density_component] > 0.,
+             ExcNonAdmissibleState(cell_avg,
+                                   "Invalid cell average. "
+                                   "Can not perform limiting.",
+                                   cell->center()));
+      Assert(cell_avg[MHDEquations::energy_component] > 0.,
+             ExcNonAdmissibleState(cell_avg,
+                                   "Invalid cell average. "
+                                   "Can not perform limiting.",
+                                   cell->center()));
+      Assert(mhd_equations.compute_pressure_unsafe(cell_avg) > 0.,
+             ExcNonAdmissibleState(cell_avg,
+                                   "Invalid cell average. "
+                                   "Can not perform limiting.",
+                                   cell->center()));
+
       // reinit copy_data, copies unlimited DoFs
       copy_data.reinit(cell, n_dofs, locally_relevant_current_solution);
-
-      // Only limit shock indicated cells. Return otherwise
-      if (shock_indicator[cell_index] < 1.)
-        {
-          // Use unlimited DoFs
-          for (unsigned int i = 0; i < n_dofs; ++i)
-            copy_data.cell_dof_values[i] =
-              locally_relevant_current_solution(copy_data.local_dof_indices[i]);
-          return;
-        }
-
-
-      // reinit cell
-      fe_v_grad.reinit(cell);
-      fe_v_support.reinit(cell);
-
-      const std::vector<double>          &JxW = fe_v_grad.get_JxW_values();
-      const std::vector<Point<spacedim>> &support_points =
-        fe_v_support.get_quadrature_points();
-
-      const MHDEquations::state_type &cell_avg = get_cell_average(cell);
-
-      MHDEquations::flux_type              cell_avg_gradient;
-      MHDEquations::flux_type              limited_gradient;
-      MHDEquations::flux_type              tmp_gradient;
-      std::vector<MHDEquations::flux_type> neighbor_gradients;
-      neighbor_gradients.reserve(cell->n_faces());
 
       std::vector<Vector<double>> limited_support_point_values(
         fe_v_support.n_quadrature_points,
         Vector<double>(MHDEquations::n_components));
 
+      bool limit_cell = false;
 
-      // Compute cell average gradient
-      std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
-        fe_v_grad.n_quadrature_points,
-        std::vector<Tensor<1, spacedim>>(MHDEquations::n_components));
-      fe_v_grad.get_function_gradients(locally_relevant_current_solution,
-                                       solution_gradients);
-      for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+      // Only limit shock indicated cells
+      if (shock_indicator[cell_index] > 1.)
         {
-          for (const unsigned int q_index :
-               fe_v_grad.quadrature_point_indices())
-            cell_avg_gradient[c] +=
-              solution_gradients[q_index][c] * JxW[q_index];
-          cell_avg_gradient[c] /= cell->measure();
-        }
+          // reinit cell
+          fe_v_grad.reinit(cell);
 
-      // Compute gradients by neighbor cells (ignore non-periodic boundary)
-      for (const auto face_no : cell->face_indices())
-        {
-          if (!cell->at_boundary(face_no) ||
-              cell->has_periodic_neighbor(face_no))
+          const std::vector<double> &JxW = fe_v_grad.get_JxW_values();
+
+          MHDEquations::flux_type              cell_avg_gradient;
+          MHDEquations::flux_type              limited_gradient;
+          MHDEquations::flux_type              tmp_gradient;
+          std::vector<MHDEquations::flux_type> neighbor_gradients;
+          neighbor_gradients.reserve(cell->n_faces());
+
+
+          // Compute cell average gradient
+          std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
+            fe_v_grad.n_quadrature_points,
+            std::vector<Tensor<1, spacedim>>(MHDEquations::n_components));
+          /** @todo Add local version of `get_function_gradients` to @dealii */
+          // fe_v_grad.get_function_gradients(copy_data.cell_dof_values,
+          //                                  copy_data.cell_indices,
+          //                                  solution_gradients);
+          fe_v_grad.get_function_gradients(locally_relevant_current_solution,
+                                           solution_gradients);
+          for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
             {
-              auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
-              const MHDEquations::state_type &neighbor_avg =
-                get_cell_average(neighbor);
-              const Tensor<1, spacedim> distance =
-                SlopeLimiter::compute_periodic_distance_cell_neighbor(cell,
-                                                                      face_no);
+              for (const unsigned int q_index :
+                   fe_v_grad.quadrature_point_indices())
+                cell_avg_gradient[c] +=
+                  solution_gradients[q_index][c] * JxW[q_index];
+              cell_avg_gradient[c] /= cell->measure();
+            }
 
-              for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-                for (unsigned int d = 0; d < spacedim; ++d)
-                  tmp_gradient[c][d] =
-                    (neighbor_avg[c] - cell_avg[c]) / distance[d];
-              neighbor_gradients.push_back(tmp_gradient);
+          // Compute gradients by neighbor cells (ignore non-periodic boundary)
+          for (const auto face_no : cell->face_indices())
+            {
+              if (!cell->at_boundary(face_no) ||
+                  cell->has_periodic_neighbor(face_no))
+                {
+                  auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
+                  const MHDEquations::state_type &neighbor_avg =
+                    get_cell_average(neighbor);
+                  const Tensor<1, spacedim> distance =
+                    SlopeLimiter::compute_periodic_distance_cell_neighbor(
+                      cell, face_no);
+
+                  for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+                    for (unsigned int d = 0; d < spacedim; ++d)
+                      tmp_gradient[c][d] =
+                        (neighbor_avg[c] - cell_avg[c]) / distance[d];
+                  neighbor_gradients.push_back(tmp_gradient);
+                }
+            }
+
+
+          MHDEquations::flux_type              char_cell_avg_gradient;
+          MHDEquations::flux_type              char_limited_gradient;
+          std::vector<MHDEquations::flux_type> char_neighbor_gradients(
+            neighbor_gradients.size());
+
+          std::array<dealii::FullMatrix<double>, spacedim> left_matrices{
+            {FullMatrix<double>(MHDEquations::n_components),
+             FullMatrix<double>(MHDEquations::n_components),
+             FullMatrix<double>(MHDEquations::n_components)}};
+          std::array<dealii::FullMatrix<double>, spacedim> right_matrices{
+            {FullMatrix<double>(MHDEquations::n_components),
+             FullMatrix<double>(MHDEquations::n_components),
+             FullMatrix<double>(MHDEquations::n_components)}};
+
+          mhd_equations.compute_transformation_matrices(cell_avg,
+                                                        left_matrices,
+                                                        right_matrices);
+
+          mhd_equations.convert_gradient_characteristic_to_conserved(
+            cell_avg_gradient, left_matrices, char_cell_avg_gradient);
+          for (unsigned int i = 0; i < neighbor_gradients.size(); ++i)
+            mhd_equations.convert_gradient_characteristic_to_conserved(
+              neighbor_gradients[i], left_matrices, char_neighbor_gradients[i]);
+
+          // saplog << "cell_gradient | char_cell_gradient" << std::endl;
+          // for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          //   saplog << cell_avg_gradient[c] << " | " << char_cell_avg_gradient[c]
+          //          << std::endl;
+
+
+          // Computed limited gradient
+          const double diff = SlopeLimiter::minmod_gradients(
+            char_cell_avg_gradient,
+            char_neighbor_gradients,
+            char_limited_gradient,
+            cell->diameter() / std::sqrt(static_cast<double>(dim)));
+
+
+          // Convert back to conserved variables
+          // for (unsigned int c1 = 0; c1 < MHDEquations::n_components; ++c1)
+          //   {
+          //     for (unsigned int c2 = 0; c2 < MHDEquations::n_components;
+          //     ++c2)
+          //       {
+          //         for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+          //           {
+          //             limited_gradient[c1][d] +=
+          //               right_matrix[c1][c2] * char_limited_gradient[c2][d];
+          //           }
+          //       }
+          //   }
+          mhd_equations.convert_gradient_characteristic_to_conserved(
+            char_limited_gradient, right_matrices, limited_gradient);
+
+          // saplog << "limited_gradient | char_limited_gradient" << std::endl;
+          // for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+          //   saplog << limited_gradient[c] << " | " << char_limited_gradient[c]
+          //          << std::endl;
+
+
+          // Only limit if average gradient was changed
+          if (diff > 1e-10)
+            {
+              limit_cell = true;
+              fe_v_support.reinit(cell);
+              const std::vector<Point<spacedim>> &support_points =
+                fe_v_support.get_quadrature_points();
+
+              // Compute limited solution values at support points
+              for (const unsigned int q_index :
+                   fe_v_support.quadrature_point_indices())
+                for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+                  limited_support_point_values[q_index][c] +=
+                    cell_avg[c] + limited_gradient[c] *
+                                    (support_points[q_index] - cell->center());
             }
         }
 
-
-      MHDEquations::flux_type              char_cell_avg_gradient;
-      MHDEquations::flux_type              char_limited_gradient;
-      std::vector<MHDEquations::flux_type> char_neighbor_gradients(
-        neighbor_gradients.size());
-
-      std::array<dealii::FullMatrix<double>, spacedim> left_matrices{
-        {FullMatrix<double>(MHDEquations::n_components),
-         FullMatrix<double>(MHDEquations::n_components),
-         FullMatrix<double>(MHDEquations::n_components)}};
-      std::array<dealii::FullMatrix<double>, spacedim> right_matrices{
-        {FullMatrix<double>(MHDEquations::n_components),
-         FullMatrix<double>(MHDEquations::n_components),
-         FullMatrix<double>(MHDEquations::n_components)}};
-
-      mhd_equations.compute_transformation_matrices(cell_avg,
-                                                    left_matrices,
-                                                    right_matrices);
-
-      mhd_equations.convert_gradient_characteristic_to_conserved(
-        cell_avg_gradient, left_matrices, char_cell_avg_gradient);
-      for (unsigned int i = 0; i < neighbor_gradients.size(); ++i)
-        mhd_equations.convert_gradient_characteristic_to_conserved(
-          neighbor_gradients[i], left_matrices, char_neighbor_gradients[i]);
-
-      // saplog << "cell_gradient | char_cell_gradient" << std::endl;
-      // for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-      //   saplog << cell_avg_gradient[c] << " | " << char_cell_avg_gradient[c]
-      //          << std::endl;
-
-
-      // Computed limited gradient
-      const double diff =
-        SlopeLimiter::minmod_gradients(char_cell_avg_gradient,
-                                       char_neighbor_gradients,
-                                       char_limited_gradient,
-                                       cell->diameter() /
-                                         std::sqrt(static_cast<double>(dim)));
-
-
-      // Convert back to conserved variables
-      // for (unsigned int c1 = 0; c1 < MHDEquations::n_components; ++c1)
-      //   {
-      //     for (unsigned int c2 = 0; c2 < MHDEquations::n_components; ++c2)
-      //       {
-      //         for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
-      //           {
-      //             limited_gradient[c1][d] +=
-      //               right_matrix[c1][c2] * char_limited_gradient[c2][d];
-      //           }
-      //       }
-      //   }
-      mhd_equations.convert_gradient_characteristic_to_conserved(
-        char_limited_gradient, right_matrices, limited_gradient);
-
-      // saplog << "limited_gradient | char_limited_gradient" << std::endl;
-      // for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-      //   saplog << limited_gradient[c] << " | " << char_limited_gradient[c]
-      //          << std::endl;
-
-
-      // Only limit if average gradient was changed
-      if (diff > 1e-10)
+      if (limit_cell)
         {
-          // Compute limited solution values at support points
-          for (const unsigned int q_index :
-               fe_v_support.quadrature_point_indices())
-            for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
-              limited_support_point_values[q_index][c] +=
-                cell_avg[c] + limited_gradient[c] *
-                                (support_points[q_index] - cell->center());
-
-          // Compute limited solution DoF values
           fe.convert_generalized_support_point_values_to_dof_values(
             limited_support_point_values, copy_data.cell_dof_values);
-        }
-      else
-        {
-          // Use unlimited DoFs
-          for (unsigned int i = 0; i < n_dofs; ++i)
-            copy_data.cell_dof_values[i] =
-              locally_relevant_current_solution(copy_data.local_dof_indices[i]);
         }
     };
 
