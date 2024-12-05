@@ -186,13 +186,10 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
 
 
 double
-sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
+sapphirepp::MHD::MHDEquations::compute_pressure_unsafe(
+  const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
-  Assert(state[density_component] > 0.,
-         dealii::ExcMessage("Negative density warning."));
-  Assert(state[energy_component] > 0.,
-         dealii::ExcMessage("Negative energy warning."));
 
   double p2 = 0.;
   double b2 = 0.;
@@ -208,6 +205,22 @@ sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
     (adiabatic_index - 1.) *
     (state[energy_component] - 1. / (2. * state[density_component]) * p2 -
      0.5 * b2);
+
+  return pressure;
+}
+
+
+
+double
+sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
+{
+  AssertDimension(state.size(), n_components);
+  Assert(state[density_component] > 0.,
+         dealii::ExcMessage("Negative density warning."));
+  Assert(state[energy_component] > 0.,
+         dealii::ExcMessage("Negative energy warning."));
+
+  const double pressure = compute_pressure_unsafe(state);
 
   Assert(pressure > 0., dealii::ExcMessage("Negative pressure warning."));
   return pressure;

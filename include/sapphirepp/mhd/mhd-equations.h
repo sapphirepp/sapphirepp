@@ -199,6 +199,21 @@ namespace sapphirepp
       double
       compute_pressure(const state_type &state) const;
 
+      /**
+       * @brief Same as @ref compute_pressure() but without pre- and
+       *        post-conditions.
+       *
+       * @note Use this function with caution. It is intended for use in
+       *       scenarios where negative energy or pressure warnings are handled
+       *       elsewhere in the code.
+       *
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
+       * @return double The pressure \f$ P \f$.
+       */
+      double
+      compute_pressure_unsafe(const state_type &state) const;
+
 
       /**
        * @brief Compute all eigenvalues corresponding to the MHD state
