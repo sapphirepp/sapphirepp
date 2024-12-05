@@ -497,6 +497,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   cell_average.resize(triangulation.n_active_cells(),
                       Vector<double>(MHDEquations::n_components));
   shock_indicator.reinit(triangulation.n_active_cells());
+  positivity_limiter_indicator.reinit(triangulation.n_active_cells());
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -820,7 +821,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
          ExcMessage("The slope limiter uses generalized support points "
                     "to compute the limited DoFs."));
 
-  locally_owned_solution = 0;
+  locally_owned_solution       = 0;
+  positivity_limiter_indicator = 0.;
 
   // assemble cell terms
   const auto cell_worker =
@@ -1011,9 +1013,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         indicate_positivity_limiting(limited_support_point_values);
       if (limit_positivity)
         {
-          limit_cell = true;
-          saplog << "Positivity limiter active in cell " << cell_index << " ("
-                 << cell->center() << ")" << std::endl;
+          limit_cell                               = true;
+          positivity_limiter_indicator[cell_index] = 1.;
 
           // Set cell values to cell average
           for (auto &support_point_value : limited_support_point_values)
@@ -1537,6 +1538,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   data_out.add_data_vector(shock_indicator,
                            "shock_indicator",
                            DataOut<dim, spacedim>::type_cell_data);
+  data_out.add_data_vector(positivity_limiter_indicator,
+                           "positivity_limiter",
+                           DataOut<dim, spacedim>::type_cell_data);
   /** @todo [Remove Debug] */
 
   // Output the partition of the mesh
@@ -1697,6 +1701,15 @@ const dealii::Vector<double> &
 sapphirepp::MHD::MHDSolver<dim>::get_shock_indicator() const
 {
   return shock_indicator;
+}
+
+
+
+template <unsigned int dim>
+const dealii::Vector<float> &
+sapphirepp::MHD::MHDSolver<dim>::get_positivity_limiter_indicator() const
+{
+  return positivity_limiter_indicator;
 }
 
 

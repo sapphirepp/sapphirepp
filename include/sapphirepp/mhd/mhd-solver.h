@@ -334,6 +334,14 @@ namespace sapphirepp
       get_shock_indicator() const;
 
       /**
+       * @brief Get the positivity_limiter_indicator
+       *
+       * @return const Vector<float>&
+       */
+      const Vector<float> &
+      get_positivity_limiter_indicator() const;
+
+      /**
        * @brief Get the timer object
        *
        * @return const TimerOutput&
@@ -436,6 +444,8 @@ namespace sapphirepp
       std::vector<Vector<double>> cell_average;
       /** Indicator for a shock in the solution. */
       Vector<double> shock_indicator;
+      /** Indicator where the solution is positivity limited. */
+      Vector<float> positivity_limiter_indicator;
       /** @} */
 
       /** @{ */
