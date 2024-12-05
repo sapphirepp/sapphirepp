@@ -170,15 +170,23 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(a_s2 >= 0.,
-         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(
+    a_s2 >= 0.,
+    ExcNonAdmissibleState(state,
+                          "Negative squared adiabatic sound speed, a_s^2 = " +
+                            std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
-         dealii::ExcMessage("Negative squared alfven speed warning."));
-  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared alfven speed, c_a^2 = " +
+                                 std::to_string(c_a2)));
+  Assert(d_n >= 0.,
+         ExcNonAdmissibleState(state, "Negative d_n = " + std::to_string(d_n)));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
   Assert(c_f2 >= 0.,
-         dealii::ExcMessage("Negative squared fast speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared fast speed, c_f^2 = " +
+                                 std::to_string(c_f2)));
 
   return std::fabs(nu) + std::sqrt(c_f2);
 }
@@ -215,14 +223,12 @@ double
 sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
-  Assert(state[density_component] > 0.,
-         dealii::ExcMessage("Negative density warning."));
-  Assert(state[energy_component] > 0.,
-         dealii::ExcMessage("Negative energy warning."));
+  Assert(state[density_component] > 0., ExcNonAdmissibleState(state));
+  Assert(state[energy_component] > 0., ExcNonAdmissibleState(state));
 
   const double pressure = compute_pressure_unsafe(state);
 
-  Assert(pressure > 0., dealii::ExcMessage("Negative pressure warning."));
+  Assert(pressure > 0., ExcNonAdmissibleState(state));
   return pressure;
 }
 
@@ -257,19 +263,29 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(a_s2 >= 0.,
-         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(
+    a_s2 >= 0.,
+    ExcNonAdmissibleState(state,
+                          "Negative squared adiabatic sound speed, a_s^2 = " +
+                            std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
-         dealii::ExcMessage("Negative squared alfven speed warning."));
-  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared alfven speed, c_a^2 = " +
+                                 std::to_string(c_a2)));
+  Assert(d_n >= 0.,
+         ExcNonAdmissibleState(state, "Negative d_n = " + std::to_string(d_n)));
   const double c_s2 =
     0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
   Assert(c_s2 >= 0.,
-         dealii::ExcMessage("Negative squared slow speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared slow speed, c_s^2 = " +
+                                 std::to_string(c_s2)));
   Assert(c_f2 >= 0.,
-         dealii::ExcMessage("Negative squared fast speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared fast speed, c_f^2 = " +
+                                 std::to_string(c_f2)));
 
   eigenvalues[0] = nu - std::sqrt(c_f2);
   eigenvalues[1] = nu - std::sqrt(c_a2);
@@ -320,19 +336,29 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(a_s2 >= 0.,
-         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(
+    a_s2 >= 0.,
+    ExcNonAdmissibleState(state,
+                          "Negative squared adiabatic sound speed, a_s^2 = " +
+                            std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
-         dealii::ExcMessage("Negative squared alfven speed warning."));
-  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared alfven speed, c_a^2 = " +
+                                 std::to_string(c_a2)));
+  Assert(d_n >= 0.,
+         ExcNonAdmissibleState(state, "Negative d_n = " + std::to_string(d_n)));
   const double c_s2 =
     0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
   Assert(c_s2 >= 0.,
-         dealii::ExcMessage("Negative squared slow speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared slow speed, c_s^2 = " +
+                                 std::to_string(c_s2)));
   Assert(c_f2 >= 0.,
-         dealii::ExcMessage("Negative squared fast speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared fast speed, c_f^2 = " +
+                                 std::to_string(c_f2)));
   const double a_s = std::sqrt(a_s2);
   const double c_a = std::sqrt(c_a2);
   const double c_s = std::sqrt(c_s2);
@@ -349,8 +375,14 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
       alp_s = std::sqrt((c_f2 - a_s2) / (c_f2 - c_s2));
       alp_f = std::sqrt((c_f2 - c_a2) / (c_f2 - c_s2));
     }
-  Assert(alp_s >= 0., dealii::ExcMessage("Expect non-negative value."));
-  Assert(alp_f >= 0., dealii::ExcMessage("Expect non-negative value."));
+  Assert(alp_s >= 0.,
+         ExcNonAdmissibleState(state,
+                               "Expect non-negative value for alpha_s = " +
+                                 std::to_string(alp_s)));
+  Assert(alp_f >= 0.,
+         ExcNonAdmissibleState(state,
+                               "Expect non-negative value for alpha_f = " +
+                                 std::to_string(alp_f)));
 
   // Construct perpendicular normal vector n_perp
   dealii::Tensor<1, spacedim> n_perp;
@@ -533,19 +565,29 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(a_s2 >= 0.,
-         dealii::ExcMessage("Negative squared adiabatic sound speed warning."));
+  Assert(
+    a_s2 >= 0.,
+    ExcNonAdmissibleState(state,
+                          "Negative squared adiabatic sound speed, a_s^2 = " +
+                            std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
-         dealii::ExcMessage("Negative squared alfven speed warning."));
-  Assert(d_n >= 0., dealii::ExcMessage("Negative squared value warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared alfven speed, c_a^2 = " +
+                                 std::to_string(c_a2)));
+  Assert(d_n >= 0.,
+         ExcNonAdmissibleState(state, "Negative d_n = " + std::to_string(d_n)));
   const double c_s2 =
     0.5 * (a_s2 + b2 / state[density_component] - std::sqrt(d_n));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
   Assert(c_s2 >= 0.,
-         dealii::ExcMessage("Negative squared slow speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared slow speed, c_s^2 = " +
+                                 std::to_string(c_s2)));
   Assert(c_f2 >= 0.,
-         dealii::ExcMessage("Negative squared fast speed warning."));
+         ExcNonAdmissibleState(state,
+                               "Negative squared fast speed, c_f^2 = " +
+                                 std::to_string(c_f2)));
   const double a_s = std::sqrt(a_s2);
   const double c_a = std::sqrt(c_a2);
   const double c_s = std::sqrt(c_s2);
@@ -562,8 +604,14 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
       alp_s = std::sqrt((c_f2 - a_s2) / (c_f2 - c_s2));
       alp_f = std::sqrt((c_f2 - c_a2) / (c_f2 - c_s2));
     }
-  Assert(alp_s >= 0., dealii::ExcMessage("Expect non-negative value."));
-  Assert(alp_f >= 0., dealii::ExcMessage("Expect non-negative value."));
+  Assert(alp_s >= 0.,
+         ExcNonAdmissibleState(state,
+                               "Expect non-negative value for alpha_s = " +
+                                 std::to_string(alp_s)));
+  Assert(alp_f >= 0.,
+         ExcNonAdmissibleState(state,
+                               "Expect non-negative value for alpha_f = " +
+                                 std::to_string(alp_f)));
 
   // Construct perpendicular normal vector n_perp
   dealii::Tensor<1, spacedim> n_perp;
@@ -603,8 +651,14 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
       (c_s2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2);
   const double theta_2 =
     (sgn_nb * alp_f * alp_f * c_f * a_s + sgn_nb * alp_s * alp_s * c_s * c_a);
-  Assert(theta_1 > 0., dealii::ExcMessage("Expect positive value."));
-  Assert(theta_2 > 0., dealii::ExcMessage("Expect positive value."));
+  Assert(theta_1 > 0.,
+         ExcNonAdmissibleState(state,
+                               "Expect positive value for theta_1 = " +
+                                 std::to_string(theta_1)));
+  Assert(theta_2 > 0.,
+         ExcNonAdmissibleState(state,
+                               "Expect positive value for theta_2 = " +
+                                 std::to_string(theta_2)));
 
 
   // Left fast magnetosonic mode l_1
@@ -765,9 +819,11 @@ sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
   AssertDimension(primitive_state.size(), n_components);
   AssertDimension(conserved_state.size(), n_components);
   Assert(primitive_state[density_component] > 0.,
-         dealii::ExcMessage("Negative density warning."));
+         ExcNonAdmissibleState(primitive_state,
+                               "Non-admissible primitive state."));
   Assert(primitive_state[pressure_component] > 0.,
-         dealii::ExcMessage("Negative pressure warning."));
+         ExcNonAdmissibleState(primitive_state,
+                               "Non-admissible primitive state."));
 
   double u2 = 0.;
   double b2 = 0.;
@@ -782,7 +838,9 @@ sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
   const double energy =
     0.5 * primitive_state[density_component] * u2 +
     primitive_state[pressure_component] / (adiabatic_index - 1.) + 0.5 * b2;
-  Assert(energy > 0., dealii::ExcMessage("Negative energy warning."));
+  Assert(energy > 0.,
+         ExcNonAdmissibleState(primitive_state,
+                               "Non-admissible primitive state."));
 
   conserved_state[density_component] = primitive_state[density_component];
   conserved_state[energy_component]  = energy;
