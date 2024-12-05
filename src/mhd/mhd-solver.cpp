@@ -204,7 +204,7 @@ namespace sapphirepp
                               fe,
                               Quadrature<dim>(
                                 fe.get_generalized_support_points()),
-                              update_quadrature_points)
+                              update_quadrature_points | update_values)
         {}
 
         // Copy Constructor
@@ -992,6 +992,35 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
             }
         }
 
+
+      // Positivity limier
+      // Calculate values at quadrature points or use limited values
+      if (!limit_cell)
+        {
+          fe_v_support.reinit(cell);
+          /** @todo Use local version of `get_function_values` */
+          // fe_v_support.get_function_gradients(copy_data.cell_dof_values,
+          //                                     copy_data.cell_indices,
+          //                                     limited_support_point_values);
+          fe_v_support.get_function_values(locally_relevant_current_solution,
+                                           limited_support_point_values);
+        }
+
+      const bool limit_positivity =
+        indicate_positivity_limiting(limited_support_point_values);
+      if (limit_positivity)
+        {
+          limit_cell = true;
+          saplog << "Positivity limiter active in cell " << cell_index << " ("
+                 << cell->center() << ")" << std::endl;
+
+          // Set cell values to cell average
+          for (auto &support_point_value : limited_support_point_values)
+            support_point_value = cell_avg;
+        }
+
+
+      // Compute new dof values
       if (limit_cell)
         {
           fe.convert_generalized_support_point_values_to_dof_values(
