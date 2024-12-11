@@ -214,7 +214,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , ps_reconstruction(vfp_parameters)
+  , ps_reconstruction(vfp_parameters, pde_system.lms_indices)
   , pcout(std::cout,
           ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
            (saplog.get_verbosity() >= 3)))
@@ -1786,12 +1786,6 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // For example, in the setup up phase of a PostProcessing Object.
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      const std::vector<double> mu_values =
-        ps_reconstruction.create_linear_range(-1, 1, 76);
-
-      const std::vector<double> phi_values =
-        ps_reconstruction.create_linear_range(0, 2 * M_PI, 76);
-
       // loop over all points and compute the phase reconstruction
       unsigned int point_counter = 0;
       for (const auto &expansion_coefficients : coefficients_at_all_points)
@@ -1801,23 +1795,18 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
           dealii::Vector<double> flms_values(n_components);
           expansion_coefficients.unroll(flms_values.begin(), flms_values.end());
           std::vector<double> f_values =
-            ps_reconstruction.compute_phase_space_distribution(
-              mu_values, phi_values, pde_system.lms_indices, flms_values);
+            ps_reconstruction.compute_phase_space_distribution(flms_values);
 
           std::string path = output_parameters.output_path;
           ps_reconstruction.output_gnu_splot_data(
             path + "/surface_plot_distribution_function_p_" +
               Utilities::to_string(point_counter) + "_at_t_" +
               Utilities::to_string(time_step_number) + ".dat",
-            mu_values,
-            phi_values,
             f_values);
           ps_reconstruction.output_gnu_splot_spherical_density_map(
             path + "/spherical_density_map_p_" +
               Utilities::to_string(point_counter) + "_at_t_" +
               Utilities::to_string(time_step_number) + ".dat",
-            mu_values,
-            phi_values,
             f_values);
           ++point_counter;
         }

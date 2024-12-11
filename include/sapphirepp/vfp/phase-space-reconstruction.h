@@ -19,27 +19,28 @@ namespace sapphirepp
     class PhaseSpaceReconstruction
     {
     public:
-      PhaseSpaceReconstruction(const VFPParameters<dim> &vfp_parameters);
+      PhaseSpaceReconstruction(
+        const VFPParameters<dim>                       &vfp_parameters,
+        const std::vector<std::array<unsigned int, 3>> &lms_indices);
+
+
 
       std::vector<double>
       compute_phase_space_distribution(
-        const std::vector<double>                      &mu_values,
-        const std::vector<double>                      &phi_values,
-        const std::vector<std::array<unsigned int, 3>> &lms_index_map,
-        const dealii::Vector<double>                   &expansion_coefficients);
+        const dealii::Vector<double> &expansion_coefficients) const;
+
+
 
       void
       output_gnu_splot_data(const std::filesystem::path &path,
-                            const std::vector<double>   &x_values,
-                            const std::vector<double>   &y_values,
-                            const std::vector<double>   &f_values);
+                            const std::vector<double>   &f_values) const;
+
+
 
       void
       output_gnu_splot_spherical_density_map(
         const std::filesystem::path &path,
-        const std::vector<double>   &mu_values,
-        const std::vector<double>   &phi_values,
-        const std::vector<double>   &f_values);
+        const std::vector<double>   &f_values) const;
 
 
 
@@ -55,6 +56,16 @@ namespace sapphirepp
         const std::vector<double>                      &theta_values,
         const std::vector<double>                      &phi_values,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
+
+
+
+    private:
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+
+      const std::vector<double> theta_values;
+      const std::vector<double> phi_values;
+
+      const dealii::Table<3, double> real_spherical_harmonics;
     };
   } // namespace VFP
 } // namespace sapphirepp

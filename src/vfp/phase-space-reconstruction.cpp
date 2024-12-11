@@ -9,13 +9,17 @@
 #include <fstream>
 #include <limits>
 
-#include "gsl/gsl_sf_legendre.h"
-
 
 
 template <unsigned int dim>
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
-  const VFPParameters<dim> &vfp_parameters)
+  const VFPParameters<dim>                       &vfp_parameters,
+  const std::vector<std::array<unsigned int, 3>> &lms_indices)
+  : lms_indices{lms_indices}
+  , theta_values{create_linear_range(0, M_PI, 76)}
+  , phi_values{create_linear_range(0, 2 * M_PI, 76)}
+  , real_spherical_harmonics{
+      compute_real_spherical_harmonics(theta_values, phi_values, lms_indices)}
 {
   static_cast<void>(vfp_parameters);
 }
@@ -24,23 +28,19 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
 
 template <unsigned int dim>
 std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  compute_phase_space_distribution(
-    const std::vector<double>                      &mu_values,
-    const std::vector<double>                      &phi_values,
-    const std::vector<std::array<unsigned int, 3>> &lms_index_map,
-    const dealii::Vector<double>                   &expansion_coefficients)
+sapphirepp::VFP::PhaseSpaceReconstruction<
+  dim>::compute_phase_space_distribution(const dealii::Vector<double>
+                                           &expansion_coefficients) const
 {
-  dealii::Table<3, double> y_lms =
-    compute_real_spherical_harmonics(mu_values, phi_values, lms_index_map);
+  AssertDimension(expansion_coefficients.size(), lms_indices.size());
 
-  std::vector<double> f(mu_values.size() * phi_values.size());
+  std::vector<double> f(theta_values.size() * phi_values.size());
 
-  for (std::size_t i = 0; i < expansion_coefficients.size(); ++i)
-    for (std::size_t j = 0; j < mu_values.size(); ++j)
+  for (std::size_t i = 0; i < lms_indices.size(); ++i)
+    for (std::size_t j = 0; j < theta_values.size(); ++j)
       for (std::size_t k = 0; k < phi_values.size(); ++k)
         f[j * phi_values.size() + k] +=
-          expansion_coefficients[i] * y_lms(j, k, i);
+          expansion_coefficients[i] * real_spherical_harmonics(j, k, i);
 
   return f;
 }
@@ -51,18 +51,16 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
   const std::filesystem::path &path,
-  const std::vector<double>   &x_values,
-  const std::vector<double>   &y_values,
-  const std::vector<double>   &f_values)
+  const std::vector<double>   &f_values) const
 {
   std::ofstream data_file(path);
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
   data_file.precision(std::numeric_limits<double>::digits10);
-  for (std::size_t i = 0; i < x_values.size(); ++i)
+  for (unsigned int i = 0; i < theta_values.size(); ++i)
     {
-      for (std::size_t j = 0; j < y_values.size(); ++j)
-        data_file << x_values[i] << " " << y_values[j] << " "
-                  << f_values[i * y_values.size() + j] << "\n";
+      for (unsigned int j = 0; j < phi_values.size(); ++j)
+        data_file << theta_values[i] << " " << phi_values[j] << " "
+                  << f_values[i * theta_values.size() + j] << "\n";
       // Gnu plot data format requires the addition of an extra new line when
       // the x-coordinate changes. See
       // https://stackoverflow.com/questions/62729982/how-to-plot-a-3d-gnuplot-splot-surface-graph-with-data-from-a-file
@@ -75,25 +73,20 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
 template <unsigned int dim>
 void
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  output_gnu_splot_spherical_density_map(const std::filesystem::path &path,
-                                         const std::vector<double>   &mu_values,
-                                         const std::vector<double> &phi_values,
-                                         const std::vector<double> &f_values)
+  output_gnu_splot_spherical_density_map(
+    const std::filesystem::path &path,
+    const std::vector<double>   &f_values) const
 {
   std::ofstream data_file(path);
   data_file.precision(std::numeric_limits<double>::digits10);
-  // x = mu
-  double y = 0;
-  double z = 0;
-  for (std::size_t i = 0; i < mu_values.size(); ++i)
+  for (unsigned int i = 0; i < theta_values.size(); ++i)
     {
-      for (std::size_t j = 0; j < phi_values.size(); ++j)
+      for (unsigned int j = 0; j < phi_values.size(); ++j)
         {
-          y = std::sqrt(1 - mu_values[i] * mu_values[i]) *
-              std::cos(phi_values[j]);
-          z = std::sqrt(1 - mu_values[i] * mu_values[i]) *
-              std::sin(phi_values[j]);
-          data_file << mu_values[i] << " " << y << " " << z << " "
+          const double x = std::cos(theta_values[i]);
+          const double y = std::sin(theta_values[i]) * std::cos(phi_values[j]);
+          const double z = std::sin(theta_values[i]) * std::sin(phi_values[j]);
+          data_file << x << " " << y << " " << z << " "
                     << f_values[i * phi_values.size() + j] << "\n";
         }
       data_file << std::endl;
