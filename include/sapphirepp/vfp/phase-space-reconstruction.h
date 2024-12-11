@@ -39,10 +39,12 @@ namespace sapphirepp
         const std::vector<double>   &phi_values,
         const std::vector<double>   &f_values);
 
-      std::vector<double>
-      create_range(const double       lower_bound,
-                   const double       step_size,
-                   const unsigned int n_intervals);
+
+
+      static std::vector<double>
+      create_linear_range(const double       start,
+                          const double       stop,
+                          const unsigned int num);
     };
   } // namespace VFP
 } // namespace sapphirepp

@@ -139,20 +139,19 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
 
 template <unsigned int dim>
 std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::create_range(
-  const double       lower_bound,
-  const double       step_size,
-  const unsigned int n_intervals)
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::create_linear_range(
+  const double       start,
+  const double       stop,
+  const unsigned int num)
 {
-  std::vector<double> values(n_intervals + 1);
-  double              start = lower_bound - step_size;
-  std::generate(values.begin(), values.end(), [&start, step_size]() {
-    start += step_size;
-    return start;
-  });
+  std::vector<double> values(num);
+  for (unsigned int i = 0; i < num; ++i)
+    values[i] = start + i * (stop - start) / (num - 1);
+  // Sanitize
+  values[0]       = start;
+  values[num - 1] = stop;
   return values;
 }
-
 
 
 // Explicit instantiation

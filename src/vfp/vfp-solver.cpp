@@ -1774,7 +1774,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // TODO: Find a workaround. Probably a lambda that is passed to
   // rpe.evaluate_and_process() that does not use FEPointEvaluation, which
   // requires the template argument.
-  constexpr unsigned int n_components = (4 + 1) * (4 + 1);
+  constexpr unsigned int n_components = (3 + 1) * (3 + 1);
   // Return value: std::vector<dealii::Tensor<1,n_components,double>>
   const auto coefficients_at_all_points =
     VectorTools::point_values<n_components>(rpe_cache,
@@ -1786,27 +1786,11 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   // For example, in the setup up phase of a PostProcessing Object.
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      const unsigned int n_mu_intervals =
-        75.; // Results in n_intervals + 1 points
-      const double        mu_min   = -1;
-      const double        mu_max   = 1;
-      const double        delta_mu = (mu_max - mu_min) / n_mu_intervals;
-      std::vector<double> mu_values =
-        ps_reconstruction.create_range(mu_min, delta_mu, n_mu_intervals);
+      const std::vector<double> mu_values =
+        ps_reconstruction.create_linear_range(-1, 1, 76);
 
-      // Sanitize mu range: If, for example, a mu range is computed it is
-      // necessary to make sure that mu <=1 exactly and not to double precision.
-      // If it is only true to double precision, the GSL function sphPlm throws
-      // an error.
-      mu_values.front() = mu_min;
-      mu_values.back()  = mu_max;
-
-      const unsigned int n_phi_intervals = n_mu_intervals;
-      const double       phi_min         = 0.;
-      const double       phi_max         = 2 * std::acos(-1); // 2π
-      const double       delta_phi = (phi_max - phi_min) / n_phi_intervals;
       const std::vector<double> phi_values =
-        ps_reconstruction.create_range(phi_min, delta_phi, n_phi_intervals);
+        ps_reconstruction.create_linear_range(0, 2 * M_PI, 76);
 
       // loop over all points and compute the phase reconstruction
       unsigned int point_counter = 0;
