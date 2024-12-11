@@ -10,7 +10,7 @@
 #include "gsl/gsl_sf_legendre.h"
 
 std::vector<double>
-sapphirepp::VFP::PhaseSpace::compute_phase_space_distribution(
+sapphirepp::VFP::PhaseSpaceReconstruction::compute_phase_space_distribution(
   const std::vector<double>                      &mu_values,
   const std::vector<double>                      &phi_values,
   const std::vector<std::array<unsigned int, 3>> &lms_index_map,
@@ -69,7 +69,7 @@ sapphirepp::VFP::PhaseSpace::compute_phase_space_distribution(
 
 
 void
-sapphirepp::VFP::PhaseSpace::output_gnu_splot_data(
+sapphirepp::VFP::PhaseSpaceReconstruction::output_gnu_splot_data(
   const std::filesystem::path &path,
   const std::vector<double>   &x_values,
   const std::vector<double>   &y_values,
@@ -91,11 +91,11 @@ sapphirepp::VFP::PhaseSpace::output_gnu_splot_data(
 }
 
 void
-sapphirepp::VFP::PhaseSpace::output_gnu_splot_spherical_density_map(
-  const std::filesystem::path &path,
-  const std::vector<double>   &mu_values,
-  const std::vector<double>   &phi_values,
-  const std::vector<double>   &f_values)
+sapphirepp::VFP::PhaseSpaceReconstruction::
+  output_gnu_splot_spherical_density_map(const std::filesystem::path &path,
+                                         const std::vector<double>   &mu_values,
+                                         const std::vector<double> &phi_values,
+                                         const std::vector<double> &f_values)
 {
   std::ofstream data_file(path);
   data_file.precision(std::numeric_limits<double>::digits10);
@@ -118,9 +118,10 @@ sapphirepp::VFP::PhaseSpace::output_gnu_splot_spherical_density_map(
 }
 
 std::vector<double>
-sapphirepp::VFP::PhaseSpace::create_range(const double       lower_bound,
-                                          const double       step_size,
-                                          const unsigned int n_intervals)
+sapphirepp::VFP::PhaseSpaceReconstruction::create_range(
+  const double       lower_bound,
+  const double       step_size,
+  const unsigned int n_intervals)
 {
   std::vector<double> values(n_intervals + 1);
   double              start = lower_bound - step_size;
