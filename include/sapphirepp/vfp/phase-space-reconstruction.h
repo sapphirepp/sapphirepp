@@ -7,12 +7,18 @@
 #include <filesystem>
 #include <vector>
 
+#include "vfp-parameters.h"
+
 namespace sapphirepp
 {
   namespace VFP
   {
-    namespace PhaseSpaceReconstruction
+    template <unsigned int dim>
+    class PhaseSpaceReconstruction
     {
+    public:
+      PhaseSpaceReconstruction(const VFPParameters<dim> &vfp_parameters);
+
       std::vector<double>
       compute_phase_space_distribution(
         const std::vector<double>                      &mu_values,
@@ -37,9 +43,8 @@ namespace sapphirepp
       create_range(const double       lower_bound,
                    const double       step_size,
                    const unsigned int n_intervals);
-    } // namespace PhaseSpaceReconstruction
-  }   // namespace VFP
-      // namespace VFP
+    };
+  } // namespace VFP
 } // namespace sapphirepp
 
 #endif

@@ -33,12 +33,12 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/mpi_remote_point_evaluation.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/types.h>
-#include <deal.II/base/mpi_remote_point_evaluation.h>
 
 #include <deal.II/distributed/shared_tria.h>
 #include <deal.II/distributed/tria.h>
@@ -64,6 +64,7 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "pde-system.h"
+#include "phase-space-reconstruction.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
@@ -433,7 +434,8 @@ namespace sapphirepp
        * Use to reconstruct phase space at predefined points
        */
       Utilities::MPI::RemotePointEvaluation<dim_ps, dim_ps> rpe_cache;
-      
+      PhaseSpaceReconstruction<dim_ps>                      ps_reconstruction;
+
       /** @{ */
       /** @dealref{SparsityPattern} */
       SparsityPattern sparsity_pattern;

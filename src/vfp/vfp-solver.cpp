@@ -214,6 +214,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
+  , ps_reconstruction(vfp_parameters)
   , pcout(std::cout,
           ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
            (saplog.get_verbosity() >= 3)))
@@ -1791,9 +1792,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
       const double        mu_max   = 1;
       const double        delta_mu = (mu_max - mu_min) / n_mu_intervals;
       std::vector<double> mu_values =
-        PhaseSpaceReconstruction::create_range(mu_min,
-                                               delta_mu,
-                                               n_mu_intervals);
+        ps_reconstruction.create_range(mu_min, delta_mu, n_mu_intervals);
 
       // Sanitize mu range: If, for example, a mu range is computed it is
       // necessary to make sure that mu <=1 exactly and not to double precision.
@@ -1807,9 +1806,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
       const double       phi_max         = 2 * std::acos(-1); // 2π
       const double       delta_phi = (phi_max - phi_min) / n_phi_intervals;
       const std::vector<double> phi_values =
-        PhaseSpaceReconstruction::create_range(phi_min,
-                                               delta_phi,
-                                               n_phi_intervals);
+        ps_reconstruction.create_range(phi_min, delta_phi, n_phi_intervals);
 
       // loop over all points and compute the phase reconstruction
       unsigned int point_counter = 0;
@@ -1820,18 +1817,18 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
           dealii::Vector<double> flms_values(n_components);
           expansion_coefficients.unroll(flms_values.begin(), flms_values.end());
           std::vector<double> f_values =
-            PhaseSpaceReconstruction::compute_phase_space_distribution(
+            ps_reconstruction.compute_phase_space_distribution(
               mu_values, phi_values, pde_system.lms_indices, flms_values);
 
           std::string path = output_parameters.output_path;
-          PhaseSpaceReconstruction::output_gnu_splot_data(
+          ps_reconstruction.output_gnu_splot_data(
             path + "/surface_plot_distribution_function_p_" +
               Utilities::to_string(point_counter) + "_at_t_" +
               Utilities::to_string(time_step_number) + ".dat",
             mu_values,
             phi_values,
             f_values);
-          PhaseSpaceReconstruction::output_gnu_splot_spherical_density_map(
+          ps_reconstruction.output_gnu_splot_spherical_density_map(
             path + "/spherical_density_map_p_" +
               Utilities::to_string(point_counter) + "_at_t_" +
               Utilities::to_string(time_step_number) + ".dat",

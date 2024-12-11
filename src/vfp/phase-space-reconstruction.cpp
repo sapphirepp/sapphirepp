@@ -9,12 +9,25 @@
 
 #include "gsl/gsl_sf_legendre.h"
 
+
+
+template <unsigned int dim>
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
+  const VFPParameters<dim> &vfp_parameters)
+{
+  static_cast<void>(vfp_parameters);
+}
+
+
+
+template <unsigned int dim>
 std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction::compute_phase_space_distribution(
-  const std::vector<double>                      &mu_values,
-  const std::vector<double>                      &phi_values,
-  const std::vector<std::array<unsigned int, 3>> &lms_index_map,
-  const dealii::Vector<double>                   &expansion_coefficients)
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
+  compute_phase_space_distribution(
+    const std::vector<double>                      &mu_values,
+    const std::vector<double>                      &phi_values,
+    const std::vector<std::array<unsigned int, 3>> &lms_index_map,
+    const dealii::Vector<double>                   &expansion_coefficients)
 {
   std::vector<double> cos_values(phi_values.size());
   std::vector<double> sin_values(phi_values.size());
@@ -68,8 +81,10 @@ sapphirepp::VFP::PhaseSpaceReconstruction::compute_phase_space_distribution(
 }
 
 
+
+template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction::output_gnu_splot_data(
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
   const std::filesystem::path &path,
   const std::vector<double>   &x_values,
   const std::vector<double>   &y_values,
@@ -90,8 +105,11 @@ sapphirepp::VFP::PhaseSpaceReconstruction::output_gnu_splot_data(
     }
 }
 
+
+
+template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction::
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
   output_gnu_splot_spherical_density_map(const std::filesystem::path &path,
                                          const std::vector<double>   &mu_values,
                                          const std::vector<double> &phi_values,
@@ -117,8 +135,11 @@ sapphirepp::VFP::PhaseSpaceReconstruction::
     }
 }
 
+
+
+template <unsigned int dim>
 std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction::create_range(
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::create_range(
   const double       lower_bound,
   const double       step_size,
   const unsigned int n_intervals)
@@ -131,3 +152,10 @@ sapphirepp::VFP::PhaseSpaceReconstruction::create_range(
   });
   return values;
 }
+
+
+
+// Explicit instantiation
+template class sapphirepp::VFP::PhaseSpaceReconstruction<1>;
+template class sapphirepp::VFP::PhaseSpaceReconstruction<2>;
+template class sapphirepp::VFP::PhaseSpaceReconstruction<3>;
