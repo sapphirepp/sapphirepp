@@ -2,6 +2,8 @@
 
 #include <deal.II/lac/vector.h>
 
+#include <boost/math/special_functions/spherical_harmonic.hpp>
+
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -29,53 +31,16 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
     const std::vector<std::array<unsigned int, 3>> &lms_index_map,
     const dealii::Vector<double>                   &expansion_coefficients)
 {
-  std::vector<double> cos_values(phi_values.size());
-  std::vector<double> sin_values(phi_values.size());
-
-  for (std::size_t i = 0; i < phi_values.size(); ++i)
-    {
-      cos_values[i] = std::cos(phi_values[i]);
-      sin_values[i] = std::sin(phi_values[i]);
-    }
-  // NOTE: Type cast is necessary to choose a specific overload of std::cos
-  // std::transform(phi_values.begin(), phi_values.end(), cos_values.begin(),
-  //                static_cast<double (*)(double)>(std::cos));
-  // std::transform(phi_values.begin(), phi_values.end(), sin_values.begin(),
-  //                static_cast<double (*)(double)>(std::sin));
+  dealii::Table<3, double> y_lms =
+    compute_real_spherical_harmonics(mu_values, phi_values, lms_index_map);
 
   std::vector<double> f(mu_values.size() * phi_values.size());
-  for (std::size_t i = 0; i < expansion_coefficients.size(); ++i)
-    {
-      unsigned int l   = lms_index_map[i][0];
-      unsigned int m   = lms_index_map[i][1];
-      unsigned int s   = lms_index_map[i][2];
-      auto         Plm = [l, m](auto &&PH1) {
-        return gsl_sf_legendre_sphPlm(l, m, std::forward<decltype(PH1)>(PH1));
-      };
-      // auto         Plm = [l, m](double x) { gsl_sf_legendre_sphPlm(l, m, x);
-      // };
-      std::vector<double> Plm_values(mu_values.size());
-      std::transform(mu_values.begin(),
-                     mu_values.end(),
-                     Plm_values.begin(),
-                     Plm);
 
-      for (std::size_t j = 0; j < mu_values.size(); ++j)
-        {
-          for (std::size_t k = 0; k < phi_values.size(); ++k)
-            {
-              if (m != 0)
-                f[j * phi_values.size() + k] +=
-                  expansion_coefficients[i] * //* (m % 2 ? -1. : 1.) * //
-                                              // Condon-Shortley phase
-                  Plm_values[j] * (s ? sin_values[k] : cos_values[k]);
-              else
-                f[j * phi_values.size() + k] +=
-                  expansion_coefficients[i] // * (m % 2 ? -1. : 1.)
-                  * Plm_values[j];
-            }
-        }
-    }
+  for (std::size_t i = 0; i < expansion_coefficients.size(); ++i)
+    for (std::size_t j = 0; j < mu_values.size(); ++j)
+      for (std::size_t k = 0; k < phi_values.size(); ++k)
+        f[j * phi_values.size() + k] +=
+          expansion_coefficients[i] * y_lms(j, k, i);
 
   return f;
 }
@@ -152,6 +117,59 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::create_linear_range(
   values[num - 1] = stop;
   return values;
 }
+
+
+
+template <unsigned int dim>
+dealii::Table<3, double>
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
+  compute_real_spherical_harmonics(
+    const std::vector<double>                      &theta_values,
+    const std::vector<double>                      &phi_values,
+    const std::vector<std::array<unsigned int, 3>> &lms_indices)
+{
+  dealii::Table<3, double> y_lms(theta_values.size(),
+                                 phi_values.size(),
+                                 lms_indices.size());
+
+  for (unsigned int i = 0; i < lms_indices.size(); ++i)
+    {
+      const unsigned int l = lms_indices[i][0];
+      const unsigned int m = lms_indices[i][1];
+      const unsigned int s = lms_indices[i][2];
+
+      for (unsigned int j = 0; j < theta_values.size(); ++j)
+        {
+          for (unsigned int k = 0; k < phi_values.size(); ++k)
+            {
+              switch (s)
+                {
+                  case 0:
+                    {
+                      y_lms(j, k, i) = boost::math::spherical_harmonic_r(
+                        l, m, theta_values[j], phi_values[k]);
+                      if (m > 0)
+                        y_lms(j, k, i) *= M_SQRT2;
+                      break;
+                    }
+                  case 1:
+                    {
+                      Assert(m > 0, ExcInvalidState());
+                      y_lms(j, k, i) =
+                        M_SQRT2 * boost::math::spherical_harmonic_i(
+                                    l, m, theta_values[j], phi_values[k]);
+                      break;
+                    }
+                  default:
+                    Assert(false, ExcInvalidState())
+                }
+            }
+        }
+    }
+
+  return y_lms;
+}
+
 
 
 // Explicit instantiation

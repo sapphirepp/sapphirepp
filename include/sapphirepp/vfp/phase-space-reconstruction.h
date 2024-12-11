@@ -1,6 +1,8 @@
 #ifndef VFP_PHASESPACERECONSTRUCTION_H
 #define VFP_PHASESPACERECONSTRUCTION_H
 
+#include <deal.II/base/table.h>
+
 #include <deal.II/lac/vector.h>
 
 #include <array>
@@ -45,6 +47,14 @@ namespace sapphirepp
       create_linear_range(const double       start,
                           const double       stop,
                           const unsigned int num);
+
+
+
+      static dealii::Table<3, double>
+      compute_real_spherical_harmonics(
+        const std::vector<double>                      &theta_values,
+        const std::vector<double>                      &phi_values,
+        const std::vector<std::array<unsigned int, 3>> &lms_indices);
     };
   } // namespace VFP
 } // namespace sapphirepp
