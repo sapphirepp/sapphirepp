@@ -57,7 +57,6 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/vector_tools_evaluate.h>
 #include <deal.II/numerics/vector_tools_integrate_difference.h>
 #include <deal.II/numerics/vector_tools_project.h>
 
@@ -72,6 +71,8 @@
 #include "particle-functions.h"
 #include "phase-space-reconstruction.h"
 #include "sapphirepp-logstream.h"
+
+
 
 namespace sapphirepp
 {
@@ -214,7 +215,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , ps_reconstruction(vfp_parameters, pde_system.lms_indices)
+  , ps_reconstruction(vfp_parameters, output_parameters, pde_system.lms_indices)
   , pcout(std::cout,
           ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
            (saplog.get_verbosity() >= 3)))
@@ -310,25 +311,6 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
                                           source_function,
                                           locally_owned_current_source);
     }
-  saplog << "Reconstruction of phase space is set up" << std::endl;
-  // Setup up communication pattern for remote point evaluation. Used to
-  // reconstruct phase space at these points.
-  std::vector<Point<dim_ps>> reconstruction_points;
-  // NOTE: The reconstruction_points vector is only filled for the rank 0
-  // processors, because we intend to reonctruct phase space by the root rank.
-  // TODO: For a later implementation, it might be possible to check if the
-  // processor that owns the point can do the reconstruction.
-  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    reconstruction_points = {Point<dim_ps>(-3.), Point<dim_ps>(3.)};
-  rpe_cache.reinit(reconstruction_points, triangulation, mapping);
-
-  AssertThrow(
-    rpe_cache.all_points_found(),
-    StandardExceptions::ExcMessage(
-      "Not all specified points were found. Maybe a point is not inside the computational domain."));
-
-  // saplog << "Phase space will be reconstructed at " << reconstruction_points
-  //        << std::endl;
 }
 
 
@@ -624,6 +606,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                        locally_owned_dofs,
                        dsp,
                        mpi_communicator);
+
+  ps_reconstruction.reinit(triangulation, mapping);
 }
 
 
@@ -1767,50 +1751,9 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   data_out.build_patches(vfp_parameters.polynomial_degree);
   output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 
-  // NOTE: point_values needs the template argument n_components, which needs to
-  // be known at compile time. Unfortunately it is not possible to compute at
-  // compile time, because l_max is a run-time parameter.
-  //
-  // TODO: Find a workaround. Probably a lambda that is passed to
-  // rpe.evaluate_and_process() that does not use FEPointEvaluation, which
-  // requires the template argument.
-  constexpr unsigned int n_components = (3 + 1) * (3 + 1);
-  // Return value: std::vector<dealii::Tensor<1,n_components,double>>
-  const auto coefficients_at_all_points =
-    VectorTools::point_values<n_components>(rpe_cache,
-                                            dof_handler,
-                                            locally_relevant_current_solution);
-
-  // NOTE: In an actual implementaion, the computation of phi and mu ranges and
-  // also the values of cos phi, sin phi and Plm(mu) should only be done once.
-  // For example, in the setup up phase of a PostProcessing Object.
-  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      // loop over all points and compute the phase reconstruction
-      unsigned int point_counter = 0;
-      for (const auto &expansion_coefficients : coefficients_at_all_points)
-        {
-          // TODO: In the actual implemenation compute phase distribution should
-          // directly work with the tensor. There is no need to unroll.
-          dealii::Vector<double> flms_values(n_components);
-          expansion_coefficients.unroll(flms_values.begin(), flms_values.end());
-          std::vector<double> f_values =
-            ps_reconstruction.compute_phase_space_distribution(flms_values);
-
-          std::string path = output_parameters.output_path;
-          ps_reconstruction.output_gnu_splot_data(
-            path + "/surface_plot_distribution_function_p_" +
-              Utilities::to_string(point_counter) + "_at_t_" +
-              Utilities::to_string(time_step_number) + ".dat",
-            f_values);
-          ps_reconstruction.output_gnu_splot_spherical_density_map(
-            path + "/spherical_density_map_p_" +
-              Utilities::to_string(point_counter) + "_at_t_" +
-              Utilities::to_string(time_step_number) + ".dat",
-            f_values);
-          ++point_counter;
-        }
-    }
+  ps_reconstruction.reconstruct_all_points(dof_handler,
+                                           locally_relevant_current_solution,
+                                           time_step_number);
 }
 
 

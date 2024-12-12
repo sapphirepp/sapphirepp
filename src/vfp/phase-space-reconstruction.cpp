@@ -2,6 +2,8 @@
 
 #include <deal.II/lac/vector.h>
 
+#include <deal.II/numerics/vector_tools_evaluate.h>
+
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
 #include <algorithm>
@@ -14,14 +16,94 @@
 template <unsigned int dim>
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
   const VFPParameters<dim>                       &vfp_parameters,
+  const Utils::OutputParameters                  &output_parameters,
   const std::vector<std::array<unsigned int, 3>> &lms_indices)
-  : lms_indices{lms_indices}
+  : output_parameters{output_parameters}
+  , lms_indices{lms_indices}
   , theta_values{create_linear_range(0, M_PI, 76)}
   , phi_values{create_linear_range(0, 2 * M_PI, 76)}
   , real_spherical_harmonics{
       compute_real_spherical_harmonics(theta_values, phi_values, lms_indices)}
 {
+  LogStream::Prefix p("PSRec", saplog);
   static_cast<void>(vfp_parameters);
+
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    reconstruction_points = {Point<dim>(-3.), Point<dim>(3.)};
+
+
+  // saplog << "Phase space will be reconstructed at " << reconstruction_points
+  //        << std::endl;
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
+  const Triangulation<dim> &triangulation,
+  const Mapping<dim>       &mapping)
+{
+  LogStream::Prefix p("PSRec", saplog);
+  saplog << "Reconstruction of phase space is set up" << std::endl;
+
+  rpe_cache.reinit(reconstruction_points, triangulation, mapping);
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
+  const DoFHandler<dim>            &dof_handler,
+  const PETScWrappers::MPI::Vector &solution,
+  const unsigned int                time_step_number) const
+{
+  LogStream::Prefix p("PSRec", saplog);
+  saplog << "Perform reconstruction of phase space" << std::endl;
+
+  // NOTE: point_values needs the template argument n_components, which needs to
+  // be known at compile time. Unfortunately it is not possible to compute at
+  // compile time, because l_max is a run-time parameter.
+  //
+  // TODO: Find a workaround. Probably a lambda that is passed to
+  // rpe.evaluate_and_process() that does not use FEPointEvaluation, which
+  // requires the template argument.
+  constexpr unsigned int n_components = (3 + 1) * (3 + 1);
+  // Return value: std::vector<dealii::Tensor<1,n_components,double>>
+  const auto coefficients_at_all_points =
+    VectorTools::point_values<n_components>(rpe_cache, dof_handler, solution);
+
+  // NOTE: In an actual implementaion, the computation of phi and mu ranges and
+  // also the values of cos phi, sin phi and Plm(mu) should only be done once.
+  // For example, in the setup up phase of a PostProcessing Object.
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      // loop over all points and compute the phase reconstruction
+      unsigned int point_counter = 0;
+      for (const auto &expansion_coefficients : coefficients_at_all_points)
+        {
+          // TODO: In the actual implemenation compute phase distribution should
+          // directly work with the tensor. There is no need to unroll.
+          dealii::Vector<double> flms_values(n_components);
+          expansion_coefficients.unroll(flms_values.begin(), flms_values.end());
+          std::vector<double> f_values =
+            compute_phase_space_distribution(flms_values);
+
+          std::string path = output_parameters.output_path;
+          output_gnu_splot_data(
+            path + "/surface_plot_distribution_function_p_" +
+              Utilities::to_string(point_counter) + "_at_t_" +
+              Utilities::to_string(time_step_number) + ".dat",
+            f_values);
+          output_gnu_splot_spherical_density_map(
+            path + "/spherical_density_map_p_" +
+              Utilities::to_string(point_counter) + "_at_t_" +
+              Utilities::to_string(time_step_number) + ".dat",
+            f_values);
+          ++point_counter;
+        }
+    }
 }
 
 

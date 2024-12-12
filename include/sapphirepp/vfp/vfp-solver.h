@@ -33,7 +33,6 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/mpi.h>
-#include <deal.II/base/mpi_remote_point_evaluation.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/tensor_function.h>
@@ -430,12 +429,6 @@ namespace sapphirepp
        */
       const AffineConstraints<double> constraints;
 
-      /**
-       * Use to reconstruct phase space at predefined points
-       */
-      Utilities::MPI::RemotePointEvaluation<dim_ps, dim_ps> rpe_cache;
-      PhaseSpaceReconstruction<dim_ps>                      ps_reconstruction;
-
       /** @{ */
       /** @dealref{SparsityPattern} */
       SparsityPattern sparsity_pattern;
@@ -456,6 +449,11 @@ namespace sapphirepp
       PETScWrappers::MPI::Vector locally_owned_previous_solution;
       /** Current solution */
       PETScWrappers::MPI::Vector locally_relevant_current_solution;
+      /** @} */
+
+      /** @{ */
+      /** Postprocessor to reconstruct phase space at predefined points */
+      PhaseSpaceReconstruction<dim_ps> ps_reconstruction;
       /** @} */
 
       /** @{ */
