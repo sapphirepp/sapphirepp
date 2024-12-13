@@ -6,7 +6,7 @@ target_include_directories(closure PUBLIC
                            ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
 target_link_libraries(closure UtilsLib)
 
-file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY parameter.prm heatmap.gp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
   "${CMAKE_CURRENT_BINARY_DIR}/results"
