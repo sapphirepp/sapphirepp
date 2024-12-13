@@ -52,6 +52,8 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("VFP");
 
+  const auto pattern_point = Patterns::List(Patterns::Double(), dim, dim, ",");
+
 
   prm.enter_subsection("Mesh");
   {
@@ -62,18 +64,24 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "program or read from a file");
 
     prm.declare_entry("Point 1",
-                      "-2., -2., -2.",
-                      Patterns::Anything(),
+                      (dim == 1) ? "-2." :
+                      (dim == 2) ? "-2., -2." :
+                                   "-2., -2., -2.",
+                      pattern_point,
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Point 2",
-                      "2., 2., 2.",
-                      Patterns::Anything(),
+                      (dim == 1) ? "2." :
+                      (dim == 2) ? "2., 2." :
+                                   "2., 2., 2.",
+                      pattern_point,
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Number of cells",
-                      "32, 32, 32",
-                      Patterns::Anything(),
+                      (dim == 1) ? "32" :
+                      (dim == 2) ? "32, 32" :
+                                   "32, 32, 32",
+                      Patterns::List(Patterns::Integer(1), dim, dim, ","),
                       "Number of cells in each coordinate direction");
 
     prm.declare_entry("Number of shock cells",
@@ -93,7 +101,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 
     prm.declare_entry("File name",
                       "",
-                      Patterns::Anything(),
+                      Patterns::FileName(),
                       "The file containing the grid (only for "
                       "Grid type = File)");
 
@@ -212,10 +220,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
     prm.declare_entry(
       "reconstruction points",
       "",
-      Patterns::List(Patterns::List(Patterns::Double(), dim_ps, dim_ps, ","),
-                     0,
-                     Patterns::List::max_int_value,
-                     ";"),
+      Patterns::List(pattern_point, 0, Patterns::List::max_int_value, ";"),
       "List of points in the reduced phase space "
       "for reconstructing f(theta, phi). "
       "The points should be provided as a semicolon-separated list, "
@@ -261,63 +266,11 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
       Assert(false, ExcNotImplemented());
 
     // Two diagonally opposite corner points of the grid
-    unsigned int i = 0;
-    s              = prm.get("Point 1");
-    std::stringstream p1_string(s);
-    for (std::string coordinate; std::getline(p1_string, coordinate, ','); ++i)
-      {
-        if (i < dim)
-          p1[i] = std::stod(coordinate);
-      }
-    AssertThrow(dim <= i,
-                ExcMessage(
-                  "Point 1 does not specify coordinate in each dimension. "
-                  "Please enter the coordinates of the lower left corner "
-                  "of the grid: \n"
-                  "\tset Point 1 = x1 (, y1) (, z1) (, p1) \n"
-                  "You entered: " +
-                  s));
-    if (i != dim)
-      saplog << "WARNING: Point 1 specification does not match dimension!"
-             << std::endl;
-
-    i = 0;
-    s = prm.get("Point 2");
-    std::stringstream p2_string(s);
-    for (std::string coordinate; std::getline(p2_string, coordinate, ','); ++i)
-      {
-        if (i < dim)
-          p2[i] = std::stod(coordinate);
-      }
-    AssertThrow(dim <= i,
-                ExcMessage(
-                  "Point 2 does not specify coordinate in each dimension. "
-                  "Please enter the coordinates of the lower left corner "
-                  "of the grid: \n"
-                  "\tset Point 2 = x1 (, y1) (, z1) (, p1) \n"
-                  "You entered: " +
-                  s));
-    if (i != dim)
-      saplog << "WARNING: Point 2 specification does not match dimension!"
-             << std::endl;
+    Patterns::Tools::to_value(prm.get("Point 1"), p1);
+    Patterns::Tools::to_value(prm.get("Point 2"), p2);
 
     // Number of cells
-    s = prm.get("Number of cells");
-    std::stringstream n_cells_string(s);
-    for (std::string n; std::getline(n_cells_string, n, ',');)
-      n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
-    AssertThrow(dim <= n_cells.size(),
-                ExcMessage(
-                  "Number of cells does not specify value in each dimension."
-                  "Please enter the number of cells in each coordinate: \n"
-                  "\tset Number of cells = Nx (, Ny) (, Nz) (, Np) \n"
-                  "You entered: " +
-                  s));
-    if (n_cells.size() != dim)
-      saplog
-        << "WARNING: Number of cells specification does not match dimension!"
-        << std::endl;
-    n_cells.resize(dim);
+    Patterns::Tools::to_value(prm.get("Number of cells"), n_cells);
 
     n_cells_shock =
       static_cast<unsigned int>(prm.get_integer("Number of shock cells"));
@@ -426,7 +379,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   prm.enter_subsection("TransportOnly");
   {
     gamma    = prm.get_double("Gamma");
-    velocity = std::sqrt(1 - 1 / (gamma * gamma));
+    velocity = std::sqrt(1. - 1. / (gamma * gamma));
   } // TransportOnly
   prm.leave_subsection();
 

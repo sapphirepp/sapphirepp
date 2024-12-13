@@ -67,7 +67,9 @@ main(int argc, char *argv[])
 
       if ((dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) &&
           (argc == 1))
-        prm.print_parameters("parameter-template.prm", ParameterHandler::PRM);
+        prm.print_parameters("parameter-template.prm",
+                             ParameterHandler::PRM |
+                               ParameterHandler::KeepDeclarationOrder);
 
       prm.parse_input(parameter_filename);
 
