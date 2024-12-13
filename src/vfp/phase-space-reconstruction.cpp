@@ -70,12 +70,14 @@ void
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
   const DoFHandler<dim>            &dof_handler,
   const PETScWrappers::MPI::Vector &solution,
-  const unsigned int                time_step_number) const
+  const unsigned int                time_step_number,
+  const double                      cur_time) const
 {
   if (!perform_phase_space_reconstruction)
     return;
   LogStream::Prefix p("PSRec", saplog);
   saplog << "Perform reconstruction of phase space" << std::endl;
+  LogStream::Prefix p2("Reconstruction", saplog);
 
   // NOTE: point_values needs the template argument n_components, which needs to
   // be known at compile time. Unfortunately it is not possible to compute at
@@ -105,17 +107,14 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
           std::vector<double> f_values =
             compute_phase_space_distribution(flms_values);
 
-          std::string path = output_parameters.output_path;
-          output_gnu_splot_data(
-            path + "/surface_plot_distribution_function_p_" +
-              Utilities::to_string(point_counter) + "_at_t_" +
-              Utilities::to_string(time_step_number) + ".dat",
-            f_values);
-          output_gnu_splot_spherical_density_map(
-            path + "/spherical_density_map_p_" +
-              Utilities::to_string(point_counter) + "_at_t_" +
-              Utilities::to_string(time_step_number) + ".dat",
-            f_values);
+          output_gnu_splot_data(f_values,
+                                point_counter,
+                                time_step_number,
+                                cur_time);
+          output_gnu_splot_spherical_density_map(f_values,
+                                                 point_counter,
+                                                 time_step_number,
+                                                 cur_time);
           ++point_counter;
         }
     }
@@ -147,12 +146,30 @@ sapphirepp::VFP::PhaseSpaceReconstruction<
 template <unsigned int dim>
 void
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
-  const std::filesystem::path &path,
-  const std::vector<double>   &f_values) const
+  const std::vector<double> &f_values,
+  const unsigned int         point_index,
+  const unsigned int         time_step_number,
+  const double               cur_time) const
 {
-  std::ofstream data_file(path);
+  AssertIndexRange(point_index, reconstruction_points.size());
+
+  const std::string filename =
+    "surface_plot_distribution_function_point_" +
+    Utilities::int_to_string(point_index, 2) + "_t_" +
+    Utilities::int_to_string(time_step_number,
+                             output_parameters.n_digits_for_counter) +
+    ".dat";
+
+  saplog << "Write reconstruction at (" << reconstruction_points[point_index]
+         << ") to file " << filename << std::endl;
+  std::ofstream data_file(output_parameters.output_path / filename);
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
   data_file.precision(std::numeric_limits<double>::digits10);
+
+  data_file << "# f(t, x, p, theta, mu) at (x,|p|) = ("
+            << reconstruction_points[point_index] << ") for t = " << cur_time
+            << "\n";
+  data_file << "# theta phi f(theta, phi) \n";
   for (unsigned int i = 0; i < theta_values.size(); ++i)
     {
       for (unsigned int j = 0; j < phi_values.size(); ++j)
@@ -170,12 +187,29 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
 template <unsigned int dim>
 void
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  output_gnu_splot_spherical_density_map(
-    const std::filesystem::path &path,
-    const std::vector<double>   &f_values) const
+  output_gnu_splot_spherical_density_map(const std::vector<double> &f_values,
+                                         const unsigned int         point_index,
+                                         const unsigned int time_step_number,
+                                         const double       cur_time) const
 {
-  std::ofstream data_file(path);
+  AssertIndexRange(point_index, reconstruction_points.size());
+
+  const std::string filename =
+    "spherical_density_map_point_" + Utilities::int_to_string(point_index, 2) +
+    "_t_" +
+    Utilities::int_to_string(time_step_number,
+                             output_parameters.n_digits_for_counter) +
+    ".dat";
+
+  saplog << "Write reconstruction at (" << reconstruction_points[point_index]
+         << ") to file " << filename << std::endl;
+  std::ofstream data_file(output_parameters.output_path / filename);
   data_file.precision(std::numeric_limits<double>::digits10);
+
+  data_file << "# f(t, x, p) at (x,|p|) = ("
+            << reconstruction_points[point_index] << ") for t = " << cur_time
+            << "\n";
+  data_file << "# n_{p_x} n_{p_y} n_{p_z} f(p_x, p_z, p_y) \n";
   for (unsigned int i = 0; i < theta_values.size(); ++i)
     {
       for (unsigned int j = 0; j < phi_values.size(); ++j)

@@ -53,7 +53,8 @@ namespace sapphirepp
       void
       reconstruct_all_points(const DoFHandler<dim>            &dof_handler,
                              const PETScWrappers::MPI::Vector &solution,
-                             const unsigned int time_step_number = 0) const;
+                             const unsigned int time_step_number = 0,
+                             const double       cur_time         = 0.) const;
 
 
 
@@ -90,15 +91,19 @@ namespace sapphirepp
 
 
       void
-      output_gnu_splot_data(const std::filesystem::path &path,
-                            const std::vector<double>   &f_values) const;
+      output_gnu_splot_data(const std::vector<double> &f_values,
+                            const unsigned int         point_index,
+                            const unsigned int         time_step_number = 0,
+                            const double               cur_time = 0.) const;
 
 
 
       void
       output_gnu_splot_spherical_density_map(
-        const std::filesystem::path &path,
-        const std::vector<double>   &f_values) const;
+        const std::vector<double> &f_values,
+        const unsigned int         point_index,
+        const unsigned int         time_step_number = 0,
+        const double               cur_time         = 0.) const;
     };
   } // namespace VFP
 } // namespace sapphirepp

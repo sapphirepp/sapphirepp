@@ -1753,7 +1753,8 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
 
   ps_reconstruction.reconstruct_all_points(dof_handler,
                                            locally_relevant_current_solution,
-                                           time_step_number);
+                                           time_step_number,
+                                           cur_time);
 }
 
 
