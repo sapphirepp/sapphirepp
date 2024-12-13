@@ -4,8 +4,8 @@
 set term png enhanced size 1024,1024 font "STIX Two Math, 18"
 
 # Define default values for input and output files
-if (!exists("input_file")) input_file = 'results/scattering-01-l3/spherical_density_map_p_0_at_t_0.dat'
-if (!exists("output_file")) output_file = 'heatmap.png'
+if (!exists("input_file")) input_file = 'results/closure/spherical_density_map_p_0_at_t_0.dat'
+if (!exists("output_file")) output_file = 'results/closure/heatmap.png'
 
 # Define output file from command-line argument or default value
 set output output_file
