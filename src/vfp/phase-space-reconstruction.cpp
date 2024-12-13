@@ -11,6 +11,8 @@
 #include <fstream>
 #include <limits>
 
+#include "tools.h"
+
 
 
 template <unsigned int dim>
@@ -20,20 +22,29 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
   const std::vector<std::array<unsigned int, 3>> &lms_indices)
   : output_parameters{output_parameters}
   , lms_indices{lms_indices}
-  , theta_values{create_linear_range(0, M_PI, 76)}
-  , phi_values{create_linear_range(0, 2 * M_PI, 76)}
+  , perform_phase_space_reconstruction{vfp_parameters
+                                         .perform_phase_space_reconstruction}
+  , theta_values{Utils::Tools::create_linear_range(0,
+                                                   M_PI,
+                                                   vfp_parameters.n_theta)}
+  , phi_values{Utils::Tools::create_linear_range(0,
+                                                 2 * M_PI,
+                                                 vfp_parameters.n_phi)}
   , real_spherical_harmonics{
       compute_real_spherical_harmonics(theta_values, phi_values, lms_indices)}
 {
   LogStream::Prefix p("PSRec", saplog);
-  static_cast<void>(vfp_parameters);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    reconstruction_points = {Point<dim>(-3.), Point<dim>(3.)};
+    reconstruction_points = vfp_parameters.reconstruction_points;
 
-
-  // saplog << "Phase space will be reconstructed at " << reconstruction_points
-  //        << std::endl;
+  if (reconstruction_points.size() > 0)
+    {
+      saplog << "Phase space will be reconstructed at:" << std::endl;
+      for (const auto &point : reconstruction_points)
+        saplog << "  " << point << std::endl;
+      saplog << std::endl;
+    }
 }
 
 
@@ -44,6 +55,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
   const Triangulation<dim> &triangulation,
   const Mapping<dim>       &mapping)
 {
+  if (!perform_phase_space_reconstruction)
+    return;
   LogStream::Prefix p("PSRec", saplog);
   saplog << "Reconstruction of phase space is set up" << std::endl;
 
@@ -59,6 +72,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
   const PETScWrappers::MPI::Vector &solution,
   const unsigned int                time_step_number) const
 {
+  if (!perform_phase_space_reconstruction)
+    return;
   LogStream::Prefix p("PSRec", saplog);
   saplog << "Perform reconstruction of phase space" << std::endl;
 
@@ -118,9 +133,9 @@ sapphirepp::VFP::PhaseSpaceReconstruction<
 
   std::vector<double> f(theta_values.size() * phi_values.size());
 
-  for (std::size_t i = 0; i < lms_indices.size(); ++i)
-    for (std::size_t j = 0; j < theta_values.size(); ++j)
-      for (std::size_t k = 0; k < phi_values.size(); ++k)
+  for (unsigned int i = 0; i < lms_indices.size(); ++i)
+    for (unsigned int j = 0; j < theta_values.size(); ++j)
+      for (unsigned int k = 0; k < phi_values.size(); ++k)
         f[j * phi_values.size() + k] +=
           expansion_coefficients[i] * real_spherical_harmonics(j, k, i);
 
@@ -178,24 +193,6 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
 
 
 template <unsigned int dim>
-std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::create_linear_range(
-  const double       start,
-  const double       stop,
-  const unsigned int num)
-{
-  std::vector<double> values(num);
-  for (unsigned int i = 0; i < num; ++i)
-    values[i] = start + i * (stop - start) / (num - 1);
-  // Sanitize
-  values[0]       = start;
-  values[num - 1] = stop;
-  return values;
-}
-
-
-
-template <unsigned int dim>
 dealii::Table<3, double>
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
   compute_real_spherical_harmonics(
@@ -210,7 +207,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
   for (unsigned int i = 0; i < lms_indices.size(); ++i)
     {
       const unsigned int l = lms_indices[i][0];
-      const unsigned int m = lms_indices[i][1];
+      const int          m = static_cast<int>(lms_indices[i][1]);
       const unsigned int s = lms_indices[i][2];
 
       for (unsigned int j = 0; j < theta_values.size(); ++j)

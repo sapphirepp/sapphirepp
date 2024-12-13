@@ -57,6 +57,32 @@ namespace sapphirepp
 
 
 
+      static Table<3, double>
+      compute_real_spherical_harmonics(
+        const std::vector<double>                      &theta_values,
+        const std::vector<double>                      &phi_values,
+        const std::vector<std::array<unsigned int, 3>> &lms_indices);
+
+
+
+    private:
+      /** Output parameter */
+      const Utils::OutputParameters output_parameters;
+
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+
+      const bool                perform_phase_space_reconstruction;
+      const std::vector<double> theta_values;
+      const std::vector<double> phi_values;
+
+      const Table<3, double> real_spherical_harmonics;
+
+      std::vector<Point<dim>> reconstruction_points;
+
+      Utilities::MPI::RemotePointEvaluation<dim, dim> rpe_cache;
+
+
+
       std::vector<double>
       compute_phase_space_distribution(
         const Vector<double> &expansion_coefficients) const;
@@ -73,38 +99,6 @@ namespace sapphirepp
       output_gnu_splot_spherical_density_map(
         const std::filesystem::path &path,
         const std::vector<double>   &f_values) const;
-
-
-
-      static std::vector<double>
-      create_linear_range(const double       start,
-                          const double       stop,
-                          const unsigned int num);
-
-
-
-      static Table<3, double>
-      compute_real_spherical_harmonics(
-        const std::vector<double>                      &theta_values,
-        const std::vector<double>                      &phi_values,
-        const std::vector<std::array<unsigned int, 3>> &lms_indices);
-
-
-
-    private:
-      /** Output parameter */
-      const Utils::OutputParameters output_parameters;
-
-      const std::vector<std::array<unsigned int, 3>> lms_indices;
-
-      const std::vector<double> theta_values;
-      const std::vector<double> phi_values;
-
-      const Table<3, double> real_spherical_harmonics;
-
-      std::vector<Point<dim>> reconstruction_points;
-
-      Utilities::MPI::RemotePointEvaluation<dim, dim> rpe_cache;
     };
   } // namespace VFP
 } // namespace sapphirepp
