@@ -29,6 +29,7 @@
 #include "vfp-parameters.h"
 
 #include <deal.II/base/patterns.h>
+#include <deal.II/base/utilities.h>
 
 #include <filesystem>
 #include <sstream>
@@ -203,6 +204,31 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "Only has to be specified in the transport-only (i.e. "
                       "p-independent) case.");
   } // TransportOnly
+  prm.leave_subsection();
+
+
+  prm.enter_subsection("Phase space reconstruction");
+  {
+    prm.declare_entry(
+      "reconstruction points",
+      "",
+      Patterns::List(Patterns::List(Patterns::Double(), dim_ps, dim_ps, ","),
+                     0,
+                     Patterns::List::max_int_value,
+                     ";"),
+      "List of points in the reduced phase space "
+      "for reconstructing f(theta, phi). "
+      "The points should be provided as a semicolon-separated list, "
+      "e.g., 1,1,1; 2,2,2.");
+    prm.declare_entry("n_theta",
+                      "75",
+                      Patterns::Integer(0),
+                      "Number of theta points for phase space reconstruction.");
+    prm.declare_entry("n_phi",
+                      "75",
+                      Patterns::Integer(0),
+                      "Number of phi points for phase space reconstruction.");
+  } // Phase space reconstruction
   prm.leave_subsection();
 
 
@@ -402,6 +428,32 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     gamma    = prm.get_double("Gamma");
     velocity = std::sqrt(1 - 1 / (gamma * gamma));
   } // TransportOnly
+  prm.leave_subsection();
+
+
+  prm.enter_subsection("Phase space reconstruction");
+  {
+    reconstruction_points.clear();
+    const auto string_list =
+      Utilities::split_string_list(prm.get("reconstruction points"), ";");
+    for (const auto &s : string_list)
+      reconstruction_points.push_back(
+        Patterns::Tools::Convert<Point<dim_ps>>::to_value(s));
+
+    //  Don't perform reconstruction if no points are given
+    if (reconstruction_points.size() == 0)
+      {
+        perform_phase_space_reconstruction = false;
+        n_theta                            = 0;
+        n_phi                              = 0;
+      }
+    else
+      {
+        perform_phase_space_reconstruction = true;
+        n_theta = static_cast<unsigned int>(prm.get_integer("n_theta"));
+        n_phi   = static_cast<unsigned int>(prm.get_integer("n_phi"));
+      }
+  } // Phase space reconstruction
   prm.leave_subsection();
 
 
