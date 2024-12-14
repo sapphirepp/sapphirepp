@@ -8,11 +8,13 @@
  2. @subpage gyro-advection  
     This example illustrates how an isotropic distribution of particles gyrates
     in a magnetic field, while being advected by a background plasma flow.
- 3. @subpage scattering-only  
+ 3. @subpage closure  
+    In this example the effect of truncating the expansion at $l_{\rm max}$ is explored.
+ 4. @subpage scattering-only  
     Serving as a comprehensive guide to @sapphire, this example is highly
     recommended for new developers. It focuses on using scattering to reach a
     solution with diminishing multipoles.
- 4. @subpage convergence-study  
+ 5. @subpage convergence-study  
     In this advanced example, we derive an analytic solution for the system of
     equations solved in @sapphire in a special scenario. This is used to verify
     the accuracy of the numerical methods by performing a convergence study.
