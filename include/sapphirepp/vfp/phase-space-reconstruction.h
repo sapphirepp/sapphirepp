@@ -52,6 +52,7 @@ namespace sapphirepp
 
       void
       reconstruct_all_points(const DoFHandler<dim>            &dof_handler,
+                             const Mapping<dim>               &mapping,
                              const PETScWrappers::MPI::Vector &solution,
                              const unsigned int time_step_number = 0,
                              const double       cur_time         = 0.) const;
@@ -71,6 +72,7 @@ namespace sapphirepp
       const Utils::OutputParameters output_parameters;
 
       const std::vector<std::array<unsigned int, 3>> lms_indices;
+      const unsigned int                             system_size;
 
       const bool                perform_phase_space_reconstruction;
       const std::vector<double> theta_values;
@@ -86,7 +88,7 @@ namespace sapphirepp
 
       std::vector<double>
       compute_phase_space_distribution(
-        const Vector<double> &expansion_coefficients) const;
+        const std::vector<double> &expansion_coefficients) const;
 
 
 

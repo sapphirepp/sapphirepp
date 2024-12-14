@@ -1,5 +1,11 @@
 #include "phase-space-reconstruction.h"
 
+#include <deal.II/base/array_view.h>
+#include <deal.II/base/mpi_remote_point_evaluation.h>
+
+#include <deal.II/fe/fe_update_flags.h>
+#include <deal.II/fe/fe_values.h>
+
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/vector_tools_evaluate.h>
@@ -22,6 +28,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
   const std::vector<std::array<unsigned int, 3>> &lms_indices)
   : output_parameters{output_parameters}
   , lms_indices{lms_indices}
+  , system_size{static_cast<unsigned int>(lms_indices.size())}
   , perform_phase_space_reconstruction{vfp_parameters
                                          .perform_phase_space_reconstruction}
   , theta_values{Utils::Tools::create_linear_range(0,
@@ -61,6 +68,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
   saplog << "Reconstruction of phase space is set up" << std::endl;
 
   rpe_cache.reinit(reconstruction_points, triangulation, mapping);
+  AssertThrow(rpe_cache.all_points_found(),
+              ExcMessage("Point for reconstruction is outside domain."));
 }
 
 
@@ -69,6 +78,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
   const DoFHandler<dim>            &dof_handler,
+  const Mapping<dim>               &mapping,
   const PETScWrappers::MPI::Vector &solution,
   const unsigned int                time_step_number,
   const double                      cur_time) const
@@ -79,33 +89,71 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
   saplog << "Perform reconstruction of phase space" << std::endl;
   LogStream::Prefix p2("Reconstruction", saplog);
 
-  // NOTE: point_values needs the template argument n_components, which needs to
-  // be known at compile time. Unfortunately it is not possible to compute at
-  // compile time, because l_max is a run-time parameter.
-  //
-  // TODO: Find a workaround. Probably a lambda that is passed to
-  // rpe.evaluate_and_process() that does not use FEPointEvaluation, which
-  // requires the template argument.
-  constexpr unsigned int n_components = (3 + 1) * (3 + 1);
-  // Return value: std::vector<dealii::Tensor<1,n_components,double>>
-  const auto coefficients_at_all_points =
-    VectorTools::point_values<n_components>(rpe_cache, dof_handler, solution);
+  using CellData =
+    typename dealii::Utilities::MPI::RemotePointEvaluation<dim, dim>::CellData;
 
-  // NOTE: In an actual implementaion, the computation of phi and mu ranges and
-  // also the values of cos phi, sin phi and Plm(mu) should only be done once.
-  // For example, in the setup up phase of a PostProcessing Object.
+
+  const std::function<void(const ArrayView<std::vector<double>> &,
+                           const CellData &)>
+    evaluate_function = [&](const ArrayView<std::vector<double>> &coefficients,
+                            const CellData                       &cell_data) {
+      std::vector<Point<dim>>              unit_points;
+      std::vector<types::global_dof_index> local_dof_indices_vector;
+
+      for (const auto cell_index : cell_data.cell_indices())
+        {
+          const auto &cell = cell_data.get_active_cell_iterator(cell_index)
+                               ->as_dof_handler_iterator(dof_handler);
+
+          // Convert unit point array view to vector
+          unit_points.clear();
+          for (const Point<dim> &p : cell_data.get_unit_points(cell_index))
+            unit_points.push_back(p);
+
+          // Initialize FEValues for point evaluation
+          FEValues<dim> fe_values(mapping,
+                                  cell->get_fe(),
+                                  Quadrature<dim>(unit_points),
+                                  update_values);
+          fe_values.reinit(cell);
+
+          // Resize coefficient buffer
+          auto local_coefficients =
+            cell_data.get_data_view(cell_index, coefficients);
+          for (auto &coeff : local_coefficients)
+            coeff.resize(system_size);
+
+          // Get local_dof_indices as ArrayView
+          local_dof_indices_vector.resize(cell->get_fe().n_dofs_per_cell());
+          cell->get_dof_indices(local_dof_indices_vector);
+          const auto local_dof_indices =
+            make_array_view(local_dof_indices_vector);
+
+          fe_values.get_function_values(solution,
+                                        local_dof_indices,
+                                        local_coefficients,
+                                        false);
+        }
+    };
+
+
+  // TODO: Have to check if this still works with old deal.II version
+  std::vector<std::vector<double>> coefficients_at_all_points;
+  std::vector<std::vector<double>> buffer;
+  rpe_cache.evaluate_and_process(coefficients_at_all_points,
+                                 buffer,
+                                 evaluate_function);
+  // const std::vector<double> coefficients_at_all_points =
+  //   rpe_cache.evaluate_and_process(evaluate_function);
+
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
       // loop over all points and compute the phase reconstruction
       unsigned int point_counter = 0;
       for (const auto &expansion_coefficients : coefficients_at_all_points)
         {
-          // TODO: In the actual implemenation compute phase distribution should
-          // directly work with the tensor. There is no need to unroll.
-          dealii::Vector<double> flms_values(n_components);
-          expansion_coefficients.unroll(flms_values.begin(), flms_values.end());
           std::vector<double> f_values =
-            compute_phase_space_distribution(flms_values);
+            compute_phase_space_distribution(expansion_coefficients);
 
           output_gnu_splot_data(f_values,
                                 point_counter,
@@ -125,7 +173,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
 template <unsigned int dim>
 std::vector<double>
 sapphirepp::VFP::PhaseSpaceReconstruction<
-  dim>::compute_phase_space_distribution(const dealii::Vector<double>
+  dim>::compute_phase_space_distribution(const std::vector<double>
                                            &expansion_coefficients) const
 {
   AssertDimension(expansion_coefficients.size(), lms_indices.size());
@@ -267,7 +315,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
                       break;
                     }
                   default:
-                    Assert(false, ExcInvalidState())
+                    Assert(false, ExcInvalidState());
                 }
             }
         }
