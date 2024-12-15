@@ -137,14 +137,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
     };
 
 
-  // TODO: Have to check if this still works with old deal.II version
-  std::vector<std::vector<double>> coefficients_at_all_points;
-  std::vector<std::vector<double>> buffer;
-  rpe_cache.evaluate_and_process(coefficients_at_all_points,
-                                 buffer,
-                                 evaluate_function);
-  // const std::vector<double> coefficients_at_all_points =
-  //   rpe_cache.evaluate_and_process(evaluate_function);
+  const std::vector<std::vector<double>> coefficients_at_all_points =
+    rpe_cache.evaluate_and_process(evaluate_function);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {

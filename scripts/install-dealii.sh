@@ -15,7 +15,7 @@ fi
 
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
-PETSC_VERSION="3.21.3"
+PETSC_VERSION="3.22.2"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
@@ -28,7 +28,7 @@ P4EST_VERSION="2.8.6"
 
 INSTALL_DEAL_II=false
 DEAL_II_DIR=${DEAL_II_DIR:-"$HOME/.local/lib/dealii"}
-DEAL_II_VERSION="9.5.2"
+DEAL_II_VERSION="9.6.1"
 
 if [[ $(uname) == "Darwin" ]]; then
     NUMBER_JOBS=$(sysctl -n hw.ncpu)
