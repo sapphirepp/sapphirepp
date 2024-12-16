@@ -48,8 +48,7 @@ This leads to a separation of particles with different directions of motion,
 encoded by $\theta$.
 This is demonstrated in the figure below.
 
-@todo Figure from paper
-![Analytical velocity distribution](https://sapphirepp.org/img/examples/parallel-shock-f-lnp.png)
+![Analytical velocity distribution](https://sapphirepp.org/img/examples/closure/analytical_heatmaps.png)
 Analytical velocity distribution of the particles at three different space and time points.
 
 We plot a heatmap of the average particle number density at $(x=0,t=0)$,
@@ -163,7 +162,7 @@ $(n_{p_x}, n_{p_y}, n_{p_z})$.
 
 ```parameter
 subsection Phase space reconstruction
-  set reconstruction points = -3; 3
+  set reconstruction points = -6; -3; 0; 3; 6
   set n_phi                 = 75
   set n_theta               = 75
 end
@@ -191,7 +190,90 @@ gnuplot -e "input_file='results/closure/spherical_density_map_point_00_t_0000.da
 
 ## Results {#results-closure}
 
-@todo Results
+As we want to compare the solution from @sapphire
+to the analytic solution given above at $(x=0,t=0)$,
+$(x=3 \sigma, t = 3 \sigma/ V = 6/\sqrt{3})$
+and $(x=6 \sigma, t= 6 \sigma /V = 12/\sqrt{3})$,
+we choose a time-step
+$\Delta t = \frac{1}{\sqrt{3} \cdot 100}$.
+The corresponding time steps are then $N=0$, $N=600$ and $N=1200$ respectively.
+
+First the first run we use $l_{\text{max}} = 3$:
+
+```parameter
+subsection Expansion
+  set Expansion order = 3
+end
+```
+
+After compiling and running the example,
+we can visualize the results at the predefined points
+using the provided gnuplot script,
+
+```shell
+gnuplot -e "input_file='results/closure/spherical_density_map_point_02_t_0000.dat'; output_file='results/closure/heatmap_l3_x0_t0.png'" heatmap.gp
+gnuplot -e "input_file='results/closure/spherical_density_map_point_03_t_0600.dat'; output_file='results/closure/heatmap_l3_x3_t3.png'" heatmap.gp
+gnuplot -e "input_file='results/closure/spherical_density_map_point_04_t_1200.dat'; output_file='results/closure/heatmap_l3_x6_t6.png'" heatmap.gp
+```
+
+@note The index for the point follows the same order
+      as the definition in the parameter file.
+      The used position and time can be checked
+      in the header of the output files.
+
+<p float="center">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l3_x0_t0.png" alt="Numerical solution for l_max=3, x=0, t=0" width="30%">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l3_x3_t3.png" alt="Numerical solution for l_max=3, x=3, t=3/V" width="30%">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l3_x6_t6.png" alt="Numerical solution for l_max=3, x=6, t=6/V" width="30%">
+</p>
+
+Taking a closer look at the results for,
+we can notice that the numerical solution does not exactly match
+the analytical solution.
+The distribution is too smooth and,
+especially for the point $(x=6 \sigma, t=6/\sqrt{3})$,
+underestimates the peak at the pole of the sphere
+while at the same time producing negative values for the distribution.
+
+We can improve the results by increasing the expansion order
+to $l_{\text{max}} = 4$:
+
+```parameter
+subsection Expansion
+  set Expansion order = 4
+end
+```
+
+```shell
+gnuplot -e "input_file='results/closure/spherical_density_map_point_02_t_0000.dat'; output_file='results/closure/heatmap_l4_x0_t0.png'" heatmap.gp
+gnuplot -e "input_file='results/closure/spherical_density_map_point_03_t_0600.dat'; output_file='results/closure/heatmap_l4_x3_t3.png'" heatmap.gp
+gnuplot -e "input_file='results/closure/spherical_density_map_point_04_t_1200.dat'; output_file='results/closure/heatmap_l4_x6_t6.png'" heatmap.gp
+```
+
+Repeating the steps above,
+running the simulation and visualizing the results,
+we obtain the following heatmaps.
+
+<p float="center">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l4_x0_t0.png" alt="Numerical solution for l_max=4, x=0, t=0" width="30%">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l4_x3_t3.png" alt="Numerical solution for l_max=4, x=3, t=3/V" width="30%">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l4_x6_t6.png" alt="Numerical solution for l_max=4, x=6, t=6/V" width="30%">
+</p>
+
+We see that the results improve.
+Last, we can run a simulation with $l_{\text{max}} = 11$,
+and compare the results for the different $l_{\text{max}}$
+at $(x=6 \sigma, t=6/\sqrt{3})$.
+
+<p float="center">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l3_x6_t6.png" alt="Numerical solution for l_max=3, x=6, t=6/V" width="30%">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l4_x6_t6.png" alt="Numerical solution for l_max=4, x=6, t=6/V" width="30%">
+  <img src="https://sapphirepp.org/img/examples/closure/heatmap_l11_x6_t6.png" alt="Numerical solution for l_max=11, x=6, t=6/V" width="30%">
+</p>
+
+Finally, we want to emphasize that using a scattering frequency $\nu > 0$,
+suppresses the higher order terms.
+Therefore, a lower $l_{\text{max}}$ is sufficient to obtain accurate results.
 
 ### Example parameter file {#example-parameter-closure}
 

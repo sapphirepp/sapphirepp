@@ -32,12 +32,12 @@ subsection VFP
     set Mass   = 1.
   end
   subsection Phase space reconstruction
+    set reconstruction points = -6; -3; 0; 3; 6
     set n_phi                 = 75
     set n_theta               = 75
-    set reconstruction points = -3; 3
   end
   subsection Time stepping
-    set Final time     = 12
+    set Final time     = 6.9282032303 # = 12/sqrt(3)
     set Method         = ERK4
     set Time step size = 0.00577350269189 # = 1/100 1/sqrt(3)
   end

@@ -1,7 +1,7 @@
 ############################################################
 # Plot a heatmap of the distribution function              #
 ############################################################
-set term png enhanced size 1024,1024 font "STIX Two Math, 18"
+set term png enhanced size 1024,1024 font "STIX Two Math, 24"
 
 # Define default values for input and output files
 if (!exists("input_file")) input_file = 'results/closure/spherical_density_map_point_00_t_0000.dat'
@@ -38,9 +38,10 @@ set pm3d interpolate 1,1 flush begin noftriangles border lt 10
 
 set colorbox vertical user origin 0.,0.3 size 0.02,0.4
 # Change range of colormap
-set cbrange[-0.05:0.25]
-set cbtics scale 0.5
-set cbtics (-0.05, 0., 0.05, 0.1, 0.15, 0.2) out nomirror
+set cbrange[-0.05:0.6]
+# set cbrange[-0.05:0.25]
+# set cbtics scale 0.5
+# set cbtics (-0.05, 0., 0.05, 0.1, 0.15, 0.2) out nomirror
 
 # Define input file from command-line argument or default value
 splot input_file with lines

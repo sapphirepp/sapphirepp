@@ -74,7 +74,7 @@ namespace sapphirepp
                         "The standard deviation of the isotropic "
                         "and normal particle distribution at t = 0.");
       prm.declare_entry("Scattering frequency",
-                        "1.",
+                        "0.",
                         dealii::Patterns::Double(),
                         "The scattering frequency.");
       /** [Declare runtime parameter] */
