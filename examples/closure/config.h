@@ -52,7 +52,6 @@ namespace sapphirepp
   public:
     /** [Define runtime parameter] */
     double standard_deviation;
-    double magnetic_field_strength;
     double scattering_frequency;
     /** [Define runtime parameter] */
 
@@ -69,16 +68,11 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry(
-        "Standard deviation",
-        "1.",
-        dealii::Patterns::Double(),
-        "The standard deviation of the isotropic and normal particle distribution at t = 0.");
-      prm.declare_entry(
-        "Magnetic field strength",
-        "1.",
-        dealii::Patterns::Double(),
-        "The strength of the magnetic field in the x-direction.");
+      prm.declare_entry("Standard deviation",
+                        "1.",
+                        dealii::Patterns::Double(),
+                        "The standard deviation of the isotropic "
+                        "and normal particle distribution at t = 0.");
       prm.declare_entry("Scattering frequency",
                         "1.",
                         dealii::Patterns::Double(),
@@ -99,9 +93,8 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
-      standard_deviation      = prm.get_double("Standard deviation");
-      magnetic_field_strength = prm.get_double("Magnetic field strength");
-      scattering_frequency    = prm.get_double("Scattering frequency");
+      standard_deviation   = prm.get_double("Standard deviation");
+      scattering_frequency = prm.get_double("Scattering frequency");
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
@@ -256,10 +249,10 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [Magnetic field] */
-        // TODO: Does this example really has a magnetic field?
-        magnetic_field[0] = prm.magnetic_field_strength; // B_x
-        magnetic_field[1] = 0.;                          // B_y
-        magnetic_field[2] = 0.;                          // B_z
+        // no magnetic field
+        magnetic_field[0] = 0.; // B_x
+        magnetic_field[1] = 0.; // B_y
+        magnetic_field[2] = 0.; // B_z
         /** [Magnetic field] */
       }
 

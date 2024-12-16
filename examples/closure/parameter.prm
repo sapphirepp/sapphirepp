@@ -7,9 +7,8 @@ subsection Output
   set Simulation identifier        = closure
 end
 subsection Physical parameters
-  set Standard deviation = 1
-  set Magnetic field strength = 1.
-  set Scattering frequency = 0.1
+  set Standard deviation   = 1.
+  set Scattering frequency = 0.
 end
 subsection VFP
   subsection Expansion
