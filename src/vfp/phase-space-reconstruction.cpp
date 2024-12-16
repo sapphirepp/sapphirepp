@@ -64,10 +64,14 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
   , phi_values{Utils::Tools::create_linear_range(0,
                                                  2 * M_PI,
                                                  vfp_parameters.n_phi)}
-  , real_spherical_harmonics{
-      compute_real_spherical_harmonics(theta_values, phi_values, lms_indices)}
+  , real_spherical_harmonics{compute_real_spherical_harmonics(theta_values,
+                                                              phi_values,
+                                                              lms_indices)}
+  , rpe_cache(1e-6, true)
 {
+  LogStream::Prefix p0("VFP", saplog);
   LogStream::Prefix p("PSRec", saplog);
+  LogStream::Prefix p1("Constructor", saplog);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     reconstruction_points = vfp_parameters.reconstruction_points;
@@ -77,7 +81,6 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
       saplog << "Phase space will be reconstructed at:" << std::endl;
       for (const auto &point : reconstruction_points)
         saplog << "  " << point << std::endl;
-      saplog << std::endl;
     }
 }
 
@@ -97,6 +100,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
   rpe_cache.reinit(reconstruction_points, triangulation, mapping);
   AssertThrow(rpe_cache.all_points_found(),
               ExcMessage("Point for reconstruction is outside domain."));
+  Assert(rpe_cache.is_map_unique(),
+         ExcMessage("Mapping between points and cells in not unique."));
 }
 
 
@@ -115,6 +120,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
   LogStream::Prefix p("PSRec", saplog);
   saplog << "Perform reconstruction of phase space" << std::endl;
   LogStream::Prefix p2("Reconstruction", saplog);
+  Assert(rpe_cache.is_ready(), ExcMessage("rpe_cache is no initialized."));
 
   using CellData =
     typename dealii::Utilities::MPI::RemotePointEvaluation<dim, dim>::CellData;
@@ -166,6 +172,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
 
   const std::vector<std::vector<double>> coefficients_at_all_points =
     rpe_cache.evaluate_and_process(evaluate_function);
+  AssertDimension(coefficients_at_all_points.size(),
+                  reconstruction_points.size());
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
