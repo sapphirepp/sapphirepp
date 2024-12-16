@@ -57,7 +57,10 @@ equation.
 
 A distinguishing feature of @sapphire is that it solves this system of PDEs by
 applying the discontinuous Galerkin (dG) method. The dG method is a finite
-element method which is particularly suited for the shown VFP equation.
+element method which is particularly suited for the shown VFP equation. 
+
+The full implementation details can be found in @cite Schween2024a and 
+@cite Schween2024b.
 
 Even though primarily developed in the context of cosmic-ray physics, @sapphire
 can be applied in the context of inertial confinement fusion, or for example to
