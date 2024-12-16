@@ -40,7 +40,6 @@
 
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
-#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <limits>
