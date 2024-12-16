@@ -20,7 +20,7 @@ features of @sapphire can be found in the [examples](#examples) section.
 
 The example we are considering uses the following setup: We have a planar shock
 that the particles will cross, to gain energy by the first-order Fermi mechanism
-@cite Drury1983 @cite Kirk1994 @cite Schween2024. We will prescribe the
+@cite Drury1983 @cite Kirk1994 @cite Schween2024b. We will prescribe the
 background plasma in the shock frame, resulting in a stationary velocity field
 $\mathbf{u}(\mathbf{x})$ with the shock compression ratio $r$ at $x = 0$:
 
@@ -196,7 +196,7 @@ in @sapphire corresponds to only one line in `sapphirepp/include/config.h`:
 
 Next, we specify the injection of particles at the shock, $x = 0$. In analytic
 models, particles are typically injected isotropically at a discrete momentum
-$p_0$ @cite Drury1983 @cite Kirk1994 @cite Schween2024,
+$p_0$ @cite Drury1983 @cite Kirk1994 @cite Schween2024b,
 
 $$
   S(x, \mathbf{p}) = Q \delta(x) \delta(p - p_0) \,.
@@ -205,7 +205,7 @@ $$
 Here, $Q$ represents the injection rate, and $\delta$ denotes the delta
 distribution. Numerically, we approximate these delta distributions as Gaussians
 with standard deviations $\sigma_x$ and $\sigma_p$, respectively
-@cite Schween2024,
+@cite Schween2024b,
 
 $$
   S(x, \mathbf{p}) = \frac{Q}{2 \pi \sigma_p \sigma_x}
@@ -264,7 +264,7 @@ part.
 Last, we need to implement the background velocity field
 $\mathbf{u}(\mathbf{x})$. Since the velocity field of a shock, as given above,
 is discontinuous, we instead parametrize it using a $\tanh$ profile for
-numerical implementation @cite Schween2024,
+numerical implementation @cite Schween2024b,
 
 $$
   \mathbf{u}(x) = \frac{u_{\mathrm{sh}}}{2r} \left(
@@ -577,7 +577,7 @@ suggests that particles are "swimming against the stream".
 When comparing with analytic models of parallel shock acceleration, we expect
 the momentum ($p$) dependence of the distribution function to follow a power-law
 for $p > p_0$, specifically $f_{000}(p) \propto p^{-4}$ @cite Drury1983
-@cite Kirk1994 @cite Schween2024. To demonstrate that this example accurately
+@cite Kirk1994 @cite Schween2024b. To demonstrate that this example accurately
 captures this behaviour, we present a log-log plot of $p^4 f_{000}$, using a
 cut-out at constant $x$:
 

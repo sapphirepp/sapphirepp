@@ -7,7 +7,7 @@
 This example provides an overview of how magnetic fields function within
 @sapphire. We will explore a simple scenario of an isotropic particle
 distribution in a constant magnetic field, advected in a constant background
-plasma flow. This example closely follows section 4.2 in @cite Schween2024.
+plasma flow. This example closely follows section 4.2 in @cite Schween2024b.
 
 We use a constant magnetic field oriented in the $z$-direction,
 

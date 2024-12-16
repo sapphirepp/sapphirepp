@@ -18,7 +18,7 @@ $$
 $$
 
 We'll use a constant scattering frequency $\nu = \nu_0$. When we expand this
-equation in spherical harmonics (as detailed in @cite Schween2024), we get:
+equation in spherical harmonics (as detailed in @cite Schween2024b), we get:
 
 $$
   \partial_{t} f_{lms} + \nu \, \frac{l(l + 1)}{2} f_{lms} = 0 \,.
