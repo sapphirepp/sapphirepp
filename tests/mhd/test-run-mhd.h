@@ -90,8 +90,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
 
 
       /** [Setup analytic solution] */
-      AssertDimension(exact_solution.n_components, MHDEquations::n_components)
-        PETScWrappers::MPI::Vector analytic_solution_vector;
+      AssertDimension(exact_solution.n_components, MHDEquations::n_components);
+      PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
         mhd_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
       /** [Setup analytic solution] */
