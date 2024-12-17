@@ -1,0 +1,47 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = pvtu
+  set Number of digits for counter = 4
+  set Output frequency             = 100
+  set Results folder               = results
+  set Simulation identifier        = closure
+end
+subsection Physical parameters
+  set Standard deviation   = 1.
+  set Scattering frequency = 0.
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 3
+  end
+  subsection Finite element
+    set Polynomial degree = 2
+  end
+  subsection Mesh
+    set Grid type             = Hypercube
+    set Number of cells       = 256
+    set Point 1               = -15
+    set Point 2               = 15
+    subsection Boundary conditions
+      set lower x = continuous
+      set upper x = continuous
+    end
+  end
+  subsection Particle properties
+    set Charge = 1.
+    set Mass   = 1.
+  end
+  subsection Phase space reconstruction
+    set reconstruction points = -6; -3; 0; 3; 6
+    set n_phi                 = 75
+    set n_theta               = 75
+  end
+  subsection Time stepping
+    set Final time     = 6.9282032303 # = 12/sqrt(3)
+    set Method         = ERK4
+    set Time step size = 0.00577350269189 # = 1/100 1/sqrt(3)
+  end
+  subsection TransportOnly
+    set Gamma = 2.
+  end
+end

@@ -63,6 +63,7 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "pde-system.h"
+#include "phase-space-reconstruction.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
@@ -428,7 +429,6 @@ namespace sapphirepp
        */
       const AffineConstraints<double> constraints;
 
-
       /** @{ */
       /** @dealref{SparsityPattern} */
       SparsityPattern sparsity_pattern;
@@ -449,6 +449,11 @@ namespace sapphirepp
       PETScWrappers::MPI::Vector locally_owned_previous_solution;
       /** Current solution */
       PETScWrappers::MPI::Vector locally_relevant_current_solution;
+      /** @} */
+
+      /** @{ */
+      /** Postprocessor to reconstruct phase space at predefined points */
+      PhaseSpaceReconstruction<dim_ps> ps_reconstruction;
       /** @} */
 
       /** @{ */

@@ -10,7 +10,7 @@ on:
     
 env:
   COMPILE_JOBS: 2
-  CXX_FLAGS: "-Werror -Wall -Wextra"
+  CXX_FLAGS: "-Werror -Wall -Wextra -Wno-ignored-optimization-argument"
   MPI_NPROC: 2
 
 jobs:
@@ -22,10 +22,10 @@ jobs:
       fail-fast: true
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.5.0"]
+        dealii_version: ["v9.6.0"]
     
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-focal
+      image: dealii/dealii:${{ matrix.dealii_version }}-jammy
       options: --user root
 
     steps:
