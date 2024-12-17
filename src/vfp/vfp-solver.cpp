@@ -194,7 +194,7 @@ namespace sapphirepp
         }
       };
     } // namespace VFPSolver
-  }   // namespace internal
+  } // namespace internal
 } // namespace sapphirepp
 
 
@@ -969,10 +969,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               advection_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
-                            // \phi m * v * du^k/dt * A_k * \phi
+                            // \phi v * du^k/dt * A_k * \phi
                             copy_data.cell_matrix(i, j) +=
                               fe_v.shape_value(i, q_index) *
-                              vfp_parameters.mass *
                               particle_velocities[q_index] *
                               material_derivative_vel[q_index][coordinate] *
                               advection_matrices[coordinate](component_i,
