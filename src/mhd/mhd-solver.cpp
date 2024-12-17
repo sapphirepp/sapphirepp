@@ -261,7 +261,7 @@ namespace sapphirepp
         }
       };
     } // namespace MHDSolver
-  }   // namespace internal
+  } // namespace internal
 } // namespace sapphirepp
 
 

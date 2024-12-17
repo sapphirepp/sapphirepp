@@ -127,6 +127,6 @@ namespace sapphirepp
         return cell->neighbor(face_no)->center() - cell->center();
       }
     } // namespace SlopeLimiter
-  }   // namespace MHD
+  } // namespace MHD
 } // namespace sapphirepp
 #endif
