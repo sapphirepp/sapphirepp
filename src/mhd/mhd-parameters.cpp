@@ -28,9 +28,9 @@
 #include "mhd-parameters.h"
 
 #include <deal.II/base/patterns.h>
+#include <deal.II/base/utilities.h>
 
 #include <filesystem>
-#include <sstream>
 
 #include "sapphirepp-logstream.h"
 
@@ -50,6 +50,8 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("MHD");
 
+  const auto pattern_point = Patterns::List(Patterns::Double(), dim, dim, ",");
+
 
   prm.enter_subsection("Mesh");
   {
@@ -60,18 +62,24 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "program or read from a file");
 
     prm.declare_entry("Point 1",
-                      "-2., -2., -2.",
-                      Patterns::Anything(),
+                      (dim == 1) ? "-2." :
+                      (dim == 2) ? "-2., -2." :
+                                   "-2., -2., -2.",
+                      pattern_point,
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Point 2",
-                      "2., 2., 2.",
-                      Patterns::Anything(),
+                      (dim == 1) ? "2." :
+                      (dim == 2) ? "2., 2." :
+                                   "2., 2., 2.",
+                      pattern_point,
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Number of cells",
-                      "8, 8, 8",
-                      Patterns::Anything(),
+                      (dim == 1) ? "32" :
+                      (dim == 2) ? "32, 32" :
+                                   "32, 32, 32",
+                      Patterns::List(Patterns::Integer(1), dim, dim, ","),
                       "Number of cells in each coordinate direction");
 
     prm.declare_entry("File name",
@@ -179,63 +187,11 @@ sapphirepp::MHD::MHDParameters<dim>::parse_parameters(ParameterHandler &prm)
       Assert(false, ExcNotImplemented());
 
     // Two diagonally opposite corner points of the grid
-    unsigned int i = 0;
-    s              = prm.get("Point 1");
-    std::stringstream p1_string(s);
-    for (std::string coordinate; std::getline(p1_string, coordinate, ','); ++i)
-      {
-        if (i < dim)
-          p1[i] = std::stod(coordinate);
-      }
-    AssertThrow(dim <= i,
-                ExcMessage(
-                  "Point 1 does not specify coordinate in each dimension. "
-                  "Please enter the coordinates of the lower left corner "
-                  "of the grid: \n"
-                  "\tset Point 1 = x1 (, y1) (, z1) \n"
-                  "You entered: " +
-                  s));
-    if (i != dim)
-      saplog << "WARNING: Point 1 specification does not match dimension!"
-             << std::endl;
-
-    i = 0;
-    s = prm.get("Point 2");
-    std::stringstream p2_string(s);
-    for (std::string coordinate; std::getline(p2_string, coordinate, ','); ++i)
-      {
-        if (i < dim)
-          p2[i] = std::stod(coordinate);
-      }
-    AssertThrow(dim <= i,
-                ExcMessage(
-                  "Point 2 does not specify coordinate in each dimension. "
-                  "Please enter the coordinates of the lower left corner "
-                  "of the grid: \n"
-                  "\tset Point 2 = x1 (, y1) (, z1) \n"
-                  "You entered: " +
-                  s));
-    if (i != dim)
-      saplog << "WARNING: Point 2 specification does not match dimension!"
-             << std::endl;
+    Patterns::Tools::to_value(prm.get("Point 1"), p1);
+    Patterns::Tools::to_value(prm.get("Point 2"), p2);
 
     // Number of cells
-    s = prm.get("Number of cells");
-    std::stringstream n_cells_string(s);
-    for (std::string n; std::getline(n_cells_string, n, ',');)
-      n_cells.push_back(static_cast<unsigned int>(std::stoi(n)));
-    AssertThrow(dim <= n_cells.size(),
-                ExcMessage(
-                  "Number of cells does not specify value in each dimension."
-                  "Please enter the number of cells in each coordinate: \n"
-                  "\tset Number of cells = Nx (, Ny) (, Nz) \n"
-                  "You entered: " +
-                  s));
-    if (n_cells.size() != dim)
-      saplog
-        << "WARNING: Number of cells specification does not match dimension!"
-        << std::endl;
-    n_cells.resize(dim);
+    Patterns::Tools::to_value(prm.get("Number of cells"), n_cells);
 
     grid_file = prm.get("File name");
 
