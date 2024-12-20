@@ -69,6 +69,14 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Output reference values to a stream
+     *
+     * @tparam StreamType Type of the stream
+     * @param os Output stream
+     * @param reference_values Reference values
+     * @return StreamType& os
+     */
     template <typename StreamType>
     StreamType &
     operator<<(StreamType &os, const ReferenceValues &reference_values)
