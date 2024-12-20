@@ -1,0 +1,23 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+        - main
+  pull_request:
+    branches:
+        - main
+  workflow_dispatch:
+
+jobs:
+  formatting-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Documentation
+        run: |
+          cmake -S . -B build -DSAPPHIREPP=OFF -DDOC=ON
+          make --directory=build doc >&- 

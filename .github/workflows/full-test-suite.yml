@@ -37,7 +37,7 @@ jobs:
 
       - name: Compile
         run: |
-          cmake -S . -B build -DSAPPHIRE=On -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
+          cmake -S . -B build -DSAPPHIREPP=ON -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
                 -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
                 -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
                 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
