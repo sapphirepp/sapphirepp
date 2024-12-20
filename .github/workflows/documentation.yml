@@ -10,12 +10,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  formatting-check:
+  documentation-check:
     name: Documentation Check
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake graphviz texlive-bibtex-extra
+          wget https://github.com/doxygen/doxygen/releases/download/Release_1_10_0/doxygen-1.10.0.linux.bin.tar.gz
+          tar -xzf doxygen-1.10.0.linux.bin.tar.gz
+          sudo mv doxygen-1.10.0/bin/doxygen /usr/local/bin/doxygen
+          rm -rf doxygen-1.10.0 doxygen-1.10.0.linux.bin.tar.gz
 
       - name: Check Documentation
         run: |

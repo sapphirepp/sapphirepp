@@ -117,34 +117,34 @@ formatting in your IDE.
     case, not only in debug mode.
 
 12. Sometimes it makes sense to implement a class by using several non-member
-    functions that are not part of the public interface and are only meant to be
-    called in the current source file. Such free functions should be put in an
-    internal namespace `sapinternal` structured in the following way:
+   functions that are not part of the public interface and are only meant to be
+   called in the current source file. Such free functions should be put in an
+   internal namespace `sapinternal` structured in the following way:
 
-    ```cpp
-    namespace sapinternal
-    {
-      namespace ClassNameImplementation
-      {
-        // free functions go here
-      }
-    }
-    ```
+   ```cpp
+   namespace sapinternal
+   {
+     namespace ClassNameImplementation
+     {
+       // free functions go here
+     }
+   }
+   ```
 
-    where `ClassName` is the name of the calling class.
+   where `ClassName` is the name of the calling class.
 
 13. Classes, namespaces and types generally are named using uppercase letters to
-    denote word beginnings (e.g. `OutputParameters`) — sometimes called
-    *[camel case](https://en.wikipedia.org/wiki/Camel_case)* — while functions
-    and variables use lowercase letters and underscores to separate words.
+   denote word beginnings (e.g. `OutputParameters`) — sometimes called
+   *[camel case](https://en.wikipedia.org/wiki/Camel_case)* — while functions
+   and variables use lowercase letters and underscores to separate words.
 
 14. We may use forward declarations in header files to, hopefully, improve
-    compilation speeds by not using headers when we just need to mark a certain
-    type as an argument to a function. The convention is that, if all we need is
-    a type name, then the type may be forward declared in the header where we
-    need it; if a function (or member function) can return a value then a
-    declaration of that value's type should be available (by including the
-    necessary header).
+   compilation speeds by not using headers when we just need to mark a certain
+   type as an argument to a function. The convention is that, if all we need is
+   a type name, then the type may be forward declared in the header where we
+   need it; if a function (or member function) can return a value then a
+   declaration of that value's type should be available (by including the
+   necessary header).
 
 ## Instantiation of templated functions/classes {#coding-conventions-templates}
 

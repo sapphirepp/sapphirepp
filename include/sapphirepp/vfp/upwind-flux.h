@@ -44,36 +44,82 @@
 #include "pde-system.h"
 #include "vfp-parameters.h"
 
+
+
 namespace sapphirepp
 {
   namespace VFP
   {
+
+    /**
+     * @brief Class to compute the upwind fluxes in the VFP equation
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     * @tparam has_momentum Is th momentum term activated?
+     * @tparam logarithmic_p Do we use a logarithmic momentum variable?
+     */
     template <unsigned int dim, bool has_momentum, bool logarithmic_p>
     class UpwindFlux
     {
     private:
+      /** Dimension of the configuration space */
       static constexpr unsigned int dim_cs = dim - has_momentum;
 
     public:
+      /**
+       * @brief Construct a new Upwind Flux object an initialize the matrices.
+       *
+       * @param system PDE system for the VFP equation
+       * @param solver_control Parameters for the VFP solver
+       * @param physical_parameters User defined runtime parameters
+       */
       UpwindFlux(const PDESystem          &system,
                  const VFPParameters<dim> &solver_control,
                  const PhysicalParameters &physical_parameters);
+
+
+      /**
+       * @brief Set the time
+       *
+       * @param time Current time
+       */
       void
       set_time(double time);
+
+
+      /**
+       * @brief Computes the upwind fluxes at the quadrature points
+       *
+       * @param q_points Quadrature points
+       * @param normals Normal vectors at the quadrature points
+       * @param positive_flux_matrices Return positive flux matrices
+       *                               at the quadrature points
+       * @param negative_flux_matrices Return negative flux matrices
+       *                               at the quadrature points
+       */
       void
       compute_upwind_fluxes(
         const std::vector<dealii::Point<dim>>     &q_points,
         const std::vector<dealii::Tensor<1, dim>> &normals,
         std::vector<dealii::FullMatrix<double>>   &positive_flux_matrices,
         std::vector<dealii::FullMatrix<double>>   &negative_flux_matrices);
+
+
+      /**
+       * @brief Test the upwind flux computation for random input.
+       */
       void
       test();
+
+
 
     private:
       void
       prepare_work_arrays_for_lapack();
+
       void
       prepare_upwind_fluxes();
+
       void
       compute_flux_in_space_directions(
         unsigned int                component,
@@ -82,12 +128,14 @@ namespace sapphirepp
         const double                particle_velocity,
         dealii::FullMatrix<double> &positive_flux_matrix,
         dealii::FullMatrix<double> &negative_flux_matrix);
+
       void
       compute_matrix_sum(const double                  n_p,
                          const double                  momentum,
                          const double                  gamma,
                          const dealii::Vector<double> &material_derivative,
                          const std::vector<dealii::Vector<double>> &jacobian);
+
       void
       compute_flux_in_p_direction(
         const double                               n_p,
@@ -97,6 +145,9 @@ namespace sapphirepp
         const std::vector<dealii::Vector<double>> &jacobian,
         dealii::FullMatrix<double>                &positive_flux_matrix,
         dealii::FullMatrix<double>                &negative_flux_matrix);
+
+
+
       // PDE System matrices
       const PDESystem              &pde_system;
       const unsigned int            matrix_size;

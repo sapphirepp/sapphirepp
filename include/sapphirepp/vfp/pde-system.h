@@ -108,16 +108,51 @@ namespace sapphirepp
 
 
       /** @{ */
+      /**
+       * @brief Get the advection matrices object
+       *
+       * @return const std::vector<dealii::LAPACKFullMatrix<double>>&
+       */
       const std::vector<dealii::LAPACKFullMatrix<double>> &
       get_advection_matrices() const;
+
+      /**
+       * @brief Get the generator rotation matrices object
+       *
+       * @return const std::vector<dealii::LAPACKFullMatrix<double>>&
+       */
       const std::vector<dealii::LAPACKFullMatrix<double>> &
       get_generator_rotation_matrices() const;
+
+      /**
+       * @brief Get the collision matrix object
+       *
+       * @return const dealii::Vector<double>&
+       */
       const dealii::Vector<double> &
       get_collision_matrix() const;
+
+      /**
+       * @brief Get the adv mat products object
+       *
+       * @return const std::vector<dealii::LAPACKFullMatrix<double>>&
+       */
       const std::vector<dealii::LAPACKFullMatrix<double>> &
       get_adv_mat_products() const;
+
+      /**
+       * @brief Get the adv cross gen object
+       *
+       * @return const std::vector<dealii::LAPACKFullMatrix<double>>&
+       */
       const std::vector<dealii::LAPACKFullMatrix<double>> &
       get_adv_cross_gen() const;
+
+      /**
+       * @brief Get the t matrices object
+       *
+       * @return const std::vector<dealii::LAPACKFullMatrix<double>>&
+       */
       const std::vector<dealii::LAPACKFullMatrix<double>> &
       get_t_matrices() const;
       /** @} */
@@ -125,6 +160,12 @@ namespace sapphirepp
 
 
       /** @{ */
+      /**
+       * @brief Print the lms indices ordering
+       *
+       * @tparam StreamType Type of the output stream
+       * @param os Output stream
+       */
       template <typename StreamType>
       void
       print_lms_indices(StreamType &os) const
@@ -139,18 +180,59 @@ namespace sapphirepp
         os << std::endl;
       }
 
+      /**
+       * @brief Print the advection matrices
+       *
+       * @param os Output stream
+       */
       void
       print_advection_matrices(std::ostream &os) const;
+
+      /**
+       * @brief Print the generator rotation matrices
+       *
+       * @param os Output stream
+       */
       void
       print_generator_rotation_matrices(std::ostream &os) const;
+
+      /**
+       * @brief Print the collision matrix
+       *
+       * @param os Output stream
+       */
       void
       print_collision_matrix(std::ostream &os) const;
+
+      /**
+       * @brief Print the adv mat products
+       *
+       * @param os Output stream
+       */
       void
       print_adv_mat_products(std::ostream &os) const;
+
+      /**
+       * @brief Print the adv cross gen
+       *
+       * @param os Output stream
+       */
       void
       print_adv_cross_gen(std::ostream &os) const;
+
+      /**
+       * @brief Print the t matrices
+       *
+       * @param os Output stream
+       */
       void
       print_t_matrices(std::ostream &os) const;
+
+      /**
+       * @brief Print the full PDE system
+       *
+       * @param os Output stream
+       */
       void
       print_pde_system(std::ostream &os) const;
       /** @} */
