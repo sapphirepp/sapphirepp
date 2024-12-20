@@ -36,37 +36,86 @@
 
 #include <vector>
 
-// Functions to compute the velocity and the gamma of a particle at the point
-// x,(y,z) of p in phase space
+
+
 namespace sapphirepp
 {
   namespace VFP
   {
+
+    /**
+     * @brief A function to compute the particle velocity at a point in
+     *        reduced phase space \f$ (\mathbf{x}, p) \f$.
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     * @tparam logarithmic_p Do we use a logarithmic momentum variable?
+     */
     template <unsigned int dim, bool logarithmic_p>
     class ParticleVelocity : public dealii::Function<dim>
     {
     public:
+      /**
+       * @brief Constructor
+       *
+       * @param mass Mass of the particles
+       */
       ParticleVelocity(const double &mass);
+
+      /**
+       * @brief Compute the particle velocity at a list of points.
+       *
+       * @param points List of points in reduced phase space
+       *               \f$ (\mathbf{x}, p) \f$
+       * @param velocities List of (absolute) velocities
+       * @param component unused
+       */
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
                  std::vector<double>                   &velocities,
                  unsigned int component = 0) const override;
 
+
     private:
+      /** Mass of the particles */
       const double mass;
     };
 
+
+
+    /**
+     * @brief Function to compute the particle gamma factor \f$ \gamma \f$
+     *        at a point in reduced phase space \f$ (\mathbf{x}, p) \f$.
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
+     * @tparam logarithmic_p Do we use a logarithmic momentum variable?
+     */
     template <unsigned int dim, bool logarithmic_p>
     class ParticleGamma : public dealii::Function<dim>
     {
     public:
+      /**
+       * @brief Constructor
+       *
+       * @param mass Mass of the particles
+       */
       ParticleGamma(const double &mass);
+
+
+      /**
+       * @brief Compute the particle gamma factor at a list of points.
+       *
+       * @param points List of points in reduced phase space
+       *               \f$ (\mathbf{x}, p) \f$
+       * @param gammas List of gamma factors
+       * @param component unused
+       */
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
                  std::vector<double>                   &gammas,
                  unsigned int component = 0) const override;
 
     private:
+      /** Mass of the particles */
       const double mass;
     };
   } // namespace VFP

@@ -33,12 +33,16 @@
 
 #include "config.h"
 
+
+
 template <unsigned int dim, bool logarithmic_p>
 sapphirepp::VFP::ParticleVelocity<dim, logarithmic_p>::ParticleVelocity(
   const double &mass)
   : dealii::Function<dim>()
   , mass(mass)
 {}
+
+
 
 template <unsigned int dim, bool logarithmic_p>
 void
@@ -58,7 +62,6 @@ sapphirepp::VFP::ParticleVelocity<dim, logarithmic_p>::value_list(
       double p =
         (logarithmic_p ? std::exp(points[i][dim - 1]) : points[i][dim - 1]);
       velocities[i] = 1. / std::sqrt(mass * mass / (p * p) + 1);
-      // add mass tomorrow
     }
 }
 
@@ -71,12 +74,15 @@ template class sapphirepp::VFP::ParticleVelocity<3, true>;
 template class sapphirepp::VFP::ParticleVelocity<3, false>;
 
 
+
 template <unsigned int dim, bool logarithmic_p>
 sapphirepp::VFP::ParticleGamma<dim, logarithmic_p>::ParticleGamma(
   const double &mass)
   : dealii::Function<dim>()
   , mass(mass)
 {}
+
+
 
 template <unsigned int dim, bool logarithmic_p>
 void
@@ -93,7 +99,6 @@ sapphirepp::VFP::ParticleGamma<dim, logarithmic_p>::value_list(
       double p =
         (logarithmic_p ? std::exp(points[i][dim - 1]) : points[i][dim - 1]);
       gammas[i] = std::sqrt(p * p / (mass * mass) + 1.);
-      // add mass tomorrow
     }
 }
 
