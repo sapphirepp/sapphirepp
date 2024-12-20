@@ -76,7 +76,9 @@
 
 namespace sapphirepp
 {
-  namespace internal
+
+  /** @cond sapinternal */
+  namespace sapinternal
   {
     namespace VFPSolver
     {
@@ -194,8 +196,9 @@ namespace sapphirepp
         }
       };
     } // namespace VFPSolver
-  } // namespace internal
+  } // namespace sapinternal
 } // namespace sapphirepp
+/** @endcond */
 
 
 template <unsigned int dim>
@@ -655,7 +658,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
-  using namespace sapphirepp::internal::VFPSolver;
+  using namespace sapphirepp::sapinternal::VFPSolver;
   upwind_flux.set_time(time);
 
   const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
