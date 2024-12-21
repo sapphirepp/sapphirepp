@@ -276,7 +276,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   setup_system();
 
   {
-    if constexpr ((VFPFlags::steady_state & vfp_flags) == VFPFlags::none)
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
       {
         TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
         saplog << "Assemble mass matrix." << std::endl;
@@ -288,7 +288,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   }
 
   {
-    if constexpr ((VFPFlags::steady_state & vfp_flags) == VFPFlags::none)
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
       {
         TimerOutput::Scope timer_section(timer, "Project initial condition");
         InitialValueFunction<dim_ps> initial_value_function(
@@ -326,7 +326,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
 {
   setup();
   LogStream::Prefix p("VFP", saplog);
-  if constexpr ((vfp_flags & VFPFlags::steady_state) != VFPFlags::none)
+  if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
       steady_state_solve();
       output_results(0, 0);
@@ -1401,7 +1401,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 {
-  TimerOutput::Scope timer_section(timer, "Steady stat solve");
+  TimerOutput::Scope timer_section(timer, "Steady state solve");
   LogStream::Prefix  p("steady_state", saplog);
 
   SolverControl              solver_control(2000, 1e-10);
