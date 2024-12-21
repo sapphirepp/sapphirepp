@@ -63,25 +63,30 @@ namespace sapphirepp
     enum class VFPFlags
     {
       none = 0,
+      /**
+       * Activate the time-evolution term
+       * \f$ \frac{\partial f}{\partial t} \f$
+       */
+      time_evolution = 1 << 0,
 
       /**
        * Activate the spatial advection term
        * \f$ (\mathbf{u} + \mathbf{v}) \cdot \nabla_x f \f$
        */
-      spatial_advection = 1 << 0,
+      spatial_advection = 1 << 1,
 
       /**
        * Activate the collision term
        * \f$ \frac{\nu}{2} \Delta_{\theta, \varphi} f \f$
        */
-      collision = 1 << 1,
+      collision = 1 << 2,
 
       /**
        * Activate the rotation term, i.e. the magentic field
        * \f$ q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)
        * \f$
        */
-      rotation = 1 << 2,
+      rotation = 1 << 3,
 
       /**
        * If the fields \f$ \mathbf{u} \f$ and \f$\mathbf{B} \f$ are time
@@ -90,26 +95,26 @@ namespace sapphirepp
        * to be assembled only once. \n
        * By default the fields are assumed to be time dependent.
        */
-      time_independent_fields = 1 << 3,
+      time_independent_fields = 1 << 4,
 
       /**
        * Activate the momentum term
        * \f$ \left( \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} +
        * \mathbf{p} \cdot\nabla_{x} \mathbf{u} \right) \cdot \nabla_{p} f \f$
        */
-      momentum = 1 << 4,
+      momentum = 1 << 5,
 
       /**
        * Use a linear momentum variable, \f$ p \f$. \n
        * By default a logarithmic momentum variable, \f$ \ln(p) \f$, is used.
        */
-      linear_p = 1 << 5,
+      linear_p = 1 << 6,
 
       /**
        * Activate the source term
        * \f$ S(\mathbf{x}, \mathbf{p}, t) \f$
        */
-      source = 1 << 6,
+      source = 1 << 7,
 
       /**
        * If the source \f$ S \f$ is time independent, this flag should be used.
@@ -118,9 +123,7 @@ namespace sapphirepp
        * `system_rhs` to be assembled only once.
        * \n By default the source is assumed to be time dependent.
        */
-      time_independent_source = 1 << 7,
-
-      steady_state = 1 << 8
+      time_independent_source = 1 << 8,
     };
 
 
@@ -168,6 +171,8 @@ namespace sapphirepp
     operator<<(StreamType &os, VFPFlags f)
     {
       os << "VFP flags: \n";
+      if ((f & VFPFlags::time_evolution) != VFPFlags::none)
+        os << "	 - Time_evolution term\n";
       if ((f & VFPFlags::spatial_advection) != VFPFlags::none)
         os << "	 - Spatial Advection\n";
       if ((f & VFPFlags::collision) != VFPFlags::none)
@@ -194,8 +199,6 @@ namespace sapphirepp
           else
             os << " (time dependent)\n";
         }
-      if ((f & VFPFlags::steady_state) != VFPFlags::none)
-        os << "	 - Steady state solution\n";
 
       return os;
     }
