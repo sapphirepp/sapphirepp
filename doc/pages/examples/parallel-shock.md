@@ -7,7 +7,7 @@
 In this example we simulate the transport and acceleration of particles in a
 parallel shock. The setup is similar to the [quick start](#quick-start), but we
 use an advanced and more realistic configuration. You can find a detailed
-description of the setup and an analytic solution in @cite Schween2024b.
+description of the setup and an analytic solution in @cite Schween2025.
 
 We're examining an astrophysical shock moving along the $x$-axis. The background
 plasma's velocity is represented as $\mathbf{U}_1 = U_{\rm sh}
@@ -35,7 +35,7 @@ $$
 @todo We can also just use $\nu = \nu_0 \left(\frac{p}{p_0}\right)^{\alpha}$
   with $\alpha$ a free parameter.
 
-In @cite Schween2024b we derive an analytic solution for the distribution
+In @cite Schween2025 we derive an analytic solution for the distribution
 function in mixed coordinates:
 
 \f[

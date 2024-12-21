@@ -43,7 +43,7 @@ the magnetic field $B_0$, the charge $q$, the Lorentz factor $\gamma$, and the
 mass $m$. In the following, we drop $f_{111}$ as it decouples and has a trivial
 solution.
 
-In @cite Schween2024b, we derived an analytical solution for this system of
+In @cite Schween2025, we derived an analytical solution for this system of
 equations assuming a periodic box of length $L$. We obtained the following
 solution for the expansion coefficients $f_{lms}$:
 

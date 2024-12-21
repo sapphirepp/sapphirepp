@@ -60,7 +60,7 @@ applying the discontinuous Galerkin (dG) method. The dG method is a finite
 element method which is particularly suited for the shown VFP equation. 
 
 The full implementation details can be found in @cite Schween2024a and 
-@cite Schween2024b.
+@cite Schween2025.
 
 Even though primarily developed in the context of cosmic-ray physics, @sapphire
 can be applied in the context of inertial confinement fusion, or for example to
