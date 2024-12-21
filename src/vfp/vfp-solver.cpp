@@ -68,9 +68,11 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 #include "particle-functions.h"
 #include "phase-space-reconstruction.h"
 #include "sapphirepp-logstream.h"
+#include "vfp-flags.h"
 
 
 
@@ -197,8 +199,9 @@ namespace sapphirepp
       };
     } // namespace VFPSolver
   } // namespace sapinternal
+  /** @endcond */
 } // namespace sapphirepp
-/** @endcond */
+
 
 
 template <unsigned int dim>
@@ -284,15 +287,18 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   }
 
   {
-    TimerOutput::Scope timer_section(timer, "Project initial condition");
-    InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
-                                                        pde_system.system_size);
-    PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
-                                                 mpi_communicator);
-    project(initial_value_function, initial_condition);
-    // Here a non ghosted vector, is copied into a ghosted vector. I think
-    // that is the moment where the ghost cells are filled.
-    locally_relevant_current_solution = initial_condition;
+    if constexpr ((VFPFlags::steady_state & vfp_flags) == VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "Project initial condition");
+        InitialValueFunction<dim_ps> initial_value_function(
+          physical_parameters, pde_system.system_size);
+        PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
+                                                     mpi_communicator);
+        project(initial_value_function, initial_condition);
+        // Here a non ghosted vector, is copied into a ghosted vector. I think
+        // that is the moment where the ghost cells are filled.
+        locally_relevant_current_solution = initial_condition;
+      }
   }
 
   // Assemble the dg matrix for t = 0
@@ -319,11 +325,13 @@ sapphirepp::VFP::VFPSolver<dim>::run()
 {
   setup();
   LogStream::Prefix p("VFP", saplog);
-  if constexpr ((vfp_flags & VFPFlags::steady_state) != VFPFlags::none )
+  if constexpr ((vfp_flags & VFPFlags::steady_state) != VFPFlags::none)
     {
       steady_state_solve();
-      output_results(0,0);
-      saplog << "Simulation ended." << std::endl;
+      output_results(0, 0);
+      saplog << "Simulation ended. " << " \t[" << Utilities::System::get_time()
+             << "]" << std::endl
+             << std::endl;
     }
   else
     {
