@@ -126,7 +126,9 @@ $$
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S\, .
 $$
 
-In total, we have four effects at play. First, we have @ref
+The temporal evolution of $f$, included in the computation via the @ref
+sapphirepp::VFP::VFPFlags::time_evolution "time evolution" flag, is determined
+by four effects: First, we have @ref
 sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection", $(\mathbf{u} +
 \mathbf{v}) \cdot \nabla_{x} f$, due to the background plasma velocity
 $\mathbf{u}(\mathbf{x},t)$ and the particle velocity $\mathbf{v}(\mathbf{p})$.
@@ -135,12 +137,13 @@ $\left( \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} + \mathbf{p}
 \cdot\nabla_{x} \mathbf{u} \right) \cdot \nabla_{p} f$, describing the
 (perceived) acceleration of particles in the mixed coordinate frame due to
 changes in background velocity. The third effect are @ref
-sapphirepp::VFP::VFPFlags::collision "collisions" (i.e. elastic binary
-interactions) of the particles that we can model with an effective scattering
+sapphirepp::VFP::VFPFlags::collision "collisions" (i.e. elastic 
+interactions of the particles with the magnetohydrodynamic turbulence of the background plasma)
+that we model with an effective scattering
 term, $\frac{\nu}{2} \Delta_{\theta, \varphi} f$, which only changes the
-direction $\theta, \varphi$ of the particles but not their energy. Last, we have
-the injection of particles at a @ref sapphirepp:VFP::VFPFlags::source "source"
-$S$. In @sapphire, we activate these effects by listing them in the @ref
+direction $\theta, \varphi$ of the particles but not their energy. Last, we model
+the injection of particles with a @ref sapphirepp:VFP::VFPFlags::source "source"
+term $S$. In @sapphire, we activate these effects by listing them in the @ref
 sapphirepp::VFP::VFPFlags "vfp_flags" variable (separated by a bitwise-or `|`
 and prefixed with the namespace `VFPFlags::`):
 
