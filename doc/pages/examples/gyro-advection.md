@@ -101,7 +101,9 @@ $$
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,,
 $$
 
-we have the time derivative and two additional terms. The first term represents
+we have the time derivative, included via the @ref
+sapphirepp::VFP::VFPFlags::time_evolution "time_evolution" flag,
+and two additional terms. The first term represents
 @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
 $(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, while the second term denotes
 @ref sapphirepp::VFP::VFPFlags::rotation "rotation" due to magnetic
