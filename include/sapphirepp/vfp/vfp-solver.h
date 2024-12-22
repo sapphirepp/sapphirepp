@@ -169,6 +169,10 @@ namespace sapphirepp
       run();
       /** @} */
 
+      /**
+       * @brief Solve the the linear system resulting from the weak formulation
+       * if not time derivative of the distributin function is present
+       */
       void
       steady_state_solve();
 
