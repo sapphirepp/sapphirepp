@@ -1,0 +1,184 @@
+# Steady-state parallel shock {#steady-state-parallel-shock}
+
+@tableofcontents
+
+This example is builds on the [parallel shock](#parallel-shock) example.
+
+## Introduction {#introduction-steady-state-parallel-shock}
+
+In the [parallel shock](#parallel-shock) example, we showed how to simulate the
+_time-dependent_ acceleration and propagation of particles at a parallel shock
+front. It could be seen that after some time a steady state was reached, i.e.
+the phase-space distribution of the particles did not change anymore with time.
+The example, that you are currently reading, demonstrates how steady-state
+solutions of the VFP equation can be obtained directly. Though various physical
+scenarios lead to a steady state, we once more opted to compute the the particle
+distribution for the case of a parallel shock.
+
+As in the [quick start](#quick-start) and in the [parallel
+shock](#parallel-shock) example, we examine a collisionless shock with
+compression ratio $r$ that propagates through through an astrophysical plasma,
+e.g. the interstellar medium. Particles are injected at a constant rate $Q$ with
+an energy determined by $p_{\text{inj}}$ at the position of the shock wave. They
+are scattered in the up- and downstream at a frequency $\nu$ and, thus, undergo
+diffusive shock acceleration. Since a detailed explanation of the described
+scencario is given in the two mentioned examples, we summarise the physical
+setup in the following table:
+
+| Physical scenario:   |                                                                                                                                                                    |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Velocity profile     | $\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x$ if $x<0$ (upstream) and $\mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x$ if $x>0$ (downstream)                    |
+| Magnetic field       | $$\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$$                                                                                                                         |
+| Scattering frequency | $$\nu(x) = \nu_0 p^{-1} $$                                                                                                                                         |
+| Source               | $$ S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$$ |
+
+
+## Implementation {#implementation-steady-state-parallel-shock}
+
+The implementation of the sketched physical scenorio can be found in the
+directory `sapphirepp/examples/steady-state-parallel-shock`. Since the
+implementation is essentially the same as in in the [parallel
+shock](#parallel-shock) example, we restrain our discussion to the changes
+necessary to directly compute the steady-state solution with Sapphire++.
+
+### VFP equation {#dimension-steady-state-parallel-shock}
+
+Not very surprising, the main difference to the time-dependent parallel shock
+example is the exclusion of the time derivative of the distribution function in
+the VFP equation. We, namely, solve
+
+$$
+  (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f -
+  \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p}f -
+  \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f +
+  q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
+  \frac{\nu}{2} \Delta_{\theta, \varphi} f + S \,.
+$$
+
+Therefore, the list of `vfp_flags` is
+
+@snippet{lineno} examples/steady-state-parallel-shock/config.h VFP Flags
+
+We note that we did _not_ include the `time_evolution` flag. Also, it was not
+necessary to explicitly state that the velocity field, the magnetic field and
+the source term are time-independent.
+
+### Scattering frequency {#scattering-frequency-steady-state-parallel-shock}
+
+The steady-state parallel shock scenario also differs from the time-dependent
+case in the momentum dependence of scattering frequency. We set
+
+$$
+  \nu(p) = \nu_0 p^{-1} \, ,
+$$
+
+where $nu_0$ is a parameter which can be freely set. This choice is called the
+"Bohm limit" or "Bohm scaling". Such a choice could be understood in various
+ways: First, a plasma in which particles are scattered more often is not
+magnetised anymore. We note this choice of $\nu(p)$ leads to about one
+scattering per gyration. Secondly, the steady-state VFP equation has two
+physical essential parameters. These are the scattering frequency and the gyro
+frequency. In the Bohm limit their ratio is independent of $p$ and the solution
+of the steady-state VFP equation should, thus, be scale invariant in $p$, i.e.
+$f(a p) = a^{k} f(p)$ for some scalar $a$ and exponent $k$.
+
+The implementation looks like
+
+@snippet{lineno} examples/steady-state-parallel-shock/config.h Scattering frequency
+
+Note that we chose to work with $\ln p$ instead of $p$ and, hence, $\nu(\ln p) =
+\nu_0 * \exp(-1 \ln p)$. We remember the user that the last component `point` in
+reduced phase space is the magnitude of momentum variable. Since the reduced
+phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
+
+Notice that $\nu_0$ is a runtime parameter that is set in the supplied parameter
+file.
+
+### Source term {#source-term-steady-state-parallel-shock}
+
+We also slightly changed the source term. We, namely, included the factor
+$1/4\pi p^2$. Thus will still inject isotropic and almost mono-energetic
+particles at the shock. Though, the additional factor gives the user-defined
+rate $Q$ a clearer physical interpretation. The reason is that the number
+density of injected particles is given by
+
+$$
+	n_{\text{inj}} = \int S \, \mathrm{d}^3 p = 4\pi \int S p^2 \, \mathrm{d} p = \frac{Q}{\sqrt{2
+	\pi} \sigma_x} \exp\left(-\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x}\right) \,,
+$$
+which is now directly set by the parameter $Q$.
+
+We remind the user that we actually solve a system of PDEs that determines the
+expansion coefficients of the spherical harmonic expansion of the distribution
+function $f$. This implies that the source term also needs be expanded in
+spherical harmonics. A straightforward computation, because the source term is
+independent of $\theta$ and $\varphi$, i.e. we inject an isotropic particle
+distribution,
+
+$$
+	S_{000} = \int Y_{000} S \, \mathrm{d}\Omega = \sqrt{4\pi} S \,.
+$$
+
+All $S_{lms}$ with $l > 0$ are zero.
+
+@snippet{lineno} examples/steady-state-parallel-shock/config.h Source
+
+We again note that we use the index `i` to refer to the components of the
+spherical harmonic decomposition of the source term. $i = 0$ corresponds $l = 0
+, m = 0$ and $s = 0$.
+
+
+### Compile and run {#compile-steady-state-parallel-shock}
+
+If you configured @sapphire with the `-DEXAMPLES=ON` option, see
+[Compilation](#compilation), the steady-state shock example is compiled and the
+executable can be found in the `examples/steady-state-parallel-shock` folder.
+This executable is called `steady-state-parallel-shock`
+
+We supply the user with a set of parameters that are listed in the
+`examples/steady-state-parallel-shock/parameter.prm` file:
+
+@include examples/steady-state-parallel-shock/parameter.prm
+
+Run the simulation with:
+
+```shell
+   cd sapphirepp/build/examples/steady-state-parallel-shock
+  ./steady-state-parallel-shock parameter.prm
+```
+
+
+## Results {#results-steady-state-parallel-shock}
+
+<!-- The analytic solution predicts that the distribution function will follow a -->
+<!-- $p^{-3r/(r - 1)}$ power law for $p > p_{\rm inj}$. Given a compression ratio -->
+<!-- $r=4$, we anticipate a $p^{-4}$ power law. To visualize these results, we plot -->
+<!-- $p^4 f(x,p)$, which should yield an approximately constant value in the -->
+<!-- downstream region ($x>0$). In the upstream region ($x<0$), we expect an -->
+<!-- exponential cut-off, which is dependent on the scattering frequency $\nu$. -->
+
+<!-- ![2D time series](https://sapphirepp.org/img/examples/parallel-shock-2d.gif) -->
+
+<!-- As discussed in the introduction, we also observe an upstream anisotropy, -->
+<!-- $f_{100}$. When comparing our simulation results to the analytic solution, we -->
+<!-- find they are in good agreement. The figure below showcases $p^4 f(\ln(p))$: -->
+
+<!-- ![Steady state f(ln(p)) plot](https://sapphirepp.org/img/examples/parallel-shock-f-lnp.png) -->
+
+<!-- In the last figure we present $p^4 f(x)$. Note that the anisotropic part -->
+<!-- disappears in the downstream region. -->
+
+<!-- ![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock-f-x.png) -->
+
+<div class="section_buttons">
+
+| Previous              |
+|:----------------------|
+| [Examples](#examples) |
+
+</div>
+
+---
+
+@author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
+@date 2025-01-02
