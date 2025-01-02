@@ -1,0 +1,46 @@
+subsection Output
+  set Base file name               = f
+  set Format                       = pvtu
+  set Number of digits for counter = 4
+  set Output frequency             = 1
+  set Results folder               = ./results
+  set Simulation identifier        = steady-state-parallel-shock
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 1
+  end
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type             = Shock grid
+    set Point 1               = -100, -2.3
+    set Point 2               = 100, 4.6
+    set Number of cells       = 64, 64
+    set Shock width           = 0.5
+    set Number of shock cells = 10
+    set Scaling factor shock  = 1.1
+    subsection Boundary conditions
+      set lower x = zero inflow
+      set upper x = continuous
+      set lower p = continuous
+      set upper p = continuous
+    end
+  end
+end
+
+subsection Physical parameters
+  set B0                = 1.
+  set nu0               = 1.
+  set compression ratio = 4.
+  set shock width       = 0.5
+  set u_sh              = 0.03
+  subsection Source
+    set Q     = 0.1
+    set p_inj = 1.
+    set x_inj = 0.0
+    set sig_p = 0.1
+    set sig_x = 0.1
+  end
+end
