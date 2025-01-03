@@ -143,32 +143,40 @@ We supply the user with a set of parameters that are listed in the
 Run the simulation with:
 
 ```shell
-   cd sapphirepp/build/examples/steady-state-parallel-shock
-  ./steady-state-parallel-shock parameter.prm
+	cd sapphirepp/build/examples/steady-state-parallel-shock
+	mpirun -n 4 ./steady-state-parallel-shock parameter.prm
 ```
 
 
 ## Results {#results-steady-state-parallel-shock}
 
-<!-- The analytic solution predicts that the distribution function will follow a -->
-<!-- $p^{-3r/(r - 1)}$ power law for $p > p_{\rm inj}$. Given a compression ratio -->
-<!-- $r=4$, we anticipate a $p^{-4}$ power law. To visualize these results, we plot -->
-<!-- $p^4 f(x,p)$, which should yield an approximately constant value in the -->
-<!-- downstream region ($x>0$). In the upstream region ($x<0$), we expect an -->
-<!-- exponential cut-off, which is dependent on the scattering frequency $\nu$. -->
+In @cite Drury1983 eq. 3.24, Drury derives an analytic solution for the
+isotropic part $f_{000}$ of the distribution function at shock, i.e. at $x = 0$.
+He assumes a constant scattering frequency. However, in the case of Bohm scaling
+we expect the same result to hold, because the ratio of the scattering frequency
+to the gyro frequency is independent of $p$. Moreover, his source term is a
+delta distribution in $x$ and $p$ (point injection) and his velocity profile has
+a sharp discontinuity at the shock. We model the velocity discontinuity with a
+tanh function and the delta distribution with a narrow Gaussian profile. We,
+thus, do not expect that the analytic solution in @cite Drury1983 and our
+computation match exactly, but they should get closer to each other the smaller
+the shock width and the narrower the the injection profile. Adapting his
+solution to our source term, we expect the simulation result to be approximately
 
-<!-- ![2D time series](https://sapphirepp.org/img/examples/parallel-shock-2d.gif) -->
+$$
+ f_{000}(x = 0, p) = \frac{3}{\sqrt{4 \pi} p^{3}_{\text{inj}}} \frac{Q}{U_1 - U_2}
+ \left(\frac{p}{p_{\text{inj}}}\right)^{-3 U_1/(U_1 - U_2)}
+ = \frac{3Q}{\sqrt{4 \pi} U_1 p^{3}_{\text{inj}}} \frac{r}{r - 1} \left(\frac{p}{p_{\text{inj}}}\right)^{-3 r/(r - 1)}
+$$
 
-<!-- As discussed in the introduction, we also observe an upstream anisotropy, -->
-<!-- $f_{100}$. When comparing our simulation results to the analytic solution, we -->
-<!-- find they are in good agreement. The figure below showcases $p^4 f(\ln(p))$: -->
+For the additional factor of $\sqrt{4\pi}$ see @cite Schween2025 eq. 61. Because
+we set the compression ratio to $r=4$, we expect a $p^{-4}$ power law.
 
-<!-- ![Steady state f(ln(p)) plot](https://sapphirepp.org/img/examples/parallel-shock-f-lnp.png) -->
-
-<!-- In the last figure we present $p^4 f(x)$. Note that the anisotropic part -->
-<!-- disappears in the downstream region. -->
-
-<!-- ![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock-f-x.png) -->
+<!--  To -->
+<!-- visualize these results, we plot $p^4 f(x,p)$, which should yield an -->
+<!-- approximately constant value in the downstream region ($x>0$). In the upstream -->
+<!-- region ($x<0$), we expect an exponential cut-off, which is dependent on the -->
+<!-- scattering frequency $\nu$. -->
 
 <div class="section_buttons">
 
