@@ -385,8 +385,9 @@ only use one thread per process.
 
 The custom log stream @ref sapphirepp::saplog "saplog" is used to output status
 and debug information to the console. The verbosity level can be specified via
-the argument of the @ref sapphirepp::Utils::SapphireppLogStream::init "init()"
-function. A verbosity of `2` corresponds to progress information.
+the command line, see
+@ref sapphirepp::Utils::SapphireppLogStream::init "init()".
+A verbosity of `2` corresponds to progress information.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Saplog
 

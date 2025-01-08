@@ -63,8 +63,7 @@ main(int argc, char *argv[])
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-
-      saplog.init(2);
+      saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter-template.prm";
       if (argc > 1)

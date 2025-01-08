@@ -110,7 +110,7 @@ main(int argc, char *argv[])
       /** [MPI initialization] */
       /** [Saplog] */
 
-      saplog.init(2);
+      saplog.init(argc, argv);
       /** [Saplog] */
 
       /** [Command line argument] */
