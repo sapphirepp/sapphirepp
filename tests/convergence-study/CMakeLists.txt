@@ -11,7 +11,7 @@ target_include_directories(test-convergence-study PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
 target_include_directories(test-convergence-study PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-convergence-study UtilsLib)
+target_link_libraries(test-convergence-study UtilsLib VFPLib)
 
 add_test(NAME convergence-study-CN COMMAND
   ./test-convergence-study parameter-CN.prm 5e-6

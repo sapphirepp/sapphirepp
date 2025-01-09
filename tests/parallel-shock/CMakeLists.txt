@@ -10,7 +10,7 @@ target_include_directories(test-parallel-shock PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
 target_include_directories(test-parallel-shock PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-parallel-shock UtilsLib)
+target_link_libraries(test-parallel-shock UtilsLib VFPLib)
 
 add_test(NAME parallel-shock COMMAND
   mpirun -np ${MPI_NPROC} ./test-parallel-shock parameter.prm 0.33

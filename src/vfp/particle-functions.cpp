@@ -31,8 +31,6 @@
 
 #include <cmath>
 
-#include "config.h"
-
 
 
 template <unsigned int dim, bool logarithmic_p>

@@ -13,7 +13,7 @@ target_include_directories(test-scattering-only-1d PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
 target_include_directories(test-scattering-only-1d PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-scattering-only-1d UtilsLib)
+target_link_libraries(test-scattering-only-1d UtilsLib VFPLib)
 
 add_test(NAME scattering-only-1d-CN COMMAND
   ./test-scattering-only-1d parameter-1d-CN.prm test_run 1e-2
@@ -74,7 +74,7 @@ target_include_directories(test-scattering-only-2d PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
 target_include_directories(test-scattering-only-2d PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-scattering-only-2d UtilsLib)
+target_link_libraries(test-scattering-only-2d UtilsLib VFPLib)
 
 add_test(NAME scattering-only-2d COMMAND
   ./test-scattering-only-2d parameter-2d-ERK4.prm 1e-4
@@ -94,7 +94,7 @@ target_include_directories(test-scattering-only-3d PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
 target_include_directories(test-scattering-only-3d PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-scattering-only-3d UtilsLib)
+target_link_libraries(test-scattering-only-3d UtilsLib VFPLib)
 
 add_test(NAME scattering-only-3d COMMAND
   ./test-scattering-only-3d parameter-3d-ERK4.prm 1e-4

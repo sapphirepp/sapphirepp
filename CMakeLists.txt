@@ -67,8 +67,14 @@ if(SAPPHIREPP)
 
   if(VFP)
     message(STATUS "Preparing VFP module")
+    add_subdirectory(src/vfp)
+
     # VFP source files have to be compiled together with the main/config file
-    file(GLOB VFP_SOURCES src/vfp/*.cpp)
+    set(VFP_SOURCES ${PROJECT_SOURCE_DIR}/src/vfp/upwind-flux.cpp
+      ${PROJECT_SOURCE_DIR}/src/vfp/phase-space-reconstruction.cpp
+      ${PROJECT_SOURCE_DIR}/src/vfp/vfp-parameters.cpp
+      ${PROJECT_SOURCE_DIR}/src/vfp/vfp-solver.cpp
+    )
 
     file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
     add_executable(sapphirepp sapphirepp.cpp ${VFP_SOURCES})
@@ -77,7 +83,7 @@ if(SAPPHIREPP)
       ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
     )
     target_include_directories(sapphirepp PUBLIC ${CONFIG_HEADER_DIR})
-    target_link_libraries(sapphirepp UtilsLib)
+    target_link_libraries(sapphirepp UtilsLib VFPLib)
   endif(VFP)
 
   if(EXAMPLES)
