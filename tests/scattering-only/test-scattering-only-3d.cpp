@@ -115,7 +115,7 @@ main(int argc, char *argv[])
 
       dealii::Timer           timer;
       ParameterHandler        prm;
-      VFPParameters<dim>      vfp_parameters;
+      VFPParameters<dim>      vfp_parameters(vfp_flags);
       PhysicalParameters      physical_parameters;
       Utils::OutputParameters output_parameters;
 
