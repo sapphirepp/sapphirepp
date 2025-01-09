@@ -101,7 +101,7 @@ convergence_with_expansion_order(const std::string         &parameter_filename,
 
   Timer                   timer;
   ParameterHandler        prm;
-  VFPParameters<dim>      vfp_parameters;
+  VFPParameters<dim>      vfp_parameters(vfp_flags);
   PhysicalParameters      physical_parameters;
   Utils::OutputParameters output_parameters;
 
@@ -181,7 +181,7 @@ test_run(const std::string &parameter_filename, const double max_L2_error)
 
   dealii::Timer           timer;
   ParameterHandler        prm;
-  VFPParameters<dim>      vfp_parameters;
+  VFPParameters<dim>      vfp_parameters(vfp_flags);
   PhysicalParameters      physical_parameters;
   Utils::OutputParameters output_parameters;
 
