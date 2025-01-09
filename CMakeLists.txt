@@ -71,8 +71,6 @@ if(SAPPHIREPP)
 
     # VFP source files have to be compiled together with the main/config file
     set(VFP_SOURCES ${PROJECT_SOURCE_DIR}/src/vfp/upwind-flux.cpp
-      ${PROJECT_SOURCE_DIR}/src/vfp/phase-space-reconstruction.cpp
-      ${PROJECT_SOURCE_DIR}/src/vfp/vfp-parameters.cpp
       ${PROJECT_SOURCE_DIR}/src/vfp/vfp-solver.cpp
     )
 
