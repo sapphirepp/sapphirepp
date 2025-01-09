@@ -34,7 +34,7 @@
 #include <string>
 #include <vector>
 
-#include "config.h"
+#include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
 
 namespace sapphirepp
@@ -55,13 +55,14 @@ namespace sapphirepp
     class VFPParameters
     {
     private:
+      /** Runtime copy of the @ref VFPFlags */
+      const VFPFlags vfp_flags;
       /** Is the momentum term activated? */
-      static constexpr bool momentum =
-        (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+      const bool momentum;
       /** Dimension in reduced phase space */
-      static constexpr int dim_ps = dim;
+      static constexpr unsigned int dim_ps = dim;
       /** Dimension of the configuration space */
-      static constexpr int dim_cs = dim - momentum;
+      const unsigned int dim_cs;
 
 
 
@@ -192,7 +193,7 @@ namespace sapphirepp
 
 
       /** @brief Constructor */
-      VFPParameters();
+      VFPParameters(const VFPFlags &vfp_flags);
 
       /**
        * @brief Delcare parameters in parameter file
