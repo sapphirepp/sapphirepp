@@ -12,7 +12,7 @@ target_include_directories(scattering-only PUBLIC ${CONFIG_HEADER_DIR})
 target_include_directories(scattering-only PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
-target_link_libraries(scattering-only UtilsLib)
+target_link_libraries(scattering-only UtilsLib VFPLib)
 
 # Copy the parameter file to the build directory
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

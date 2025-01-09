@@ -10,7 +10,7 @@ target_include_directories(test-gyro-advection PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
 )
 target_include_directories(test-gyro-advection PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-gyro-advection UtilsLib)
+target_link_libraries(test-gyro-advection UtilsLib VFPLib)
 
 add_test(NAME gyro-advection COMMAND
   ./test-gyro-advection parameter-advection.prm 0.15
