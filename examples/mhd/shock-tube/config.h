@@ -159,7 +159,7 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [MHD Initial condition] */
-        if (point[0] < 0.5)
+        if (point[0] < 0.)
           mhd_equations.convert_primitive_to_conserved(primitive_left_state, f);
         else
           mhd_equations.convert_primitive_to_conserved(primitive_right_state,

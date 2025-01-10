@@ -13,8 +13,8 @@ subsection MHD
   subsection Mesh
     set Grid type       = Hypercube
     set Number of cells = 20
-    set Point 1         = 0.
-    set Point 2         = 1.
+    set Point 1         = -0.5
+    set Point 2         = 0.5
     subsection Boundary conditions
       set lower x = zero inflow
       set upper x = zero inflow
