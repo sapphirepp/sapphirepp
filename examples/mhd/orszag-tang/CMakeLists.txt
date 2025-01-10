@@ -5,7 +5,7 @@ target_include_directories(orszag-tang PUBLIC ${CONFIG_HEADER_DIR})
 target_include_directories(orszag-tang PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
 )
-target_link_libraries(orszag-tang UtilsLib)
+target_link_libraries(orszag-tang UtilsLib MHDLib)
 
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

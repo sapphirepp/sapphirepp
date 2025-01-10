@@ -5,7 +5,7 @@ target_include_directories(athena-linear-waves PUBLIC ${CONFIG_HEADER_DIR})
 target_include_directories(athena-linear-waves PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
 )
-target_link_libraries(athena-linear-waves UtilsLib)
+target_link_libraries(athena-linear-waves UtilsLib MHDLib)
 
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
