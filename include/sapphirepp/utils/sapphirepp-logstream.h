@@ -82,6 +82,20 @@ namespace sapphirepp
       init(const unsigned int depth_console     = 2,
            const bool         enable_mpi_output = false);
 
+
+      /**
+       * @brief Initialize the log stream with command line options
+       *
+       * This function must only be called after MPI initialization.
+       * To show all options use the `--help/-h` flag.
+       *
+       * @param argc Number of commandline arguments
+       * @param argv Commandline arguments
+       */
+      void
+      init(int argc, char *argv[]);
+
+
       /**
        * @brief Get the verbosity of the console output
        *

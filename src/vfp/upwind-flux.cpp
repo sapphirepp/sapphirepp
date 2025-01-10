@@ -31,16 +31,19 @@
 #include <deal.II/base/exceptions.h>
 
 #include <deal.II/lac/lapack_support.h>
-#include <deal.II/lac/lapack_templates.h> // direct access to the Fortran driver routines of Lapack
+// direct access to the Fortran driver routines of Lapack
+#include <deal.II/lac/lapack_templates.h>
 #include <deal.II/lac/vector.h>
 
 #include <algorithm>
-// for testing arbirtary coefficients in matrix sum and the corresponding
+// for testing arbitrary coefficients in matrix sum and the corresponding
 // eigenvalue/eigenvector computations
 #include <iomanip>
 #include <random>
 
 #include "config.h"
+
+
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
@@ -80,10 +83,10 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   int_dummy{&dealii::LAPACKSupport::one}
   , double_dummy{1.}
 {
-  // NOTE: Since we very often call compute_matrix_sum and the matrixes classes
+  // NOTE: Since we very often call compute_matrix_sum and the matrices classes
   // of dealii do not allow unchecked access to there raw data, we create copies
   // of the matrices in the hope that this additional memory consumption is made
-  // up for by perfomance gains.
+  // up for by performance gains.
   const std::vector<dealii::LAPACKFullMatrix<double>> &adv_mat =
     pde_system.get_advection_matrices();
   for (unsigned int k = 0; k < 3; ++k)
@@ -92,7 +95,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
         for (unsigned int j = 0; j < matrix_size; ++j)
           // NOTE: When computing the eigenvalues of matrix_sum, I call a
           // Fortran routine which requires the matrix elements to be stored in
-          // column-major order. But since the resulting matrix is symmteric,
+          // column-major order. But since the resulting matrix is symmetric,
           // there is no difference between column-major order and row-major
           // order. I stick with the C convention and use row-major order.
           advection_matrices[k][i * matrix_size + j] = adv_mat[k](i, j);
@@ -110,6 +113,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
   prepare_upwind_fluxes();
 }
 
+
+
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
@@ -117,6 +122,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
 {
   background_velocity_field.set_time(time);
 }
+
+
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
@@ -213,6 +220,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
     }
 }
 
+
+
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
@@ -299,6 +308,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   work.resize(static_cast<unsigned int>(lwork));
   iwork.resize(static_cast<unsigned int>(liwork));
 }
+
+
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
@@ -414,6 +425,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // get the eigenvectors of A_y and A_z
 }
 
+
+
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
@@ -521,6 +534,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
   test_negative_flux_matrix.print_formatted(std::cout);
 }
 
+
+
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
@@ -585,6 +600,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
     }
 }
 
+
+
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
@@ -625,6 +642,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                    (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
                    (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
 }
+
+
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
@@ -706,6 +725,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
         }
     }
 }
+
+
 
 // explicit instantiation
 template class sapphirepp::VFP::UpwindFlux<1, true, true>;

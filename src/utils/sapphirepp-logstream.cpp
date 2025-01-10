@@ -30,6 +30,10 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
 
+#include <boost/program_options.hpp>
+
+#include <petscsys.h>
+
 #include <mpi.h>
 
 #include <string>
@@ -76,6 +80,56 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console,
         << dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)
         << " MPI process(es) [" << dealii::Utilities::System::get_date() << " "
         << dealii::Utilities::System::get_time() << "]" << std::endl;
+}
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
+{
+  int is_initialized;
+  MPI_Initialized(&is_initialized);
+  Assert(is_initialized,
+         dealii::ExcMessage("saplog.init() must be called after MPI "
+                            "initialization!"));
+
+  namespace po = boost::program_options;
+
+  po::options_description desc("saplog options");
+  desc.add_options()("help,h", "produce help message")(
+    "verbosity,v",
+    po::value<unsigned int>()->default_value(2),
+    "verbosity of the console output\n"
+    "  0 - silence the program\n"
+    "  1 - show only start-up message\n"
+    "  2 - show progress\n"
+    "  >2 - show different levels of debug messages")(
+    "verbose-mpi", "show output from all mpi processes");
+
+  po::variables_map vm;
+  auto              parsed = po::command_line_parser(argc, argv)
+                  .options(desc)
+                  .allow_unregistered()
+                  .run();
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  if (vm.count("help"))
+    {
+      std::cout << std::endl
+                << desc << std::endl
+                << "  -help \t shows all MPI/PETSc options" << std::endl
+                << std::endl;
+    }
+
+  // RemoveOptions from PETSC options to avoid warnings
+  PetscOptionsClearValue(nullptr, "-h");
+  PetscOptionsClearValue(nullptr, "--help");
+  PetscOptionsClearValue(nullptr, "-v");
+  PetscOptionsClearValue(nullptr, "--verbosity");
+  PetscOptionsClearValue(nullptr, "--verbose-mpi");
+
+  this->init(vm["verbosity"].as<unsigned int>(), vm.count("verbose-mpi"));
 }
 
 

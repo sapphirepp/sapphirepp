@@ -9,7 +9,7 @@ for the effect of truncating the expansion at $l_{\rm max}$.
 Furthermore, we will introduce the post-processing module
 to reconstruct the full distribution function
 $f(\mathbf{x}, p, \theta, \varphi)$.
-To this end, we follow the example introduced in @cite Schween2024b, Sec. 4.3.
+To this end, we follow the example introduced in @cite Schween2025, Sec. 4.3.
 
 We start off with an isotropic distribution of mono-energetic particles,
 homogeneous in $y$--$z$--plane with a Gaussian profile in $x$ direction.

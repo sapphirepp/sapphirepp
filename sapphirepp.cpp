@@ -39,6 +39,20 @@
 
 
 
+/**
+ * @brief Default main function for @sapphire.
+ *
+ * Usage:
+ * ```shell
+ * ./sapphirepp parameter-file.prm
+ * ```
+ *
+ * @param argc Number of commandline arguments
+ * @param argv Commandline arguments
+ * @return int Return code:
+ *             - 0: Success
+ *             - 1: Failure
+ */
 int
 main(int argc, char *argv[])
 {
@@ -49,8 +63,7 @@ main(int argc, char *argv[])
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-
-      saplog.init(2);
+      saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter-template.prm";
       if (argc > 1)

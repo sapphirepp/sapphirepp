@@ -61,6 +61,6 @@ namespace sapphirepp
                           const unsigned int num);
 
     } // namespace Tools
-  }   // namespace Utils
+  } // namespace Utils
 } // namespace sapphirepp
 #endif

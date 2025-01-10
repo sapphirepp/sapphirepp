@@ -123,6 +123,13 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Implement the bitwise OR operator for the VFPFlags
+     *
+     * @param f1 First VFPFlags
+     * @param f2 Second VFPFlags
+     * @return constexpr VFPFlags f1 | f2
+     */
     constexpr VFPFlags
     operator|(VFPFlags f1, VFPFlags f2)
     {
@@ -131,6 +138,13 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Implement the bitwise AND operator for the VFPFlags
+     *
+     * @param f1 First VFPFlags
+     * @param f2 Second VFPFlags
+     * @return constexpr VFPFlags f1 & f2
+     */
     constexpr VFPFlags
     operator&(VFPFlags f1, VFPFlags f2)
     {
@@ -139,6 +153,14 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Print the VFPFlags to a stream
+     *
+     * @tparam StreamType Type of the output stream
+     * @param os Output stream
+     * @param f VFPFlags
+     * @return StreamType& os
+     */
     template <typename StreamType>
     inline StreamType &
     operator<<(StreamType &os, VFPFlags f)
