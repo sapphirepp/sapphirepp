@@ -235,12 +235,12 @@ namespace sapphirepp
         AssertDimension(scattering_frequencies.size(), points.size());
         static_cast<void>(component); // suppress compiler warning
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
             // Constant scattering frequency
-            scattering_frequencies[i] =
-              prm.nu0 * std::exp(1. / 3. * points[i][1]);
+            scattering_frequencies[q_index] =
+              prm.nu0 * std::exp(1. / 3. * points[q_index][1]);
             /** [Scattering frequency] */
           }
       }
@@ -376,17 +376,18 @@ namespace sapphirepp
         AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
 
-        for (unsigned int i = 0; i < divergence.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity divergence] */
             // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
             // => d/dx u(x) = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
 
             // div u
-            divergence[i] = prm.u_sh / (2 * prm.compression_ratio) *
-                            (1 - prm.compression_ratio) / prm.shock_width *
-                            (1 - std::tanh(points[i][0] / prm.shock_width) *
-                                   std::tanh(points[i][0] / prm.shock_width));
+            divergence[q_index] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             /** [Background velocity divergence] */
           }
       }
@@ -401,7 +402,7 @@ namespace sapphirepp
         AssertDimension(material_derivatives.size(), points.size());
         AssertDimension(material_derivatives[0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
             // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
@@ -410,17 +411,17 @@ namespace sapphirepp
             //        1/x_s (1-r) (1-tanh(x/x_s)^2)
 
             // D/Dt u_x
-            material_derivatives[i][0] =
+            material_derivatives[q_index][0] =
               prm.u_sh * prm.u_sh /
               (4 * prm.compression_ratio * prm.compression_ratio) /
               prm.shock_width * (1 - prm.compression_ratio) *
               ((1 - prm.compression_ratio) *
-                 std::tanh(points[i][0] / prm.shock_width) +
+                 std::tanh(points[q_index][0] / prm.shock_width) +
                (1 + prm.compression_ratio)) *
-              (1 - std::tanh(points[i][0] / prm.shock_width) *
-                     std::tanh(points[i][0] / prm.shock_width));
-            material_derivatives[i][1] = 0.; // D/Dt u_y
-            material_derivatives[i][2] = 0.; // D/Dt u_z
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
+            material_derivatives[q_index][1] = 0.; // D/Dt u_y
+            material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
           }
       }
@@ -436,28 +437,28 @@ namespace sapphirepp
         AssertDimension(jacobians[0].size(), this->n_components);
         AssertDimension(jacobians[0][0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
             //  u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
             //  => u_00 = du/dx = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
 
             // \partial u_x / \partial x
-            jacobians[i][0][0] =
+            jacobians[q_index][0][0] =
               prm.u_sh / (2 * prm.compression_ratio) *
               (1 - prm.compression_ratio) / prm.shock_width *
-              (1 - std::tanh(points[i][0] / prm.shock_width) *
-                     std::tanh(points[i][0] / prm.shock_width));
-            jacobians[i][0][1] = 0.; // \partial u_x / \partial y
-            jacobians[i][0][2] = 0.; // \partial u_x / \partial z
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
+            jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
+            jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
-            jacobians[i][1][0] = 0.; // \partial u_y / \partial x
-            jacobians[i][1][1] = 0.; // \partial u_y / \partial y
-            jacobians[i][1][2] = 0.; // \partial u_y / \partial z
+            jacobians[q_index][1][0] = 0.; // \partial u_y / \partial x
+            jacobians[q_index][1][1] = 0.; // \partial u_y / \partial y
+            jacobians[q_index][1][2] = 0.; // \partial u_y / \partial z
 
-            jacobians[i][2][0] = 0.; // \partial u_z / \partial x
-            jacobians[i][2][1] = 0.; // \partial u_z / \partial y
-            jacobians[i][2][2] = 0.; // \partial u_z / \partial z
+            jacobians[q_index][2][0] = 0.; // \partial u_z / \partial x
+            jacobians[q_index][2][1] = 0.; // \partial u_z / \partial y
+            jacobians[q_index][2][2] = 0.; // \partial u_z / \partial z
             /** [Background velocity Jacobian] */
           }
       }

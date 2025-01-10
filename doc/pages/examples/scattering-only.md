@@ -2,7 +2,6 @@
 
 @tableofcontents
 
-
 ## Introduction {#introduction-scattering-only}
 
 This example provides an in-depth exploration of @sapphire using a simple case
@@ -19,7 +18,7 @@ $$
 $$
 
 We'll use a constant scattering frequency $\nu = \nu_0$. When we expand this
-equation in spherical harmonics (as detailed in @cite Schween2024), we get:
+equation in spherical harmonics (as detailed in @cite Schween2024b), we get:
 
 $$
   \partial_{t} f_{lms} + \nu \, \frac{l(l + 1)}{2} f_{lms} = 0 \,.
@@ -33,7 +32,6 @@ $$
 $$
 
 where $f_{lms, 0} = f_{lms}(t=0)$.
-
 
 ## Implementation {#implementation-scattering-only}
 
@@ -57,7 +55,6 @@ conventions and best practices employed in @sapphire.
 
 @note The `config.h` file is included in the @sapphire library. As such, it must
   retain its name and define specific variables and functions used by @sapphire.
-
 
 ### config.h {#config-scattering-only}
 
@@ -91,7 +88,6 @@ To avoid naming conflicts between variables and classes, we encapsulate
 everything related to @sapphire within the @ref sapphirepp namespace:
 
 @snippet{lineno} examples/scattering-only/config.h Namespace sapphirepp
-
 
 #### Custom Runtime Parameters {#parameter-scattering-only}
 
@@ -127,7 +123,6 @@ debug information.
 
 @snippet{lineno} examples/scattering-only/config.h Parse parameters
 
-
 #### VFP equation {#dimension-scattering-only}
 
 Next, we define static variables and functions related to the VFP equation.
@@ -154,7 +149,6 @@ sapphirepp::VFP::VFPFlags::collision "collision". All other terms (and the $p$
 dependence) are deactivated by default.
 
 @snippet{lineno} examples/scattering-only/config.h VFP Flags
-
 
 #### Initial condition {#initial-condition-scattering-only}
 
@@ -196,7 +190,6 @@ Finally, we close the function definition, after defining the private variable
 
 @snippet{lineno} examples/scattering-only/config.h InitialValueFunction value
 
-
 #### Scattering frequency {#scattering-frequency-scattering-only}
 
 The scattering frequency is defined similarly to the initial condition. However,
@@ -223,7 +216,6 @@ Again, we close the function definition, after defining the private variable
 
 @snippet{lineno} examples/scattering-only/config.h ScatteringFrequency value
 
-
 #### Source term {#source-term-scattering-only}
 
 We need to provide definitions for the @ref sapphirepp::VFP::Source "Source",
@@ -240,7 +232,6 @@ the detailed explanation and directly provide the code.
 
 @snippet{lineno} examples/scattering-only/config.h Source
 
-
 #### Magnetic field {#magnetic-field-scattering-only}
 
 The @ref sapphirepp::VFP::MagneticField "MagneticField" function is a
@@ -252,7 +243,6 @@ the detailed explanation as the implementation is similar to @ref
 sapphirepp::VFP::InitialValueFunction "InitialValueFunction".
 
 @snippet{lineno} examples/scattering-only/config.h MagneticField
-
 
 #### Velocity field {#velocity-scattering-only}
 
@@ -271,7 +261,6 @@ The constructor is similar to the @ref sapphirepp::VFP::MagneticField
 @snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField
 
 Inside the velocity field class, we define four different functions:
-
 
 1. Background velocity field value $\mathbf{u}(\mathbf{x})$:
 
@@ -315,11 +304,9 @@ Inside the velocity field class, we define four different functions:
 
    @snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField Jacobian
 
-
 Finally, we close the namespaces and the include guard.
 
 @snippet{lineno} examples/scattering-only/config.h Close namespaces
-
 
 ### scattering-only.cpp {#main-scattering-only}
 
@@ -347,7 +334,6 @@ The file begins with the inclusion of several header files:
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Includes
 
-
 #### Analytic solution {#analytic-solution-scattering-only}
 
 We start by implementing a @dealref{Function} for the analytic solution.
@@ -374,7 +360,6 @@ $$
 $$
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp AnalyticSolution value
-
 
 #### Main function {#main-function-scattering-only}
 
@@ -434,7 +419,6 @@ Finally, we can create the VFP equation solver @ref sapphirepp::VFP::VFPSolver
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp VFP Solver
 
-
 #### Comparing with the analytic solution {#error-scattering-only}
 
 After the simulation finishes, we can evaluate the error by comparing the
@@ -471,12 +455,10 @@ vector.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Output analytic solution
 
-
 In case an exception is thrown, we catch it, output it to `std::err`, and return
 with an error code.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch end
-
 
 ### CMakeLists.txt {#compiling-scattering-only}
 
@@ -527,7 +509,6 @@ This will create the executable `scattering-only`, which can be run with:
 ./scattering-only parameter.prm
 ```
 
-
 ### parameter.prm {#example-parameter-scattering-only}
 
 The final file required is the parameter file. This file can be in `.prm`,
@@ -548,7 +529,6 @@ fourth-order explicit Runge-Kutta method, which should provide adequate
 precision for this simulation.
 
 @include{lineno} examples/scattering-only/parameter.prm
-
 
 ## Executing the example {#execute-scattering-only}
 
@@ -594,13 +574,11 @@ The program creates a `results` folder in the current directory, with a
 parameters (`log.prm`), the analytic solution (`analytic_solution_0000.vtu`),
 and the numerical solution at each time step (`solution_*.vtu`).
 
-The `*.vtu` files can be opened in visualization software like
-[ParaView](https://www.paraview.org) or
+The `*.vtu` files can be opened in visualization software like @paraview or
 [VisIt](https://visit-dav.github.io/visit-website/). These files contain all
 expansion coefficients `f_lms` along with the MPI `subdomain`. Note that the
 solution `f_lms` is a `dim = dim_ps` dimensional quantity in mixed coordinate
 reduced phase space.
-
 
 ## Results {#results-scattering-only}
 
@@ -633,19 +611,15 @@ in the following plot:
 
 ![Results at t=1](https://sapphirepp.org/img/examples/scattering-only-t1.png)
 
-
 ## The plain program {#plain-scattering-only}
-
 
 ### config.h {#plain-config-scattering-only}
 
 @include{lineno} examples/scattering-only/config.h
 
-
 ### scattering-only.cpp {#plain-main-scattering-only}
 
 @include{lineno} examples/scattering-only/scattering-only.cpp
-
 
 <div class="section_buttons">
 
@@ -654,7 +628,6 @@ in the following plot:
 | [Examples](#examples) |
 
 </div>
-
 
 ---
 

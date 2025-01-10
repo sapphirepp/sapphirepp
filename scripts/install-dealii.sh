@@ -6,7 +6,7 @@ INTERACTIVE=true
 SKIP_PREREQUISITE=false
 PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb assimp"
 PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb assimp"
-PREREQUISITES_APT="gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbb2 libtbb2-dev libassimp-dev"
+PREREQUISITES_APT="build-essential gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbb2 libtbb2-dev libassimp-dev"
 if [[ $(uname) == "Darwin" ]]; then
     PACKAGE_INSTALLER="brew"
 else
@@ -15,7 +15,7 @@ fi
 
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
-PETSC_VERSION="3.20.0"
+PETSC_VERSION="3.22.2"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
@@ -24,11 +24,11 @@ fi
 
 INSTALL_P4EST=false
 P4EST_DIR=${P4EST_DIR:-"$HOME/.local/lib/p4est"}
-P4EST_VERSION="2.8.5"
+P4EST_VERSION="2.8.6"
 
 INSTALL_DEAL_II=false
 DEAL_II_DIR=${DEAL_II_DIR:-"$HOME/.local/lib/dealii"}
-DEAL_II_VERSION="9.5.1"
+DEAL_II_VERSION="9.6.1"
 
 if [[ $(uname) == "Darwin" ]]; then
     NUMBER_JOBS=$(sysctl -n hw.ncpu)
@@ -41,14 +41,14 @@ WORKPWD=${WORKPWD:-$(pwd)}
 # Define functions
 function set_configuration {
     # Prompt the user for input
-    read -p "Is PETSc already installed on your machine? [y/N]: " install_petsc_input
-    read -p "Enter the installation directory for PETSc (default: $PETSC_DIR): " petsc_dir_input
-    read -p "Is p4est already installed on your machine? [y/N]: " install_p4est_input
-    read -p "Enter the installation directory for p4est (default: $P4EST_DIR): " p4est_dir_input
-    read -p "Is deal.II already installed on your machine? [y/N]: " install_deal_ii_input
-    read -p "Enter the installation directory for deal.II (default: $DEAL_II_DIR): " deal_ii_dir_input
-    read -p "Enter the number of processors to use for compilation (default: $NUMBER_JOBS): " number_jobs_input
-    read -p "Do you want to run the test suite after installation? [y/N]: " run_test_input
+    read -rp "Is PETSc already installed on your machine? [y/N]: " install_petsc_input
+    read -rp "Enter the installation directory for PETSc (default: $PETSC_DIR): " petsc_dir_input
+    read -rp "Is p4est already installed on your machine? [y/N]: " install_p4est_input
+    read -rp "Enter the installation directory for p4est (default: $P4EST_DIR): " p4est_dir_input
+    read -rp "Is deal.II already installed on your machine? [y/N]: " install_deal_ii_input
+    read -rp "Enter the installation directory for deal.II (default: $DEAL_II_DIR): " deal_ii_dir_input
+    read -rp "Enter the number of processors to use for compilation (default: $NUMBER_JOBS): " number_jobs_input
+    read -rp "Do you want to run the test suite after installation? [y/N]: " run_test_input
 
     # Set the configuration based on user input
     if [[ $install_petsc_input =~ ^[Nn]$ ]]; then
@@ -104,7 +104,7 @@ function print_configuration {
     fi
     echo ""
 
-    read -p "Is this configuration correct? [y/N]: " confirm_input
+    read -rp "Is this configuration correct? [y/N]: " confirm_input
     if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
         echo "Installation aborted."
         exit 1
@@ -116,19 +116,19 @@ function install_prerequisites {
     echo ""
     echo "  $PREREQUISITES"
     echo ""
-    read -p "[y/N]: " install_prerequisite_input
+    read -rp "[y/N]: " install_prerequisite_input
 
     if [[ ! $install_prerequisite_input =~ ^[Nn]$ ]]; then
         return
     fi
 
-    read -p "Which package manager do you want to use to install the prerequisites? [brew/apt/apt-get/...]: " package_installer_input
+    read -rp "Which package manager do you want to use to install the prerequisites? [brew/apt/apt-get/...]: " package_installer_input
     echo ""
     if [[ $package_installer_input ]]; then
         PACKAGE_INSTALLER=$package_installer_input
     fi
 
-    if [ $PACKAGE_INSTALLER == "brew" ]; then
+    if [ "$PACKAGE_INSTALLER" == "brew" ]; then
         echo "To install the prerequisites with brew, run the following command:"
         echo ""
         echo "  brew install $PREREQUISITES_BREW"
@@ -137,12 +137,12 @@ function install_prerequisites {
         echo ""
         echo "  brew pin $PREREQUISITES_BREW"
         echo ""
-    elif [ $PACKAGE_INSTALLER == "apt" ]; then
+    elif [ "$PACKAGE_INSTALLER" == "apt" ]; then
         echo "To install the prerequisites with apt, run the following command:"
         echo ""
         echo "  sudo apt install $PREREQUISITES_APT"
         echo ""
-    elif [ $PACKAGE_INSTALLER == "apt-get" ]; then
+    elif [ "$PACKAGE_INSTALLER" == "apt-get" ]; then
         echo "To install the prerequisites with apt-get, run the following command:"
         echo ""
         echo "  sudo apt-get install $PREREQUISITES_APT"

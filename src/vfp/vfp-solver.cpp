@@ -69,7 +69,9 @@
 #include <vector>
 
 #include "particle-functions.h"
+#include "phase-space-reconstruction.h"
 #include "sapphirepp-logstream.h"
+
 
 
 namespace sapphirepp
@@ -213,6 +215,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
+  , ps_reconstruction(vfp_parameters, output_parameters, pde_system.lms_indices)
   , pcout(std::cout,
           ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
            (saplog.get_verbosity() >= 3)))
@@ -603,6 +606,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                        locally_owned_dofs,
                        dsp,
                        mpi_communicator);
+
+  ps_reconstruction.reinit(triangulation, mapping);
 }
 
 
@@ -964,10 +969,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               advection_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
-                            // \phi m * v * du^k/dt * A_k * \phi
+                            // \phi v * du^k/dt * A_k * \phi
                             copy_data.cell_matrix(i, j) +=
                               fe_v.shape_value(i, q_index) *
-                              vfp_parameters.mass *
                               particle_velocities[q_index] *
                               material_derivative_vel[q_index][coordinate] *
                               advection_matrices[coordinate](component_i,
@@ -1747,6 +1751,12 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   output_parameters.write_results<dim, dim>(data_out,
                                             time_step_number,
                                             cur_time);
+
+  ps_reconstruction.reconstruct_all_points(dof_handler,
+                                           mapping,
+                                           locally_relevant_current_solution,
+                                           time_step_number,
+                                           cur_time);
 }
 
 

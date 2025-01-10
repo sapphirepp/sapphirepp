@@ -2,11 +2,9 @@
 [![clang-format Check](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml)
 [![Full test suite](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml)
 
-
 <p align="center">
 <img src="logo/sapphire-logo-text.png" alt="Sapphire++ logo" width=394>
 </p>
-
 
 # About
 
@@ -33,7 +31,6 @@ Sapphire++ is developed by the [Astrophysical Plasma
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
 group located at the [Max-Planck-Institut für
 Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
-
 
 ## Installation
 
@@ -65,8 +62,7 @@ cd build && make
 ```
 
 A detailed description of the installation process can be found in the
-[documentation](https://sapphirepp.org).
-
+[documentation](https://sapphirepp.org#installation).
 
 ## Getting started
 
@@ -79,13 +75,16 @@ To run Sapphire++ you need to provide a configuration file:
 You enable parallel execution by using `mpirun`:
 
 ```shell
-mpirun ./sapphirepp parameter.prm
+mpirun -np N ./sapphirepp parameter.prm
 ```
 
-We provide a documentation on our website [sapphire.org](https://sapphirepp.org)
-together with [tutorials](https://sapphirepp.org/latest/examples.html) and
-[examples](examples).
+where `N` is the number of processors to use.
 
+Comprehensive documentation is available on our website
+[sapphire.org](https://sapphirepp.org). There, you can find a [quick-start
+guide](https://sapphirepp.org/latest/quick-start.html) and various
+[tutorials](https://sapphirepp.org/latest/examples.html). The source code for
+the examples is located in the [examples](examples) folder.
 
 ## Licence
 
@@ -93,20 +92,20 @@ Sapphire++ is distributed under the [LGPL 3.0 license](LICENSE).
 
 If you use this software in your research, please cite the following paper:
 
-> [Your Name], [Paper Title], [Journal], [Year], DOI: [DOI]
+> Schween, N. W. and Schulze, F. and Reville, B., Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous Galerkin Method, 2024, DOI: http://dx.doi.org/10.2139/ssrn.4808843
 
 Here's the BibTeX entry for the paper:
 
 ```bibtex
-@article{YourPaper,
-  title={Paper Title},
-  author={Your Name},
-  journal={Journal},
-  year={Year},
-  doi={DOI}
+@Article{Sapphirepp2024,
+ note = {Preprint},
+ pubstate = {submitted},
+ date = {2024},
+ doi = {10.2139/ssrn.4808843},
+ title = {Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous {Galerkin} Method},
+ author = {Schween, Nils Walter and Schulze, Florian and Reville, Brian}
 }
 ```
-
 
 ## Contributing
 

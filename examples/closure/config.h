@@ -20,9 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/gyro-advection/config.h
+ * @file examples/closure/config.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for gyro-advection example
+ * @brief Implement physical setup for closure example
  */
 
 #ifndef CONFIG_H
@@ -50,9 +51,8 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double B0;
-    double u0;
-    double sigma;
+    double standard_deviation;
+    double scattering_frequency;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -68,18 +68,15 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("B0/2pi",
+      prm.declare_entry("Standard deviation",
                         "1.",
                         dealii::Patterns::Double(),
-                        "Magnetic field strength");
-      prm.declare_entry("u0",
+                        "The standard deviation of the isotropic "
+                        "and normal particle distribution at t = 0.");
+      prm.declare_entry("Scattering frequency",
                         "0.",
                         dealii::Patterns::Double(),
-                        "Velocity of the background plasma");
-      prm.declare_entry("sigma",
-                        "1.",
-                        dealii::Patterns::Double(0),
-                        "Spread of the initial distribution");
+                        "The scattering frequency.");
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -96,9 +93,8 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
-      B0    = prm.get_double("B0/2pi") * 2. * M_PI;
-      u0    = prm.get_double("u0");
-      sigma = prm.get_double("sigma");
+      standard_deviation   = prm.get_double("Standard deviation");
+      scattering_frequency = prm.get_double("Scattering frequency");
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
@@ -111,16 +107,15 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 2;
+    static constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
-                                          VFPFlags::rotation |
-                                          VFPFlags::time_independent_fields;
+    static constexpr VFPFlags vfp_flags =
+      VFPFlags::spatial_advection | VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -145,16 +140,12 @@ namespace sapphirepp
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
-        for (unsigned int i = 0; i < f.size(); ++i)
-          {
-            /** [Initial value] */
-            if (i == 0)
-              f[0] =
-                std::exp(-point.norm_square() / (2. * prm.sigma * prm.sigma));
-            else
-              f[i] = 0.;
-            /** [Initial value] */
-          }
+        /** [Initial value] */
+        // f_000(t = 0) = \sqrt(4 pi) * f(t=0)
+        f[0] = std::sqrt(2) / prm.standard_deviation *
+               std::exp(-(point[0] * point[0]) /
+                        (2 * prm.standard_deviation * prm.standard_deviation));
+        /** [Initial value] */
       }
 
 
@@ -188,8 +179,7 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
-            // No scattering frequency
-            scattering_frequencies[q_index] = 0;
+            scattering_frequencies[q_index] = prm.scattering_frequency;
             /** [Scattering frequency] */
           }
       }
@@ -259,9 +249,10 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [Magnetic field] */
-        magnetic_field[0] = 0.;     // B_x
-        magnetic_field[1] = 0.;     // B_y
-        magnetic_field[2] = prm.B0; // B_z
+        // no magnetic field
+        magnetic_field[0] = 0.; // B_x
+        magnetic_field[1] = 0.; // B_y
+        magnetic_field[2] = 0.; // B_z
         /** [Magnetic field] */
       }
 
@@ -293,9 +284,9 @@ namespace sapphirepp
 
         /** [Background velocity value] */
         // zero velocity field
-        velocity[0] = prm.u0; // u_x
-        velocity[1] = prm.u0; // u_y
-        velocity[2] = 0.;     // u_z
+        velocity[0] = 0.; // u_x
+        velocity[1] = 0.; // u_y
+        velocity[2] = 0.; // u_z
         /** [Background velocity value] */
       }
 

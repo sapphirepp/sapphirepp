@@ -20,10 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file sapphirepp.cpp
+ * @file examples/closure/closure.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for @sapphire
+ * @brief Implement main function for closure example
  */
 
 #include <deal.II/base/mpi.h>
@@ -52,7 +52,7 @@ main(int argc, char *argv[])
 
       saplog.init(2);
 
-      std::string parameter_filename = "parameter-template.prm";
+      std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
@@ -64,12 +64,6 @@ main(int argc, char *argv[])
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
       vfp_parameters.declare_parameters(prm);
-
-      if ((dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) &&
-          (argc == 1))
-        prm.print_parameters("parameter-template.prm",
-                             ParameterHandler::PRM |
-                               ParameterHandler::KeepDeclarationOrder);
 
       prm.parse_input(parameter_filename);
 

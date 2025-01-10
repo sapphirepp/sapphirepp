@@ -2,7 +2,6 @@
 
 @tableofcontents
 
-
 ## Introduction {#introduction-convergence-study}
 
 This example presents a convergence study for @sapphire, utilizing a
@@ -44,7 +43,7 @@ the magnetic field $B_0$, the charge $q$, the Lorentz factor $\gamma$, and the
 mass $m$. In the following, we drop $f_{111}$ as it decouples and has a trivial
 solution.
 
-In @cite Schween2024, we derived an analytical solution for this system of
+In @cite Schween2024b, we derived an analytical solution for this system of
 equations assuming a periodic box of length $L$. We obtained the following
 solution for the expansion coefficients $f_{lms}$:
 
@@ -69,11 +68,10 @@ $f_{000}$. The wave number $k_n = \frac{2 \pi n}{L}$ and the constant $c_n =
 This analytic solution can be used to compare with the numerical solution at an
 arbitrary time $t$ to assess the convergence of the numerical solution.
 
-
 ## Implementation {#implementation-convergence-study}
 
 In the following, we will show the implementation of the convergence study
-example in @sapphire. As always, the steup is devided up into two main files:
+example in @sapphire. As always, the setup is divided up into two main files:
 
 - [config.h](#config-convergence-study) which defines the setup of the VFP
   system and runtime parameters.
@@ -85,9 +83,7 @@ In this example, we will only highlight the main parts of the implementation.
 For a comprehensive overview, please refer to the [scattering
 only](#scattering-only) example.
 
-
 ### config.h {#config-convergence-study}
-
 
 #### VFP equation {#dimension-convergence-study}
 
@@ -106,7 +102,6 @@ field is time independent, hence we can use
 @ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent" flag.
 
 @snippet{lineno} examples/convergence-study/config.h VFP Flags
-
 
 #### Runtime Parameters {#parameter-convergence-study}
 
@@ -148,14 +143,12 @@ goes for the velocity $v$, gamma factor $\gamma$, charge $q$, and mass $m$.
 
    @snippet{lineno} examples/convergence-study/config.h Parse runtime parameter
 
-
 #### Analytic solution {#initial-condition-convergence-study}
 
 We "misuse" the @ref sapphirepp::VFP::InitialValueFunction
 "InitialValueFunction" to implement the analytic solution at all times. Setting
 $t=0$ yields the initial condition, but setting $t>0$ yields the analytic
 solution at a given time. To recall the analytic solution, we have:
-
 
 \begin{align*}
   f_{000}(t,x)  & = \sum_{n} \frac{c_n^2}{\sqrt{\omega^2 + c_n^2}}
@@ -171,7 +164,7 @@ solution at a given time. To recall the analytic solution, we have:
   \left[ A_n \sin(k_n x) + B_n \cos(k_n x) \right]
 \end{align*}
 
-with  $\omega = \frac{B_0 q}{\gamma m}$, $k_n = \frac{2 \pi n}{L}$ and $c_n =
+with $\omega = \frac{B_0 q}{\gamma m}$, $k_n = \frac{2 \pi n}{L}$ and $c_n =
 \frac{v}{\sqrt{3}} k_n$. As mentioned before, we hardcode the coefficients $A_n$ and
 $B_n$ for simplicity. We choose a simple sin wave $B_1 = 1$. To ensure
 positivity of the analytic solution, we use the offset $A_0 = 2$.
@@ -191,14 +184,12 @@ $c_n$, which evaluates to zero for $n=0$.
 
 @snippet{lineno} examples/convergence-study/config.h Initial value
 
-
 #### Magnetic field {#magnetic-field-convergence-study}
 
 The implementation of the magnetic field $\mathbf{B} = B_0 \hat{\mathbf{e}}_z$
 is straightforward:f
 
 @snippet{lineno} examples/convergence-study/config.h Magnetic field
-
 
 ### convergence-study.cpp {#main-convergence-study}
 
@@ -208,7 +199,6 @@ will not use the @ref sapphirepp::VFP::VFPSolver::run "run()" function, but
 implement the time loop ourselves. We will also output add the analytic solution
 to the output, showing a comparison between `projection` and `interpolation` of
 the solution (see the [visualization](#visualization) section).
-
 
 #### Setup {#setup-convergence-study}
 
@@ -242,7 +232,6 @@ of the @ref sapphirepp::VFP::InitialValueFunction "InitialValueFunction" and a
 when calculating the error.
 
 @snippet{lineno} examples/convergence-study/convergence-study.cpp Setup analytic solution
-
 
 #### Time loop {#time-loop-convergence-study}
 
@@ -288,7 +277,6 @@ use the methods implemented in the @ref sapphirepp::VFP::VFPSolver "VFPSolver".
 
 @snippet{lineno} examples/convergence-study/convergence-study.cpp Time step
 
-
 #### End simulation {#end-simulation-convergence-study}
 
 After finishing the time loop, we output the final results, and calculate the
@@ -303,7 +291,6 @@ final error.
 Finally, we can end the simulation and close the `csv` file.
 
 @snippet{lineno} examples/convergence-study/convergence-study.cpp End simulation
-
 
 ## Results {#results-convergence-study}
 
@@ -321,7 +308,7 @@ at the nodes. We discuss this in more detail in the
 ![Results tEnd](https://sapphirepp.org/img/examples/convergence-study/convergence_study_tEnd.png)
 
 Running the simulation for different time steps, $\Delta t$, we can assess the
-convergence of the numerical solution. As expected, the `ERK4` method is forth
+convergence of the numerical solution. As expected, the `ERK4` method is fourth
 order, while the forward Euler method is only first order. We can also study the
 convergence of the numerical solution with spatial resolutions $\Delta
 x$ for different polynomial degrees $k$. In this case, we expect the error to
@@ -332,19 +319,15 @@ follow a $(\Delta x)^{k+1}$ scaling, assuming the projection error dominates.
   <img src="https://sapphirepp.org/img/examples/convergence-study/convergence_study_dx.png" alt="Convergence dx" width="49%">
 </p>
 
-
 ## The plain program {#plain-convergence-study}
-
 
 ### config.h {#plain-config-convergence-study}
 
 @include{lineno} examples/convergence-study/config.h
 
-
 ### convergence-study.cpp {#plain-main-convergence-study}
 
 @include{lineno} examples/convergence-study/convergence-study.cpp
-
 
 <div class="section_buttons">
 
@@ -353,7 +336,6 @@ follow a $(\Delta x)^{k+1}$ scaling, assuming the projection error dominates.
 | [Examples](#examples) |
 
 </div>
-
 
 ---
 

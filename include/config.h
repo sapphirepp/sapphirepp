@@ -181,10 +181,10 @@ namespace sapphirepp
        * to the momentum coordinate \f$ p \f$:
        *
        * ```cpp
-       *  const double x = point[0];
-       *  const double y = point[1];
+       *  const double x     = point[0];
+       *  const double y     = point[1];
        *  ...
-       *  const double p = point[dim-1];
+       *  const double log_p = point[dim-1];
        * ```
        *
        * @param point Point in reduced phase space
@@ -250,12 +250,12 @@ namespace sapphirepp
        * space. `points` is a vector of points in reduced phase space:
        *
        * ```cpp
-       * for (unsigned int i = 0; i < points.size(); ++i)
+       * for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
        *  {
-       *    const double x = points[i][0];
-       *    const double y = points[i][1];
+       *    const double x     = points[q_index][0];
+       *    const double y     = points[q_index][1];
        *    ...
-       *    const double p = points[i][dim-1];
+       *    const double log_p = points[q_index][dim-1];
        *  }
        * ```
        *
@@ -272,11 +272,11 @@ namespace sapphirepp
         AssertDimension(scattering_frequencies.size(), points.size());
         static_cast<void>(component); // suppress compiler warning
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
             // !!!EDIT HERE!!!
-            scattering_frequencies[i] = 100.;
+            scattering_frequencies[q_index] = 100.;
             /** [Scattering frequency] */
           }
       }
@@ -338,22 +338,36 @@ namespace sapphirepp
           {
             /** [Source] */
             // !!!EDIT HERE!!!
-            if (i == 0)
+            // Define parameters
+            const double p0    = 1.;
+            const double Q     = 0.1;
+            const double sig_p = 0.1;
+            const double sig_x = 0.001;
+
+            // Get x and p value
+            const double x = point[0];
+            const double p = std::exp(point[1]); // point[1] = log(p)
+
+            // Convert i -> l, m, s
+            const unsigned int l = lms_indices[i][0];
+            const unsigned int m = lms_indices[i][1];
+            const unsigned int s = lms_indices[i][2];
+
+            // isotropic part
+            if (l == 0 && m == 0 && s == 0)
               {
                 // shifted Gaussian in x and p
-                const double p     = std::exp(point[1]) - 1.0;
-                const double x     = point[0];
-                const double Q     = 0.1;
-                const double sig_p = 0.1;
-                const double sig_x = 0.001;
-
                 // s_000 = sqrt(4 pi) * s
-                source_values[0] = Q / (std::sqrt(M_PI) * sig_p * sig_x) *
-                                   std::exp(-p * p / (2. * sig_p * sig_p)) *
-                                   std::exp(-x * x / (2. * sig_x * sig_x));
+                source_values[i] =
+                  Q / (std::sqrt(M_PI) * sig_p * sig_x) *
+                  std::exp(-(p - p0) * (p - p0) / (2. * sig_p * sig_p)) *
+                  std::exp(-x * x / (2. * sig_x * sig_x));
               }
+            // vanishing anisotropic part
             else
-              source_values[i] = 0.;
+              {
+                source_values[i] = 0.;
+              }
             /** [Source] */
           }
       }
@@ -490,16 +504,14 @@ namespace sapphirepp
 
         /** [Background velocity value] */
         // !!!EDIT HERE!!!
-        // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
-        const double compression_ratio = 4.;
-        const double shock_width       = 0.001;
-        const double u_sh              = 0.1;
+        // u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
+        const double r    = 4.;
+        const double d_sh = 0.001;
+        const double u_sh = 0.1;
 
         // u_x
         velocity[0] =
-          u_sh / (2 * compression_ratio) *
-          ((1 - compression_ratio) * std::tanh(point[0] / shock_width) +
-           (1 + compression_ratio));
+          u_sh / (2 * r) * ((1 - r) * std::tanh(point[0] / d_sh) + (1 + r));
         velocity[1] = 0.; // u_y
         velocity[2] = 0.; // u_z
         /** [Background velocity value] */
@@ -526,21 +538,22 @@ namespace sapphirepp
         AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
 
-        for (unsigned int i = 0; i < divergence.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity divergence] */
             // !!!EDIT HERE!!!
-            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
-            // => d/dx u(x) = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
-            const double compression_ratio = 4.;
-            const double shock_width       = 0.001;
-            const double u_sh              = 0.1;
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
+            // => d/dx u(x) = u_sh/2r 1/d_sh (1-r) (1-tanh(x/d_sh)^2)
+            const double r    = 4.;
+            const double d_sh = 0.001;
+            const double u_sh = 0.1;
+
+            const double x = points[q_index][0];
 
             // div u
-            divergence[i] = u_sh / (2 * compression_ratio) *
-                            (1 - compression_ratio) / shock_width *
-                            (1 - std::tanh(points[i][0] / shock_width) *
-                                   std::tanh(points[i][0] / shock_width));
+            divergence[q_index] =
+              u_sh / (2 * r) * (1 - r) / d_sh *
+              (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
             /** [Background velocity divergence] */
           }
       }
@@ -569,28 +582,27 @@ namespace sapphirepp
         AssertDimension(material_derivatives.size(), points.size());
         AssertDimension(material_derivatives[0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
             // !!!EDIT HERE!!!
-            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
             // => D/Dt u(x) = d/dt u(x) + u d/dx u(x)
-            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/x_s) + (1+r)) *
-            //        1/x_s (1-r) (1-tanh(x/x_s)^2)
-            const double compression_ratio = 4.;
-            const double shock_width       = 0.001;
-            const double u_sh              = 0.1;
+            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/d_sh) + (1+r)) *
+            //        1/d_sh (1-r) (1-tanh(x/d_sh)^2)
+            const double r    = 4.;
+            const double d_sh = 0.001;
+            const double u_sh = 0.1;
+
+            const double x = points[q_index][0];
 
             // D/Dt u_x
-            material_derivatives[i][0] =
-              u_sh * u_sh / (4 * compression_ratio * compression_ratio) /
-              shock_width * (1 - compression_ratio) *
-              ((1 - compression_ratio) * std::tanh(points[i][0] / shock_width) +
-               (1 + compression_ratio)) *
-              (1 - std::tanh(points[i][0] / shock_width) *
-                     std::tanh(points[i][0] / shock_width));
-            material_derivatives[i][1] = 0.; // D/Dt u_y
-            material_derivatives[i][2] = 0.; // D/Dt u_z
+            material_derivatives[q_index][0] =
+              u_sh * u_sh / (4 * r * r) / d_sh * (1 - r) *
+              ((1 - r) * std::tanh(x / d_sh) + (1 + r)) *
+              (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            material_derivatives[q_index][1] = 0.; // D/Dt u_y
+            material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
           }
       }
@@ -621,31 +633,32 @@ namespace sapphirepp
         AssertDimension(jacobians[0].size(), this->n_components);
         AssertDimension(jacobians[0][0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
             // !!!EDIT HERE!!!
-            //  u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
-            //  => u_00 = du/dx = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
-            const double compression_ratio = 4.;
-            const double shock_width       = 0.001;
-            const double u_sh              = 0.1;
+            //  u(x) = u_sh/2r * ((1-r)*tanh(x/d_sh) + (1+r))
+            //  => u_00 = du/dx = u_sh/2r 1/d_sh (1-r) (1-tanh(x/d_sh)^2)
+            const double r    = 4.;
+            const double d_sh = 0.001;
+            const double u_sh = 0.1;
+
+            const double x = points[q_index][0];
 
             // \partial u_x / \partial x
-            jacobians[i][0][0] = u_sh / (2 * compression_ratio) *
-                                 (1 - compression_ratio) / shock_width *
-                                 (1 - std::tanh(points[i][0] / shock_width) *
-                                        std::tanh(points[i][0] / shock_width));
-            jacobians[i][0][1] = 0.; // \partial u_x / \partial y
-            jacobians[i][0][2] = 0.; // \partial u_x / \partial z
+            jacobians[q_index][0][0] =
+              u_sh / (2 * r) * (1 - r) / d_sh *
+              (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
+            jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
-            jacobians[i][1][0] = 0.; // \partial u_y / \partial x
-            jacobians[i][1][1] = 0.; // \partial u_y / \partial y
-            jacobians[i][1][2] = 0.; // \partial u_y / \partial z
+            jacobians[q_index][1][0] = 0.; // \partial u_y / \partial x
+            jacobians[q_index][1][1] = 0.; // \partial u_y / \partial y
+            jacobians[q_index][1][2] = 0.; // \partial u_y / \partial z
 
-            jacobians[i][2][0] = 0.; // \partial u_z / \partial x
-            jacobians[i][2][1] = 0.; // \partial u_z / \partial y
-            jacobians[i][2][2] = 0.; // \partial u_z / \partial z
+            jacobians[q_index][2][0] = 0.; // \partial u_z / \partial x
+            jacobians[q_index][2][1] = 0.; // \partial u_z / \partial y
+            jacobians[q_index][2][2] = 0.; // \partial u_z / \partial z
             /** [Background velocity Jacobian] */
           }
       }

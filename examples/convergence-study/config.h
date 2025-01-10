@@ -207,11 +207,11 @@ namespace sapphirepp
         AssertDimension(scattering_frequencies.size(), points.size());
         static_cast<void>(component); // suppress compiler warning
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
             // No scattering frequency
-            scattering_frequencies[i] = 0;
+            scattering_frequencies[q_index] = 0;
             /** [Scattering frequency] */
           }
       }
@@ -330,11 +330,11 @@ namespace sapphirepp
         AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
 
-        for (unsigned int i = 0; i < divergence.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity divergence] */
             // div u
-            divergence[i] = 0.;
+            divergence[q_index] = 0.;
             /** [Background velocity divergence] */
           }
       }
@@ -349,13 +349,13 @@ namespace sapphirepp
         AssertDimension(material_derivatives.size(), points.size());
         AssertDimension(material_derivatives[0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
             // zero velocity field
-            material_derivatives[i][0] = 0.; // D/Dt u_x
-            material_derivatives[i][1] = 0.; // D/Dt u_y
-            material_derivatives[i][2] = 0.; // D/Dt u_z
+            material_derivatives[q_index][0] = 0.; // D/Dt u_x
+            material_derivatives[q_index][1] = 0.; // D/Dt u_y
+            material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
           }
       }
@@ -371,21 +371,21 @@ namespace sapphirepp
         AssertDimension(jacobians[0].size(), this->n_components);
         AssertDimension(jacobians[0][0].size(), this->n_components);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
             // zero velocity field
-            jacobians[i][0][0] = 0.; // \partial u_x / \partial x
-            jacobians[i][0][1] = 0.; // \partial u_x / \partial y
-            jacobians[i][0][2] = 0.; // \partial u_x / \partial z
+            jacobians[q_index][0][0] = 0.; // \partial u_x / \partial x
+            jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
+            jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
-            jacobians[i][1][0] = 0.; // \partial u_y / \partial x
-            jacobians[i][1][1] = 0.; // \partial u_y / \partial y
-            jacobians[i][1][2] = 0.; // \partial u_y / \partial z
+            jacobians[q_index][1][0] = 0.; // \partial u_y / \partial x
+            jacobians[q_index][1][1] = 0.; // \partial u_y / \partial y
+            jacobians[q_index][1][2] = 0.; // \partial u_y / \partial z
 
-            jacobians[i][2][0] = 0.; // \partial u_z / \partial x
-            jacobians[i][2][1] = 0.; // \partial u_z / \partial y
-            jacobians[i][2][2] = 0.; // \partial u_z / \partial z
+            jacobians[q_index][2][0] = 0.; // \partial u_z / \partial x
+            jacobians[q_index][2][1] = 0.; // \partial u_z / \partial y
+            jacobians[q_index][2][2] = 0.; // \partial u_z / \partial z
             /** [Background velocity Jacobian] */
           }
       }

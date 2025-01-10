@@ -2,13 +2,12 @@
 
 @tableofcontents
 
-
 ## Introduction {#introduction-gyro-advection}
 
 This example provides an overview of how magnetic fields function within
 @sapphire. We will explore a simple scenario of an isotropic particle
 distribution in a constant magnetic field, advected in a constant background
-plasma flow. This example closely follows section 4.2 in @cite Schween2024.
+plasma flow. This example closely follows section 4.2 in @cite Schween2024b.
 
 We use a constant magnetic field oriented in the $z$-direction,
 
@@ -76,7 +75,6 @@ It's important to note that truncating the expansion of the distribution
 function at $l_{\rm max}$ results in deviations. Therefore, $f_{l>0}(\mathbf{r},
 t = n \times T_g) \neq 0$ even though the initial condition is isotropic.
 
-
 ## Implementation {#implementation-gyro-advection}
 
 You can find the implementation of this example in the `examples/gyro-advection`
@@ -84,7 +82,6 @@ directory. The subsequent sections provide a concise guide on how to implement
 this example in @sapphire. This guide assumes that you have already gone through
 the [quick start](#quick-start) and [parallel-shock](#parallel-shock) examples,
 and are familiar with the basic concepts of @sapphire.
-
 
 ### VFP equation {#dimension-gyro-advection}
 
@@ -113,7 +110,6 @@ Consequently, we activate these three @ref sapphirepp::VFP::VFPFlags
 "VFP flags":
 
 @snippet{lineno} examples/gyro-advection/config.h VFP Flags
-
 
 ### Runtime Parameters {#parameter-gyro-advection}
 
@@ -145,18 +141,16 @@ declare, and parse our custom runtime parameters, as demonstrated in the
 
    @snippet{lineno} examples/gyro-advection/config.h Parse runtime parameter
 
-
 ### Initial Condition {#initial-condition-gyro-advection}
 
 The initial condition is an isotropic Gaussian distribution, as previously
 described. Consequently, we set all expansion coefficients $f_{l>0}$ to zero,
 except for the isotropic component $f_{i(0,0,0)} = f_0$. To calculate $r^2 =
-x^2+×y^2$, we employ the
+x^2+y^2$, we employ the
 @dealref{point.norm_square(),classTensor,ac9829e8f74544262c6b0ec1f39429029}
 function.
 
 @snippet{lineno} examples/gyro-advection/config.h Initial value
-
 
 ### Magnetic field {#magnetic-field-gyro-advection}
 
@@ -165,7 +159,6 @@ $\mathbf{B} = B_0 \hat{\mathbf{e}}_z$ within the @ref
 sapphirepp::VFP::MagneticField "MagneticField" class:
 
 @snippet{lineno} examples/gyro-advection/config.h Magnetic field
-
 
 ### Velocity field {#velocity-gyro-advection}
 
@@ -192,7 +185,6 @@ field.
 4. Background velocity Jacobian $\frac{\partial u_{x}}{\partial x} = 0$:
 
    @snippet{lineno} examples/gyro-advection/config.h Background velocity Jacobian
-
 
 ## Results {#results-gyro-advection}
 
@@ -225,7 +217,6 @@ that a higher $l_{\rm max}$ leads to a smaller residual.
   <img src="https://sapphirepp.org/img/examples/gyro-advection/residual_static_l5.png" alt="residual static l_max=5" width="30%">
 </p>
 
-
 ### Example parameter file {#example-parameter-gyro-advection}
 
 The parameter file below can be used to run the simulation. Be aware that this
@@ -235,7 +226,6 @@ hours). Templates for lower resolution simulations are provided in
 
 @include{lineno} examples/gyro-advection/parameter.prm
 
-
 <div class="section_buttons">
 
 | Previous              |
@@ -243,7 +233,6 @@ hours). Templates for lower resolution simulations are provided in
 | [Examples](#examples) |
 
 </div>
-
 
 ---
 

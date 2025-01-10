@@ -4,7 +4,6 @@
 
 @tableofcontents
 
-
 <div class="section_buttons">
 
 | Previous                      |                                      Next |

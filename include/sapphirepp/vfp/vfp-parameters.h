@@ -170,6 +170,26 @@ namespace sapphirepp
       /** @} */
 
 
+      /** @{ */
+      /**
+       * Postprocess to preform phase space reconstruction?
+       */
+      bool perform_phase_space_reconstruction;
+      /**
+       * Points to perform phase space reconstruction
+       */
+      std::vector<dealii::Point<dim>> reconstruction_points;
+      /**
+       * Number of theta points for phase space reconstruction
+       */
+      unsigned int n_theta;
+      /**
+       * Number of phi points for phase space reconstruction
+       */
+      unsigned int n_phi;
+      /** @} */
+
+
 
       /** @brief Constructor */
       VFPParameters();
