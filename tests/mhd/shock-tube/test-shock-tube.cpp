@@ -54,8 +54,7 @@ main(int argc, char *argv[])
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-
-      saplog.init(100, true);
+      saplog.init(argc, argv);
 
       // std::string parameter_filename = "parameter.prm";
       std::string parameter_filename = "parameter-sod.prm";
