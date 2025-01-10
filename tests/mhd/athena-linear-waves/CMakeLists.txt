@@ -13,7 +13,7 @@ target_include_directories(test-athena-linear-waves-1d PUBLIC ${CONFIG_HEADER_DI
 target_include_directories(test-athena-linear-waves-1d PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
 )
-target_link_libraries(test-athena-linear-waves-1d UtilsLib)
+target_link_libraries(test-athena-linear-waves-1d UtilsLib MHDLib)
 
 add_test(NAME athena-linear-waves-1d-sound COMMAND
   ./test-athena-linear-waves-1d parameter-1d-sound.prm 4e-7
@@ -78,7 +78,7 @@ target_include_directories(test-athena-linear-waves-2d PUBLIC ${CONFIG_HEADER_DI
 target_include_directories(test-athena-linear-waves-2d PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
 )
-target_link_libraries(test-athena-linear-waves-2d UtilsLib)
+target_link_libraries(test-athena-linear-waves-2d UtilsLib MHDLib)
 
 add_test(NAME athena-linear-waves-2d-sound COMMAND
   ./test-athena-linear-waves-2d parameter-2d-sound.prm 2e-6
@@ -110,7 +110,7 @@ target_include_directories(test-athena-linear-waves-3d PUBLIC ${CONFIG_HEADER_DI
 target_include_directories(test-athena-linear-waves-3d PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
 )
-target_link_libraries(test-athena-linear-waves-3d UtilsLib)
+target_link_libraries(test-athena-linear-waves-3d UtilsLib MHDLib)
 
 add_test(NAME athena-linear-waves-3d-sound COMMAND
   ./test-athena-linear-waves-3d parameter-3d-sound.prm 2e-5

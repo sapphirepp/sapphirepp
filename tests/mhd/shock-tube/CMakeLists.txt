@@ -11,7 +11,7 @@ target_include_directories(test-shock-tube PUBLIC
   ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
   ${PROJECT_SOURCE_DIR}/tests/mhd
 )
-target_link_libraries(test-shock-tube UtilsLib)
+target_link_libraries(test-shock-tube UtilsLib MHDLib)
 
 add_test(NAME shock-tube-sod COMMAND
   ./test-shock-tube parameter-sod.prm 4e-7

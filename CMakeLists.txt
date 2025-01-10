@@ -78,9 +78,10 @@ if(SAPPHIREPP)
 
   if(MHD)
     message(STATUS "Preparing MHD module")
+    add_subdirectory(src/mhd)
 
     # MHD source files have to be compiled together with the main/config file
-    file(GLOB MHD_SOURCES src/mhd/*.cpp)
+    file(GLOB MHD_SOURCES ${PROJECT_SOURCE_DIR}/src/mhd/mhd-solver.cpp)
 
     file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
     add_executable(test-mhd test-mhd.cpp ${MHD_SOURCES})
@@ -92,19 +93,16 @@ if(SAPPHIREPP)
       ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
     )
     target_include_directories(test-mhd PUBLIC ${CONFIG_HEADER_DIR})
-    target_link_libraries(test-mhd UtilsLib)
+    target_link_libraries(test-mhd UtilsLib MHDLib)
   endif(MHD)
 
   # Check if all modules are enabled
-  if(VFP)
+  if(VFP AND MHD)
     set(SAPPHIREPP_ALL_MODULES ON)
     include(cmake/macro_sapphirepp_setup_target.cmake)
 
     add_executable(sapphirepp sapphirepp.cpp)
     sapphirepp_setup_target(sapphirepp ${PROJECT_SOURCE_DIR}/include)
-    target_include_directories(sapphirepp PUBLIC
-      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
-    )
   else()
     set(SAPPHIREPP_ALL_MODULES OFF)
   endif()

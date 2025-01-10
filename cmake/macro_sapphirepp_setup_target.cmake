@@ -28,11 +28,15 @@ macro(sapphirepp_setup_target _target)
   )
 
   target_sources(${_target} PRIVATE ${VFP_SOURCES})
+  target_sources(${_target} PRIVATE ${MHD_SOURCES})
 
   deal_ii_setup_target(${_target})
   target_include_directories(${_target} PUBLIC
     ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
   )
+  target_include_directories(${_target} PUBLIC
+    ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
+  )
   target_include_directories(${_target} PUBLIC ${_config_header_dir})
-  target_link_libraries(${_target} UtilsLib VFPLib)
+  target_link_libraries(${_target} UtilsLib VFPLib MHDLib)
 endmacro()
