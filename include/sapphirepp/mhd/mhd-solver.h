@@ -342,6 +342,14 @@ namespace sapphirepp
       get_positivity_limiter_indicator() const;
 
       /**
+       * @brief Get the maximum CFL time step on each cell
+       *
+       * @return const Vector<double>&
+       */
+      const Vector<double> &
+      get_cell_dt() const;
+
+      /**
        * @brief Get the timer object
        *
        * @return const TimerOutput&
@@ -446,6 +454,8 @@ namespace sapphirepp
       Vector<double> shock_indicator;
       /** Indicator where the solution is positivity limited. */
       Vector<float> positivity_limiter_indicator;
+      /** Maximum CFL time step on each cell. */
+      Vector<double> cell_dt;
       /** @} */
 
       /** @{ */
@@ -485,10 +495,12 @@ namespace sapphirepp
 
       /** @{ */
       /**
-       * @brief Assemble the right hand side of the DG system
+       * @brief Assemble the right hand side of the DG system.
        *
        * Compute the @ref dg_rhs using the @ref
-       * locally_relevant_current_solution
+       * locally_relevant_current_solution.
+       * It also calculates the @ref cell_dt
+       * using the maximum eigenvalue on the interior of each cell.
        *
        * @param time Time of the current time step
        */

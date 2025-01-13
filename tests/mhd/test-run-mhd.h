@@ -159,6 +159,9 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                 mhd_solver.get_positivity_limiter_indicator(),
                 "positivity_limiter",
                 DataOut<dim, spacedim>::type_cell_data);
+              data_out.add_data_vector(mhd_solver.get_cell_dt(),
+                                       "cell_dt",
+                                       DataOut<dim, spacedim>::type_cell_data);
 
               // Output the partition of the mesh
               const auto &triangulation = mhd_solver.get_triangulation();
@@ -267,6 +270,9 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                                  DataOut<dim, spacedim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_positivity_limiter_indicator(),
                                  "positivity_limiter",
+                                 DataOut<dim, spacedim>::type_cell_data);
+        data_out.add_data_vector(mhd_solver.get_cell_dt(),
+                                 "cell_dt",
                                  DataOut<dim, spacedim>::type_cell_data);
 
         // Output the partition of the mesh

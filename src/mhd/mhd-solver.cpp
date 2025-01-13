@@ -501,6 +501,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
                       Vector<double>(MHDEquations::n_components));
   shock_indicator.reinit(triangulation.n_active_cells());
   positivity_limiter_indicator.reinit(triangulation.n_active_cells());
+  cell_dt.reinit(triangulation.n_active_cells());
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -1069,7 +1070,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   using namespace sapphirepp::sapinternal::MHDSolver;
 
   static_cast<void>(time); // suppress compiler warning
-  dg_rhs = 0;
+  dg_rhs  = 0;
+  cell_dt = 0;
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator             &cell,
@@ -1089,12 +1091,16 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     std::vector<Vector<double>> states(
       q_points.size(), Vector<double>(MHDEquations::n_components));
     typename MHDEquations::flux_type flux_matrix;
+    double                           max_eigenvalue = 0.;
 
     fe_v.get_function_values(locally_relevant_current_solution, states);
 
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         mhd_equations.compute_flux_matrix(states[q_index], flux_matrix);
+        max_eigenvalue =
+          std::max(max_eigenvalue,
+                   mhd_equations.compute_maximum_eigenvalue(states[q_index]));
 
         for (unsigned int i : fe_v.dof_indices())
           {
@@ -1112,6 +1118,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
               }
           }
       }
+
+    const double h = cell->diameter() / std::sqrt(static_cast<double>(dim));
+    cell_dt[cell->active_cell_index()] =
+      h / ((2. * fe.degree + 1.) * max_eigenvalue);
   };
 
 
@@ -1545,6 +1555,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   data_out.add_data_vector(positivity_limiter_indicator,
                            "positivity_limiter",
                            DataOut<dim, spacedim>::type_cell_data);
+  data_out.add_data_vector(cell_dt,
+                           "cell_dt",
+                           DataOut<dim, spacedim>::type_cell_data);
   /** @todo [Remove Debug] */
 
   // Output the partition of the mesh
@@ -1714,6 +1727,15 @@ const dealii::Vector<float> &
 sapphirepp::MHD::MHDSolver<dim>::get_positivity_limiter_indicator() const
 {
   return positivity_limiter_indicator;
+}
+
+
+
+template <unsigned int dim>
+const dealii::Vector<double> &
+sapphirepp::MHD::MHDSolver<dim>::get_cell_dt() const
+{
+  return cell_dt;
 }
 
 
