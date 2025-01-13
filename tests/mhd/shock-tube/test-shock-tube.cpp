@@ -84,8 +84,8 @@ main(int argc, char *argv[])
 
       /** [Setup exact solution] */
       Utils::GridDataFunction<dim_mhd, MHDEquations::spacedim> exact_solution(
-        // "/home/schulze/Documents/PhD/Code/athena-results",
-        "/Users/flo/Documents/PhD/Code/athena-results",
+        "/home/schulze/Documents/PhD/Code/athena-results",
+        // "/Users/flo/Documents/PhD/Code/athena-results",
         "Sod",
         MHDEquations::n_components,
         0.,

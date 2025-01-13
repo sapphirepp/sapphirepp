@@ -718,6 +718,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     shock_indicator[cell_index] += cell_shock_indicator;
     // saplog << "shock indicator: " << shock_indicator[cell_index] <<
     // std::endl;
+    shock_indicator[cell_index] = 1.1;
   };
 
   /** @todo Use valid or empty copier? */
