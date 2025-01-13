@@ -38,6 +38,15 @@
 
 
 
+/**
+ * @brief Main function to test the @ref sapphirepp::MHD module.
+ *
+ * @param argc Number of commandline arguments
+ * @param argv Commandline arguments
+ * @return int Return code:
+ *             - 0: Success
+ *             - 1: Failure
+ */
 int
 main(int argc, char *argv[])
 {
