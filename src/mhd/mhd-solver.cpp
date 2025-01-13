@@ -73,7 +73,9 @@
 
 namespace sapphirepp
 {
-  namespace internal
+
+  /** @cond sapinternal */
+  namespace sapinternal
   {
     namespace MHDSolver
     {
@@ -261,8 +263,9 @@ namespace sapphirepp
         }
       };
     } // namespace MHDSolver
-  } // namespace internal
+  } // namespace sapinternal
 } // namespace sapphirepp
+/** @endcond */
 
 
 template <unsigned int dim>
@@ -602,7 +605,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
   LogStream::Prefix p("ShockIndicator", saplog);
 
   using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
-  using namespace sapphirepp::internal::MHDSolver;
+  using namespace sapphirepp::sapinternal::MHDSolver;
 
   shock_indicator = 0;
 
@@ -779,7 +782,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   LogStream::Prefix p("Limiter", saplog);
 
   using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
-  using namespace sapphirepp::internal::MHDSolver;
+  using namespace sapphirepp::sapinternal::MHDSolver;
 
 
   /**
@@ -1062,7 +1065,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   TimerOutput::Scope timer_section(timer, "DG rhs - MHD");
 
   using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
-  using namespace sapphirepp::internal::MHDSolver;
+  using namespace sapphirepp::sapinternal::MHDSolver;
 
   static_cast<void>(time); // suppress compiler warning
   dg_rhs = 0;
