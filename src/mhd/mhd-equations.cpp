@@ -194,6 +194,41 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
 
 
 double
+sapphirepp::MHD::MHDEquations::compute_maximum_eigenvalue(
+  const state_type &state) const
+{
+  AssertDimension(state.size(), n_components);
+
+  const double pressure = compute_pressure(state);
+  double       p2       = 0.;
+  double       b2       = 0.;
+  for (unsigned int d = 0; d < spacedim; ++d)
+    {
+      p2 += state[first_momentum_component + d] *
+            state[first_momentum_component + d];
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+    }
+  const double max_u = std::sqrt(p2) / state[density_component];
+
+  const double a_s2 = adiabatic_index * pressure / state[density_component];
+  Assert(
+    a_s2 >= 0.,
+    ExcNonAdmissibleState(state,
+                          "Negative squared adiabatic sound speed, a_s^2 = " +
+                            std::to_string(a_s2)));
+  const double max_c_f2 = a_s2 + b2 / state[density_component];
+  Assert(max_c_f2 >= 0.,
+         ExcNonAdmissibleState(state,
+                               "Negative squared fast speed, c_f^2 = " +
+                                 std::to_string(max_c_f2)));
+
+  return max_u + std::sqrt(max_c_f2);
+}
+
+
+
+double
 sapphirepp::MHD::MHDEquations::compute_pressure_unsafe(
   const state_type &state) const
 {

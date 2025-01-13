@@ -245,6 +245,18 @@ namespace sapphirepp
       compute_maximum_normal_eigenvalue(
         const state_type                  &state,
         const dealii::Tensor<1, spacedim> &normal) const;
+
+
+
+      /**
+       * @brief Computes an upper limit for the maximum eigenvalue of the state.
+       *
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
+       * @return double Upper limit for the maximum eigenvalue.
+       */
+      double
+      compute_maximum_eigenvalue(const state_type &state) const;
       /** @} */
 
 
