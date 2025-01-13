@@ -49,6 +49,13 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Implement the bitwise OR operator for the MHDFlags
+     *
+     * @param f1 First MHDFlags
+     * @param f2 Second MHDFlags
+     * @return constexpr MHDFlags f1 | f2
+     */
     constexpr MHDFlags
     operator|(MHDFlags f1, MHDFlags f2)
     {
@@ -57,6 +64,13 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Implement the bitwise AND operator for the MHDFlags
+     *
+     * @param f1 First MHDFlags
+     * @param f2 Second MHDFlags
+     * @return constexpr MHDFlags f1 & f2
+     */
     constexpr MHDFlags
     operator&(MHDFlags f1, MHDFlags f2)
     {
@@ -65,6 +79,14 @@ namespace sapphirepp
 
 
 
+    /**
+     * @brief Print the MHDFlags to a stream
+     *
+     * @tparam StreamType Type of the output stream
+     * @param os Output stream
+     * @param f MHDFlags
+     * @return StreamType& os
+     */
     template <typename StreamType>
     inline StreamType &
     operator<<(StreamType &os, MHDFlags f)
