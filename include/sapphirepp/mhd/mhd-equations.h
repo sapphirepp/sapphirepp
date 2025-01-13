@@ -54,6 +54,13 @@ namespace sapphirepp
     class ExcNonAdmissibleState : public dealii::ExceptionBase
     {
     public:
+      /**
+       * @brief Constructor
+       *
+       * @param state The @ref MHDEquations::state_type "MHD state"
+       * @param msg Error message
+       * @param point Point on the grid where the error occurred
+       */
       ExcNonAdmissibleState(
         const dealii::Vector<double>   &state,
         const std::string              &msg   = "",
@@ -63,9 +70,17 @@ namespace sapphirepp
         , point(point)
       {}
 
+      /** Destructor */
       virtual ~ExcNonAdmissibleState() noexcept
       {}
 
+
+
+      /**
+       * @brief Print error message
+       *
+       * @param out Output stream
+       */
       virtual void
       print_info(std::ostream &out) const override
       {
@@ -78,6 +93,8 @@ namespace sapphirepp
         out << ": \n"
             << "    " << state << std::endl;
       }
+
+
 
     private:
       const dealii::Vector<double>   state;
