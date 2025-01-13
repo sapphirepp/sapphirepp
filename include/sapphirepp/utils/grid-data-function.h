@@ -212,15 +212,20 @@ namespace sapphirepp
      * @tparam dim Dimension of the data in the file.
      * @tparam spacedim Space dimension of the function.
      */
-
-    /**
-     * @brief Constructor
-     */
     template <unsigned int dim, unsigned int spacedim = dim>
     class GridDataFunction : public Function<spacedim>
     {
     public:
-      /** @brief Constructor */
+      /**
+       * @brief Constructor
+       *
+       * @param input_path Folder where the files are located
+       * @param base_filename Base filename of the files,
+       *        following the Athena `.hst` convention
+       * @param n_components Number of components in the function
+       * @param inital_time Initial time
+       * @param n_components_data Number of components in the file
+       */
       GridDataFunction(const std::filesystem::path &input_path,
                        const std::string           &base_filename,
                        const unsigned int           n_components      = 1,
@@ -229,23 +234,27 @@ namespace sapphirepp
 
 
 
+      /** Value of the interpolated function at a point */
       virtual double
       value(const Point<spacedim> &p,
             const unsigned int     component = 0) const override;
 
 
 
+      /** Gradient of the interpolated function at a point */
       virtual Tensor<1, spacedim>
       gradient(const Point<spacedim> &p,
                const unsigned int     component = 0) const override;
 
 
 
+      /** Set the time, read in the new data for the corresponding timestep */
       virtual void
       set_time(const double new_time) override;
 
 
 
+      /** Load the data from a file */
       void
       load_data_from_file(const std::string &filename);
 
