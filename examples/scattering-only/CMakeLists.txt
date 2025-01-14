@@ -9,8 +9,9 @@ file(GLOB CONFIG_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(scattering-only PUBLIC ${CONFIG_HEADER_DIR})
 
 # Link the rest of Sapphire++
-target_include_directories(scattering-only PUBLIC 
-                           ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+target_include_directories(scattering-only PUBLIC
+  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+)
 target_link_libraries(scattering-only UtilsLib)
 
 # Copy the parameter file to the build directory
