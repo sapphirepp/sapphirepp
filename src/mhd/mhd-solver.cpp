@@ -64,6 +64,7 @@
 #include <cmath>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -171,6 +172,8 @@ namespace sapphirepp
 
       struct CopyData
       {
+        unsigned int                         cell_index;
+        double                               min_dt;
         Vector<double>                       cell_dg_rhs;
         std::vector<types::global_dof_index> local_dof_indices;
         // std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -180,6 +183,9 @@ namespace sapphirepp
         void
         reinit(const Iterator &cell, unsigned int dofs_per_cell)
         {
+          cell_index = cell->active_cell_index();
+          min_dt     = 0;
+
           cell_dg_rhs.reinit(dofs_per_cell);
 
           local_dof_indices.resize(dofs_per_cell);
@@ -1070,8 +1076,9 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   using namespace sapphirepp::sapinternal::MHDSolver;
 
   static_cast<void>(time); // suppress compiler warning
-  dg_rhs  = 0;
-  cell_dt = 0;
+  dg_rhs    = 0;
+  cell_dt   = 0;
+  global_dt = std::numeric_limits<double>::max();
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator             &cell,
@@ -1119,9 +1126,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
           }
       }
 
-    const double h = cell->diameter() / std::sqrt(static_cast<double>(dim));
-    cell_dt[cell->active_cell_index()] =
-      h / ((2. * fe.degree + 1.) * max_eigenvalue);
+    const double h   = cell->diameter() / std::sqrt(static_cast<double>(dim));
+    copy_data.min_dt = h / ((2. * fe.degree + 1.) * max_eigenvalue);
   };
 
 
@@ -1297,6 +1303,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     constraints.distribute_local_to_global(c.cell_dg_rhs,
                                            c.local_dof_indices,
                                            dg_rhs);
+    cell_dt[c.cell_index] = c.min_dt;
+    global_dt             = std::min(global_dt, c.min_dt);
     for (auto &cdf : c.face_data)
       {
         constraints.distribute_local_to_global(cdf.cell_dg_rhs_1,
@@ -1329,6 +1337,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                         face_worker);
   dg_rhs.compress(VectorOperation::add);
   saplog << "The DG rhs was assembled." << std::endl;
+
+  global_dt = Utilities::MPI::min(global_dt, mpi_communicator);
+  saplog << "Maximum CFL time step: " << global_dt << std::endl;
+  Assert(global_dt > 0, ExcMessage("The time step must be greater than 0."));
 }
 
 
@@ -1345,6 +1357,10 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
 
   // Assemble the right hand side
   assemble_dg_rhs(time);
+  AssertThrow(time_step <= global_dt,
+              ExcMessage(
+                "Violated CFL condition: " + std::to_string(time_step) + " > " +
+                std::to_string(global_dt)));
 
   mass_matrix.vmult(system_rhs, locally_owned_solution);
   system_rhs.add(time_step, dg_rhs);
@@ -1469,6 +1485,10 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
   // Stage i=0
   locally_owned_staged_solution[0] = locally_relevant_current_solution;
   assemble_dg_rhs(time + gamma[0] * time_step);
+  AssertThrow(time_step <= global_dt,
+              ExcMessage(
+                "Violated CFL condition: " + std::to_string(time_step) + " > " +
+                std::to_string(global_dt)));
   locally_owned_staged_dg_rhs[0] = dg_rhs;
 
   // Stage 0<i<s
@@ -1499,6 +1519,10 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
       locally_relevant_current_solution = locally_owned_staged_solution[i];
       apply_limiter();
       assemble_dg_rhs(time + gamma[i] * time_step);
+      AssertThrow(time_step <= global_dt,
+                  ExcMessage(
+                    "Violated CFL condition: " + std::to_string(time_step) +
+                    " > " + std::to_string(global_dt)));
       locally_owned_staged_dg_rhs[i] = dg_rhs;
     }
 

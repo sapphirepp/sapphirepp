@@ -454,8 +454,13 @@ namespace sapphirepp
       Vector<double> shock_indicator;
       /** Indicator where the solution is positivity limited. */
       Vector<float> positivity_limiter_indicator;
+      /** @} */
+
+      /** @{ */
       /** Maximum CFL time step on each cell. */
       Vector<double> cell_dt;
+      /** Global maximum CLF time step. */
+      double global_dt;
       /** @} */
 
       /** @{ */
@@ -500,7 +505,8 @@ namespace sapphirepp
        * Compute the @ref dg_rhs using the @ref
        * locally_relevant_current_solution.
        * It also calculates the @ref cell_dt
-       * using the maximum eigenvalue on the interior of each cell.
+       * using the maximum eigenvalue on the interior of each cell,
+       * and updates @ref global_dt accordingly.
        *
        * @param time Time of the current time step
        */
