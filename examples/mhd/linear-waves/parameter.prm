@@ -12,9 +12,9 @@ subsection MHD
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 32, 32, 32
-    set Point 1         = 0., 0., 0.
-    set Point 2         = 1, 1., 1.
+    set Number of cells = 32, 32
+    set Point 1         = 0., 0.
+    set Point 2         = 1., 1.
     subsection Boundary conditions
       set lower x = periodic
       set lower y = periodic
