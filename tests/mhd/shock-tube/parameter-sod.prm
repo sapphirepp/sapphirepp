@@ -26,7 +26,7 @@ subsection MHD
   subsection Time stepping
     set Final time     = 0.25
     set Method         = FE
-    set Time step size = 0.001
+    set Time step size = 0.0005
   end
 end
 subsection Physical parameters

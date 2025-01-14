@@ -18,7 +18,7 @@ subsection MHD
   subsection Time stepping
     set Final time     = 2
     set Method         = ERK4
-    set Time step size = 0.01
+    set Time step size = 0.005
   end
 end
 subsection Physical parameters
