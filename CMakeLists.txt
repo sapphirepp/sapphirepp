@@ -68,20 +68,15 @@ if(SAPPHIREPP)
   if(VFP)
     message(STATUS "Preparing VFP module")
     add_subdirectory(src/vfp)
+    include(cmake/macro_sapphirepp_setup_target_vfp.cmake)
 
     # VFP source files have to be compiled together with the main/config file
     set(VFP_SOURCES ${PROJECT_SOURCE_DIR}/src/vfp/upwind-flux.cpp
       ${PROJECT_SOURCE_DIR}/src/vfp/vfp-solver.cpp
     )
 
-    file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
-    add_executable(sapphirepp sapphirepp.cpp ${VFP_SOURCES})
-    deal_ii_setup_target(sapphirepp)
-    target_include_directories(sapphirepp PUBLIC
-      ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
-    )
-    target_include_directories(sapphirepp PUBLIC ${CONFIG_HEADER_DIR})
-    target_link_libraries(sapphirepp UtilsLib VFPLib)
+    add_executable(sapphirepp sapphirepp.cpp)
+    sapphirepp_setup_target_vfp(sapphirepp ${PROJECT_SOURCE_DIR}/include)
   endif(VFP)
 
   if(EXAMPLES)
