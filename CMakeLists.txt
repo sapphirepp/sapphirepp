@@ -57,7 +57,6 @@ if(SAPPHIREPP)
   message(STATUS "Preparing Sapphire++")
 
   deal_ii_initialize_cached_variables()
-  file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
 
   configure_file(${PROJECT_SOURCE_DIR}/include/sapphirepp/version.h.in
     ${PROJECT_BINARY_DIR}/include/sapphirepp/version.h @ONLY

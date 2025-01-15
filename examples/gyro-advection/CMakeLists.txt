@@ -1,11 +1,5 @@
-add_executable(gyro-advection gyro-advection.cpp ${VFP_SOURCES})
-deal_ii_setup_target(gyro-advection)
-file(GLOB CONFIG_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(gyro-advection PUBLIC ${CONFIG_HEADER_DIR})
-target_include_directories(gyro-advection PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
-)
-target_link_libraries(gyro-advection UtilsLib VFPLib)
+add_executable(gyro-advection gyro-advection.cpp)
+sapphirepp_setup_target_vfp(gyro-advection)
 
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

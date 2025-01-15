@@ -6,14 +6,10 @@ file(COPY parameter-1d-CN.prm parameter-1d-ERK4.prm parameter-1d-LSERK.prm
 )
 
 
-add_executable(test-scattering-only-1d test-scattering-only-1d.cpp ${VFP_SOURCES})
-deal_ii_setup_target(test-scattering-only-1d)
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/scattering-only)
-target_include_directories(test-scattering-only-1d PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+add_executable(test-scattering-only-1d test-scattering-only-1d.cpp)
+sapphirepp_setup_target_vfp(test-scattering-only-1d
+  ${PROJECT_SOURCE_DIR}/examples/scattering-only
 )
-target_include_directories(test-scattering-only-1d PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-scattering-only-1d UtilsLib VFPLib)
 
 add_test(NAME scattering-only-1d-CN COMMAND
   ./test-scattering-only-1d parameter-1d-CN.prm test_run 1e-2
@@ -67,14 +63,10 @@ set_property(TEST scattering-only-1d-BE PROPERTY LABELS
 )
 
 
-add_executable(test-scattering-only-2d test-scattering-only-2d.cpp ${VFP_SOURCES})
-deal_ii_setup_target(test-scattering-only-2d)
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/scattering-only)
-target_include_directories(test-scattering-only-2d PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+add_executable(test-scattering-only-2d test-scattering-only-2d.cpp)
+sapphirepp_setup_target_vfp(test-scattering-only-2d
+  ${PROJECT_SOURCE_DIR}/examples/scattering-only
 )
-target_include_directories(test-scattering-only-2d PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-scattering-only-2d UtilsLib VFPLib)
 
 add_test(NAME scattering-only-2d COMMAND
   ./test-scattering-only-2d parameter-2d-ERK4.prm 1e-4
@@ -87,14 +79,10 @@ set_property(TEST scattering-only-2d PROPERTY LABELS
 )
 
 
-add_executable(test-scattering-only-3d test-scattering-only-3d.cpp ${VFP_SOURCES})
-deal_ii_setup_target(test-scattering-only-3d)
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/scattering-only)
-target_include_directories(test-scattering-only-3d PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+add_executable(test-scattering-only-3d test-scattering-only-3d.cpp)
+sapphirepp_setup_target_vfp(test-scattering-only-3d
+  ${PROJECT_SOURCE_DIR}/examples/scattering-only
 )
-target_include_directories(test-scattering-only-3d PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-scattering-only-3d UtilsLib VFPLib)
 
 add_test(NAME scattering-only-3d COMMAND
   ./test-scattering-only-3d parameter-3d-ERK4.prm 1e-4

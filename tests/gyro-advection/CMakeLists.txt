@@ -3,14 +3,10 @@ file(COPY parameter-advection.prm parameter-static.prm
 )
 
 
-add_executable(test-gyro-advection test-gyro-advection.cpp ${VFP_SOURCES})
-deal_ii_setup_target(test-gyro-advection)
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/gyro-advection)
-target_include_directories(test-gyro-advection PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+add_executable(test-gyro-advection test-gyro-advection.cpp)
+sapphirepp_setup_target_vfp(test-gyro-advection
+  ${PROJECT_SOURCE_DIR}/examples/gyro-advection
 )
-target_include_directories(test-gyro-advection PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-gyro-advection UtilsLib VFPLib)
 
 add_test(NAME gyro-advection COMMAND
   ./test-gyro-advection parameter-advection.prm 0.15

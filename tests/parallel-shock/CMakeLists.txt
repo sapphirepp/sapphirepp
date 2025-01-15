@@ -3,14 +3,10 @@ file(COPY parameter.prm
 )
 
 
-add_executable(test-parallel-shock test-parallel-shock.cpp ${VFP_SOURCES})
-deal_ii_setup_target(test-parallel-shock)
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/parallel-shock)
-target_include_directories(test-parallel-shock PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+add_executable(test-parallel-shock test-parallel-shock.cpp)
+sapphirepp_setup_target_vfp(test-parallel-shock
+  ${PROJECT_SOURCE_DIR}/examples/parallel-shock
 )
-target_include_directories(test-parallel-shock PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-parallel-shock UtilsLib VFPLib)
 
 add_test(NAME parallel-shock COMMAND
   mpirun -np ${MPI_NPROC} ./test-parallel-shock parameter.prm 0.33
