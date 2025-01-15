@@ -4,14 +4,10 @@ file(COPY parameter-CN.prm parameter-ERK4.prm parameter-LSERK.prm
 )
 
 
-add_executable(test-convergence-study test-convergence-study.cpp ${VFP_SOURCES})
-deal_ii_setup_target(test-convergence-study)
-file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/examples/convergence-study)
-target_include_directories(test-convergence-study PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+add_executable(test-convergence-study test-convergence-study.cpp)
+sapphirepp_setup_target_vfp(test-convergence-study
+  ${PROJECT_SOURCE_DIR}/examples/convergence-study
 )
-target_include_directories(test-convergence-study PUBLIC ${CONFIG_HEADER_DIR})
-target_link_libraries(test-convergence-study UtilsLib VFPLib)
 
 add_test(NAME convergence-study-CN COMMAND
   ./test-convergence-study parameter-CN.prm 5e-6

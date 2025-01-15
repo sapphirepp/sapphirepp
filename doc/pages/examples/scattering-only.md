@@ -466,16 +466,20 @@ Then we return with an error code.
 
 ### CMakeLists.txt {#compiling-scattering-only}
 
-To compile the example, we need to create a `CMakeLists.txt` file. This file is
-used by the [CMake](https://cmake.org) build system to generate makefiles that
-compile the program. Since the `config.h` file is included in the main library,
-we must link against it. This requirement means that @sapphire cannot be treated
-as an independent library. This is evident in the fact that all examples or
-applications of sapphire must be included alongside the main library.
+To compile the example, we need to create a `CMakeLists.txt` file.
+This file is used by the [CMake](https://cmake.org) build system
+to generate makefiles that compile the program.
+Since the `config.h` file is included in the main library,
+we must link against it.
+This requirement means that @sapphire cannot be treated as an independent library.
+As a consequence, all examples or applications of @sapphire
+must be included alongside the main library.
 
-To simplify the process, we define several variables in the root
-`CMakeLists.txt`. As long as applications are located in the
-`sapphirepp/examples` folder, there are only two steps to follow:
+To simplify the process,
+we defined a macro `sapphirepp_setup_target_vfp`
+which links all necessary libraries and files to the target.
+As long as applications are located in the `sapphirepp/examples` folder,
+there are only two steps to follow:
 
 1. Add the application as a subdirectory to the
    `sapphirepp/examples/CMakeLists.txt` file:
