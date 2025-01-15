@@ -77,17 +77,20 @@ if(SAPPHIREPP)
   endif(VFP)
 
   if(MHD)
-    MESSAGE(STATUS "Preparing MHD module")
-    # VFP source files have to be compiled together with the main/config file
+    message(STATUS "Preparing MHD module")
+
+    # MHD source files have to be compiled together with the main/config file
     file(GLOB MHD_SOURCES src/mhd/*.cpp)
 
     file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
     add_executable(test-mhd test-mhd.cpp ${MHD_SOURCES})
     deal_ii_setup_target(test-mhd)
     target_include_directories(test-mhd PUBLIC
-      ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+      ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
+    )
     target_include_directories(test-mhd PUBLIC
-      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
+      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
+    )
     target_include_directories(test-mhd PUBLIC ${CONFIG_HEADER_DIR})
     target_link_libraries(test-mhd UtilsLib)
   endif(MHD)
@@ -100,7 +103,8 @@ if(SAPPHIREPP)
     add_executable(sapphirepp sapphirepp.cpp)
     sapphirepp_setup_target(sapphirepp ${PROJECT_SOURCE_DIR}/include)
     target_include_directories(sapphirepp PUBLIC
-      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
+      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
+    )
   else()
     set(SAPPHIREPP_ALL_MODULES OFF)
   endif()
