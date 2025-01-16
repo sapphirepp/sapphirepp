@@ -1,7 +1,65 @@
-results
-build
-.cache
+# Parameter files
 *.prm
 !parameter-template.prm
-!examples/*/*prm
-!tests/*/*.prm
+
+# Results folder
+results
+
+# Temporary files
+tmp*
+*.tmp
+.cache
+*~
+*#
+*.swp
+
+# CMake files
+CMakeFiles
+CMakeCache.txt
+*.cmake
+!macro_*.cmake
+Makefile
+DartConfiguration.tcl
+compile_commands.json
+CMakeDoxyfile.in
+Doxyfile
+version.h
+
+# Build folder
+build
+bin
+
+# Build files
+lib*.a
+*.o
+*.out
+*.exe
+
+# misc
+/compile_commands.json
+/.clang_complete
+/contrib/utilities/programs
+
+# eclipse
+/.cproject
+/.project
+qtcreator/
+
+# visual studio code
+/.vscode
+
+# qt creator
+CMakeLists.txt.user
+
+# clangd
+/.cache
+/.clangd
+
+# MacOS self-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
