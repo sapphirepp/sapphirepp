@@ -1,11 +1,5 @@
-add_executable(athena-linear-waves athena-linear-waves.cpp ${MHD_SOURCES})
-deal_ii_setup_target(athena-linear-waves)
-file(GLOB CONFIG_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(athena-linear-waves PUBLIC ${CONFIG_HEADER_DIR})
-target_include_directories(athena-linear-waves PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
-)
-target_link_libraries(athena-linear-waves UtilsLib MHDLib)
+add_executable(athena-linear-waves athena-linear-waves.cpp)
+sapphirepp_setup_target_mhd(athena-linear-waves)
 
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

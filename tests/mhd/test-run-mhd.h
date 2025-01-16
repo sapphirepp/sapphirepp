@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file test-run-mhd.h
+ * @file tests/mhd/test-run-mhd.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement functions for test runs.
+ * @brief Implement functions for mhd test runs.
  */
 
 #ifndef TESTS_TESTRUNMHD_H

@@ -1,11 +1,5 @@
-add_executable(blast-wave blast-wave.cpp ${MHD_SOURCES})
-deal_ii_setup_target(blast-wave)
-file(GLOB CONFIG_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(blast-wave PUBLIC ${CONFIG_HEADER_DIR})
-target_include_directories(blast-wave PUBLIC
-  ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd
-)
-target_link_libraries(blast-wave UtilsLib MHDLib)
+add_executable(blast-wave blast-wave.cpp)
+sapphirepp_setup_target_mhd(blast-wave)
 
 file(COPY parameter.prm DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
