@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/scattering-only/scattering-only.cpp
+ * @file examples/vfp/scattering-only/scattering-only.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement main function for scattering-only example
  */

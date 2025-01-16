@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/convergence-study/test-convergence-study.cpp
+ * @file tests/vfpconvergence-study/test-convergence-study.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement tests for convergence-study example
  */

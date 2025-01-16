@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/closure/config.h
+ * @file examples/vfp/closure/config.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement physical setup for closure example

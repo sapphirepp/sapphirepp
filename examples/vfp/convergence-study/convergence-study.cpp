@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/convergence-study/convergence-study.cpp
+ * @file examples/vfp/convergence-study/convergence-study.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement main function for convergence-study example
  */

@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/parallel-shock/config.h
+ * @file examples/vfp/parallel-shock/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement physical setup for parallel-shock example
  */

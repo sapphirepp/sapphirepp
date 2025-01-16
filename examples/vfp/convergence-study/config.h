@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/convergence-study/config.h
+ * @file examples/vfp/convergence-study/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement physical setup for convergence-study example
  */

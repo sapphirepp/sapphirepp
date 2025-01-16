@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/parallel-shock/test-parallel-shock.cpp
+ * @file tests/vfpparallel-shock/test-parallel-shock.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement tests for parallel-shock example
  */
