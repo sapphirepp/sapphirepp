@@ -73,10 +73,18 @@ if(SAPPHIREPP)
     set(VFP_SOURCES ${PROJECT_SOURCE_DIR}/src/vfp/upwind-flux.cpp
       ${PROJECT_SOURCE_DIR}/src/vfp/vfp-solver.cpp
     )
+  endif(VFP)
+
+  # Check if all modules are enabled
+  if(VFP)
+    set(SAPPHIREPP_ALL_MODULES ON)
+    include(cmake/macro_sapphirepp_setup_target.cmake)
 
     add_executable(sapphirepp sapphirepp.cpp)
-    sapphirepp_setup_target_vfp(sapphirepp ${PROJECT_SOURCE_DIR}/include)
-  endif(VFP)
+    sapphirepp_setup_target(sapphirepp ${PROJECT_SOURCE_DIR}/include)
+  else()
+    set(SAPPHIREPP_ALL_MODULES OFF)
+  endif()
 
   if(EXAMPLES)
     message(STATUS "Preparing Examples")
