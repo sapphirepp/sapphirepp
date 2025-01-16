@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/gyro-advection/test-advection.cpp
+ * @file tests/vfpgyro-advection/test-advection.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement tests for gyro-advection example
  */

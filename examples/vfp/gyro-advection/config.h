@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/gyro-advection/config.h
+ * @file examples/vfp/gyro-advection/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement physical setup for gyro-advection example
  */

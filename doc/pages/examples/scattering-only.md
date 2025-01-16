@@ -35,9 +35,10 @@ where $f_{lms, 0} = f_{lms}(t=0)$.
 
 ## Implementation {#implementation-scattering-only}
 
-This section provides a detailed walkthrough of the example's implementation in
-@sapphire. You can locate the relevant files in the
-`sapphirepp/examples/scattering-only` directory.
+This section provides a detailed walkthrough
+of the example's implementation in @sapphire.
+You can locate the relevant files
+in the `sapphirepp/examples/vfp/scattering-only` directory.
 
 The example requires four files:
 
@@ -58,9 +59,9 @@ conventions and best practices employed in @sapphire.
 
 ### config.h {#config-scattering-only}
 
-We start by investigating the `config.h` file line by line. The complete file
-can be found at the bottom of this page and in the
-`sapphirepp/examples/scattering-only` directory.
+We start by investigating the `config.h` file line by line.
+The complete file can be found at the bottom of this page
+and in the `sapphirepp/examples/vfp/scattering-only` directory.
 
 First, we set up the include guard and import the necessary dependencies:
 
@@ -82,12 +83,12 @@ First, we set up the include guard and import the necessary dependencies:
 - `sapphirepp-logstream.h`: Facilitates output to the console using different
   levels of verbosity.
 
-@snippet{lineno} examples/scattering-only/config.h Includes
+@snippet{lineno} examples/vfp/scattering-only/config.h Includes
 
 To avoid naming conflicts between variables and classes, we encapsulate
 everything related to @sapphire within the @ref sapphirepp namespace:
 
-@snippet{lineno} examples/scattering-only/config.h Namespace sapphirepp
+@snippet{lineno} examples/vfp/scattering-only/config.h Namespace sapphirepp
 
 #### Custom Runtime Parameters {#parameter-scattering-only}
 
@@ -100,7 +101,7 @@ frequency $\nu$ and the initial value of the expansion coefficients $f_0$
 These parameters are defined as **public** variables at the start of the @ref
 sapphirepp::PhysicalParameters "PhysicalParameters" class:
 
-@snippet{lineno} examples/scattering-only/config.h PhysicalParameters
+@snippet{lineno} examples/vfp/scattering-only/config.h PhysicalParameters
 
 @note The `// !!!EDIT HERE!!!` comments are left as a reference where the user
   modifies the code as presented in the [parallel shock](#parallel-shock)
@@ -114,14 +115,14 @@ sapphirepp::saplog "saplog" stream to output debug information, with
 @dealref{LogStream::Prefix,classLogStream_1_1Prefix} controlling the verbosity
 of the output.
 
-@snippet{lineno} examples/scattering-only/config.h Declare parameters
+@snippet{lineno} examples/vfp/scattering-only/config.h Declare parameters
 
 Finally, **parsing** the parameters is straightforward in the @ref
 sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()"
 function. Again, we use the @ref sapphirepp::saplog "saplog" stream to output
 debug information.
 
-@snippet{lineno} examples/scattering-only/config.h Parse parameters
+@snippet{lineno} examples/vfp/scattering-only/config.h Parse parameters
 
 #### VFP equation {#dimension-scattering-only}
 
@@ -129,7 +130,7 @@ Next, we define static variables and functions related to the VFP equation.
 These are grouped together under the @ref sapphirepp::VFP "VFP" namespace for
 organization and ease of access.
 
-@snippet{lineno} examples/scattering-only/config.h Namespace VFP
+@snippet{lineno} examples/vfp/scattering-only/config.h Namespace VFP
 
 First, we specify the dimensionality of the problem. Given that the solution is
 independent of both $\mathbf{x}$ and $p$, we set `dim = 1` (since `dim = 0` is
@@ -137,7 +138,7 @@ not allowed in the code). This corresponds to one space dimension `dim = dim_cs
 = 1` as the momentum dependence is not activated. This variable is defined as a
 `static constexpr` to ensure its value is known at compile time.
 
-@snippet{lineno} examples/scattering-only/config.h Dimension
+@snippet{lineno} examples/vfp/scattering-only/config.h Dimension
 
 Next, we specify the terms of the VFP equation to be used. The `vfp_flags`
 variable is also defined as `static constexpr`, enabling the compiler to
@@ -148,7 +149,7 @@ example, we only have a scattering term, @ref
 sapphirepp::VFP::VFPFlags::collision "collision". All other terms (and the $p$
 dependence) are deactivated by default.
 
-@snippet{lineno} examples/scattering-only/config.h VFP Flags
+@snippet{lineno} examples/vfp/scattering-only/config.h VFP Flags
 
 #### Initial condition {#initial-condition-scattering-only}
 
@@ -168,7 +169,7 @@ create a mapping between the system index $i$ and the spherical harmonic indices
 $l, m, s$ using the @ref sapphirepp::VFP::PDESystem::create_lms_indices
 "create_lms_indices()" function.
 
-@snippet{lineno} examples/scattering-only/config.h InitialValueFunction constructor
+@snippet{lineno} examples/vfp/scattering-only/config.h InitialValueFunction constructor
 
 We define the function value at a `point` in the @ref
 sapphirepp::VFP::InitialValueFunction::vector_value "vector_value()" function,
@@ -188,7 +189,7 @@ We then loop over all indices $i$ and set the result vector `f` to $f_{0}$.
 Finally, we close the function definition, after defining the private variable
 `prm` and the mapping `lms_indices`.
 
-@snippet{lineno} examples/scattering-only/config.h InitialValueFunction value
+@snippet{lineno} examples/vfp/scattering-only/config.h InitialValueFunction value
 
 #### Scattering frequency {#scattering-frequency-scattering-only}
 
@@ -196,7 +197,7 @@ The scattering frequency is defined similarly to the initial condition. However,
 the scattering frequency is a scalar function, so we use the @dealref{Function}
 class with only one component.
 
-@snippet{lineno} examples/scattering-only/config.h ScatteringFrequency constructor
+@snippet{lineno} examples/vfp/scattering-only/config.h ScatteringFrequency constructor
 
 To enhance performance by reducing the number of function calls, we employ the
 @ref sapphirepp::VFP::ScatteringFrequency::value_list "value_list()" function.
@@ -214,7 +215,7 @@ scattering frequency to $\nu$.
 Again, we close the function definition, after defining the private variable
 `prm`.
 
-@snippet{lineno} examples/scattering-only/config.h ScatteringFrequency value
+@snippet{lineno} examples/vfp/scattering-only/config.h ScatteringFrequency value
 
 #### Source term {#source-term-scattering-only}
 
@@ -230,7 +231,7 @@ implementation closely mirrors that of the @ref
 sapphirepp::VFP::InitialValueFunction "InitialValueFunction". Therefore, we skip
 the detailed explanation and directly provide the code.
 
-@snippet{lineno} examples/scattering-only/config.h Source
+@snippet{lineno} examples/vfp/scattering-only/config.h Source
 
 #### Magnetic field {#magnetic-field-scattering-only}
 
@@ -242,7 +243,7 @@ This allows for a magnetic field that points out of the plane. Again, we skip
 the detailed explanation as the implementation is similar to @ref
 sapphirepp::VFP::InitialValueFunction "InitialValueFunction".
 
-@snippet{lineno} examples/scattering-only/config.h MagneticField
+@snippet{lineno} examples/vfp/scattering-only/config.h MagneticField
 
 #### Velocity field {#velocity-scattering-only}
 
@@ -258,7 +259,7 @@ functions.
 The constructor is similar to the @ref sapphirepp::VFP::MagneticField
 "MagneticField".
 
-@snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField
+@snippet{lineno} examples/vfp/scattering-only/config.h BackgroundVelocityField
 
 Inside the velocity field class, we define four different functions:
 
@@ -270,7 +271,7 @@ Inside the velocity field class, we define four different functions:
    @dealref{vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
    function of the parent class.
 
-   @snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField value
+   @snippet{lineno} examples/vfp/scattering-only/config.h BackgroundVelocityField value
 
 2. Background velocity divergence $\nabla \cdot \mathbf{u}(\mathbf{x})$:
 
@@ -280,7 +281,7 @@ Inside the velocity field class, we define four different functions:
    at once. This mirrors the
    @dealref{value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}.
 
-   @snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField divergence
+   @snippet{lineno} examples/vfp/scattering-only/config.h BackgroundVelocityField divergence
 
 3. Background velocity material derivative $\frac{\mathrm{D}
    \mathbf{u}}{\mathrm{D} t}$:
@@ -290,7 +291,7 @@ Inside the velocity field class, we define four different functions:
    "material_derivative_list()" function to define the material derivative of
    the velocity field at multiple `points` at once.
 
-   @snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField material derivative
+   @snippet{lineno} examples/vfp/scattering-only/config.h BackgroundVelocityField material derivative
 
 4. Background velocity Jacobian $\frac{\partial u_{x}}{\partial x}$:
 
@@ -302,11 +303,11 @@ Inside the velocity field class, we define four different functions:
    After defining these functions, we define the private parameters and close the
    class definition.
 
-   @snippet{lineno} examples/scattering-only/config.h BackgroundVelocityField Jacobian
+   @snippet{lineno} examples/vfp/scattering-only/config.h BackgroundVelocityField Jacobian
 
 Finally, we close the namespaces and the include guard.
 
-@snippet{lineno} examples/scattering-only/config.h Close namespaces
+@snippet{lineno} examples/vfp/scattering-only/config.h Close namespaces
 
 ### scattering-only.cpp {#main-scattering-only}
 
@@ -332,7 +333,7 @@ The file begins with the inclusion of several header files:
 - `sapphirepp-logstream.h` enables console and logfile output
   with varying levels of verbosity.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Includes
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Includes
 
 #### Analytic solution {#analytic-solution-scattering-only}
 
@@ -340,14 +341,14 @@ We start by implementing a @dealref{Function} for the analytic solution.
 Following the [coding conventions](#coding-conventions), we use an internal
 namespace to avoid naming conflicts with other functions.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp AnalyticSolution namespace
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp AnalyticSolution namespace
 
 The analytic solution is a vector valued function with each component
 representing one expansion coefficient. The constructor is similar to the @ref
 sapphirepp::VFP::InitialValueFunction "InitialValueFunction". One additional
 parameter is the time at which the solution should be evaluated.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp AnalyticSolution constructor
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp AnalyticSolution constructor
 
 The @dealref{vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
 function defines the value of the analytic solution at a given `point`. We can
@@ -359,20 +360,20 @@ $$
   f_{lms}(t) = f_{0} \exp\left(-\nu \frac{l(l + 1)}{2} t \right) \,.
 $$
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp AnalyticSolution value
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp AnalyticSolution value
 
 #### Main function {#main-function-scattering-only}
 
 The `main` function is defined next, with `argc` and `argv` used to process
 command-line arguments.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Main function
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Main function
 
 The program is run within a try-catch block to catch any exceptions and output
 them. The namespaces @ref sapphirepp and @ref sapphirepp::VFP are used to avoid
 prefixing the respective classes.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch begin
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Try-Catch begin
 
 Before proceeding, MPI needs to be initialized for parallel runs using the
 @dealref{MPI_InitFinalize,classUtilities_1_1MPI_1_1MPI__InitFinalize} utility.
@@ -381,7 +382,7 @@ at the end of the program. The last argument of the constructor specifies the
 number of threads to be used per MPI process. We avoid TBB parallelization and
 only use one thread per process.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp MPI initialization
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp MPI initialization
 
 The custom log stream @ref sapphirepp::saplog "saplog"
 is used to output status and debug information to the console and logfiles.
@@ -389,13 +390,13 @@ The verbosity level and logfile can be specified via the command line,
 see @ref sapphirepp::Utils::SapphireppLogStream::init "saplog.init()".
 The default verbosity of `2` corresponds to progress information.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Saplog
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Saplog
 
 The parameter file is specified as a command-line argument. Therefore, the
 command-line arguments are processed, defaulting to the file `parameter.prm` if
 no argument is given.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Command line argument
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Command line argument
 
 Next, all objects that declare runtime parameters are created. These include the
 @ref sapphirepp::VFP::VFPParameters "VFPParameters", @ref
@@ -403,22 +404,22 @@ sapphirepp::Utils::OutputParameters "OutputParameters", and @ref
 sapphirepp::PhysicalParameters "PhysicalParameters" classes. The
 @dealref{ParameterHandler} is used to handle the parameter file.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Run time parameters
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Run time parameters
 
 Before reading the parameter file, all parameters that the
 @dealref{ParameterHandler} should expect are declared.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Declare parameters
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Declare parameters
 
 After declaring the parameters, the parameter file is parsed and the parameters
 of the objects are set.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Parse parameters
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Parse parameters
 
 Finally, we can create the VFP equation solver @ref sapphirepp::VFP::VFPSolver
 "VFPSolver" and run the simulation.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp VFP Solver
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp VFP Solver
 
 #### Comparing with the analytic solution {#error-scattering-only}
 
@@ -426,14 +427,14 @@ After the simulation finishes, we can evaluate the error by comparing the
 results with the analytic solution. To do this, we first need to create the
 analytic solution function.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Create AnalyticSolution
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Create AnalyticSolution
 
 We can then compute the L2 error using the @ref
 sapphirepp::VFP::VFPSolver::compute_global_error "compute_global_error()"
 function. Additionally, we compute the norm of the solution to obtain the
 relative error.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Calculate L2-error
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Calculate L2-error
 
 We also want to write the analytic solution to a file. To this end, we need to
 create a @dealref{MPI::Vector,classPETScWrappers_1_1MPI_1_1Vector} object. We
@@ -445,7 +446,7 @@ given by the function values. This is not the case for a projected function,
 which the weak solution approximates. We refer to the discussion in the
 [visualization](#visualization) section.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Calculate analytic solution
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Calculate analytic solution
 
 Finally, we write the analytic solution to a file using the @dealref{DataOut}
 object and the @ref sapphirepp::Utils::OutputParameters::write_results
@@ -454,7 +455,7 @@ sapphirepp::VFP::PDESystem::create_component_name_list
 "create_component_name_list()" function to name the components of the
 vector.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Output analytic solution
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Output analytic solution
 
 In case an exception is thrown,
 we catch it and use the
@@ -462,7 +463,7 @@ we catch it and use the
 method to output it to both the log stream and `std::err`.
 Then we return with an error code.
 
-@snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch end
+@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Try-Catch end
 
 ### CMakeLists.txt {#compiling-scattering-only}
 
@@ -482,7 +483,7 @@ As long as applications are located in the `sapphirepp/examples` folder,
 there are only two steps to follow:
 
 1. Add the application as a subdirectory to the
-   `sapphirepp/examples/CMakeLists.txt` file:
+   `sapphirepp/examples/vfp/CMakeLists.txt` file:
 
     ```cmake
     add_subdirectory(scattering-only)
@@ -490,7 +491,7 @@ there are only two steps to follow:
 
 2. Add the following `CMakeLists.txt` in the application folder:
 
-   @include{lineno} examples/scattering-only/CMakeLists.txt
+   @include{lineno} examples/vfp/scattering-only/CMakeLists.txt
 
 After these steps, re-run `cmake` to update the build system:
 
@@ -503,7 +504,8 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
 @note For development, we recommend using the Debug mode. You can switch between
   Debug and Release mode by changing the `CMAKE_BUILD_TYPE` variable.
 
-This process will create a `sapphirepp/build/examples/scattering-only` folder.
+This process will create a
+`sapphirepp/build/examples/vfp/scattering-only` folder.
 To build the executable for the example, execute `make` in this folder:
 
 ```shell
@@ -536,7 +538,7 @@ Given this, we select a time step size of $\Delta t = 0.1$. We also opt to use a
 fourth-order explicit Runge-Kutta method, which should provide adequate
 precision for this simulation.
 
-@include{lineno} examples/scattering-only/parameter.prm
+@include{lineno} examples/vfp/scattering-only/parameter.prm
 
 ## Executing the example {#execute-scattering-only}
 
@@ -544,7 +546,7 @@ Once the example program is compiled, it can be executed with the following
 command:
 
 ```shell
-cd sapphirepp/build/examples/scattering-only
+cd sapphirepp/build/examples/vfp/scattering-only
 ./scattering-only parameter.prm
 ```
 
@@ -623,11 +625,11 @@ in the following plot:
 
 ### config.h {#plain-config-scattering-only}
 
-@include{lineno} examples/scattering-only/config.h
+@include{lineno} examples/vfp/scattering-only/config.h
 
 ### scattering-only.cpp {#plain-main-scattering-only}
 
-@include{lineno} examples/scattering-only/scattering-only.cpp
+@include{lineno} examples/vfp/scattering-only/scattering-only.cpp
 
 <div class="section_buttons">
 

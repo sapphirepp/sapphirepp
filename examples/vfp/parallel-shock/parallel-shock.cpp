@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/parallel-shock/parallel-shock.cpp
+ * @file examples/vfp/parallel-shock/parallel-shock.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement main function for parallel-shock example
  */

@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/scattering-only/test-scattering-only-1d.cpp
+ * @file tests/vfpscattering-only/test-scattering-only-1d.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement 1d tests for scattering-only example
  */
