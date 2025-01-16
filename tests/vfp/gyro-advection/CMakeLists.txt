@@ -5,7 +5,7 @@ file(COPY parameter-advection.prm parameter-static.prm
 
 add_executable(test-gyro-advection test-gyro-advection.cpp)
 sapphirepp_setup_target_vfp(test-gyro-advection
-  ${PROJECT_SOURCE_DIR}/examples/gyro-advection
+  ${PROJECT_SOURCE_DIR}/examples/vfp/gyro-advection
 )
 
 add_test(NAME gyro-advection COMMAND

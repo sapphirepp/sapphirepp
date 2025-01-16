@@ -19,7 +19,6 @@ set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
   "${CMAKE_CURRENT_BINARY_DIR}/results"
 )
 
-add_subdirectory(parallel-shock)
-add_subdirectory(gyro-advection)
-add_subdirectory(scattering-only)
-add_subdirectory(convergence-study)
+if(VFP)
+  add_subdirectory(vfp)
+endif()

@@ -6,7 +6,7 @@ file(COPY parameter-CN.prm parameter-ERK4.prm parameter-LSERK.prm
 
 add_executable(test-convergence-study test-convergence-study.cpp)
 sapphirepp_setup_target_vfp(test-convergence-study
-  ${PROJECT_SOURCE_DIR}/examples/convergence-study
+  ${PROJECT_SOURCE_DIR}/examples/vfp/convergence-study
 )
 
 add_test(NAME convergence-study-CN COMMAND
