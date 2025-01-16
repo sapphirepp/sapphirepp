@@ -5,7 +5,7 @@ file(COPY parameter.prm
 
 add_executable(test-parallel-shock test-parallel-shock.cpp)
 sapphirepp_setup_target_vfp(test-parallel-shock
-  ${PROJECT_SOURCE_DIR}/examples/parallel-shock
+  ${PROJECT_SOURCE_DIR}/examples/vfp/parallel-shock
 )
 
 add_test(NAME parallel-shock COMMAND
