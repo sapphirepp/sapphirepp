@@ -4,16 +4,19 @@ else()
   set(MPI_NPROC $ENV{MPI_NPROC})
 endif()
 
-add_test(NAME quick-start COMMAND
-  ../sapphirepp
-)
-set_property(TEST quick-start PROPERTY LABELS
-  "quick-start"
-  "2d" "momentum" "spatial_advection" "source" "scattering"
-  "shock" "CN"
-  "commit-Release" "commit-Debug"
-  "full-suite-Release" "full-suite-Debug"
-)
+if(SAPPHIREPP_ALL_MODULES)
+  add_test(NAME quick-start COMMAND
+    ../sapphirepp
+  )
+  set_property(TEST quick-start PROPERTY LABELS
+    "quick-start"
+    "vfp"
+    "2d" "momentum" "spatial_advection" "source" "scattering"
+    "shock" "CN"
+    "commit-Release" "commit-Debug"
+    "full-suite-Release" "full-suite-Debug"
+  )
+endif()
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
   "${CMAKE_CURRENT_BINARY_DIR}/results"
