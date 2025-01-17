@@ -45,6 +45,11 @@ namespace sapphirepp
     enum class MHDFlags
     {
       none = 0,
+
+      no_limiting            = 1 << 0,
+      primitive_limiting     = 1 << 1,
+      no_shock_indicator     = 1 << 2,
+      no_positivity_limiting = 1 << 3,
     };
 
 
