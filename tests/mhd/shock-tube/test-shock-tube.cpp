@@ -56,15 +56,21 @@ main(int argc, char *argv[])
                                                                   1);
       saplog.init(argc, argv);
 
-      // std::string parameter_filename = "parameter.prm";
-      std::string parameter_filename = "parameter-sod.prm";
+      std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
-      // double max_L2_error = 1e-10;
-      double max_L2_error = 1e10;
+      std::string comparison_path = "athena-results";
       if (argc > 2)
-        max_L2_error = std::stod(argv[2]);
+        comparison_path = argv[2];
+
+      std::string comparison_base_filename = "Sod";
+      if (argc > 3)
+        comparison_base_filename = argv[3];
+
+      double max_L2_error = 1e-10;
+      if (argc > 4)
+        max_L2_error = std::stod(argv[4]);
 
       dealii::ParameterHandler prm;
       PhysicalParameters       physical_parameters;
@@ -84,9 +90,8 @@ main(int argc, char *argv[])
 
       /** [Setup exact solution] */
       Utils::GridDataFunction<dim_mhd, MHDEquations::spacedim> exact_solution(
-        "/home/schulze/Documents/PhD/Code/athena-results",
-        // "/Users/flo/Documents/PhD/Code/athena-results",
-        "Sod",
+        comparison_path,
+        comparison_base_filename,
         MHDEquations::n_components,
         0.,
         5);
