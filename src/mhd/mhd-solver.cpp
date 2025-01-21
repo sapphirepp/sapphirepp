@@ -714,8 +714,8 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     // saplog << "indicator value: " << cell_shock_indicator << std::endl;
 
 
-    // WNormalize the indicator variable
-    const double dx = cell->diameter() / std::sqrt(static_cast<double>(dim));
+    // Normalize the indicator variable
+    const double dx     = cell->minimum_vertex_distance();
     const double degree = fe_v_face.get_fe().tensor_degree();
     // saplog << "degree=" << degree << ", dx=" << dx << std::endl;
     const double cell_norm =
@@ -941,11 +941,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                         MHDFlags::none)
             {
               // Primitive Limiting
-              diff = SlopeLimiter::minmod_gradients(
-                cell_avg_gradient,
-                neighbor_gradients,
-                limited_gradient,
-                cell->diameter() / std::sqrt(static_cast<double>(dim)));
+              diff =
+                SlopeLimiter::minmod_gradients(cell_avg_gradient,
+                                               neighbor_gradients,
+                                               limited_gradient,
+                                               cell->minimum_vertex_distance());
             }
           else
             {
@@ -984,11 +984,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
 
               // Computed limited gradient
-              diff = SlopeLimiter::minmod_gradients(
-                char_cell_avg_gradient,
-                char_neighbor_gradients,
-                char_limited_gradient,
-                cell->diameter() / std::sqrt(static_cast<double>(dim)));
+              diff =
+                SlopeLimiter::minmod_gradients(char_cell_avg_gradient,
+                                               char_neighbor_gradients,
+                                               char_limited_gradient,
+                                               cell->minimum_vertex_distance());
 
 
               // Convert back to conserved variables
@@ -1155,8 +1155,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
           }
       }
 
-    const double h   = cell->diameter() / std::sqrt(static_cast<double>(dim));
-    copy_data.min_dt = h / ((2. * fe.degree + 1.) * max_eigenvalue);
+    const double dx  = cell->minimum_vertex_distance();
+    copy_data.min_dt = dx / ((2. * fe.degree + 1.) * max_eigenvalue);
   };
 
 
