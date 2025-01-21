@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 5
   set Output frequency             = 1
   set Results folder               = ./results
-  set Simulation identifier        = shock-tube-limited
+  set Simulation identifier        = shock-tube-sod
 end
 subsection MHD
   subsection Finite element
@@ -25,7 +25,7 @@ subsection MHD
   end
   subsection Time stepping
     set Final time     = 0.25
-    set Method         = FE
+    set Method         = ERK2
     set Time step size = 0.0005
   end
 end

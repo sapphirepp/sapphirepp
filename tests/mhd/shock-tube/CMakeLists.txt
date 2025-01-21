@@ -12,12 +12,16 @@ target_include_directories(test-shock-tube PUBLIC
 )
 
 add_test(NAME shock-tube-sod COMMAND
-  ./test-shock-tube parameter-sod.prm 4e-7
+  ./test-shock-tube parameter-sod.prm
+  # "athena-results"
+  "/home/schulze/Documents/PhD/Code/athena-results" # TODO: copy data over
+  "Sod"
+  6e-3
 )
 set_property(TEST shock-tube-sod PROPERTY LABELS
   "shock-tube"
   "1d" "sod"
-  "ERK4" "periodic BC"
+  "ERK2" "zero-inflow"
   "fast" "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
