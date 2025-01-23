@@ -193,16 +193,6 @@ sapphirepp::Utils::SapphireppLogStream::attach_file(
 
 
 
-unsigned int
-sapphirepp::Utils::SapphireppLogStream::get_verbosity()
-{
-  unsigned int n = this->depth_console(0);
-  this->depth_console(n);
-  return n;
-}
-
-
-
 void
 sapphirepp::Utils::SapphireppLogStream::print_error(const std::exception &exc)
 {
@@ -226,4 +216,68 @@ sapphirepp::Utils::SapphireppLogStream::print_error(const std::exception &exc)
         << "Aborting!" << "\n"
         << "----------------------------------------------------" << std::endl;
   this->depth_file(depth_file);
+}
+
+
+
+unsigned int
+sapphirepp::Utils::SapphireppLogStream::get_verbosity_console()
+{
+  unsigned int n = this->depth_console(0);
+  this->depth_console(n);
+  return n;
+}
+
+
+
+unsigned int
+sapphirepp::Utils::SapphireppLogStream::get_verbosity_file()
+{
+  unsigned int n = this->depth_file(0);
+  this->depth_file(n);
+  return n;
+}
+
+
+
+std::ostream &
+sapphirepp::Utils::SapphireppLogStream::to_ostream(const unsigned int verbosity)
+{
+  if (this->has_file() && (this->get_verbosity_file() >= verbosity))
+    return this->get_file_stream();
+
+  if (this->get_verbosity_console() >= verbosity)
+    return this->get_console();
+
+  // If the logfile is activated, we use write to the logfile,
+  // otherwise the stream is discarded.
+  return log_file;
+}
+
+
+
+dealii::ConditionalOStream
+sapphirepp::Utils::SapphireppLogStream::to_condition_ostream(
+  const unsigned int verbosity)
+{
+  if (this->has_file())
+    return dealii::ConditionalOStream(this->get_file_stream(),
+                                      this->get_verbosity_file() >= verbosity);
+
+  return dealii::ConditionalOStream(this->get_console(),
+                                    this->get_verbosity_console() >= verbosity);
+}
+
+
+
+sapphirepp::Utils::SapphireppLogStream::operator std::ostream &()
+{
+  return this->to_ostream();
+}
+
+
+
+sapphirepp::Utils::SapphireppLogStream::operator dealii::ConditionalOStream()
+{
+  return this->to_condition_ostream();
 }

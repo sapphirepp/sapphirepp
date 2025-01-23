@@ -121,15 +121,6 @@ namespace sapphirepp
 
 
       /**
-       * @brief Get the verbosity of the console output
-       *
-       * @return unsigned int verbosity
-       */
-      unsigned int
-      get_verbosity();
-
-
-      /**
        * @brief Prints an error message to `std:err` and this LogStream.
        *
        * This has the advantage, that error messages are also saved in the
@@ -139,6 +130,60 @@ namespace sapphirepp
        */
       void
       print_error(const std::exception &exc);
+
+
+      /** @{ */
+      /**
+       * @brief Get the verbosity of the console output
+       *
+       * @return unsigned int verbosity of the console output
+       */
+      unsigned int
+      get_verbosity_console();
+
+      /**
+       * @brief Get the verbosity of the file output
+       *
+       * @return unsigned int verbosity of the file output
+       */
+      unsigned int
+      get_verbosity_file();
+      /** @} */
+
+
+      /** @{ */
+      /**
+       * @brief Conversion to std::ostream
+       *
+       * Returns either file or console output stream dependent on verbosity.
+       * If the target verbosity is larger then the logstream verbosity,
+       * return an empty stream.
+       *
+       * @param verbosity Target verbosity of the output
+       * @return std::ostream&
+       */
+      std::ostream &
+      to_ostream(const unsigned int verbosity = 3);
+
+      /**
+       * @brief Conversion to @dealref{ConditionalOStream}
+       *
+       * Returns either file or console output stream dependent on verbosity.
+       * If the target verbosity is larger then the logstream verbosity,
+       * the result will be silenced.
+       *
+       * @param verbosity Target verbosity of the output
+       * @return dealii::ConditionalOStream @dealref{ConditionalOStream}
+       */
+      dealii::ConditionalOStream
+      to_condition_ostream(const unsigned int verbosity = 3);
+
+      /** @brief Conversion operator to std::ostream  */
+      operator std::ostream &();
+
+      /** @brief Conversion operator to @dealref{ConditionalOStream}  */
+      operator dealii::ConditionalOStream();
+      /** @} */
 
 
 
