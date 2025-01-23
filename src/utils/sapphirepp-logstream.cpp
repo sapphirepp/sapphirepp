@@ -36,7 +36,7 @@
 
 #include <mpi.h>
 
-#include <string>
+#include <limits>
 
 #include "version.h"
 
@@ -51,6 +51,20 @@ sapphirepp::Utils::SapphireppLogStream::SapphireppLogStream()
 {
   this->pop();
   this->push("Sapphire");
+}
+
+
+
+sapphirepp::Utils::SapphireppLogStream::~SapphireppLogStream()
+{
+  // Ensure that the log_file is closed.
+  // I think we do not need the same precautions as for the deallog:
+  // https://www.dealii.org/current/doxygen/deal.II/logstream_8cc_source.html#l00088
+  if (log_file.is_open())
+    {
+      this->detach();
+      log_file.close();
+    }
 }
 
 
@@ -71,7 +85,7 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console,
   if (mpi_rank > 0)
     {
       this->push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
-      if (enable_mpi_output == false)
+      if (!enable_mpi_output)
         this->depth_console(0);
     }
   this->push("Sapphire");
@@ -85,7 +99,8 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console,
 
 
 void
-sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
+sapphirepp::Utils::SapphireppLogStream::init(const int         argc,
+                                             const char *const argv[])
 {
   int is_initialized;
   MPI_Initialized(&is_initialized);
@@ -104,7 +119,13 @@ sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
     "  1 - show only start-up message\n"
     "  2 - show progress\n"
     "  >2 - show different levels of debug messages")(
-    "verbose-mpi", "show output from all mpi processes");
+    "verbose-mpi", "show output from all mpi processes")(
+    "logfile,l",
+    po::value<std::string>(),
+    "output to logfile")("logfile-verbosity",
+                         po::value<unsigned int>()->default_value(
+                           std::numeric_limits<unsigned int>::max()),
+                         "verbosity of the logfile output");
 
   po::variables_map vm;
   auto              parsed = po::command_line_parser(argc, argv)
@@ -128,8 +149,46 @@ sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
   PetscOptionsClearValue(nullptr, "-v");
   PetscOptionsClearValue(nullptr, "--verbosity");
   PetscOptionsClearValue(nullptr, "--verbose-mpi");
+  PetscOptionsClearValue(nullptr, "-l");
+  PetscOptionsClearValue(nullptr, "--logfile");
+  PetscOptionsClearValue(nullptr, "--logfile-verbosity");
 
+  if (vm.count("logfile"))
+    {
+      this->attach_file(vm["logfile"].as<std::string>(),
+                        vm["logfile-verbosity"].as<unsigned int>(),
+                        vm.count("verbose-mpi"));
+    }
   this->init(vm["verbosity"].as<unsigned int>(), vm.count("verbose-mpi"));
+}
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::attach_file(
+  const std::string &filepath,
+  const unsigned int depth_file,
+  const bool         enable_mpi_output)
+{
+  Assert(!log_file.is_open(),
+         dealii::ExcMessage("You try to attach a log_file, "
+                            "but the log_filestream is already open. "
+                            "You can attach only one log_file!"));
+  int is_initialized;
+  MPI_Initialized(&is_initialized);
+  Assert(is_initialized,
+         dealii::ExcMessage("saplog.init() must be called after MPI "
+                            "initialization!"));
+
+  const unsigned int mpi_rank =
+    dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  if ((mpi_rank > 0) && !enable_mpi_output)
+    return;
+
+  log_file.open(filepath, std::ios::app);
+  AssertThrow(log_file.is_open(), dealii::ExcFileNotOpen(filepath));
+  saplog.attach(log_file, mpi_rank == 0);
+  this->depth_file(depth_file);
 }
 
 

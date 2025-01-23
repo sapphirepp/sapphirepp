@@ -29,7 +29,12 @@
 #ifndef UTILS_SAPPHIREPPLOGSTREAM_H
 #define UTILS_SAPPHIREPPLOGSTREAM_H
 
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/logstream.h>
+
+#include <fstream>
+#include <string>
 
 /**
  * @namespace sapphirepp
@@ -63,6 +68,11 @@ namespace sapphirepp
       /** @brief Constructor */
       SapphireppLogStream();
 
+
+      /** @brief Destructor */
+      ~SapphireppLogStream();
+
+
       /**
        * @brief Initialize the log stream
        *
@@ -93,7 +103,20 @@ namespace sapphirepp
        * @param argv Commandline arguments
        */
       void
-      init(int argc, char *argv[]);
+      init(const int argc, const char *const argv[]);
+
+
+      /**
+       * @brief Attach a logfile to the stream
+       *
+       * @param filepath Path to the logfile
+       * @param depth_file The verbosity of the file output
+       * @param enable_mpi_output Enable output of all mpi processes
+       */
+      void
+      attach_file(const std::string &filepath,
+                  const unsigned int depth_file,
+                  const bool         enable_mpi_output = false);
 
 
       /**
@@ -103,11 +126,20 @@ namespace sapphirepp
        */
       unsigned int
       get_verbosity();
+
+
+
+    private:
+      /** Output stream to logfile */
+      std::ofstream log_file;
     };
 
   } // namespace Utils
 
-  /** @brief The standard log stream for @sapphire */
+  /**
+   * @brief The standard @ref Utils::SapphireppLogStream "log stream"
+   *        for @sapphire
+   */
   extern sapphirepp::Utils::SapphireppLogStream saplog;
 } // namespace sapphirepp
 #endif
