@@ -62,6 +62,8 @@ sapphirepp::Utils::SapphireppLogStream::~SapphireppLogStream()
   // https://www.dealii.org/current/doxygen/deal.II/logstream_8cc_source.html#l00088
   if (log_file.is_open())
     {
+      if (dealii::deallog.has_file())
+        dealii::deallog.detach();
       this->detach();
       log_file.close();
     }
@@ -120,12 +122,14 @@ sapphirepp::Utils::SapphireppLogStream::init(const int         argc,
     "  2 - show progress\n"
     "  >2 - show different levels of debug messages")(
     "verbose-mpi", "show output from all mpi processes")(
-    "logfile,l",
-    po::value<std::string>(),
-    "output to logfile")("logfile-verbosity",
-                         po::value<unsigned int>()->default_value(
-                           std::numeric_limits<unsigned int>::max()),
-                         "verbosity of the logfile output");
+    "logfile,l", po::value<std::string>(), "output to logfile")(
+    "logfile-verbosity",
+    po::value<unsigned int>()->default_value(
+      std::numeric_limits<unsigned int>::max()),
+    "verbosity of the logfile output")("deallog",
+                                       po::value<unsigned int>()->default_value(
+                                         0),
+                                       "verbosity of deallog");
 
   po::variables_map vm;
   auto              parsed = po::command_line_parser(argc, argv)
@@ -152,6 +156,7 @@ sapphirepp::Utils::SapphireppLogStream::init(const int         argc,
   PetscOptionsClearValue(nullptr, "-l");
   PetscOptionsClearValue(nullptr, "--logfile");
   PetscOptionsClearValue(nullptr, "--logfile-verbosity");
+  PetscOptionsClearValue(nullptr, "--deallog");
 
   if (vm.count("logfile"))
     {
@@ -160,6 +165,13 @@ sapphirepp::Utils::SapphireppLogStream::init(const int         argc,
                         vm.count("verbose-mpi"));
     }
   this->init(vm["verbosity"].as<unsigned int>(), vm.count("verbose-mpi"));
+
+  dealii::deallog.depth_console(vm["deallog"].as<unsigned int>());
+  if (this->has_file())
+    {
+      dealii::deallog.attach(log_file, false);
+      dealii::deallog.depth_file(vm["deallog"].as<unsigned int>());
+    }
 }
 
 
