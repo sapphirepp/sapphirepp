@@ -206,7 +206,7 @@ sapphirepp::Utils::SapphireppLogStream::attach_file(
 
 
 void
-sapphirepp::Utils::SapphireppLogStream::print_error(const std::exception &exc)
+sapphirepp::Utils::SapphireppLogStream::print_error(std::exception &exc)
 {
   std::cerr << std::endl;
   std::cerr << "\n"
@@ -227,6 +227,27 @@ sapphirepp::Utils::SapphireppLogStream::print_error(const std::exception &exc)
         << exc.what() << "\n"
         << "Aborting!" << "\n"
         << "----------------------------------------------------" << std::endl;
+  this->depth_file(depth_file);
+}
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::print_warning(
+  const std::string &warning)
+{
+  if (this->get_verbosity_console() > 0)
+    {
+      std::cerr << std::endl;
+      std::cerr << "WARNING: " << warning << std::endl;
+    }
+
+  *this << std::endl;
+  // Always print the warning to the log file
+  const unsigned int depth_file =
+    this->depth_file(std::numeric_limits<unsigned int>::max());
+  *this << "\n"
+        << "WARNING: " << warning << std::endl;
   this->depth_file(depth_file);
 }
 
