@@ -219,9 +219,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , ps_reconstruction(vfp_parameters, output_parameters, pde_system.lms_indices)
-  , pcout(std::cout,
-          ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
-           (saplog.get_verbosity() >= 3)))
+  , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
