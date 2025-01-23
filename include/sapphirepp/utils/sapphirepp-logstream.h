@@ -83,7 +83,7 @@ namespace sapphirepp
        *
        * @param depth_console The verbosity of the console output
        *        - `0` silence the program
-       *        - `1` shows only the start-up message
+       *        - `1` shows only the start-up message and warnings
        *        - `2` show progress
        *        - `>2` show different levels of debug messages
        * @param enable_mpi_output If `true`, all mpi processes will output to
@@ -130,6 +130,17 @@ namespace sapphirepp
        */
       void
       print_error(const std::exception &exc);
+
+
+      /**
+       * @brief Prints a warning to `std:err` and this LogStream.
+       *
+       * The warning is shown for `verbosity > 0`.
+       *
+       * @param warning Warning message
+       */
+      void
+      print_warning(const std::string &warning);
 
 
       /** @{ */
