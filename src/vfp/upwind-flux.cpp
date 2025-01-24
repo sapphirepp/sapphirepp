@@ -431,10 +431,10 @@ template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 {
-  std::cout << "Eigenvalues: \n";
+  saplog << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
-    std::cout << lambda << " ";
-  std::cout << std::endl;
+    saplog << lambda << " ";
+  saplog << std::endl;
 
   dealii::FullMatrix<double> test_positive_flux_matrix(matrix_size);
   dealii::FullMatrix<double> test_negative_flux_matrix(matrix_size);
@@ -443,10 +443,10 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
   compute_flux_in_space_directions(
     1, 1., -0.5, 0.9, test_positive_flux_matrix, test_negative_flux_matrix);
 
-  // std::cout << "positive_flux_matrix \n";
-  // test_positive_flux_matrix.print_formatted(std::cout);
-  // std::cout << "negative_flux_matrix \n";
-  // test_negative_flux_matrix.print_formatted(std::cout);
+  // saplog << "positive_flux_matrix \n";
+  // test_positive_flux_matrix.print_formatted(saplog);
+  // saplog << "negative_flux_matrix \n";
+  // test_negative_flux_matrix.print_formatted(saplog);
 
   // Test momentum direction
   // Random number generator
@@ -495,26 +495,26 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
                                             rnd_number_generator()};
 
   // Print out the random values:
-  std::cout << "n_p: " << test_n_p << "\n";
-  std::cout << "gamma: " << test_gamma << "\n";
-  std::cout << "momentum: " << test_p << "\n";
-  std::cout << "Material derivative: \n";
-  test_material_derivative.print(std::cout);
-  std::cout << "Jacobian: "
-            << "\n";
+  saplog << "n_p: " << test_n_p << "\n";
+  saplog << "gamma: " << test_gamma << "\n";
+  saplog << "momentum: " << test_p << "\n";
+  saplog << "Material derivative: \n";
+  test_material_derivative.print(saplog);
+  saplog << "Jacobian: "
+         << "\n";
   for (const auto &row : test_jacobian)
-    row.print(std::cout);
+    row.print(saplog);
 
   // Python array ouput to ease testing
-  std::cout << std::fixed << std::setprecision(9) << "[" << test_n_p << ", "
-            << test_gamma << ", " << test_material_derivative[0] << ", "
-            << test_material_derivative[1] << ", "
-            << test_material_derivative[2] << ", " << test_p << ", "
-            << test_jacobian[0][0] << ", " << test_jacobian[1][1] << ", "
-            << test_jacobian[2][2] << ", " << test_jacobian[0][1] << ", "
-            << test_jacobian[1][0] << ", " << test_jacobian[0][2] << ", "
-            << test_jacobian[2][0] << ", " << test_jacobian[1][2] << ", "
-            << test_jacobian[2][1] << "]" << std::endl;
+  saplog << std::fixed << std::setprecision(9) << "[" << test_n_p << ", "
+         << test_gamma << ", " << test_material_derivative[0] << ", "
+         << test_material_derivative[1] << ", " << test_material_derivative[2]
+         << ", " << test_p << ", " << test_jacobian[0][0] << ", "
+         << test_jacobian[1][1] << ", " << test_jacobian[2][2] << ", "
+         << test_jacobian[0][1] << ", " << test_jacobian[1][0] << ", "
+         << test_jacobian[0][2] << ", " << test_jacobian[2][0] << ", "
+         << test_jacobian[1][2] << ", " << test_jacobian[2][1] << "]"
+         << std::endl;
 
   // reset matrices
   test_positive_flux_matrix = 0;
@@ -528,10 +528,10 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
                               test_positive_flux_matrix,
                               test_negative_flux_matrix);
 
-  std::cout << "positive_flux_matrix \n";
-  test_positive_flux_matrix.print_formatted(std::cout);
-  std::cout << "negative_flux_matrix \n";
-  test_negative_flux_matrix.print_formatted(std::cout);
+  saplog << "positive_flux_matrix \n";
+  test_positive_flux_matrix.print_formatted(saplog);
+  saplog << "negative_flux_matrix \n";
+  test_negative_flux_matrix.print_formatted(saplog);
 }
 
 

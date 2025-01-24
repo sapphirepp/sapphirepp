@@ -209,7 +209,7 @@ sapphirepp::VFP::PDESystem::print_adv_cross_gen(std::ostream &os) const
   for (const auto &adv_x_gen_mat : adv_x_gen_matrices)
     {
       os << "(A x Omega)_" << subscript << ": " << std::endl;
-      adv_x_gen_mat.print_formatted(std::cout);
+      adv_x_gen_mat.print_formatted(os);
       subscript++;
     }
 }

@@ -219,9 +219,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , ps_reconstruction(vfp_parameters, output_parameters, pde_system.lms_indices)
-  , pcout(std::cout,
-          ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
-           (saplog.get_verbosity() >= 3)))
+  , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("VFP", saplog);
@@ -235,17 +233,14 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
     ExcMessage(
       "The total dimension must be greater than or equal to one and smaller or"
       " equal to three."));
-  if (((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none) and
+  if (((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none) &&
       (dim_cs != 0))
     {
-      std::cerr
-        << "WARNING: spatial advection is deactivated, but dim_cs > 0"
-        << std::endl
-        << "  If the spatial advection term is deactivated," << std::endl
-        << "  the distribution function is assumed to be homogeneous"
-        << std::endl
-        << "  i.e. the dimension of the configuration space should be zero."
-        << std::endl;
+      saplog.print_warning(
+        "Spatial advection is deactivated, but dim_cs > 0. \n"
+        "  If the spatial advection term is deactivated, \n"
+        "  the distribution function is assumed to be homogeneous \n"
+        "  i.e. the dimension of the configuration space should be zero.");
     }
   if ((vfp_flags & VFPFlags::time_independent_fields) != VFPFlags::none)
     {
@@ -539,6 +534,14 @@ sapphirepp::VFP::VFPSolver<dim>::make_shock_grid()
 
   saplog << "Created shock grid from (" << p1 << ") to (" << p2 << ") with "
          << step_sizes[0].size() << " cells in x-direction." << std::endl;
+
+  if (step_sizes[0].size() != vfp_parameters.n_cells[0])
+    saplog.print_warning("The shock grid uses " +
+                         Utilities::to_string(step_sizes[0].size()) +
+                         " cells in x-direction. \n"
+                         "The parameter file entry 'Number of cells = " +
+                         Utilities::to_string(vfp_parameters.n_cells[0]) +
+                         ", ...' is ignored for x.");
 }
 
 
