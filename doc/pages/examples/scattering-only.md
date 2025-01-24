@@ -329,8 +329,8 @@ The file begins with the inclusion of several header files:
   solver, such as the time step size and final time.
 - `output-parameters.h` declares the parameters related to output, like the
   output directory and the output frequency.
-- `sapphirepp-logstream.h` enables console output with varying levels of
-  verbosity.
+- `sapphirepp-logstream.h` enables console and logfile output
+  with varying levels of verbosity.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Includes
 
@@ -383,11 +383,11 @@ only use one thread per process.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp MPI initialization
 
-The custom log stream @ref sapphirepp::saplog "saplog" is used to output status
-and debug information to the console. The verbosity level can be specified via
-the command line, see
-@ref sapphirepp::Utils::SapphireppLogStream::init "init()".
-A verbosity of `2` corresponds to progress information.
+The custom log stream @ref sapphirepp::saplog "saplog"
+is used to output status and debug information to the console and logfiles.
+The verbosity level and logfile can be specified via the command line,
+see @ref sapphirepp::Utils::SapphireppLogStream::init "saplog.init()".
+The default verbosity of `2` corresponds to progress information.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Saplog
 
@@ -456,8 +456,11 @@ vector.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Output analytic solution
 
-In case an exception is thrown, we catch it, output it to `std::err`, and return
-with an error code.
+In case an exception is thrown,
+we catch it and use the
+@ref sapphirepp::Utils::SapphireppLogStream::print_error "saplog.print_error()"
+method to output it to both the log stream and `std::err`.
+Then we return with an error code.
 
 @snippet{lineno} examples/scattering-only/scattering-only.cpp Try-Catch end
 
