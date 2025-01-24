@@ -292,9 +292,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
        MHDEquations::n_components)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , pcout(std::cout,
-          ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
-           (saplog.get_verbosity() >= 3)))
+  , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
   LogStream::Prefix p("MHD", saplog);
