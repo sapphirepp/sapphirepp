@@ -72,8 +72,7 @@ namespace sapphirepp
       prm.declare_entry("Test case",
                         "0",
                         dealii::Patterns::Integer(0, 1),
-                        "Test case: 0 - HD, "
-                        "1 - MHD");
+                        "Test case: 0 - HD, 1 - MHD");
       prm.declare_entry("Radius",
                         "0.1",
                         dealii::Patterns::Double(0.),
@@ -136,12 +135,26 @@ namespace sapphirepp
         primitive_ambient_state                                   = 0.;
         primitive_ambient_state[MHDEquations::density_component]  = 1.0;
         primitive_ambient_state[MHDEquations::pressure_component] = 0.1;
+        if (prm.test_case == 1)
+          {
+            primitive_ambient_state[MHDEquations::first_magnetic_component +
+                                    0] = M_SQRT1_2;
+            primitive_ambient_state[MHDEquations::first_magnetic_component +
+                                    1] = M_SQRT1_2;
+          }
         saplog << "Primitive ambient state: " << std::endl;
         saplog << primitive_ambient_state << std::endl;
 
         primitive_inner_state                                   = 0.;
         primitive_inner_state[MHDEquations::density_component]  = 1.0;
         primitive_inner_state[MHDEquations::pressure_component] = 10.0;
+        if (prm.test_case == 1)
+          {
+            primitive_ambient_state[MHDEquations::first_magnetic_component +
+                                    0] = M_SQRT1_2;
+            primitive_ambient_state[MHDEquations::first_magnetic_component +
+                                    1] = M_SQRT1_2;
+          }
         saplog << "Primitive inner state: " << std::endl;
         saplog << primitive_inner_state << std::endl;
       }
