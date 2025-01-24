@@ -330,25 +330,17 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
     }
   catch (std::exception &exc)
     {
-      std::cerr << std::endl
-                << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
-      std::cerr << "Exception on processing: " << std::endl
-                << exc.what() << std::endl
-                << "Aborting!" << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
+      sapphirepp::saplog.print_error(exc);
       return 1;
     }
   catch (...)
     {
-      std::cerr << std::endl
-                << std::endl
+      std::cerr << std::endl;
+      std::cerr << "\n"
                 << "----------------------------------------------------"
-                << std::endl;
-      std::cerr << "Unknown exception!" << std::endl
-                << "Aborting!" << std::endl
+                << "\n"
+                << "Unknown exception!" << "\n"
+                << "Aborting!" << "\n"
                 << "----------------------------------------------------"
                 << std::endl;
       return 1;
