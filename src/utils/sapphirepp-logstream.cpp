@@ -200,3 +200,30 @@ sapphirepp::Utils::SapphireppLogStream::get_verbosity()
   this->depth_console(n);
   return n;
 }
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::print_error(const std::exception &exc)
+{
+  std::cerr << std::endl;
+  std::cerr << "\n"
+            << "----------------------------------------------------" << "\n"
+            << "Exception on processing: " << "\n"
+            << exc.what() << "\n"
+            << "Aborting!" << "\n"
+            << "----------------------------------------------------"
+            << std::endl;
+
+  *this << std::endl;
+  // Always print the error to the log file
+  const unsigned int depth_file =
+    this->depth_file(std::numeric_limits<unsigned int>::max());
+  *this << "\n"
+        << "----------------------------------------------------" << "\n"
+        << "Exception on processing: " << "\n"
+        << exc.what() << "\n"
+        << "Aborting!" << "\n"
+        << "----------------------------------------------------" << std::endl;
+  this->depth_file(depth_file);
+}

@@ -33,6 +33,7 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/logstream.h>
 
+#include <exception>
 #include <fstream>
 #include <string>
 
@@ -126,6 +127,18 @@ namespace sapphirepp
        */
       unsigned int
       get_verbosity();
+
+
+      /**
+       * @brief Prints an error message to `std:err` and this LogStream.
+       *
+       * This has the advantage, that error messages are also saved in the
+       * logfile.
+       *
+       * @param exc Exception
+       */
+      void
+      print_error(const std::exception &exc);
 
 
 
