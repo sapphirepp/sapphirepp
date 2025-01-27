@@ -506,6 +506,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
                       Vector<double>(MHDEquations::n_components));
   shock_indicator.reinit(triangulation.n_active_cells());
   positivity_limiter_indicator.reinit(triangulation.n_active_cells());
+  magnetic_divergence.reinit(triangulation.n_active_cells());
   cell_dt.reinit(triangulation.n_active_cells());
 
   DynamicSparsityPattern       dsp(locally_relevant_dofs);
@@ -1094,6 +1095,164 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   locally_owned_solution.compress(VectorOperation::add);
   locally_relevant_current_solution = locally_owned_solution;
   saplog << "The solution was limited." << std::endl;
+
+  /** @todo Remove this line */
+  compute_magnetic_divergence();
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
+{
+  TimerOutput::Scope timer_section(timer, "Magnetic divergence - MHD");
+  saplog << "Compute magnetic divergence" << std::endl;
+  LogStream::Prefix p("MagneticDivergence", saplog);
+
+  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using namespace sapphirepp::sapinternal::MHDSolver;
+
+  magnetic_divergence = 0;
+
+  // empty boundary worker
+  std::function<void(const Iterator &,
+                     const unsigned int &,
+                     ScratchData<dim, spacedim> &,
+                     CopyData &)>
+    empty_boundary_worker;
+
+
+  // assemble cell terms
+  const auto cell_worker = [&](const Iterator             &cell,
+                               ScratchData<dim, spacedim> &scratch_data,
+                               CopyData                   &copy_data) {
+    static_cast<void>(copy_data);
+
+    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+    // reinit cell
+    fe_v.reinit(cell);
+    const unsigned int cell_index               = cell->active_cell_index();
+    double             cell_magnetic_divergence = 0.;
+
+    // const unsigned int n_dofs     = fe_v.get_fe().n_dofs_per_cell();
+    const unsigned int n_q_points = fe_v.n_quadrature_points;
+
+    const FEValuesExtractors::Vector magnetic_field(
+      MHDEquations::first_magnetic_component);
+    // const std::vector<Point<spacedim>> &q_points =
+    // fe_v.get_quadrature_points();
+    const std::vector<double> &JxW = fe_v.get_JxW_values();
+    std::vector<double>        divergence_values(n_q_points);
+
+    fe_v[magnetic_field].get_function_divergences(
+      locally_relevant_current_solution, divergence_values);
+
+    for (const unsigned int q_index : fe_v.quadrature_point_indices())
+      {
+        // divB
+        cell_magnetic_divergence +=
+          std::fabs(divergence_values[q_index]) * JxW[q_index];
+      }
+
+    magnetic_divergence[cell_index] +=
+      cell_magnetic_divergence / cell->measure();
+    // saplog << "Magnetic divergence in cell " << cell_index << ": "
+    //        << cell_magnetic_divergence / cell->measure() << std::endl;
+  };
+
+
+  // assemble interior face terms
+  const auto face_worker = [&](const Iterator             &cell,
+                               const unsigned int         &face_no,
+                               const unsigned int         &subface_no,
+                               const Iterator             &neighbor_cell,
+                               const unsigned int         &neighbor_face_no,
+                               const unsigned int         &neighbor_subface_no,
+                               ScratchData<dim, spacedim> &scratch_data,
+                               CopyData                   &copy_data) {
+    static_cast<void>(copy_data);
+
+    Assert((cell->level() == neighbor_cell->level()) &&
+             (neighbor_cell->has_children() == false),
+           ExcNotImplemented("Mesh refinement not yet implemented."));
+    static_cast<void>(subface_no);
+    static_cast<void>(neighbor_subface_no);
+
+    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
+    fe_v_face.reinit(cell, face_no);
+    const unsigned int cell_index               = cell->active_cell_index();
+    double             face_magnetic_divergence = 0.;
+    double             face_norm                = 0.;
+
+
+    FEFaceValues<dim, spacedim> &fe_v_face_neighbor =
+      scratch_data.fe_values_face_neighbor;
+    fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
+
+    const FEValuesExtractors::Vector magnetic_field(
+      MHDEquations::first_magnetic_component);
+    const unsigned int               n_q_points = fe_v_face.n_quadrature_points;
+    const std::vector<double>       &JxW        = fe_v_face.get_JxW_values();
+    std::vector<Tensor<1, spacedim>> face_values(n_q_points);
+    std::vector<Tensor<1, spacedim>> face_values_neighbor(n_q_points);
+
+
+    fe_v_face[magnetic_field].get_function_values(
+      locally_relevant_current_solution, face_values);
+    fe_v_face_neighbor[magnetic_field].get_function_values(
+      locally_relevant_current_solution, face_values_neighbor);
+
+    for (unsigned int q_index : fe_v_face.quadrature_point_indices())
+      {
+        // (B_nb - B_j) * n
+        face_magnetic_divergence +=
+          std::fabs((face_values_neighbor[q_index] - face_values[q_index]) *
+                    fe_v_face.normal_vector(q_index)) *
+          JxW[q_index];
+        face_norm += JxW[q_index];
+      }
+
+
+    magnetic_divergence[cell_index] += face_magnetic_divergence / face_norm;
+  };
+
+  /** @todo Use valid or empty copier? */
+  // copier for the mesh_loop function
+  const auto copier = [&](const CopyData &c) {
+    static_cast<void>(c);
+    // Empty
+  };
+  static_cast<void>(copier);
+  // empty copier
+  std::function<void(const CopyData &)> empty_copier;
+
+  ScratchData<dim, spacedim> scratch_data(mapping,
+                                          fe,
+                                          quadrature,
+                                          quadrature_face,
+                                          update_gradients | update_JxW_values);
+  CopyData                   copy_data;
+  saplog << "Begin the assembly of the magnetic divergence." << std::endl;
+  const auto filtered_iterator_range =
+    dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
+  MeshWorker::mesh_loop(filtered_iterator_range,
+                        cell_worker,
+                        empty_copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells |
+                          MeshWorker::assemble_own_interior_faces_once,
+                        // MeshWorker::assemble_own_interior_faces_both,
+                        // MeshWorker::assemble_ghost_faces_both |
+                        empty_boundary_worker,
+                        face_worker);
+  saplog << "The magnetic divergence was assembled." << std::endl;
+
+  const double global_divergence =
+    Utilities::MPI::sum(magnetic_divergence.l1_norm(), mpi_communicator);
+  saplog << "Global divergence of magnetic field: " << global_divergence
+         << std::endl;
 }
 
 
@@ -1611,6 +1770,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   data_out.add_data_vector(positivity_limiter_indicator,
                            "positivity_limiter",
                            DataOut<dim, spacedim>::type_cell_data);
+  data_out.add_data_vector(magnetic_divergence,
+                           "magnetic_divergence",
+                           DataOut<dim, spacedim>::type_cell_data);
   data_out.add_data_vector(cell_dt,
                            "cell_dt",
                            DataOut<dim, spacedim>::type_cell_data);
@@ -1783,6 +1945,15 @@ const dealii::Vector<float> &
 sapphirepp::MHD::MHDSolver<dim>::get_positivity_limiter_indicator() const
 {
   return positivity_limiter_indicator;
+}
+
+
+
+template <unsigned int dim>
+const dealii::Vector<double> &
+sapphirepp::MHD::MHDSolver<dim>::get_magnetic_divergence() const
+{
+  return magnetic_divergence;
 }
 
 
