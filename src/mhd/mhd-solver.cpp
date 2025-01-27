@@ -30,6 +30,7 @@
 #include <deal.II/base/data_out_base.h>
 #include <deal.II/base/discrete_time.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/base/table.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
 
@@ -507,9 +508,15 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   positivity_limiter_indicator.reinit(triangulation.n_active_cells());
   cell_dt.reinit(triangulation.n_active_cells());
 
-  DynamicSparsityPattern dsp(locally_relevant_dofs);
+  DynamicSparsityPattern       dsp(locally_relevant_dofs);
+  Table<2, DoFTools::Coupling> coupling(MHDEquations::n_components,
+                                        MHDEquations::n_components);
+  coupling.fill(DoFTools::Coupling::none);
+  for (unsigned int i = 0; i < MHDEquations::n_components; i++)
+    coupling(i, i) = DoFTools::Coupling::always;
+
   // NON-PERIODIC
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  DoFTools::make_sparsity_pattern(dof_handler, coupling, dsp);
   SparsityTools::distribute_sparsity_pattern(dsp,
                                              locally_owned_dofs,
                                              mpi_communicator,
@@ -523,10 +530,6 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
                      locally_owned_dofs,
                      dsp,
                      mpi_communicator);
-  system_matrix.reinit(locally_owned_dofs,
-                       locally_owned_dofs,
-                       dsp,
-                       mpi_communicator);
 }
 
 
@@ -823,8 +826,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
    *     3. Project the limited solution on the @ref locally_owned_solution
    *        \f$ f \f$ using the @ref mass_matrix \f$ M \f$ and the
    *        @ref system_rhs \f$ b \f$, \f$ M f = b \f$.
-   *   - Locally invert the mass matrix. Disadvantage is, that we need to solve
-   *     a (small) linear system on each cell.
+   *   - Locally invert the mass matrix. Disadvantage is, that we need to
+   * solve a (small) linear system on each cell.
    *   - If one has basis functions with a diagonal mass matrix, the inversion
    *     is trivial.
    *
