@@ -437,8 +437,6 @@ namespace sapphirepp
       PETScWrappers::MPI::SparseMatrix mass_matrix;
       /** DG right-hand-side */
       PETScWrappers::MPI::Vector dg_rhs;
-      /** System matrix, depends on time stepping method */
-      PETScWrappers::MPI::SparseMatrix system_matrix;
       /** System right hand side, depends on time stepping method */
       PETScWrappers::MPI::Vector system_rhs;
       /** @} */
