@@ -342,6 +342,14 @@ namespace sapphirepp
       get_positivity_limiter_indicator() const;
 
       /**
+       * @brief Get the magnetic_divergence
+       *
+       * @return const Vector<double>&
+       */
+      const Vector<double> &
+      get_magnetic_divergence() const;
+
+      /**
        * @brief Get the maximum CFL time step on each cell
        *
        * @return const Vector<double>&
@@ -452,6 +460,8 @@ namespace sapphirepp
       Vector<double> shock_indicator;
       /** Indicator where the solution is positivity limited. */
       Vector<float> positivity_limiter_indicator;
+      /** Magnetic divergence \f$ \nable \cdot \mathbf{B} \f$ per cell. */
+      Vector<double> magnetic_divergence;
       /** @} */
 
       /** @{ */
@@ -586,6 +596,14 @@ namespace sapphirepp
       void
       apply_limiter();
       /** @} */
+
+
+
+      /**
+       * @brief Computes @ref magentic_divergence of the current solution
+       */
+      void
+      compute_magnetic_divergence();
     };
 
   } // namespace MHD
