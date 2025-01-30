@@ -187,7 +187,7 @@ namespace sapphirepp
        * to the spatial dimension.
        */
       using flux_type =
-        std::array<dealii::Tensor<1, spacedim, double>, n_components>;
+        std::array<dealii::Tensor<1, dim, double>, n_components>;
 
 
       /** @{ */
@@ -257,8 +257,8 @@ namespace sapphirepp
        */
       double
       compute_maximum_normal_eigenvalue(
-        const state_type                  &state,
-        const dealii::Tensor<1, spacedim> &normal) const;
+        const state_type             &state,
+        const dealii::Tensor<1, dim> &normal) const;
 
 
 
@@ -331,8 +331,8 @@ namespace sapphirepp
        *
        */
       void
-      compute_normale_eigenvalues(const state_type                  &state,
-                                  const dealii::Tensor<1, spacedim> &normal,
+      compute_normale_eigenvalues(const state_type             &state,
+                                  const dealii::Tensor<1, dim> &normal,
                                   dealii::Vector<double> &eigenvalues) const;
 
 
@@ -373,9 +373,9 @@ namespace sapphirepp
        */
       void
       compute_right_eigenvector_matrix(
-        const state_type                  &state,
-        const dealii::Tensor<1, spacedim> &normal,
-        dealii::FullMatrix<double>        &eigenvectors) const;
+        const state_type             &state,
+        const dealii::Tensor<1, dim> &normal,
+        dealii::FullMatrix<double>   &eigenvectors) const;
 
       /**
        * @brief Compute the left eigenvector matrix \f$ \mathbf{L} \f$ for the
@@ -411,30 +411,30 @@ namespace sapphirepp
        */
       void
       compute_left_eigenvector_matrix(
-        const state_type                  &state,
-        const dealii::Tensor<1, spacedim> &normal,
-        dealii::FullMatrix<double>        &eigenvectors) const;
+        const state_type             &state,
+        const dealii::Tensor<1, dim> &normal,
+        dealii::FullMatrix<double>   &eigenvectors) const;
 
       /**
        * @brief Computes the transformation matrices to convert between
        *        conserved variables \f$ \mathbf{w} \f$ and characteristic
-       *        variables \f$ \omega \f$ in each space direction \f$ j \f$.
+       *        variables \f$ \omega \f$ in each dimension \f$ j \f$.
        *
        * @param state Conserved state \f$ \mathbf{w} \f$ to use for the
        *        linearized computation of the eigenstates.
        * @param left_matrices Array of left eigenvector matrices
-       *        \f$ \mathbf{L}_j \f$ in each space direction \f$ j \f$.
+       *        \f$ \mathbf{L}_j \f$ in each dimension \f$ j \f$.
        * @param right_matrices Array of right eigenvector matrices
-       *        \f$ \mathbf{R}_j \f$ in each space direction \f$ j \f$.
+       *        \f$ \mathbf{R}_j \f$ in each dimension \f$ j \f$.
        *
        * @see compute_right_eigenvector_matrix()
        * @see compute_left_eigenvector_matrix()
        */
       void
       compute_transformation_matrices(
-        const state_type                                 &state,
-        std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
-        std::array<dealii::FullMatrix<double>, spacedim> &right_matrices) const;
+        const state_type                            &state,
+        std::array<dealii::FullMatrix<double>, dim> &left_matrices,
+        std::array<dealii::FullMatrix<double>, dim> &right_matrices) const;
       /** @} */
 
 
@@ -529,9 +529,9 @@ namespace sapphirepp
        */
       void
       convert_characteristic_to_conserved(
-        const state_type                  &characteristic_state,
-        const dealii::Tensor<1, spacedim> &normal,
-        state_type                        &conserved_state) const;
+        const state_type             &characteristic_state,
+        const dealii::Tensor<1, dim> &normal,
+        state_type                   &conserved_state) const;
 
 
       /**
@@ -563,9 +563,9 @@ namespace sapphirepp
        */
       void
       convert_conserved_to_characteristic(
-        const state_type                  &conserved_state,
-        const dealii::Tensor<1, spacedim> &normal,
-        state_type                        &characteristic_state) const;
+        const state_type             &conserved_state,
+        const dealii::Tensor<1, dim> &normal,
+        state_type                   &characteristic_state) const;
 
 
       /**
@@ -582,9 +582,9 @@ namespace sapphirepp
        */
       void
       convert_gradient_characteristic_to_conserved(
-        const flux_type &characteristic_gradient,
-        std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
-        flux_type &conserved_gradient) const;
+        const flux_type                             &characteristic_gradient,
+        std::array<dealii::FullMatrix<double>, dim> &right_matrices,
+        flux_type                                   &conserved_gradient) const;
 
 
       /**
@@ -601,8 +601,8 @@ namespace sapphirepp
        */
       void
       convert_gradient_conserved_to_characteristic(
-        const flux_type                                  &conserved_gradient,
-        std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
+        const flux_type                             &conserved_gradient,
+        std::array<dealii::FullMatrix<double>, dim> &left_matrices,
         flux_type &characteristic_gradient) const;
       /** @} */
     };
