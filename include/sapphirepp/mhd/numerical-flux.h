@@ -88,9 +88,9 @@ namespace sapphirepp
        */
       void
       compute_numerical_normal_flux(
-        const dealii::Tensor<1, MHDEquations<dim>::spacedim> &normal,
-        const typename MHDEquations<dim>::state_type         &state_1,
-        const typename MHDEquations<dim>::state_type         &state_2,
+        const dealii::Tensor<1, dim>                 &normal,
+        const typename MHDEquations<dim>::state_type &state_1,
+        const typename MHDEquations<dim>::state_type &state_2,
         typename MHDEquations<dim>::state_type &numerical_normal_flux) const;
 
 
