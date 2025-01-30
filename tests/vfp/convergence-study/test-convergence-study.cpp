@@ -184,7 +184,7 @@ main(int argc, char *argv[])
                                          system_size, "interpol_f_"));
 
               data_out.build_patches(vfp_parameters.polynomial_degree);
-              output_parameters.write_results<dimension, dimension>(
+              output_parameters.write_results<dimension>(
                 data_out,
                 discrete_time.get_step_number(),
                 discrete_time.get_current_time());
@@ -281,7 +281,7 @@ main(int argc, char *argv[])
           PDESystem::create_component_name_list(system_size, "interpol_f_"));
 
         data_out.build_patches(vfp_parameters.polynomial_degree);
-        output_parameters.write_results<dimension, dimension>(
+        output_parameters.write_results<dimension>(
           data_out,
           discrete_time.get_step_number(),
           discrete_time.get_current_time());

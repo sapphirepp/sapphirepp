@@ -236,8 +236,10 @@ main(int argc, char *argv[])
                                  vfp_solver.get_pde_system().system_size,
                                  "weight_"));
       data_out.build_patches(vfp_parameters.polynomial_degree);
-      output_parameters.write_results<dimension, dimension>(
-        data_out, 0, vfp_parameters.final_time, "analytic_solution");
+      output_parameters.write_results<dimension>(data_out,
+                                                 0,
+                                                 vfp_parameters.final_time,
+                                                 "analytic_solution");
 
       saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
              << ", rel error = " << L2_error / L2_norm
