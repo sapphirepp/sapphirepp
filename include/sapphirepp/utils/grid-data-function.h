@@ -210,10 +210,9 @@ namespace sapphirepp
      * class to create a function with multiple components.
      *
      * @tparam dim Dimension of the data in the file.
-     * @tparam spacedim Space dimension of the function.
      */
-    template <unsigned int dim, unsigned int spacedim = dim>
-    class GridDataFunction : public Function<spacedim>
+    template <unsigned int dim>
+    class GridDataFunction : public Function<dim>
     {
     public:
       /**
@@ -236,15 +235,15 @@ namespace sapphirepp
 
       /** Value of the interpolated function at a point */
       virtual double
-      value(const Point<spacedim> &p,
-            const unsigned int     component = 0) const override;
+      value(const Point<dim>  &p,
+            const unsigned int component = 0) const override;
 
 
 
       /** Gradient of the interpolated function at a point */
-      virtual Tensor<1, spacedim>
-      gradient(const Point<spacedim> &p,
-               const unsigned int     component = 0) const override;
+      virtual Tensor<1, dim>
+      gradient(const Point<dim>  &p,
+               const unsigned int component = 0) const override;
 
 
 

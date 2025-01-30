@@ -393,14 +393,14 @@ template class sapphirepp::Utils::InterpolatedUniformGridData2<3>;
 
 
 
-template <unsigned int dim, unsigned int spacedim>
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::GridDataFunction(
+template <unsigned int dim>
+sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   const std::filesystem::path &input_path,
   const std::string           &base_filename,
   const unsigned int           n_components,
   const double                 inital_time,
   const unsigned int           n_components_input)
-  : Function<spacedim>(n_components, inital_time)
+  : Function<dim>(n_components, inital_time)
   , n_components_data(n_components_input == 0 ? n_components :
                                                 n_components_input)
   , input_path(input_path)
@@ -421,54 +421,39 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::GridDataFunction(
 
 
 
-template <unsigned int dim, unsigned int spacedim>
+template <unsigned int dim>
 double
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::value(
-  const Point<spacedim> &p,
-  const unsigned int     component) const
+sapphirepp::Utils::GridDataFunction<dim>::value(
+  const Point<dim>  &p,
+  const unsigned int component) const
 {
   if (component >= n_components_data)
     return 0.0;
 
-  Point<dim> point;
-  for (unsigned int d = 0; d < dim; ++d)
-    point[d] = p[d];
-
-  return grid_functions[component].value(point);
+  return grid_functions[component].value(p);
 }
 
 
 
-template <unsigned int dim, unsigned int spacedim>
-dealii::Tensor<1, spacedim>
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::gradient(
-  const Point<spacedim> &p,
-  const unsigned int     component) const
+template <unsigned int dim>
+dealii::Tensor<1, dim>
+sapphirepp::Utils::GridDataFunction<dim>::gradient(
+  const Point<dim>  &p,
+  const unsigned int component) const
 {
-  Tensor<1, spacedim> return_gradient;
   if (component >= n_components_data)
-    return return_gradient;
+    return Tensor<1, dim>();
 
-  Point<dim> point;
-  for (unsigned int d = 0; d < dim; ++d)
-    point[d] = p[d];
-
-  const Tensor<1, dim> gradient = grid_functions[component].gradient(point);
-
-  for (unsigned int d = 0; d < dim; ++d)
-    return_gradient[d] = gradient[d];
-
-  return return_gradient;
+  return grid_functions[component].gradient(p);
 }
 
 
 
-template <unsigned int dim, unsigned int spacedim>
+template <unsigned int dim>
 void
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::set_time(
-  const double new_time)
+sapphirepp::Utils::GridDataFunction<dim>::set_time(const double new_time)
 {
-  Function<spacedim>::set_time(new_time);
+  Function<dim>::set_time(new_time);
 
   // Skip if in same time interval
   if (time_index == time_series.size() - 1)
@@ -506,9 +491,9 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::set_time(
 
 
 
-template <unsigned int dim, unsigned int spacedim>
+template <unsigned int dim>
 void
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::load_data_from_file(
+sapphirepp::Utils::GridDataFunction<dim>::load_data_from_file(
   const std::string &filename)
 {
   LogStream::Prefix p("GridDataFunction", saplog);
@@ -532,11 +517,11 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::load_data_from_file(
                                  std::move(n_subintervals),
                                  std::move(data_values[0]));
       // Energy
-      grid_functions[1 + spacedim].set_data(std::move(interval_endpoints),
-                                            std::move(n_subintervals),
-                                            std::move(data_values[1]));
+      grid_functions[4].set_data(std::move(interval_endpoints),
+                                 std::move(n_subintervals),
+                                 std::move(data_values[1]));
       // Momentum
-      for (unsigned int d = 0; d < spacedim; ++d)
+      for (unsigned int d = 0; d < 3; ++d)
         grid_functions[1 + d].set_data(std::move(interval_endpoints),
                                        std::move(n_subintervals),
                                        std::move(data_values[2 + d]));
@@ -552,9 +537,9 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::load_data_from_file(
 
 
 
-template <unsigned int dim, unsigned int spacedim>
+template <unsigned int dim>
 void
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_tab(
+sapphirepp::Utils::GridDataFunction<dim>::read_data_tab(
   const std::filesystem::path                &input_path,
   const std::string                          &filename,
   std::array<std::pair<double, double>, dim> &interval_endpoints,
@@ -647,9 +632,9 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_tab(
 
 
 
-template <unsigned int dim, unsigned int spacedim>
+template <unsigned int dim>
 void
-sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_hst(
+sapphirepp::Utils::GridDataFunction<dim>::read_data_hst(
   const std::filesystem::path &input_path,
   const std::string           &filename,
   std::vector<double>         &time_series)
@@ -693,9 +678,6 @@ sapphirepp::Utils::GridDataFunction<dim, spacedim>::read_data_hst(
 
 
 
-template class sapphirepp::Utils::GridDataFunction<1, 1>;
-template class sapphirepp::Utils::GridDataFunction<1, 2>;
-template class sapphirepp::Utils::GridDataFunction<1, 3>;
-template class sapphirepp::Utils::GridDataFunction<2, 2>;
-template class sapphirepp::Utils::GridDataFunction<2, 3>;
-template class sapphirepp::Utils::GridDataFunction<3, 3>;
+template class sapphirepp::Utils::GridDataFunction<1>;
+template class sapphirepp::Utils::GridDataFunction<2>;
+template class sapphirepp::Utils::GridDataFunction<3>;
