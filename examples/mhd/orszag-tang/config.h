@@ -108,13 +108,13 @@ namespace sapphirepp
 
 
 
-    template <unsigned int spacedim>
-    class InitialConditionMHD : public dealii::Function<spacedim>
+    template <unsigned int dim>
+    class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
                           const double              adiabatic_index)
-        : dealii::Function<spacedim>(MHDEquations::n_components)
+        : dealii::Function<dim>(MHDEquations<dim>::n_components)
         , prm{physical_parameters}
         , mhd_equations(adiabatic_index)
       {}
@@ -122,27 +122,29 @@ namespace sapphirepp
 
 
       void
-      vector_value(const dealii::Point<spacedim> &point,
-                   dealii::Vector<double>        &f) const override
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
       {
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
         /** [MHD Initial condition] */
-        typename MHDEquations::state_type primitive_state(
-          MHDEquations::n_components);
-        primitive_state                                   = 0.;
-        primitive_state[MHDEquations::density_component]  = 25. / (36. * M_PI);
-        primitive_state[MHDEquations::pressure_component] = 5. / (12. * M_PI);
-        primitive_state[MHDEquations::first_velocity_component + 0] =
+        typename MHDEquations<dim>::state_type primitive_state(
+          MHDEquations<dim>::n_components);
+        primitive_state = 0.;
+        primitive_state[MHDEquations<dim>::density_component] =
+          25. / (36. * M_PI);
+        primitive_state[MHDEquations<dim>::pressure_component] =
+          5. / (12. * M_PI);
+        primitive_state[MHDEquations<dim>::first_velocity_component + 0] =
           -std::sin(2. * M_PI * point[1]);
-        primitive_state[MHDEquations::first_velocity_component + 1] =
+        primitive_state[MHDEquations<dim>::first_velocity_component + 1] =
           std::sin(2. * M_PI * point[0]);
 
         const double b0 = 1. / std::sqrt(4. * M_PI);
-        primitive_state[MHDEquations::first_magnetic_component + 0] =
+        primitive_state[MHDEquations<dim>::first_magnetic_component + 0] =
           -b0 * std::sin(2. * M_PI * point[1]);
-        primitive_state[MHDEquations::first_magnetic_component + 1] =
+        primitive_state[MHDEquations<dim>::first_magnetic_component + 1] =
           b0 * std::sin(4. * M_PI * point[0]);
 
 
@@ -154,7 +156,7 @@ namespace sapphirepp
 
     private:
       const PhysicalParameters prm;
-      const MHDEquations       mhd_equations;
+      const MHDEquations<dim>  mhd_equations;
     };
 
   } // namespace MHD
