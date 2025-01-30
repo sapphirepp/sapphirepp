@@ -1760,9 +1760,7 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(mhd_parameters.polynomial_degree);
-  output_parameters.write_results<dim, dim>(data_out,
-                                            time_step_number,
-                                            cur_time);
+  output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 }
 
 
