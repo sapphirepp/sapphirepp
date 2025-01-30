@@ -52,8 +52,9 @@ int
 test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
              const sapphirepp::PhysicalParameters      &physical_parameters,
              sapphirepp::Utils::OutputParameters       &output_parameters,
-             dealii::Function<3>                       &exact_solution,
-             const double                               max_L2_error = 1e-10)
+             dealii::Function<sapphirepp::MHD::MHDEquations<dim>::spacedim>
+                         &exact_solution,
+             const double max_L2_error = 1e-10)
 {
   try
     {
@@ -62,7 +63,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
 
       saplog << "Start test run mhd" << std::endl;
       LogStream::Prefix  p("Test", saplog);
-      const unsigned int spacedim = MHDEquations::spacedim;
+      const unsigned int spacedim = MHDEquations<dim>::spacedim;
 
       /** [Create error file] */
       std::ofstream error_file(output_parameters.output_path / "error.csv");
@@ -90,7 +91,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
 
 
       /** [Setup analytic solution] */
-      AssertDimension(exact_solution.n_components, MHDEquations::n_components);
+      AssertDimension(exact_solution.n_components,
+                      MHDEquations<dim>::n_components);
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
         mhd_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
@@ -125,17 +127,17 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               // Output numeric solution
               data_out.add_data_vector(
                 mhd_solver.get_current_solution(),
-                MHDEquations::create_component_name_list("numeric_"),
+                MHDEquations<dim>::create_component_name_list("numeric_"),
                 dealii::DataOut<dim, spacedim>::type_dof_data,
-                MHDEquations::create_component_interpretation_list());
+                MHDEquations<dim>::create_component_interpretation_list());
 
               // Output projected analytic solution
               mhd_solver.project(exact_solution, analytic_solution_vector);
               data_out.add_data_vector(
                 analytic_solution_vector,
-                MHDEquations::create_component_name_list("project_"),
+                MHDEquations<dim>::create_component_name_list("project_"),
                 dealii::DataOut<dim, spacedim>::type_dof_data,
-                MHDEquations::create_component_interpretation_list());
+                MHDEquations<dim>::create_component_interpretation_list());
 
               // Output interpolated analytic solution
               dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
@@ -143,13 +145,13 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                                                analytic_solution_vector);
               data_out.add_data_vector(
                 analytic_solution_vector,
-                MHDEquations::create_component_name_list("interpol_"),
+                MHDEquations<dim>::create_component_name_list("interpol_"),
                 dealii::DataOut<dim, spacedim>::type_dof_data,
-                MHDEquations::create_component_interpretation_list());
+                MHDEquations<dim>::create_component_interpretation_list());
 
               // Output cell average and shock indicator
               data_out.add_data_vector(mhd_solver.get_cell_average_component(
-                                         MHDEquations::density_component),
+                                         MHDEquations<dim>::density_component),
                                        "average_roh",
                                        DataOut<dim, spacedim>::type_cell_data);
               data_out.add_data_vector(mhd_solver.get_shock_indicator(),
@@ -241,17 +243,17 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         // Output numeric solution
         data_out.add_data_vector(
           mhd_solver.get_current_solution(),
-          MHDEquations::create_component_name_list("numeric_"),
+          MHDEquations<dim>::create_component_name_list("numeric_"),
           dealii::DataOut<dim, spacedim>::type_dof_data,
-          MHDEquations::create_component_interpretation_list());
+          MHDEquations<dim>::create_component_interpretation_list());
 
         // Output projected analytic solution
         mhd_solver.project(exact_solution, analytic_solution_vector);
         data_out.add_data_vector(
           analytic_solution_vector,
-          MHDEquations::create_component_name_list("project_"),
+          MHDEquations<dim>::create_component_name_list("project_"),
           dealii::DataOut<dim, spacedim>::type_dof_data,
-          MHDEquations::create_component_interpretation_list());
+          MHDEquations<dim>::create_component_interpretation_list());
 
         // Output interpolated analytic solution
         dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
@@ -259,13 +261,13 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                                          analytic_solution_vector);
         data_out.add_data_vector(
           analytic_solution_vector,
-          MHDEquations::create_component_name_list("interpol_"),
+          MHDEquations<dim>::create_component_name_list("interpol_"),
           dealii::DataOut<dim, spacedim>::type_dof_data,
-          MHDEquations::create_component_interpretation_list());
+          MHDEquations<dim>::create_component_interpretation_list());
 
         // Output cell average and shock indicator
         data_out.add_data_vector(mhd_solver.get_cell_average_component(
-                                   MHDEquations::density_component),
+                                   MHDEquations<dim>::density_component),
                                  "average_roh",
                                  DataOut<dim, spacedim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_shock_indicator(),
