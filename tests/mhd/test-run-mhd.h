@@ -175,7 +175,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               data_out.add_data_vector(subdomain, "subdomain");
 
               data_out.build_patches(mhd_parameters.polynomial_degree);
-              output_parameters.write_results<dim, dim>(
+              output_parameters.write_results<dim>(
                 data_out,
                 discrete_time.get_step_number(),
                 discrete_time.get_current_time());
@@ -290,10 +290,9 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         data_out.add_data_vector(subdomain, "subdomain");
 
         data_out.build_patches(mhd_parameters.polynomial_degree);
-        output_parameters.write_results<dim, dim>(
-          data_out,
-          discrete_time.get_step_number(),
-          discrete_time.get_current_time());
+        output_parameters.write_results<dim>(data_out,
+                                             discrete_time.get_step_number(),
+                                             discrete_time.get_current_time());
       }
 
       {
