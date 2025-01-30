@@ -63,7 +63,7 @@ sapphirepp::MHD::SlopeLimiter::minmod_gradients(
   values.reserve(neighbor_gradients.size() + 1);
   for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
     {
-      for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
+      for (unsigned int d = 0; d < dim; ++d)
         {
           AssertIsFinite(cell_gradient[c][d]);
           if (std::abs(cell_gradient[c][d]) < M * dx * dx)
