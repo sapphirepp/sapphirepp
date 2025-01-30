@@ -667,7 +667,8 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     Tensor<1, spacedim> momentum;
     for (unsigned int d = 0; d < spacedim; ++d)
       momentum[d] =
-        cell_average[cell_index][MHDEquations::first_momentum_component + d];
+        cell_average[cell_index]
+                    [MHDEquations<dim>::first_momentum_component + d];
     // Return in case of outflow face
     if (momentum * fe_v_face.normal_vector(0) >= 0)
       {
@@ -683,12 +684,13 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
     // Use Extractor for indicator variable y, e.g.energy or density
-    const FEValuesExtractors::Scalar variable(MHDEquations::energy_component);
-    const unsigned int               n_q_points = fe_v_face.n_quadrature_points;
-    const std::vector<double>       &JxW        = fe_v_face.get_JxW_values();
-    double                           face_norm  = 0.;
-    std::vector<double>              face_values(n_q_points);
-    std::vector<double>              face_values_neighbor(n_q_points);
+    const FEValuesExtractors::Scalar variable(
+      MHDEquations<dim>::energy_component);
+    const unsigned int         n_q_points = fe_v_face.n_quadrature_points;
+    const std::vector<double> &JxW        = fe_v_face.get_JxW_values();
+    double                     face_norm  = 0.;
+    std::vector<double>        face_values(n_q_points);
+    std::vector<double>        face_values_neighbor(n_q_points);
 
 
     fe_v_face[variable].get_function_values(locally_relevant_current_solution,
@@ -721,7 +723,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     const double degree = fe_v_face.get_fe().tensor_degree();
     // saplog << "degree=" << degree << ", dx=" << dx << std::endl;
     const double cell_norm =
-      std::fabs(cell_average[cell_index][MHDEquations::energy_component]);
+      std::fabs(cell_average[cell_index][MHDEquations<dim>::energy_component]);
     const double normalization =
       std::pow(dx, 0.5 * (degree + 1)) * face_norm * cell_norm;
 
@@ -779,8 +781,9 @@ sapphirepp::MHD::MHDSolver<dim>::indicate_positivity_limiting(
     {
       const double pressure = mhd_equations.compute_pressure_unsafe(state);
 
-      if ((state[MHDEquations::density_component] <= eps) ||
-          (state[MHDEquations::energy_component] <= eps) || (pressure <= eps))
+      if ((state[MHDEquations<dim>::density_component] <= eps) ||
+          (state[MHDEquations<dim>::energy_component] <= eps) ||
+          (pressure <= eps))
         return true;
     }
 
@@ -858,12 +861,12 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
       // Check if cell avg is valid state
       const state_type &cell_avg = get_cell_average(cell);
-      Assert(cell_avg[MHDEquations::density_component] > 0.,
+      Assert(cell_avg[MHDEquations<dim>::density_component] > 0.,
              ExcNonAdmissibleState(cell_avg,
                                    "Invalid cell average. "
                                    "Can not perform limiting.",
                                    cell->center()));
-      Assert(cell_avg[MHDEquations::energy_component] > 0.,
+      Assert(cell_avg[MHDEquations<dim>::energy_component] > 0.,
              ExcNonAdmissibleState(cell_avg,
                                    "Invalid cell average. "
                                    "Can not perform limiting.",
@@ -924,8 +927,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                 {
                   auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
                   const state_type &neighbor_avg = get_cell_average(neighbor);
-                  const Tensor<1, spacedim> distance =
-                    SlopeLimiter::compute_periodic_distance_cell_neighbor(
+                  const Tensor<1, spacedim> distance = SlopeLimiter::
+                    compute_periodic_distance_cell_neighbor<Iterator, spacedim>(
                       cell, face_no);
 
                   for (unsigned int c = 0; c < n_components; ++c)
@@ -941,11 +944,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                         MHDFlags::none)
             {
               // Primitive Limiting
-              diff =
-                SlopeLimiter::minmod_gradients(cell_avg_gradient,
-                                               neighbor_gradients,
-                                               limited_gradient,
-                                               cell->minimum_vertex_distance());
+              diff = SlopeLimiter::minmod_gradients<spacedim>(
+                cell_avg_gradient,
+                neighbor_gradients,
+                limited_gradient,
+                cell->minimum_vertex_distance());
             }
           else
             {
@@ -984,11 +987,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
 
               // Computed limited gradient
-              diff =
-                SlopeLimiter::minmod_gradients(char_cell_avg_gradient,
-                                               char_neighbor_gradients,
-                                               char_limited_gradient,
-                                               cell->minimum_vertex_distance());
+              diff = SlopeLimiter::minmod_gradients<spacedim>(
+                char_cell_avg_gradient,
+                char_neighbor_gradients,
+                char_limited_gradient,
+                cell->minimum_vertex_distance());
 
 
               // Convert back to conserved variables
@@ -1132,7 +1135,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
     const unsigned int n_q_points = fe_v.n_quadrature_points;
 
     const FEValuesExtractors::Vector magnetic_field(
-      MHDEquations::first_magnetic_component);
+      MHDEquations<dim>::first_magnetic_component);
     // const std::vector<Point<spacedim>> &q_points =
     // fe_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_v.get_JxW_values();
@@ -1184,7 +1187,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
     const FEValuesExtractors::Vector magnetic_field(
-      MHDEquations::first_magnetic_component);
+      MHDEquations<dim>::first_magnetic_component);
     const unsigned int               n_q_points = fe_v_face.n_quadrature_points;
     const std::vector<double>       &JxW        = fe_v_face.get_JxW_values();
     std::vector<Tensor<1, spacedim>> face_values(n_q_points);
@@ -1745,13 +1748,13 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(
     locally_relevant_current_solution,
-    MHDEquations::create_component_name_list(),
+    MHDEquations<dim>::create_component_name_list(),
     DataOut<dim, spacedim>::type_dof_data,
-    MHDEquations::create_component_interpretation_list());
+    MHDEquations<dim>::create_component_interpretation_list());
 
   /** @todo [Remove Debug] */
   data_out.add_data_vector(get_cell_average_component(
-                             MHDEquations::density_component),
+                             MHDEquations<dim>::density_component),
                            "average_roh",
                            DataOut<dim, spacedim>::type_cell_data);
   data_out.add_data_vector(shock_indicator,
@@ -1860,7 +1863,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_weighted_norm(
 
 
 template <unsigned int dim>
-const sapphirepp::MHD::MHDEquations &
+const sapphirepp::MHD::MHDEquations<dim> &
 sapphirepp::MHD::MHDSolver<dim>::get_mhd_equations() const
 {
   return mhd_equations;
