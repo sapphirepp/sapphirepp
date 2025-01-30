@@ -33,29 +33,30 @@
 
 
 
-template <unsigned int spacedim>
-sapphirepp::MHD::NumericalFlux<spacedim>::NumericalFlux(
-  const MHDEquations &mhd_equations)
+template <unsigned int dim>
+sapphirepp::MHD::NumericalFlux<dim>::NumericalFlux(
+  const MHDEquations<dim> &mhd_equations)
   : mhd_equations{mhd_equations}
 {}
 
 
 
-template <unsigned int spacedim>
+template <unsigned int dim>
 void
-sapphirepp::MHD::NumericalFlux<spacedim>::compute_numerical_normal_flux(
-  const dealii::Tensor<1, spacedim>       &normal,
-  const typename MHDEquations::state_type &state_1,
-  const typename MHDEquations::state_type &state_2,
-  typename MHDEquations::state_type       &numerical_normal_flux) const
+sapphirepp::MHD::NumericalFlux<dim>::compute_numerical_normal_flux(
+  const dealii::Tensor<1, MHDEquations<dim>::spacedim> &normal,
+  const typename MHDEquations<dim>::state_type         &state_1,
+  const typename MHDEquations<dim>::state_type         &state_2,
+  typename MHDEquations<dim>::state_type &numerical_normal_flux) const
 {
   /** @todo Make calculation for vector of points */
 
-  AssertDimension(state_1.size(), MHDEquations::n_components);
-  AssertDimension(state_2.size(), MHDEquations::n_components);
-  AssertDimension(numerical_normal_flux.size(), MHDEquations::n_components);
+  AssertDimension(state_1.size(), MHDEquations<dim>::n_components);
+  AssertDimension(state_2.size(), MHDEquations<dim>::n_components);
+  AssertDimension(numerical_normal_flux.size(),
+                  MHDEquations<dim>::n_components);
 
-  typename MHDEquations::flux_type flux_matrix_1, flux_matrix_2;
+  typename MHDEquations<dim>::flux_type flux_matrix_1, flux_matrix_2;
 
   mhd_equations.compute_flux_matrix(state_1, flux_matrix_1);
   mhd_equations.compute_flux_matrix(state_2, flux_matrix_2);
@@ -66,7 +67,7 @@ sapphirepp::MHD::NumericalFlux<spacedim>::compute_numerical_normal_flux(
     mhd_equations.compute_maximum_normal_eigenvalue(state_2, normal);
   const double max_eigenvalue = std::fmax(max_eigenvalue_1, max_eigenvalue_2);
 
-  for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+  for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
     {
       /** @todo Implement other numerical fluxes */
 
@@ -86,5 +87,6 @@ sapphirepp::MHD::NumericalFlux<spacedim>::compute_numerical_normal_flux(
 
 
 // explicit instantiation
-template class sapphirepp::MHD::NumericalFlux<
-  sapphirepp::MHD::MHDEquations::spacedim>;
+template class sapphirepp::MHD::NumericalFlux<1>;
+template class sapphirepp::MHD::NumericalFlux<2>;
+template class sapphirepp::MHD::NumericalFlux<3>;
