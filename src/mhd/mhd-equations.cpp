@@ -41,7 +41,8 @@ const double epsilon_d = 1e-6;
 
 
 
-sapphirepp::MHD::MHDEquations::MHDEquations(const double adiabatic_index)
+template <unsigned int dim>
+sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
   : adiabatic_index{adiabatic_index}
 {
   AssertThrow(adiabatic_index > 1.0,
@@ -52,8 +53,9 @@ sapphirepp::MHD::MHDEquations::MHDEquations(const double adiabatic_index)
 
 
 
+template <unsigned int dim>
 std::vector<std::string>
-sapphirepp::MHD::MHDEquations::create_component_name_list(
+sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
   const std::string &prefix)
 {
   std::vector<std::string> component_names(n_components);
@@ -71,8 +73,9 @@ sapphirepp::MHD::MHDEquations::create_component_name_list(
 
 
 
+template <unsigned int dim>
 std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-sapphirepp::MHD::MHDEquations::create_component_interpretation_list()
+sapphirepp::MHD::MHDEquations<dim>::create_component_interpretation_list()
 {
   std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
     data_component_interpretation(n_components);
@@ -94,9 +97,11 @@ sapphirepp::MHD::MHDEquations::create_component_interpretation_list()
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
-                                                   flux_type &flux_matrix) const
+sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
+  const state_type &state,
+  flux_type        &flux_matrix) const
 {
   AssertDimension(state.size(), n_components);
 
@@ -143,8 +148,9 @@ sapphirepp::MHD::MHDEquations::compute_flux_matrix(const state_type &state,
 
 
 
+template <unsigned int dim>
 double
-sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
+sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
   const state_type                  &state,
   const dealii::Tensor<1, spacedim> &normal) const
 {
@@ -193,8 +199,9 @@ sapphirepp::MHD::MHDEquations::compute_maximum_normal_eigenvalue(
 
 
 
+template <unsigned int dim>
 double
-sapphirepp::MHD::MHDEquations::compute_maximum_eigenvalue(
+sapphirepp::MHD::MHDEquations<dim>::compute_maximum_eigenvalue(
   const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
@@ -228,8 +235,10 @@ sapphirepp::MHD::MHDEquations::compute_maximum_eigenvalue(
 
 
 
+template <unsigned int dim>
+
 double
-sapphirepp::MHD::MHDEquations::compute_pressure_unsafe(
+sapphirepp::MHD::MHDEquations<dim>::compute_pressure_unsafe(
   const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
@@ -254,8 +263,10 @@ sapphirepp::MHD::MHDEquations::compute_pressure_unsafe(
 
 
 
+template <unsigned int dim>
 double
-sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
+sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
+  const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
   Assert(state[density_component] > 0., ExcNonAdmissibleState(state));
@@ -269,8 +280,9 @@ sapphirepp::MHD::MHDEquations::compute_pressure(const state_type &state) const
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
+sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
   const state_type                  &state,
   const dealii::Tensor<1, spacedim> &normal,
   dealii::Vector<double>            &eigenvalues) const
@@ -334,8 +346,9 @@ sapphirepp::MHD::MHDEquations::compute_normale_eigenvalues(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
+sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
   const state_type                  &state,
   const dealii::Tensor<1, spacedim> &normal,
   dealii::FullMatrix<double>        &eigenvectors) const
@@ -563,8 +576,9 @@ sapphirepp::MHD::MHDEquations::compute_right_eigenvector_matrix(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
+sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
   const state_type                  &state,
   const dealii::Tensor<1, spacedim> &normal,
   dealii::FullMatrix<double>        &eigenvectors) const
@@ -819,8 +833,9 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::compute_transformation_matrices(
+sapphirepp::MHD::MHDEquations<dim>::compute_transformation_matrices(
   const state_type                                 &state,
   std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
   std::array<dealii::FullMatrix<double>, spacedim> &right_matrices) const
@@ -846,8 +861,9 @@ sapphirepp::MHD::MHDEquations::compute_transformation_matrices(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
+sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
   const state_type &primitive_state,
   state_type       &conserved_state) const
 {
@@ -891,8 +907,9 @@ sapphirepp::MHD::MHDEquations::convert_primitive_to_conserved(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::convert_conserved_to_primitive(
+sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
   const state_type &conserved_state,
   state_type       &primitive_state) const
 {
@@ -913,8 +930,9 @@ sapphirepp::MHD::MHDEquations::convert_conserved_to_primitive(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::convert_characteristic_to_conserved(
+sapphirepp::MHD::MHDEquations<dim>::convert_characteristic_to_conserved(
   const state_type                  &characteristic_state,
   const dealii::Tensor<1, spacedim> &normal,
   state_type                        &conserved_state) const
@@ -927,8 +945,9 @@ sapphirepp::MHD::MHDEquations::convert_characteristic_to_conserved(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::convert_conserved_to_characteristic(
+sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_characteristic(
   const state_type                  &conserved_state,
   const dealii::Tensor<1, spacedim> &normal,
   state_type                        &characteristic_state) const
@@ -941,21 +960,23 @@ sapphirepp::MHD::MHDEquations::convert_conserved_to_characteristic(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::convert_gradient_characteristic_to_conserved(
-  const flux_type                                  &characteristic_gradient,
-  std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
-  flux_type                                        &conserved_gradient) const
+sapphirepp::MHD::MHDEquations<dim>::
+  convert_gradient_characteristic_to_conserved(
+    const flux_type                                  &characteristic_gradient,
+    std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
+    flux_type                                        &conserved_gradient) const
 {
-  for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+  for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
     {
       AssertDimension(right_matrices[d].n(), n_components);
       AssertDimension(right_matrices[d].m(), n_components);
 
-      for (unsigned int c1 = 0; c1 < MHDEquations::n_components; ++c1)
+      for (unsigned int c1 = 0; c1 < MHDEquations<dim>::n_components; ++c1)
         {
           conserved_gradient[c1][d] = 0.;
-          for (unsigned int c2 = 0; c2 < MHDEquations::n_components; ++c2)
+          for (unsigned int c2 = 0; c2 < MHDEquations<dim>::n_components; ++c2)
             {
               conserved_gradient[c1][d] +=
                 right_matrices[d][c1][c2] * characteristic_gradient[c2][d];
@@ -966,21 +987,23 @@ sapphirepp::MHD::MHDEquations::convert_gradient_characteristic_to_conserved(
 
 
 
+template <unsigned int dim>
 void
-sapphirepp::MHD::MHDEquations::convert_gradient_conserved_to_characteristic(
-  const flux_type                                  &conserved_gradient,
-  std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
-  flux_type &characteristic_gradient) const
+sapphirepp::MHD::MHDEquations<dim>::
+  convert_gradient_conserved_to_characteristic(
+    const flux_type                                  &conserved_gradient,
+    std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
+    flux_type &characteristic_gradient) const
 {
-  for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+  for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
     {
       AssertDimension(left_matrices[d].n(), n_components);
       AssertDimension(left_matrices[d].m(), n_components);
 
-      for (unsigned int c1 = 0; c1 < MHDEquations::n_components; ++c1)
+      for (unsigned int c1 = 0; c1 < MHDEquations<dim>::n_components; ++c1)
         {
           characteristic_gradient[c1][d] = 0;
-          for (unsigned int c2 = 0; c2 < MHDEquations::n_components; ++c2)
+          for (unsigned int c2 = 0; c2 < MHDEquations<dim>::n_components; ++c2)
             {
               characteristic_gradient[c1][d] +=
                 left_matrices[d][c1][c2] * conserved_gradient[c2][d];
@@ -988,3 +1011,10 @@ sapphirepp::MHD::MHDEquations::convert_gradient_conserved_to_characteristic(
         }
     }
 }
+
+
+
+// Explicit instantiations
+template class sapphirepp::MHD::MHDEquations<1>;
+template class sapphirepp::MHD::MHDEquations<2>;
+template class sapphirepp::MHD::MHDEquations<3>;

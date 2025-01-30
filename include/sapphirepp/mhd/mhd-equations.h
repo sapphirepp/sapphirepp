@@ -110,7 +110,11 @@ namespace sapphirepp
      * This class calculates everything related to the PDE system resulting from
      * the MHD equations, including the mapping between the components and the
      * corresponding physical quantities.
+     *
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
+     *         `dim`
      */
+    template <unsigned int dim>
     class MHDEquations
     {
     public:
