@@ -84,6 +84,7 @@ namespace sapphirepp
        * entires into account. It furthermore uses only the modified minmod
        * function.
        *
+       * @tparam dim Dimension
        * @param cell_gradient Average gradient on the cell.
        * @param neighbor_gradients Gradients to neighbor cells.
        * @param limited_gradient Component and direction wise minmod function,
@@ -92,12 +93,14 @@ namespace sapphirepp
        * @return double Average difference between cell_gradient and limited_gradient
        *                per component and direction.
        */
+      template <unsigned int dim>
       double
       minmod_gradients(
-        const MHDEquations::flux_type              &cell_gradient,
-        const std::vector<MHDEquations::flux_type> &neighbor_gradients,
-        MHDEquations::flux_type                    &limited_gradient,
-        const double                                dx);
+        const typename MHDEquations<dim>::flux_type &cell_gradient,
+        const std::vector<typename MHDEquations<dim>::flux_type>
+                                              &neighbor_gradients,
+        typename MHDEquations<dim>::flux_type &limited_gradient,
+        const double                           dx);
 
 
 
@@ -106,15 +109,14 @@ namespace sapphirepp
        *        direction of face `face_no`, accounting for periodic boundaries.
        *
        * @tparam TriaIterator @dealref{TriaIterator}
-       * @tparam spacedim Spacial dimensions
+       * @tparam dim dimensions
        * @param cell Current cell.
        * @param face_no Face number for direction of neighbor.
-       * @return dealii::Tensor<1, spacedim> Distance between this cell and the
+       * @return dealii::Tensor<1, dim> Distance between this cell and the
        *         neighbor cell, accounting for periodic boundaries.
        */
-      template <typename TriaIterator,
-                unsigned int spacedim = MHDEquations::spacedim>
-      inline dealii::Tensor<1, spacedim>
+      template <typename TriaIterator, unsigned int dim>
+      inline dealii::Tensor<1, dim>
       compute_periodic_distance_cell_neighbor(const TriaIterator &cell,
                                               const unsigned int  face_no)
       {

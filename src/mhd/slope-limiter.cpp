@@ -47,12 +47,13 @@ sapphirepp::MHD::SlopeLimiter::minmod(const std::vector<double> &values)
 
 
 
+template <unsigned int dim>
 double
 sapphirepp::MHD::SlopeLimiter::minmod_gradients(
-  const MHDEquations::flux_type              &cell_gradient,
-  const std::vector<MHDEquations::flux_type> &neighbor_gradients,
-  MHDEquations::flux_type                    &limited_gradient,
-  const double                                dx)
+  const typename MHDEquations<dim>::flux_type              &cell_gradient,
+  const std::vector<typename MHDEquations<dim>::flux_type> &neighbor_gradients,
+  typename MHDEquations<dim>::flux_type                    &limited_gradient,
+  const double                                              dx)
 {
   const double beta = 2.;
   const double M    = 0.;
@@ -60,9 +61,9 @@ sapphirepp::MHD::SlopeLimiter::minmod_gradients(
   double              difference = 0.;
   std::vector<double> values;
   values.reserve(neighbor_gradients.size() + 1);
-  for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+  for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
     {
-      for (unsigned int d = 0; d < MHDEquations::spacedim; ++d)
+      for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
         {
           AssertIsFinite(cell_gradient[c][d]);
           if (std::abs(cell_gradient[c][d]) < M * dx * dx)
@@ -86,6 +87,30 @@ sapphirepp::MHD::SlopeLimiter::minmod_gradients(
         }
     }
 
-  difference /= static_cast<double>(MHDEquations::n_components);
+  difference /= static_cast<double>(MHDEquations<dim>::n_components);
   return difference;
 }
+
+
+
+/** @cond sapinternal */
+// Explicit instantiations
+template double
+sapphirepp::MHD::SlopeLimiter::minmod_gradients<1>(
+  const typename MHDEquations<1>::flux_type &,
+  const std::vector<typename MHDEquations<1>::flux_type> &,
+  typename MHDEquations<1>::flux_type &,
+  const double);
+template double
+sapphirepp::MHD::SlopeLimiter::minmod_gradients<2>(
+  const typename MHDEquations<2>::flux_type &,
+  const std::vector<typename MHDEquations<2>::flux_type> &,
+  typename MHDEquations<2>::flux_type &,
+  const double);
+template double
+sapphirepp::MHD::SlopeLimiter::minmod_gradients<3>(
+  const typename MHDEquations<3>::flux_type &,
+  const std::vector<typename MHDEquations<3>::flux_type> &,
+  typename MHDEquations<3>::flux_type &,
+  const double);
+/** @endcond */
