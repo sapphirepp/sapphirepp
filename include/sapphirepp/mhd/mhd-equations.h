@@ -124,11 +124,6 @@ namespace sapphirepp
     public:
       /** @{ */
       /**
-       * Dimension of the space in which the equations operate, i.e. the
-       * dimension of the velocity and magnetic field.
-       */
-      static constexpr unsigned int spacedim = 3;
-      /**
        * Number of components in a vector,
        * e.g. for momentum or magnetic field.
        */
