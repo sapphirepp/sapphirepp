@@ -104,40 +104,34 @@ namespace sapphirepp
       /**
        * @brief Write results to file
        *
-       * @todo Using `spacedim = dim` as default value does not work
-       *
        * @tparam dim Dimension of the solution
-       * @tparam spacedim Dimension of the space
-       * @param data_out @dealref{DataOut} class with the solution. It must
-       *        already contain all the data that should be written. This
-       *        function only handles the last step of writing to the file.
+       * @param data_out @dealref{DataOut} class with the solution.
+       *        It must already contain all the data that should be written.
+       *        This function only handles the last step of writing to the file.
        * @param time_step_number Number of the time step
        * @param cur_time Simulation time associated with this time step
        * @param filename Overwrite for the @ref base_file_name
        * @note This function should be a const member. The problem is, that in
        *       case of HDF5 output, the xdmf_entries are changed.
        */
-      template <unsigned int dim, unsigned int spacedim = dim>
+      template <unsigned int dim>
       void
-      write_results(DataOut<dim, spacedim> &data_out,
-                    const unsigned int      time_step_number = 0,
+      write_results(DataOut<dim>      &data_out,
+                    const unsigned int time_step_number = 0,
                     const double cur_time = std::numeric_limits<double>::min(),
                     const std::string &filename = "");
 
       /**
        * @brief Write a grid to a file in ucd format
        *
-       * @todo Using `spacedim = dim` as default value does not work
-       *
        * @tparam dim Dimension of the grid
-       * @tparam spacedim Dimension of the space
        * @param triangulation Grid
        * @param filename Name of the file
        */
-      template <unsigned int dim, unsigned int spacedim = dim>
+      template <unsigned int dim>
       void
-      write_grid(const Triangulation<dim, spacedim> &triangulation,
-                 const std::string &filename = "grid.ucd") const;
+      write_grid(const Triangulation<dim> &triangulation,
+                 const std::string        &filename = "grid.ucd") const;
 
 
     private:
