@@ -84,16 +84,16 @@ namespace sapphirepp
       using namespace dealii;
 
       // The mesh_loop function requires helper data types
-      template <unsigned int dim, unsigned int spacedim>
+      template <unsigned int dim>
       class ScratchData
       {
       public:
         // Constructor
         ScratchData(
-          const Mapping<dim, spacedim>       &mapping,
-          const FiniteElement<dim, spacedim> &fe,
-          const Quadrature<dim>              &quadrature,
-          const Quadrature<dim - 1>          &quadrature_face,
+          const Mapping<dim>        &mapping,
+          const FiniteElement<dim>  &fe,
+          const Quadrature<dim>     &quadrature,
+          const Quadrature<dim - 1> &quadrature_face,
           const UpdateFlags update_flags = update_values | update_gradients |
                                            update_quadrature_points |
                                            update_JxW_values,
@@ -115,7 +115,7 @@ namespace sapphirepp
         {}
 
         // Copy Constructor
-        ScratchData(const ScratchData<dim, spacedim> &scratch_data)
+        ScratchData(const ScratchData<dim> &scratch_data)
           : fe_values(scratch_data.fe_values.get_mapping(),
                       scratch_data.fe_values.get_fe(),
                       scratch_data.fe_values.get_quadrature(),
@@ -136,10 +136,10 @@ namespace sapphirepp
               scratch_data.fe_values_subface_neighbor.get_update_flags())
         {}
 
-        FEValues<dim, spacedim>        fe_values;
-        FEFaceValues<dim, spacedim>    fe_values_face;
-        FEFaceValues<dim, spacedim>    fe_values_face_neighbor;
-        FESubfaceValues<dim, spacedim> fe_values_subface_neighbor;
+        FEValues<dim>        fe_values;
+        FEFaceValues<dim>    fe_values_face;
+        FEFaceValues<dim>    fe_values_face_neighbor;
+        FESubfaceValues<dim> fe_values_subface_neighbor;
       };
 
 
@@ -197,14 +197,14 @@ namespace sapphirepp
 
 
       // The helper data types for slope limiter mesh_loop
-      template <unsigned int dim, unsigned int spacedim>
+      template <unsigned int dim>
       class ScratchDataSlopeLimiter
       {
       public:
         // Constructor
-        ScratchDataSlopeLimiter(const Mapping<dim, spacedim>       &mapping,
-                                const FiniteElement<dim, spacedim> &fe,
-                                const Quadrature<dim>              &quadrature)
+        ScratchDataSlopeLimiter(const Mapping<dim>       &mapping,
+                                const FiniteElement<dim> &fe,
+                                const Quadrature<dim>    &quadrature)
           : fe_values_gradient(mapping,
                                fe,
                                quadrature,
@@ -218,7 +218,7 @@ namespace sapphirepp
 
         // Copy Constructor
         ScratchDataSlopeLimiter(
-          const ScratchDataSlopeLimiter<dim, spacedim> &scratch_data)
+          const ScratchDataSlopeLimiter<dim> &scratch_data)
           : fe_values_gradient(
               scratch_data.fe_values_gradient.get_mapping(),
               scratch_data.fe_values_gradient.get_fe(),
@@ -230,8 +230,8 @@ namespace sapphirepp
                               scratch_data.fe_values_support.get_update_flags())
         {}
 
-        FEValues<dim, spacedim> fe_values_gradient;
-        FEValues<dim, spacedim> fe_values_support;
+        FEValues<dim> fe_values_gradient;
+        FEValues<dim> fe_values_support;
       };
 
 
@@ -289,7 +289,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
-  , fe(FE_DGQ<dim, spacedim>(mhd_parameters.polynomial_degree), n_components)
+  , fe(FE_DGQ<dim>(mhd_parameters.polynomial_degree), n_components)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pcout(saplog.to_condition_ostream(3))
@@ -326,7 +326,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
 
   {
     TimerOutput::Scope timer_section(timer, "Project initial condition - MHD");
-    InitialConditionMHD<spacedim> initial_condition_function(
+    InitialConditionMHD<dim> initial_condition_function(
       physical_parameters, mhd_equations.adiabatic_index);
     project(initial_condition_function, locally_owned_solution);
     // Here a non ghosted vector, is copied into a ghosted vector. I think
@@ -412,8 +412,8 @@ sapphirepp::MHD::MHDSolver<dim>::make_grid()
         {
           saplog << "Read grid from file \"" << mhd_parameters.grid_file << "\""
                  << std::endl;
-          GridIn<dim, spacedim> grid_in(triangulation);
-          std::ifstream         input(mhd_parameters.grid_file);
+          GridIn<dim>   grid_in(triangulation);
+          std::ifstream input(mhd_parameters.grid_file);
           grid_in.read_ucd(input);
           Assert(triangulation.all_reference_cells_are_hyper_cube(),
                  ExcNotImplemented("The grid must consist of hypercubes."));
@@ -536,7 +536,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::project(
-  const Function<spacedim>   &f,
+  const Function<dim>        &f,
   PETScWrappers::MPI::Vector &projected_function) const
 {
   saplog << "Project a function onto the finite element space" << std::endl;
@@ -570,10 +570,10 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
   saplog << "Compute cell average" << std::endl;
   AssertDimension(cell_average.size(), triangulation.n_active_cells());
 
-  FEValues<dim, spacedim> fe_v(mapping,
-                               fe,
-                               quadrature,
-                               update_values | update_JxW_values);
+  FEValues<dim> fe_v(mapping,
+                     fe,
+                     quadrature,
+                     update_values | update_JxW_values);
 
   const unsigned int          n_q_points = quadrature.size();
   std::vector<Vector<double>> solution_values(n_q_points,
@@ -616,30 +616,27 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
   saplog << "Compute shock indicator" << std::endl;
   LogStream::Prefix p("ShockIndicator", saplog);
 
-  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::sapinternal::MHDSolver;
 
   shock_indicator = 0;
 
   // empty cell and boundary worker
-  std::function<
-    void(const Iterator &, ScratchData<dim, spacedim> &, CopyData &)>
+  std::function<void(const Iterator &, ScratchData<dim> &, CopyData &)>
     empty_cell_worker;
-  std::function<void(const Iterator &,
-                     const unsigned int &,
-                     ScratchData<dim, spacedim> &,
-                     CopyData &)>
+  std::function<void(
+    const Iterator &, const unsigned int &, ScratchData<dim> &, CopyData &)>
     empty_boundary_worker;
 
   // assemble interior face terms
-  const auto face_worker = [&](const Iterator             &cell,
-                               const unsigned int         &face_no,
-                               const unsigned int         &subface_no,
-                               const Iterator             &neighbor_cell,
-                               const unsigned int         &neighbor_face_no,
-                               const unsigned int         &neighbor_subface_no,
-                               ScratchData<dim, spacedim> &scratch_data,
-                               CopyData                   &copy_data) {
+  const auto face_worker = [&](const Iterator     &cell,
+                               const unsigned int &face_no,
+                               const unsigned int &subface_no,
+                               const Iterator     &neighbor_cell,
+                               const unsigned int &neighbor_face_no,
+                               const unsigned int &neighbor_subface_no,
+                               ScratchData<dim>   &scratch_data,
+                               CopyData           &copy_data) {
     static_cast<void>(copy_data);
     Assert((cell->level() == neighbor_cell->level()) &&
              (neighbor_cell->has_children() == false),
@@ -647,7 +644,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     static_cast<void>(subface_no);
     static_cast<void>(neighbor_subface_no);
 
-    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
+    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
     const unsigned int cell_index           = cell->active_cell_index();
     double             cell_shock_indicator = 0.;
@@ -664,8 +661,8 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
      *       outflow faces? For the energy component, there is an additional
      *       contribution pointing in direction of the B-field.
      */
-    Tensor<1, spacedim> momentum;
-    for (unsigned int d = 0; d < spacedim; ++d)
+    Tensor<1, dim> momentum;
+    for (unsigned int d = 0; d < dim; ++d)
       momentum[d] =
         cell_average[cell_index]
                     [MHDEquations<dim>::first_momentum_component + d];
@@ -679,7 +676,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     // saplog << "Inflow face" << std::endl;
 
 
-    FEFaceValues<dim, spacedim> &fe_v_face_neighbor =
+    FEFaceValues<dim> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
@@ -744,11 +741,8 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
   // empty copier
   std::function<void(const CopyData &)> empty_copier;
 
-  ScratchData<dim, spacedim> scratch_data(mapping,
-                                          fe,
-                                          quadrature,
-                                          quadrature_face);
-  CopyData                   copy_data;
+  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
+  CopyData         copy_data;
   saplog << "Begin the assembly of the shock indicator." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
@@ -803,7 +797,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   saplog << "Limit solution" << std::endl;
   LogStream::Prefix p("Limiter", saplog);
 
-  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::sapinternal::MHDSolver;
 
 
@@ -850,225 +844,223 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   positivity_limiter_indicator = 0.;
 
   // assemble cell terms
-  const auto cell_worker =
-    [&](const Iterator                         &cell,
-        ScratchDataSlopeLimiter<dim, spacedim> &scratch_data,
-        CopyDataSlopeLimiter                   &copy_data) {
-      FEValues<dim, spacedim> &fe_v_grad    = scratch_data.fe_values_gradient;
-      FEValues<dim, spacedim> &fe_v_support = scratch_data.fe_values_support;
-      const unsigned int       cell_index   = cell->active_cell_index();
-      const unsigned int       n_dofs = fe_v_grad.get_fe().n_dofs_per_cell();
+  const auto cell_worker = [&](const Iterator               &cell,
+                               ScratchDataSlopeLimiter<dim> &scratch_data,
+                               CopyDataSlopeLimiter         &copy_data) {
+    FEValues<dim>     &fe_v_grad    = scratch_data.fe_values_gradient;
+    FEValues<dim>     &fe_v_support = scratch_data.fe_values_support;
+    const unsigned int cell_index   = cell->active_cell_index();
+    const unsigned int n_dofs       = fe_v_grad.get_fe().n_dofs_per_cell();
 
-      // Check if cell avg is valid state
-      const state_type &cell_avg = get_cell_average(cell);
-      Assert(cell_avg[MHDEquations<dim>::density_component] > 0.,
-             ExcNonAdmissibleState(cell_avg,
-                                   "Invalid cell average. "
-                                   "Can not perform limiting.",
-                                   cell->center()));
-      Assert(cell_avg[MHDEquations<dim>::energy_component] > 0.,
-             ExcNonAdmissibleState(cell_avg,
-                                   "Invalid cell average. "
-                                   "Can not perform limiting.",
-                                   cell->center()));
-      Assert(mhd_equations.compute_pressure_unsafe(cell_avg) > 0.,
-             ExcNonAdmissibleState(cell_avg,
-                                   "Invalid cell average. "
-                                   "Can not perform limiting.",
-                                   cell->center()));
+    // Check if cell avg is valid state
+    const state_type &cell_avg = get_cell_average(cell);
+    Assert(cell_avg[MHDEquations<dim>::density_component] > 0.,
+           ExcNonAdmissibleState<dim>(cell_avg,
+                                      "Invalid cell average. "
+                                      "Can not perform limiting.",
+                                      cell->center()));
+    Assert(cell_avg[MHDEquations<dim>::energy_component] > 0.,
+           ExcNonAdmissibleState<dim>(cell_avg,
+                                      "Invalid cell average. "
+                                      "Can not perform limiting.",
+                                      cell->center()));
+    Assert(mhd_equations.compute_pressure_unsafe(cell_avg) > 0.,
+           ExcNonAdmissibleState<dim>(cell_avg,
+                                      "Invalid cell average. "
+                                      "Can not perform limiting.",
+                                      cell->center()));
 
-      // reinit copy_data, copies unlimited DoFs
-      copy_data.reinit(cell, n_dofs, locally_relevant_current_solution);
+    // reinit copy_data, copies unlimited DoFs
+    copy_data.reinit(cell, n_dofs, locally_relevant_current_solution);
 
-      std::vector<Vector<double>> limited_support_point_values(
-        fe_v_support.n_quadrature_points, Vector<double>(n_components));
+    std::vector<Vector<double>> limited_support_point_values(
+      fe_v_support.n_quadrature_points, Vector<double>(n_components));
 
-      bool limit_cell = false;
+    bool limit_cell = false;
 
-      // Only limit shock indicated cells
-      if (shock_indicator[cell_index] > 1.)
-        {
-          // reinit cell
-          fe_v_grad.reinit(cell);
+    // Only limit shock indicated cells
+    if (shock_indicator[cell_index] > 1.)
+      {
+        // reinit cell
+        fe_v_grad.reinit(cell);
 
-          const std::vector<double> &JxW = fe_v_grad.get_JxW_values();
+        const std::vector<double> &JxW = fe_v_grad.get_JxW_values();
 
-          flux_type              cell_avg_gradient;
-          flux_type              limited_gradient;
-          flux_type              tmp_gradient;
-          std::vector<flux_type> neighbor_gradients;
-          neighbor_gradients.reserve(cell->n_faces());
-
-
-          // Compute cell average gradient
-          std::vector<std::vector<Tensor<1, spacedim>>> solution_gradients(
-            fe_v_grad.n_quadrature_points,
-            std::vector<Tensor<1, spacedim>>(n_components));
-          /** @todo Add local version of `get_function_gradients` to @dealii */
-          // fe_v_grad.get_function_gradients(copy_data.cell_dof_values,
-          //                                  copy_data.cell_indices,
-          //                                  solution_gradients);
-          fe_v_grad.get_function_gradients(locally_relevant_current_solution,
-                                           solution_gradients);
-          for (unsigned int c = 0; c < n_components; ++c)
-            {
-              for (const unsigned int q_index :
-                   fe_v_grad.quadrature_point_indices())
-                cell_avg_gradient[c] +=
-                  solution_gradients[q_index][c] * JxW[q_index];
-              cell_avg_gradient[c] /= cell->measure();
-            }
-
-          // Compute gradients by neighbor cells (ignore non-periodic boundary)
-          for (const auto face_no : cell->face_indices())
-            {
-              if (!cell->at_boundary(face_no) ||
-                  cell->has_periodic_neighbor(face_no))
-                {
-                  auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
-                  const state_type &neighbor_avg = get_cell_average(neighbor);
-                  const Tensor<1, spacedim> distance = SlopeLimiter::
-                    compute_periodic_distance_cell_neighbor<Iterator, spacedim>(
-                      cell, face_no);
-
-                  for (unsigned int c = 0; c < n_components; ++c)
-                    for (unsigned int d = 0; d < spacedim; ++d)
-                      tmp_gradient[c][d] =
-                        (neighbor_avg[c] - cell_avg[c]) / distance[d];
-                  neighbor_gradients.push_back(tmp_gradient);
-                }
-            }
-
-          double diff;
-          if constexpr ((mhd_flags & MHDFlags::primitive_limiting) !=
-                        MHDFlags::none)
-            {
-              // Primitive Limiting
-              diff = SlopeLimiter::minmod_gradients<spacedim>(
-                cell_avg_gradient,
-                neighbor_gradients,
-                limited_gradient,
-                cell->minimum_vertex_distance());
-            }
-          else
-            {
-              // Characteristic Limiting
-              flux_type              char_cell_avg_gradient;
-              flux_type              char_limited_gradient;
-              std::vector<flux_type> char_neighbor_gradients(
-                neighbor_gradients.size());
-
-              std::array<dealii::FullMatrix<double>, spacedim> left_matrices{
-                {FullMatrix<double>(n_components),
-                 FullMatrix<double>(n_components),
-                 FullMatrix<double>(n_components)}};
-              std::array<dealii::FullMatrix<double>, spacedim> right_matrices{
-                {FullMatrix<double>(n_components),
-                 FullMatrix<double>(n_components),
-                 FullMatrix<double>(n_components)}};
-
-              mhd_equations.compute_transformation_matrices(cell_avg,
-                                                            left_matrices,
-                                                            right_matrices);
+        flux_type              cell_avg_gradient;
+        flux_type              limited_gradient;
+        flux_type              tmp_gradient;
+        std::vector<flux_type> neighbor_gradients;
+        neighbor_gradients.reserve(cell->n_faces());
 
 
-              mhd_equations.convert_gradient_characteristic_to_conserved(
-                cell_avg_gradient, left_matrices, char_cell_avg_gradient);
-              for (unsigned int i = 0; i < neighbor_gradients.size(); ++i)
-                mhd_equations.convert_gradient_characteristic_to_conserved(
-                  neighbor_gradients[i],
-                  left_matrices,
-                  char_neighbor_gradients[i]);
+        // Compute cell average gradient
+        std::vector<std::vector<Tensor<1, dim>>> solution_gradients(
+          fe_v_grad.n_quadrature_points,
+          std::vector<Tensor<1, dim>>(n_components));
+        /** @todo Add local version of `get_function_gradients` to @dealii */
+        // fe_v_grad.get_function_gradients(copy_data.cell_dof_values,
+        //                                  copy_data.cell_indices,
+        //                                  solution_gradients);
+        fe_v_grad.get_function_gradients(locally_relevant_current_solution,
+                                         solution_gradients);
+        for (unsigned int c = 0; c < n_components; ++c)
+          {
+            for (const unsigned int q_index :
+                 fe_v_grad.quadrature_point_indices())
+              cell_avg_gradient[c] +=
+                solution_gradients[q_index][c] * JxW[q_index];
+            cell_avg_gradient[c] /= cell->measure();
+          }
 
-              // saplog << "cell_gradient | char_cell_gradient" << std::endl;
-              // for (unsigned int c = 0; c < n_components; ++c)
-              //   saplog << cell_avg_gradient[c] << " | " << char_cell_avg_gradient[c]
-              //          << std::endl;
+        // Compute gradients by neighbor cells (ignore non-periodic boundary)
+        for (const auto face_no : cell->face_indices())
+          {
+            if (!cell->at_boundary(face_no) ||
+                cell->has_periodic_neighbor(face_no))
+              {
+                auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
+                const state_type    &neighbor_avg = get_cell_average(neighbor);
+                const Tensor<1, dim> distance     = SlopeLimiter::
+                  compute_periodic_distance_cell_neighbor<Iterator, dim>(
+                    cell, face_no);
 
-
-              // Computed limited gradient
-              diff = SlopeLimiter::minmod_gradients<spacedim>(
-                char_cell_avg_gradient,
-                char_neighbor_gradients,
-                char_limited_gradient,
-                cell->minimum_vertex_distance());
-
-
-              // Convert back to conserved variables
-              // for (unsigned int c1 = 0; c1 < n_components; ++c1)
-              //   {
-              //     for (unsigned int c2 = 0; c2 < n_components; ++c2)
-              //       {
-              //         for (unsigned int d = 0; d < spacedim; ++d)
-              //           {
-              //             limited_gradient[c1][d] +=
-              //               right_matrix[c1][c2] *
-              //               char_limited_gradient[c2][d];
-              //           }
-              //       }
-              //   }
-              mhd_equations.convert_gradient_characteristic_to_conserved(
-                char_limited_gradient, right_matrices, limited_gradient);
-
-              // saplog << "limited_gradient | char_limited_gradient" << std::endl;
-              // for (unsigned int c = 0; c < n_components; ++c)
-              //   saplog << limited_gradient[c] << " | " << char_limited_gradient[c]
-              //          << std::endl;
-            }
-
-
-          // Only limit if average gradient was changed
-          if (diff > 1e-10)
-            {
-              limit_cell = true;
-              fe_v_support.reinit(cell);
-              const std::vector<Point<spacedim>> &support_points =
-                fe_v_support.get_quadrature_points();
-
-              // Compute limited solution values at support points
-              for (const unsigned int q_index :
-                   fe_v_support.quadrature_point_indices())
                 for (unsigned int c = 0; c < n_components; ++c)
-                  limited_support_point_values[q_index][c] +=
-                    cell_avg[c] + limited_gradient[c] *
-                                    (support_points[q_index] - cell->center());
-            }
-        }
+                  for (unsigned int d = 0; d < dim; ++d)
+                    tmp_gradient[c][d] =
+                      (neighbor_avg[c] - cell_avg[c]) / distance[d];
+                neighbor_gradients.push_back(tmp_gradient);
+              }
+          }
+
+        double diff;
+        if constexpr ((mhd_flags & MHDFlags::primitive_limiting) !=
+                      MHDFlags::none)
+          {
+            // Primitive Limiting
+            diff = SlopeLimiter::minmod_gradients<dim>(
+              cell_avg_gradient,
+              neighbor_gradients,
+              limited_gradient,
+              cell->minimum_vertex_distance());
+          }
+        else
+          {
+            // Characteristic Limiting
+            flux_type              char_cell_avg_gradient;
+            flux_type              char_limited_gradient;
+            std::vector<flux_type> char_neighbor_gradients(
+              neighbor_gradients.size());
+
+            std::array<dealii::FullMatrix<double>, dim> left_matrices;
+            std::array<dealii::FullMatrix<double>, dim> right_matrices;
+            for (unsigned int d = 0; d < dim; ++d)
+              {
+                left_matrices[d]  = FullMatrix<double>(n_components);
+                right_matrices[d] = FullMatrix<double>(n_components);
+              }
+
+            mhd_equations.compute_transformation_matrices(cell_avg,
+                                                          left_matrices,
+                                                          right_matrices);
 
 
-      // Positivity limier
-      // Calculate values at quadrature points or use limited values
-      if (!limit_cell)
-        {
-          fe_v_support.reinit(cell);
-          /** @todo Use local version of `get_function_values` */
-          // fe_v_support.get_function_gradients(copy_data.cell_dof_values,
-          //                                     copy_data.cell_indices,
-          //                                     limited_support_point_values);
-          fe_v_support.get_function_values(locally_relevant_current_solution,
-                                           limited_support_point_values);
-        }
+            mhd_equations.convert_gradient_characteristic_to_conserved(
+              cell_avg_gradient, left_matrices, char_cell_avg_gradient);
+            for (unsigned int i = 0; i < neighbor_gradients.size(); ++i)
+              mhd_equations.convert_gradient_characteristic_to_conserved(
+                neighbor_gradients[i],
+                left_matrices,
+                char_neighbor_gradients[i]);
 
-      const bool limit_positivity =
-        indicate_positivity_limiting(limited_support_point_values);
-      if (limit_positivity)
-        {
-          limit_cell                               = true;
-          positivity_limiter_indicator[cell_index] = 1.;
-
-          // Set cell values to cell average
-          for (auto &support_point_value : limited_support_point_values)
-            support_point_value = cell_avg;
-        }
+            // saplog << "cell_gradient | char_cell_gradient" << std::endl;
+            // for (unsigned int c = 0; c < n_components; ++c)
+            //   saplog << cell_avg_gradient[c] << " | " << char_cell_avg_gradient[c]
+            //          << std::endl;
 
 
-      // Compute new dof values
-      if (limit_cell)
-        {
-          fe.convert_generalized_support_point_values_to_dof_values(
-            limited_support_point_values, copy_data.cell_dof_values);
-        }
-    };
+            // Computed limited gradient
+            diff = SlopeLimiter::minmod_gradients<dim>(
+              char_cell_avg_gradient,
+              char_neighbor_gradients,
+              char_limited_gradient,
+              cell->minimum_vertex_distance());
+
+
+            // Convert back to conserved variables
+            // for (unsigned int c1 = 0; c1 < n_components; ++c1)
+            //   {
+            //     for (unsigned int c2 = 0; c2 < n_components; ++c2)
+            //       {
+            //         for (unsigned int d = 0; d < spacedim; ++d)
+            //           {
+            //             limited_gradient[c1][d] +=
+            //               right_matrix[c1][c2] *
+            //               char_limited_gradient[c2][d];
+            //           }
+            //       }
+            //   }
+            mhd_equations.convert_gradient_characteristic_to_conserved(
+              char_limited_gradient, right_matrices, limited_gradient);
+
+            // saplog << "limited_gradient | char_limited_gradient" << std::endl;
+            // for (unsigned int c = 0; c < n_components; ++c)
+            //   saplog << limited_gradient[c] << " | " << char_limited_gradient[c]
+            //          << std::endl;
+          }
+
+
+        // Only limit if average gradient was changed
+        if (diff > 1e-10)
+          {
+            limit_cell = true;
+            fe_v_support.reinit(cell);
+            const std::vector<Point<dim>> &support_points =
+              fe_v_support.get_quadrature_points();
+
+            // Compute limited solution values at support points
+            for (const unsigned int q_index :
+                 fe_v_support.quadrature_point_indices())
+              for (unsigned int c = 0; c < n_components; ++c)
+                limited_support_point_values[q_index][c] +=
+                  cell_avg[c] + limited_gradient[c] *
+                                  (support_points[q_index] - cell->center());
+          }
+      }
+
+
+    // Positivity limier
+    // Calculate values at quadrature points or use limited values
+    if (!limit_cell)
+      {
+        fe_v_support.reinit(cell);
+        /** @todo Use local version of `get_function_values` */
+        // fe_v_support.get_function_gradients(copy_data.cell_dof_values,
+        //                                     copy_data.cell_indices,
+        //                                     limited_support_point_values);
+        fe_v_support.get_function_values(locally_relevant_current_solution,
+                                         limited_support_point_values);
+      }
+
+    const bool limit_positivity =
+      indicate_positivity_limiting(limited_support_point_values);
+    if (limit_positivity)
+      {
+        limit_cell                               = true;
+        positivity_limiter_indicator[cell_index] = 1.;
+
+        // Set cell values to cell average
+        for (auto &support_point_value : limited_support_point_values)
+          support_point_value = cell_avg;
+      }
+
+
+    // Compute new dof values
+    if (limit_cell)
+      {
+        fe.convert_generalized_support_point_values_to_dof_values(
+          limited_support_point_values, copy_data.cell_dof_values);
+      }
+  };
 
   // copier for the mesh_loop function
   const auto copier = [&](const CopyDataSlopeLimiter &c) {
@@ -1077,8 +1069,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                                            locally_owned_solution);
   };
 
-  ScratchDataSlopeLimiter<dim, spacedim> scratch_data(mapping, fe, quadrature);
-  CopyDataSlopeLimiter                   copy_data;
+  ScratchDataSlopeLimiter<dim> scratch_data(mapping, fe, quadrature);
+  CopyDataSlopeLimiter         copy_data;
   saplog << "Begin limiting of solution." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
@@ -1106,26 +1098,24 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
   saplog << "Compute magnetic divergence" << std::endl;
   LogStream::Prefix p("MagneticDivergence", saplog);
 
-  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::sapinternal::MHDSolver;
 
   magnetic_divergence = 0;
 
   // empty boundary worker
-  std::function<void(const Iterator &,
-                     const unsigned int &,
-                     ScratchData<dim, spacedim> &,
-                     CopyData &)>
+  std::function<void(
+    const Iterator &, const unsigned int &, ScratchData<dim> &, CopyData &)>
     empty_boundary_worker;
 
 
   // assemble cell terms
-  const auto cell_worker = [&](const Iterator             &cell,
-                               ScratchData<dim, spacedim> &scratch_data,
-                               CopyData                   &copy_data) {
+  const auto cell_worker = [&](const Iterator   &cell,
+                               ScratchData<dim> &scratch_data,
+                               CopyData         &copy_data) {
     static_cast<void>(copy_data);
 
-    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+    FEValues<dim> &fe_v = scratch_data.fe_values;
     // reinit cell
     fe_v.reinit(cell);
     const unsigned int cell_index               = cell->active_cell_index();
@@ -1136,7 +1126,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
 
     const FEValuesExtractors::Vector magnetic_field(
       MHDEquations<dim>::first_magnetic_component);
-    // const std::vector<Point<spacedim>> &q_points =
+    // const std::vector<Point<dim>> &q_points =
     // fe_v.get_quadrature_points();
     const std::vector<double> &JxW = fe_v.get_JxW_values();
     std::vector<double>        divergence_values(n_q_points);
@@ -1159,14 +1149,14 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
 
 
   // assemble interior face terms
-  const auto face_worker = [&](const Iterator             &cell,
-                               const unsigned int         &face_no,
-                               const unsigned int         &subface_no,
-                               const Iterator             &neighbor_cell,
-                               const unsigned int         &neighbor_face_no,
-                               const unsigned int         &neighbor_subface_no,
-                               ScratchData<dim, spacedim> &scratch_data,
-                               CopyData                   &copy_data) {
+  const auto face_worker = [&](const Iterator     &cell,
+                               const unsigned int &face_no,
+                               const unsigned int &subface_no,
+                               const Iterator     &neighbor_cell,
+                               const unsigned int &neighbor_face_no,
+                               const unsigned int &neighbor_subface_no,
+                               ScratchData<dim>   &scratch_data,
+                               CopyData           &copy_data) {
     static_cast<void>(copy_data);
 
     Assert((cell->level() == neighbor_cell->level()) &&
@@ -1175,23 +1165,23 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
     static_cast<void>(subface_no);
     static_cast<void>(neighbor_subface_no);
 
-    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
+    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
     const unsigned int cell_index               = cell->active_cell_index();
     double             face_magnetic_divergence = 0.;
     double             face_norm                = 0.;
 
 
-    FEFaceValues<dim, spacedim> &fe_v_face_neighbor =
+    FEFaceValues<dim> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
     const FEValuesExtractors::Vector magnetic_field(
       MHDEquations<dim>::first_magnetic_component);
-    const unsigned int               n_q_points = fe_v_face.n_quadrature_points;
-    const std::vector<double>       &JxW        = fe_v_face.get_JxW_values();
-    std::vector<Tensor<1, spacedim>> face_values(n_q_points);
-    std::vector<Tensor<1, spacedim>> face_values_neighbor(n_q_points);
+    const unsigned int          n_q_points = fe_v_face.n_quadrature_points;
+    const std::vector<double>  &JxW        = fe_v_face.get_JxW_values();
+    std::vector<Tensor<1, dim>> face_values(n_q_points);
+    std::vector<Tensor<1, dim>> face_values_neighbor(n_q_points);
 
 
     fe_v_face[magnetic_field].get_function_values(
@@ -1223,12 +1213,12 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
   // empty copier
   std::function<void(const CopyData &)> empty_copier;
 
-  ScratchData<dim, spacedim> scratch_data(mapping,
-                                          fe,
-                                          quadrature,
-                                          quadrature_face,
-                                          update_gradients | update_JxW_values);
-  CopyData                   copy_data;
+  ScratchData<dim> scratch_data(mapping,
+                                fe,
+                                quadrature,
+                                quadrature_face,
+                                update_gradients | update_JxW_values);
+  CopyData         copy_data;
   saplog << "Begin the assembly of the magnetic divergence." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
@@ -1259,7 +1249,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 {
   TimerOutput::Scope timer_section(timer, "DG rhs - MHD");
 
-  using Iterator = typename DoFHandler<dim, spacedim>::active_cell_iterator;
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::sapinternal::MHDSolver;
 
   static_cast<void>(time); // suppress compiler warning
@@ -1268,10 +1258,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   global_dt = std::numeric_limits<double>::max();
 
   // assemble cell terms
-  const auto cell_worker = [&](const Iterator             &cell,
-                               ScratchData<dim, spacedim> &scratch_data,
-                               CopyData                   &copy_data) {
-    FEValues<dim, spacedim> &fe_v = scratch_data.fe_values;
+  const auto cell_worker = [&](const Iterator   &cell,
+                               ScratchData<dim> &scratch_data,
+                               CopyData         &copy_data) {
+    FEValues<dim> &fe_v = scratch_data.fe_values;
     // reinit cell
     fe_v.reinit(cell);
 
@@ -1279,8 +1269,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     // reinit the cell_matrix
     copy_data.reinit(cell, n_dofs);
 
-    const std::vector<Point<spacedim>> &q_points = fe_v.get_quadrature_points();
-    const std::vector<double>          &JxW      = fe_v.get_JxW_values();
+    const std::vector<Point<dim>> &q_points = fe_v.get_quadrature_points();
+    const std::vector<double>     &JxW      = fe_v.get_JxW_values();
 
     std::vector<Vector<double>> states(q_points.size(),
                                        Vector<double>(n_components));
@@ -1319,11 +1309,11 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
 
 
   // assemble boundary face terms
-  const auto boundary_worker = [&](const Iterator             &cell,
-                                   const unsigned int         &face_no,
-                                   ScratchData<dim, spacedim> &scratch_data,
-                                   CopyData                   &copy_data) {
-    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
+  const auto boundary_worker = [&](const Iterator     &cell,
+                                   const unsigned int &face_no,
+                                   ScratchData<dim>   &scratch_data,
+                                   CopyData           &copy_data) {
+    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
 
     // NOTE: copy_data is not reinitialized, the cell_workers contribution
@@ -1333,11 +1323,9 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     const BoundaryConditionsMHD boundary_condition =
       mhd_parameters.boundary_conditions[boundary_id];
 
-    const std::vector<Point<spacedim>> &q_points =
-      fe_v_face.get_quadrature_points();
-    const std::vector<double>              &JxW = fe_v_face.get_JxW_values();
-    const std::vector<Tensor<1, spacedim>> &normals =
-      fe_v_face.get_normal_vectors();
+    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
+    const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
 
     // Initialise state and flux vectors
     std::vector<Vector<double>> states(q_points.size(),
@@ -1396,14 +1384,14 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   // |     |     |
   // *-----*     *--> x
   // Hence, n_x = 1. and n_y = 1.
-  const auto face_worker = [&](const Iterator             &cell,
-                               const unsigned int         &face_no,
-                               const unsigned int         &subface_no,
-                               const Iterator             &neighbor_cell,
-                               const unsigned int         &neighbor_face_no,
-                               const unsigned int         &neighbor_subface_no,
-                               ScratchData<dim, spacedim> &scratch_data,
-                               CopyData                   &copy_data) {
+  const auto face_worker = [&](const Iterator     &cell,
+                               const unsigned int &face_no,
+                               const unsigned int &subface_no,
+                               const Iterator     &neighbor_cell,
+                               const unsigned int &neighbor_face_no,
+                               const unsigned int &neighbor_subface_no,
+                               ScratchData<dim>   &scratch_data,
+                               CopyData           &copy_data) {
     // We assumes that faces are only  assembled once. And hence subface_no,
     // can be ignored.
     static_cast<void>(subface_no);
@@ -1411,10 +1399,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     // ignored.
     static_cast<void>(neighbor_subface_no);
 
-    FEFaceValues<dim, spacedim> &fe_v_face = scratch_data.fe_values_face;
+    FEFaceValues<dim> &fe_v_face = scratch_data.fe_values_face;
     fe_v_face.reinit(cell, face_no);
 
-    FEFaceValues<dim, spacedim> &fe_v_face_neighbor =
+    FEFaceValues<dim> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
@@ -1424,11 +1412,9 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     const unsigned int n_dofs         = fe_v_face.get_fe().n_dofs_per_cell();
     copy_data_face.reinit(cell, neighbor_cell, n_dofs);
 
-    const std::vector<Point<spacedim>> &q_points =
-      fe_v_face.get_quadrature_points();
-    const std::vector<double>              &JxW = fe_v_face.get_JxW_values();
-    const std::vector<Tensor<1, spacedim>> &normals =
-      fe_v_face.get_normal_vectors();
+    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
+    const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
 
     // Initialise state and flux vectors
     std::vector<Vector<double>> states(q_points.size(),
@@ -1500,11 +1486,8 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
       }
   };
 
-  ScratchData<dim, spacedim> scratch_data(mapping,
-                                          fe,
-                                          quadrature,
-                                          quadrature_face);
-  CopyData                   copy_data;
+  ScratchData<dim> scratch_data(mapping, fe, quadrature, quadrature_face);
+  CopyData         copy_data;
   saplog << "Begin the assembly of the DG rhs." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
@@ -1743,32 +1726,30 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   const unsigned int time_step_number,
   const double       cur_time)
 {
-  TimerOutput::Scope     timer_section(timer, "Output - MHD");
-  DataOut<dim, spacedim> data_out;
+  TimerOutput::Scope timer_section(timer, "Output - MHD");
+  DataOut<dim>       data_out;
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(
     locally_relevant_current_solution,
     MHDEquations<dim>::create_component_name_list(),
-    DataOut<dim, spacedim>::type_dof_data,
+    DataOut<dim>::type_dof_data,
     MHDEquations<dim>::create_component_interpretation_list());
 
   /** @todo [Remove Debug] */
   data_out.add_data_vector(get_cell_average_component(
                              MHDEquations<dim>::density_component),
                            "average_roh",
-                           DataOut<dim, spacedim>::type_cell_data);
+                           DataOut<dim>::type_cell_data);
   data_out.add_data_vector(shock_indicator,
                            "shock_indicator",
-                           DataOut<dim, spacedim>::type_cell_data);
+                           DataOut<dim>::type_cell_data);
   data_out.add_data_vector(positivity_limiter_indicator,
                            "positivity_limiter",
-                           DataOut<dim, spacedim>::type_cell_data);
+                           DataOut<dim>::type_cell_data);
   data_out.add_data_vector(magnetic_divergence,
                            "magnetic_divergence",
-                           DataOut<dim, spacedim>::type_cell_data);
-  data_out.add_data_vector(cell_dt,
-                           "cell_dt",
-                           DataOut<dim, spacedim>::type_cell_data);
+                           DataOut<dim>::type_cell_data);
+  data_out.add_data_vector(cell_dt, "cell_dt", DataOut<dim>::type_cell_data);
   /** @todo [Remove Debug] */
 
   // Output the partition of the mesh
@@ -1779,9 +1760,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(mhd_parameters.polynomial_degree);
-  output_parameters.write_results<dim, spacedim>(data_out,
-                                                 time_step_number,
-                                                 cur_time);
+  output_parameters.write_results<dim, dim>(data_out,
+                                            time_step_number,
+                                            cur_time);
 }
 
 
@@ -1789,10 +1770,10 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
 template <unsigned int dim>
 double
 sapphirepp::MHD::MHDSolver<dim>::compute_global_error(
-  const Function<spacedim>         &exact_solution,
-  const VectorTools::NormType      &cell_norm,
-  const VectorTools::NormType      &global_norm,
-  const Function<spacedim, double> *weight) const
+  const Function<dim>         &exact_solution,
+  const VectorTools::NormType &cell_norm,
+  const VectorTools::NormType &global_norm,
+  const Function<dim, double> *weight) const
 {
   LogStream::Prefix p("MHD", saplog);
   saplog << "Compute the global error" << std::endl;
@@ -1826,9 +1807,9 @@ sapphirepp::MHD::MHDSolver<dim>::compute_global_error(
 template <unsigned int dim>
 double
 sapphirepp::MHD::MHDSolver<dim>::compute_weighted_norm(
-  const VectorTools::NormType      &cell_norm,
-  const VectorTools::NormType      &global_norm,
-  const Function<spacedim, double> *weight) const
+  const VectorTools::NormType &cell_norm,
+  const VectorTools::NormType &global_norm,
+  const Function<dim, double> *weight) const
 {
   LogStream::Prefix p("MHD", saplog);
   saplog << "Compute the weighted norm" << std::endl;
@@ -1840,8 +1821,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_weighted_norm(
   const QIterated<dim> q_iterated(q_trapezoid,
                                   mhd_parameters.polynomial_degree * 2 + 1);
 
-  const Functions::ZeroFunction<spacedim> zero_function(
-    mhd_equations.n_components);
+  const Functions::ZeroFunction<dim> zero_function(mhd_equations.n_components);
 
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
@@ -1881,7 +1861,7 @@ sapphirepp::MHD::MHDSolver<dim>::get_triangulation() const
 
 
 template <unsigned int dim>
-const dealii::DoFHandler<dim, sapphirepp::MHD::MHDSolver<dim>::spacedim> &
+const dealii::DoFHandler<dim> &
 sapphirepp::MHD::MHDSolver<dim>::get_dof_handler() const
 {
   return dof_handler;

@@ -114,10 +114,10 @@ namespace sapphirepp
        *       maintain the possibility to compute 1D scenarios, we replace it
        *       with `parallel::shared::Triangulation`.
        */
-      using Triangulation = typename std::conditional<
-        dim != 1,
-        parallel::distributed::Triangulation<dim, spacedim>,
-        parallel::shared::Triangulation<dim, spacedim>>::type;
+      using Triangulation =
+        typename std::conditional<dim != 1,
+                                  parallel::distributed::Triangulation<dim>,
+                                  parallel::shared::Triangulation<dim>>::type;
 
 
 
@@ -214,7 +214,7 @@ namespace sapphirepp
        * @param projected_function Vector returning the projected functions
        */
       void
-      project(const Function<spacedim>   &f,
+      project(const Function<dim>        &f,
               PETScWrappers::MPI::Vector &projected_function) const;
 
 
@@ -254,11 +254,10 @@ namespace sapphirepp
        * @return The total global error \f$ d \f$
        */
       double
-      compute_global_error(
-        const Function<spacedim>         &exact_solution,
-        const VectorTools::NormType      &cell_norm,
-        const VectorTools::NormType      &global_norm,
-        const Function<spacedim, double> *weight = nullptr) const;
+      compute_global_error(const Function<dim>         &exact_solution,
+                           const VectorTools::NormType &cell_norm,
+                           const VectorTools::NormType &global_norm,
+                           const Function<dim, double> *weight = nullptr) const;
 
       /**
        * @brief Compute the (weighted) norm of the solution
@@ -280,9 +279,9 @@ namespace sapphirepp
        */
       double
       compute_weighted_norm(
-        const VectorTools::NormType      &cell_norm,
-        const VectorTools::NormType      &global_norm,
-        const Function<spacedim, double> *weight = nullptr) const;
+        const VectorTools::NormType &cell_norm,
+        const VectorTools::NormType &global_norm,
+        const Function<dim, double> *weight = nullptr) const;
       /** @} */
 
 
@@ -312,7 +311,7 @@ namespace sapphirepp
        *
        * @return const DoFHandler<dim>&
        */
-      const DoFHandler<dim, spacedim> &
+      const DoFHandler<dim> &
       get_dof_handler() const;
 
       /**
@@ -411,7 +410,7 @@ namespace sapphirepp
 
       /** @{ */
       /** @dealref{DoFHandler} */
-      DoFHandler<dim, spacedim> dof_handler;
+      DoFHandler<dim> dof_handler;
 
       /** Set of locally owned dofs */
       IndexSet locally_owned_dofs;
@@ -425,10 +424,10 @@ namespace sapphirepp
        * @note The explicit use of a mapping is most likely related to the usage
        *       of mesh_loop as well
        */
-      const MappingQ1<dim, spacedim> mapping;
+      const MappingQ1<dim> mapping;
 
       /** @dealref{FESystem} */
-      const FESystem<dim, spacedim> fe;
+      const FESystem<dim> fe;
 
       /** @{ */
       /**
@@ -577,8 +576,7 @@ namespace sapphirepp
        */
       inline state_type
       get_cell_average(
-        const typename dealii::DoFHandler<dim, spacedim>::cell_iterator &cell)
-        const
+        const typename dealii::DoFHandler<dim>::cell_iterator &cell) const
       {
         if (cell->is_active())
           {
