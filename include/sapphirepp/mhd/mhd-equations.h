@@ -120,30 +120,40 @@ namespace sapphirepp
        * dimension of the velocity and magnetic field.
        */
       static constexpr unsigned int spacedim = 3;
+      /**
+       * Number of components in a vector,
+       * e.g. for momentum or magnetic field.
+       */
+      static constexpr unsigned int n_vec_components = 3;
       /** Number of components `c`. */
-      static constexpr unsigned int n_components = 2 + spacedim + spacedim;
+      static constexpr unsigned int n_components =
+        2 + n_vec_components + n_vec_components;
       /** Index of the density component \f$ \rho \f$. */
       static constexpr unsigned int density_component = 0;
       /**
        * Starting index of the momentum components \f$ \mathbf{p} \f$
-       * (@ref spacedim components).
+       * (@ref n_vec_components components).
        */
       static constexpr unsigned int first_momentum_component = 1;
       /** Index of the energy component \f$ \mathcal{E} \f$. */
-      static constexpr unsigned int energy_component = spacedim + 1;
+      static constexpr unsigned int energy_component = n_vec_components + 1;
       /**
        * Starting index of the magnetic components
        * \f$ \mathbf{b} = \frac{\mathbf{B}}{\sqrt{4\pi}} \f$
-       * (@ref spacedim components).
+       * (@ref n_vec_components components).
        */
-      static constexpr unsigned int first_magnetic_component = spacedim + 2;
+      static constexpr unsigned int first_magnetic_component =
+        n_vec_components + 2;
       /**
        * Only in primitive states: Starting index of the velocity components
-       * \f$ \mathbf{u} \f$ (@ref spacedim components).
+       * \f$ \mathbf{u} \f$ (@ref n_vec_components components).
        */
       static constexpr unsigned int first_velocity_component =
         first_momentum_component;
-      /** Only in primitive states: Index of the energy component \f$ P \f$. */
+      /**
+       * Only in primitive states:
+       * Index of the pressure component \f$ P \f$.
+       */
       static constexpr unsigned int pressure_component = energy_component;
       /** @} */
 
