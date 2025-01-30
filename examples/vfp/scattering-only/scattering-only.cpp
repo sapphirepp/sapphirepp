@@ -186,8 +186,10 @@ main(int argc, char *argv[])
                                  vfp_solver.get_pde_system().system_size,
                                  "analytic_f_"));
       data_out.build_patches(vfp_parameters.polynomial_degree);
-      output_parameters.write_results<dimension, dimension>(
-        data_out, 0, vfp_parameters.final_time, "analytic_solution");
+      output_parameters.write_results<dimension>(data_out,
+                                                 0,
+                                                 vfp_parameters.final_time,
+                                                 "analytic_solution");
       /** [Output analytic solution] */
       /** [Try-Catch end] */
     }

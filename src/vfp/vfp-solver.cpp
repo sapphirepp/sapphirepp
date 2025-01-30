@@ -1754,9 +1754,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);
-  output_parameters.write_results<dim, dim>(data_out,
-                                            time_step_number,
-                                            cur_time);
+  output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 
   ps_reconstruction.reconstruct_all_points(dof_handler,
                                            mapping,
