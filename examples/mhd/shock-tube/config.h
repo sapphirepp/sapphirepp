@@ -115,17 +115,17 @@ namespace sapphirepp
 
 
 
-    template <unsigned int spacedim>
-    class InitialConditionMHD : public dealii::Function<spacedim>
+    template <unsigned int dim>
+    class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
                           const double              adiabatic_index)
-        : dealii::Function<spacedim>(MHDEquations::n_components)
+        : dealii::Function<dim>(MHDEquations<dim>::n_components)
         , prm{physical_parameters}
         , mhd_equations(adiabatic_index)
-        , primitive_left_state(MHDEquations::n_components)
-        , primitive_right_state(MHDEquations::n_components)
+        , primitive_left_state(MHDEquations<dim>::n_components)
+        , primitive_right_state(MHDEquations<dim>::n_components)
       {
         const double rho_l = 1.0;
         const double u_l   = 0.0;
@@ -134,17 +134,18 @@ namespace sapphirepp
         const double u_r   = 0.0;
         const double P_r   = 0.1;
 
-        primitive_left_state                                         = 0.;
-        primitive_left_state[MHDEquations::density_component]        = rho_l;
-        primitive_left_state[MHDEquations::first_velocity_component] = u_l;
-        primitive_left_state[MHDEquations::pressure_component]       = P_l;
+        primitive_left_state                                       = 0.;
+        primitive_left_state[MHDEquations<dim>::density_component] = rho_l;
+        primitive_left_state[MHDEquations<dim>::first_velocity_component] = u_l;
+        primitive_left_state[MHDEquations<dim>::pressure_component]       = P_l;
         saplog << "Primitive left state: " << std::endl;
         saplog << primitive_left_state << std::endl;
 
-        primitive_right_state                                         = 0.;
-        primitive_right_state[MHDEquations::density_component]        = rho_r;
-        primitive_right_state[MHDEquations::first_velocity_component] = u_r;
-        primitive_right_state[MHDEquations::pressure_component]       = P_r;
+        primitive_right_state                                       = 0.;
+        primitive_right_state[MHDEquations<dim>::density_component] = rho_r;
+        primitive_right_state[MHDEquations<dim>::first_velocity_component] =
+          u_r;
+        primitive_right_state[MHDEquations<dim>::pressure_component] = P_r;
         saplog << "Primitive right state: " << std::endl;
         saplog << primitive_right_state << std::endl;
       }
@@ -152,8 +153,8 @@ namespace sapphirepp
 
 
       void
-      vector_value(const dealii::Point<spacedim> &point,
-                   dealii::Vector<double>        &f) const override
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
       {
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
@@ -170,10 +171,10 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters          prm;
-      const MHDEquations                mhd_equations;
-      typename MHDEquations::state_type primitive_left_state;
-      typename MHDEquations::state_type primitive_right_state;
+      const PhysicalParameters               prm;
+      const MHDEquations<dim>                mhd_equations;
+      typename MHDEquations<dim>::state_type primitive_left_state;
+      typename MHDEquations<dim>::state_type primitive_right_state;
     };
 
   } // namespace MHD

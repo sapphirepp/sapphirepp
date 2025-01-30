@@ -694,11 +694,11 @@ namespace sapphirepp
     /**
      * @brief Initial condition
      *
-     * @tparam spacedim Dimension of the space in which the function operate,
-     *         same as @ref MHDEquations::spacedim
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
+     *         `dim`
      */
-    template <unsigned int spacedim>
-    class InitialConditionMHD : public dealii::Function<spacedim>
+    template <unsigned int dim>
+    class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
       /**
@@ -709,7 +709,7 @@ namespace sapphirepp
        */
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
                           const double              adiabatic_index)
-        : dealii::Function<spacedim>(MHDEquations::n_components)
+        : dealii::Function<dim>(MHDEquations<dim>::n_components)
         , prm{physical_parameters}
         , mhd_equations(adiabatic_index)
       {}
@@ -724,8 +724,8 @@ namespace sapphirepp
        * @see @dealref{Function::vector_value(),classFunction,ae316ebc05d21989d573024f8a23c49cb}
        */
       void
-      vector_value(const dealii::Point<spacedim> &point,
-                   dealii::Vector<double>        &f) const override
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
       {
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
@@ -754,17 +754,18 @@ namespace sapphirepp
           0.5 * (b_x * b_x + b_y * b_y + b_z * b_z);
 
         // Background state in conserved variables
-        f                                             = 0;
-        f[MHDEquations::density_component]            = density;
-        f[MHDEquations::first_momentum_component + 0] = density * u_x;
-        f[MHDEquations::first_momentum_component + 1] = density * u_y;
-        f[MHDEquations::first_momentum_component + 2] = density * u_z;
-        f[MHDEquations::energy_component]             = energy;
-        f[MHDEquations::first_magnetic_component + 0] = b_x;
-        f[MHDEquations::first_magnetic_component + 1] = b_y;
-        f[MHDEquations::first_magnetic_component + 2] = b_z;
+        f                                                  = 0;
+        f[MHDEquations<dim>::density_component]            = density;
+        f[MHDEquations<dim>::first_momentum_component + 0] = density * u_x;
+        f[MHDEquations<dim>::first_momentum_component + 1] = density * u_y;
+        f[MHDEquations<dim>::first_momentum_component + 2] = density * u_z;
+        f[MHDEquations<dim>::energy_component]             = energy;
+        f[MHDEquations<dim>::first_magnetic_component + 0] = b_x;
+        f[MHDEquations<dim>::first_magnetic_component + 1] = b_y;
+        f[MHDEquations<dim>::first_magnetic_component + 2] = b_z;
 
-        typename MHDEquations::state_type R(MHDEquations::n_components);
+        typename MHDEquations<dim>::state_type R(
+          MHDEquations<dim>::n_components);
 
         // Left going sound wave (a_s = 1.)
         R    = 0;
@@ -804,7 +805,7 @@ namespace sapphirepp
         // R[6] = -4.216370213557841e-01;
         // R[7] = -1.490711984999860e-01;
 
-        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
           f[c] += amplitude * R[c] * std::sin(2. * M_PI * x / length);
 
         /** [MHD Initial condition] */
@@ -816,7 +817,7 @@ namespace sapphirepp
       /** User defined runtime parameters */
       const PhysicalParameters prm;
       /** @ref MHDEquations */
-      const MHDEquations mhd_equations;
+      const MHDEquations<dim> mhd_equations;
     };
 
   } // namespace MHD
