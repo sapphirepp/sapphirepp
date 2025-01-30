@@ -59,13 +59,16 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
   const std::string &prefix)
 {
   std::vector<std::string> component_names(n_components);
+  const char vec_component_name[n_vec_components] = {'x', 'y', 'z'};
 
   component_names[density_component] = prefix + "rho";
   component_names[energy_component]  = prefix + "E";
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
-      component_names[first_momentum_component + d] = prefix + "p";
-      component_names[first_magnetic_component + d] = prefix + "b";
+      component_names[first_momentum_component + d] =
+        prefix + "p_" + vec_component_name[d];
+      component_names[first_magnetic_component + d] =
+        prefix + "b_" + vec_component_name[d];
     }
 
   return component_names;
@@ -84,12 +87,21 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_interpretation_list()
     dealii::DataComponentInterpretation::component_is_scalar;
   data_component_interpretation[energy_component] =
     dealii::DataComponentInterpretation::component_is_scalar;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  // Interpret components in the plain as vector components
+  for (unsigned int d = 0; d < dim; ++d)
     {
       data_component_interpretation[first_momentum_component + d] =
         dealii::DataComponentInterpretation::component_is_part_of_vector;
       data_component_interpretation[first_magnetic_component + d] =
         dealii::DataComponentInterpretation::component_is_part_of_vector;
+    }
+  // Interpret components out of the plain as scalars
+  for (unsigned int d = dim; d < n_vec_components; ++d)
+    {
+      data_component_interpretation[first_momentum_component + d] =
+        dealii::DataComponentInterpretation::component_is_scalar;
+      data_component_interpretation[first_magnetic_component + d] =
+        dealii::DataComponentInterpretation::component_is_scalar;
     }
 
   return data_component_interpretation;
@@ -108,7 +120,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
   const double pressure = compute_pressure(state);
   double       b2       = 0.;
   double       pb       = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
@@ -116,7 +128,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
             state[first_magnetic_component + d];
     }
 
-  for (unsigned int j = 0; j < spacedim; ++j)
+  for (unsigned int j = 0; j < dim; ++j)
     {
       flux_matrix[density_component][j] = state[first_momentum_component + j];
 
@@ -126,7 +138,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
         1. / (state[density_component]) * pb *
           state[first_magnetic_component + j];
 
-      for (unsigned int i = 0; i < spacedim; ++i)
+      for (unsigned int i = 0; i < n_vec_components; ++i)
         {
           flux_matrix[first_momentum_component + i][j] =
             state[first_momentum_component + j] *
@@ -151,8 +163,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 template <unsigned int dim>
 double
 sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
-  const state_type                  &state,
-  const dealii::Tensor<1, spacedim> &normal) const
+  const state_type             &state,
+  const dealii::Tensor<1, dim> &normal) const
 {
   AssertDimension(state.size(), n_components);
   Assert(std::abs(normal.norm() - 1) < epsilon_d,
@@ -162,13 +174,18 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
   double       b2       = 0.;
   double       nb       = 0.;
   double       nu       = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < dim; ++d)
     {
       b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
       nb += normal[d] * state[first_magnetic_component + d];
+    }
+  for (unsigned int d = dim; d < n_vec_components; ++d)
+    {
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
     }
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
@@ -209,7 +226,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximum_eigenvalue(
   const double pressure = compute_pressure(state);
   double       p2       = 0.;
   double       b2       = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       p2 += state[first_momentum_component + d] *
             state[first_momentum_component + d];
@@ -236,7 +253,6 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximum_eigenvalue(
 
 
 template <unsigned int dim>
-
 double
 sapphirepp::MHD::MHDEquations<dim>::compute_pressure_unsafe(
   const state_type &state) const
@@ -245,7 +261,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure_unsafe(
 
   double p2 = 0.;
   double b2 = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       p2 += state[first_momentum_component + d] *
             state[first_momentum_component + d];
@@ -283,9 +299,9 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
-  const state_type                  &state,
-  const dealii::Tensor<1, spacedim> &normal,
-  dealii::Vector<double>            &eigenvalues) const
+  const state_type             &state,
+  const dealii::Tensor<1, dim> &normal,
+  dealii::Vector<double>       &eigenvalues) const
 {
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvalues.size(), n_components);
@@ -296,13 +312,18 @@ sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
   double       b2       = 0.;
   double       nu       = 0.;
   double       nb       = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < dim; ++d)
     {
       b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
       nb += normal[d] * state[first_magnetic_component + d];
+    }
+  for (unsigned int d = dim; d < n_vec_components; ++d)
+    {
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
     }
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
@@ -349,9 +370,9 @@ sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
-  const state_type                  &state,
-  const dealii::Tensor<1, spacedim> &normal,
-  dealii::FullMatrix<double>        &eigenvectors) const
+  const state_type             &state,
+  const dealii::Tensor<1, dim> &normal,
+  dealii::FullMatrix<double>   &eigenvectors) const
 
 {
   AssertDimension(state.size(), n_components);
@@ -360,14 +381,16 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
   Assert(std::abs(normal.norm() - 1) < epsilon_d,
          dealii::ExcMessage("Normal vector must be normalized."));
 
-  const double                pressure = compute_pressure(state);
-  dealii::Tensor<1, spacedim> u;
-  double                      b2 = 0.;
-  double                      u2 = 0.;
-  double                      nu = 0.;
-  double                      nb = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  const double                        pressure = compute_pressure(state);
+  dealii::Tensor<1, n_vec_components> normal_3d;
+  dealii::Tensor<1, n_vec_components> u;
+  double                              b2 = 0.;
+  double                              u2 = 0.;
+  double                              nu = 0.;
+  double                              nb = 0.;
+  for (unsigned int d = 0; d < dim; ++d)
     {
+      normal_3d[d] = normal[d];
       u[d] = state[first_momentum_component + d] / state[density_component];
       b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
@@ -376,6 +399,15 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
       nb += normal[d] * state[first_magnetic_component + d];
+    }
+  for (unsigned int d = dim; d < n_vec_components; ++d)
+    {
+      normal_3d[d] = 0.;
+      u[d] = state[first_momentum_component + d] / state[density_component];
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+      u2 += state[first_momentum_component + d] / state[density_component] *
+            state[first_momentum_component + d] / state[density_component];
     }
   const double b_perp = std::sqrt(b2 - nb * nb);
 
@@ -433,35 +465,35 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
                                  std::to_string(alp_f)));
 
   // Construct perpendicular normal vector n_perp
-  dealii::Tensor<1, spacedim> n_perp;
+  dealii::Tensor<1, n_vec_components> n_perp;
   if (b_perp > 0)
     {
-      for (unsigned int d = 0; d < spacedim; ++d)
-        n_perp[d] = (state[first_magnetic_component + d] - nb * normal[d]);
+      for (unsigned int d = 0; d < n_vec_components; ++d)
+        n_perp[d] = (state[first_magnetic_component + d] - nb * normal_3d[d]);
     }
   else
     {
       n_perp         = 0; // tmp for e_j
-      unsigned int j = 0; // j = arg_min(normal)
-      for (unsigned int d = 1; d < spacedim; ++d)
-        if (std::abs(normal[d]) < std::abs(normal[j]))
+      unsigned int j = 0; // j = arg_min(normal_3d)
+      for (unsigned int d = 1; d < n_vec_components; ++d)
+        if (std::abs(normal_3d[d]) < std::abs(normal_3d[j]))
           j = d;
       n_perp[j] = 1.;
-      n_perp    = dealii::cross_product_3d<spacedim>(n_perp, normal);
+      n_perp    = dealii::cross_product_3d<n_vec_components>(n_perp, normal_3d);
     }
   n_perp /= n_perp.norm();
 
   Assert(std::abs(n_perp.norm() - 1) < epsilon_d,
          dealii::ExcMessage("n_perp is not normalized."));
-  Assert(std::abs(normal * n_perp) < epsilon_d,
+  Assert(std::abs(normal_3d * n_perp) < epsilon_d,
          dealii::ExcMessage("n_perp is not perpendicular to normal"));
 
-  const double                      n_perp_u = n_perp * u;
-  const dealii::Tensor<1, spacedim> n_perp_cross_u =
-    dealii::cross_product_3d<spacedim>(n_perp, u);
-  const double                      sgn_nb = (nb >= 0.) ? 1. : -1.;
-  const dealii::Tensor<1, spacedim> n_perp_cross_normal =
-    dealii::cross_product_3d<spacedim>(n_perp, normal);
+  const double                              n_perp_u = n_perp * u;
+  const dealii::Tensor<1, n_vec_components> n_perp_cross_u =
+    dealii::cross_product_3d<n_vec_components>(n_perp, u);
+  const double                              sgn_nb = (nb >= 0.) ? 1. : -1.;
+  const dealii::Tensor<1, n_vec_components> n_perp_cross_normal =
+    dealii::cross_product_3d<n_vec_components>(n_perp, normal_3d);
 
 
   // Left fast magnetosonic mode r_1
@@ -470,10 +502,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
     alp_f * u2 / 2. + alp_f * c_f2 / (adiabatic_index - 1.) +
     sgn_nb * alp_s * c_a * n_perp_u - alp_f * c_f * nu -
     (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_f * (c_f2 - a_s2);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][0] =
-        alp_f * (u[d] - c_f * normal[d]) + sgn_nb * alp_s * c_a * n_perp[d];
+        alp_f * (u[d] - c_f * normal_3d[d]) + sgn_nb * alp_s * c_a * n_perp[d];
       eigenvectors[first_magnetic_component + d][0] =
         alp_s * c_f / std::sqrt(state[density_component]) * n_perp[d];
     }
@@ -481,8 +513,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
 
   // Left alfven mode r_2
   eigenvectors[density_component][1] = 0;
-  eigenvectors[energy_component][1]  = -sgn_nb * normal * n_perp_cross_u;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  eigenvectors[energy_component][1]  = -sgn_nb * normal_3d * n_perp_cross_u;
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][1] =
         sgn_nb * n_perp_cross_normal[d];
@@ -497,10 +529,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
     alp_s * u2 / 2. + alp_s * c_s2 / (adiabatic_index - 1.) -
     sgn_nb * alp_f * a_s * n_perp_u - alp_s * c_s * nu -
     (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_s * (c_s2 - a_s2);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][2] =
-        alp_s * (u[d] - c_s * normal[d]) - sgn_nb * alp_f * a_s * n_perp[d];
+        alp_s * (u[d] - c_s * normal_3d[d]) - sgn_nb * alp_f * a_s * n_perp[d];
       eigenvectors[first_magnetic_component + d][2] =
         -alp_f * a_s2 / (std::sqrt(state[density_component]) * c_f) * n_perp[d];
     }
@@ -509,7 +541,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
   // Density entropy mode r_4
   eigenvectors[density_component][3] = 1.;
   eigenvectors[energy_component][3]  = u2 / 2.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][3] = u[d];
       eigenvectors[first_magnetic_component + d][3] = 0;
@@ -525,10 +557,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
    */
   eigenvectors[density_component][4] = 0.;
   eigenvectors[energy_component][4]  = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][4] = 0;
-      eigenvectors[first_magnetic_component + d][4] = normal[d];
+      eigenvectors[first_magnetic_component + d][4] = normal_3d[d];
     }
 
 
@@ -538,10 +570,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
     alp_s * u2 / 2. + alp_s * c_s2 / (adiabatic_index - 1.) +
     sgn_nb * alp_f * a_s * n_perp_u + alp_s * c_s * nu -
     (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_s * (c_s2 - a_s2);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][5] =
-        alp_s * (u[d] + c_s * normal[d]) + sgn_nb * alp_f * a_s * n_perp[d];
+        alp_s * (u[d] + c_s * normal_3d[d]) + sgn_nb * alp_f * a_s * n_perp[d];
       eigenvectors[first_magnetic_component + d][5] =
         -alp_f * a_s2 / (std::sqrt(state[density_component]) * c_f) * n_perp[d];
     }
@@ -549,8 +581,8 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
 
   // Right alfven mode r_7
   eigenvectors[density_component][6] = 0;
-  eigenvectors[energy_component][6]  = sgn_nb * normal * n_perp_cross_u;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  eigenvectors[energy_component][6]  = sgn_nb * normal_3d * n_perp_cross_u;
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][6] =
         -sgn_nb * n_perp_cross_normal[d];
@@ -565,10 +597,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
     alp_f * u2 / 2. + alp_f * c_f2 / (adiabatic_index - 1.) -
     sgn_nb * alp_s * c_a * n_perp_u + alp_f * c_f * nu -
     (2. - adiabatic_index) / (adiabatic_index - 1.) * alp_f * (c_f2 - a_s2);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[first_momentum_component + d][7] =
-        alp_f * (u[d] + c_f * normal[d]) - sgn_nb * alp_s * c_a * n_perp[d];
+        alp_f * (u[d] + c_f * normal_3d[d]) - sgn_nb * alp_s * c_a * n_perp[d];
       eigenvectors[first_magnetic_component + d][7] =
         alp_s * c_f / std::sqrt(state[density_component]) * n_perp[d];
     }
@@ -579,9 +611,9 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
-  const state_type                  &state,
-  const dealii::Tensor<1, spacedim> &normal,
-  dealii::FullMatrix<double>        &eigenvectors) const
+  const state_type             &state,
+  const dealii::Tensor<1, dim> &normal,
+  dealii::FullMatrix<double>   &eigenvectors) const
 
 {
   AssertDimension(state.size(), n_components);
@@ -590,14 +622,16 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
   Assert(std::abs(normal.norm() - 1) < epsilon_d,
          dealii::ExcMessage("Normal vector must be normalized."));
 
-  const double                pressure = compute_pressure(state);
-  dealii::Tensor<1, spacedim> u;
-  double                      b2 = 0.;
-  double                      u2 = 0.;
-  double                      nu = 0.;
-  double                      nb = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  const double                        pressure = compute_pressure(state);
+  dealii::Tensor<1, n_vec_components> normal_3d;
+  dealii::Tensor<1, n_vec_components> u;
+  double                              b2 = 0.;
+  double                              u2 = 0.;
+  double                              nu = 0.;
+  double                              nb = 0.;
+  for (unsigned int d = 0; d < dim; ++d)
     {
+      normal_3d[d] = normal[d];
       u[d] = state[first_momentum_component + d] / state[density_component];
       b2 += state[first_magnetic_component + d] *
             state[first_magnetic_component + d];
@@ -606,6 +640,15 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
       nu += normal[d] * state[first_momentum_component + d] /
             state[density_component];
       nb += normal[d] * state[first_magnetic_component + d];
+    }
+  for (unsigned int d = dim; d < n_vec_components; ++d)
+    {
+      normal_3d[d] = 0.;
+      u[d] = state[first_momentum_component + d] / state[density_component];
+      b2 += state[first_magnetic_component + d] *
+            state[first_magnetic_component + d];
+      u2 += state[first_momentum_component + d] / state[density_component] *
+            state[first_momentum_component + d] / state[density_component];
     }
   const double b_perp = std::sqrt(b2 - nb * nb);
 
@@ -663,35 +706,35 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
                                  std::to_string(alp_f)));
 
   // Construct perpendicular normal vector n_perp
-  dealii::Tensor<1, spacedim> n_perp;
+  dealii::Tensor<1, n_vec_components> n_perp;
   if (b_perp > 0)
     {
-      for (unsigned int d = 0; d < spacedim; ++d)
-        n_perp[d] = (state[first_magnetic_component + d] - nb * normal[d]);
+      for (unsigned int d = 0; d < n_vec_components; ++d)
+        n_perp[d] = (state[first_magnetic_component + d] - nb * normal_3d[d]);
     }
   else
     {
       n_perp         = 0; // tmp for e_j
-      unsigned int j = 0; // j = arg_min(normal)
-      for (unsigned int d = 1; d < spacedim; ++d)
-        if (std::abs(normal[d]) < std::abs(normal[j]))
+      unsigned int j = 0; // j = arg_min(normal_3d)
+      for (unsigned int d = 1; d < n_vec_components; ++d)
+        if (std::abs(normal_3d[d]) < std::abs(normal_3d[j]))
           j = d;
       n_perp[j] = 1.;
-      n_perp    = dealii::cross_product_3d<spacedim>(n_perp, normal);
+      n_perp    = dealii::cross_product_3d<n_vec_components>(n_perp, normal_3d);
     }
   n_perp /= n_perp.norm();
 
   Assert(std::abs(n_perp.norm() - 1) < epsilon_d,
          dealii::ExcMessage("n_perp is not normalized."));
-  Assert(std::abs(normal * n_perp) < epsilon_d,
+  Assert(std::abs(normal_3d * n_perp) < epsilon_d,
          dealii::ExcMessage("n_perp is not perpendicular to normal"));
 
-  const double                      n_perp_u = n_perp * u;
-  const dealii::Tensor<1, spacedim> n_perp_cross_u =
-    dealii::cross_product_3d<spacedim>(n_perp, u);
-  const double                      sgn_nb = (nb >= 0.) ? 1. : -1.;
-  const dealii::Tensor<1, spacedim> n_perp_cross_normal =
-    dealii::cross_product_3d<spacedim>(n_perp, normal);
+  const double                              n_perp_u = n_perp * u;
+  const dealii::Tensor<1, n_vec_components> n_perp_cross_u =
+    dealii::cross_product_3d<n_vec_components>(n_perp, u);
+  const double                              sgn_nb = (nb >= 0.) ? 1. : -1.;
+  const dealii::Tensor<1, n_vec_components> n_perp_cross_normal =
+    dealii::cross_product_3d<n_vec_components>(n_perp, normal_3d);
 
   const double theta_1 =
     alp_f * alp_f * a_s2 *
@@ -727,11 +770,11 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
     alp_f * a_s2 * u2 / (4. * theta_1) +
     (sgn_nb * alp_f * a_s * nu - alp_s * c_s * n_perp_u) / (2. * theta_2);
   eigenvectors[0][energy_component] = alp_f * a_s2 / (2. * theta_1);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[0][first_momentum_component + d] =
         -alp_f * a_s2 / (2. * theta_1) * u[d] -
-        sgn_nb * alp_f * a_s / (2. * theta_2) * normal[d] +
+        sgn_nb * alp_f * a_s / (2. * theta_2) * normal_3d[d] +
         alp_s * c_s / (2. * theta_2) * n_perp[d];
       eigenvectors[0][first_magnetic_component + d] =
         alp_s * c_f * std::sqrt(state[density_component]) *
@@ -741,9 +784,9 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
 
 
   // Left alfven mode l_2
-  eigenvectors[1][density_component] = sgn_nb / 2. * normal * n_perp_cross_u;
+  eigenvectors[1][density_component] = sgn_nb / 2. * normal_3d * n_perp_cross_u;
   eigenvectors[1][energy_component]  = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[1][first_momentum_component + d] =
         sgn_nb / 2. * n_perp_cross_normal[d];
@@ -757,11 +800,11 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
     alp_s * c_f2 * u2 / (4. * theta_1) +
     (sgn_nb * alp_s * c_a * nu + alp_f * c_f * n_perp_u) / (2. * theta_2);
   eigenvectors[2][energy_component] = alp_s * c_f2 / (2. * theta_1);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[2][first_momentum_component + d] =
         -alp_s * c_f2 / (2. * theta_1) * u[d] -
-        sgn_nb * alp_s * c_a / (2. * theta_2) * normal[d] -
+        sgn_nb * alp_s * c_a / (2. * theta_2) * normal_3d[d] -
         alp_f * c_f / (2. * theta_2) * n_perp[d];
       eigenvectors[2][first_magnetic_component + d] =
         -alp_f * c_f * std::sqrt(state[density_component]) *
@@ -775,7 +818,7 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
     1. - (alp_f * alp_f * a_s2 + alp_s * alp_s * c_f2) * u2 / (2. * theta_1);
   eigenvectors[3][energy_component] =
     -(alp_f * alp_f * a_s2 + alp_s * alp_s * c_f2) / theta_1;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[3][first_momentum_component + d] =
         (alp_f * alp_f * a_s2 + alp_s * alp_s * c_f2) / theta_1 * u[d];
@@ -788,10 +831,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
   // Magnetic entropy mode l_5
   eigenvectors[4][density_component] = 0;
   eigenvectors[4][energy_component]  = 0;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[4][first_momentum_component + d] = 0;
-      eigenvectors[4][first_magnetic_component + d] = normal[d];
+      eigenvectors[4][first_magnetic_component + d] = normal_3d[d];
     }
 
 
@@ -800,11 +843,11 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
     alp_s * c_f2 * u2 / (4. * theta_1) -
     (sgn_nb * alp_s * c_a * nu + alp_f * c_f * n_perp_u) / (2. * theta_2);
   eigenvectors[5][energy_component] = alp_s * c_f2 / (2. * theta_1);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[5][first_momentum_component + d] =
         -alp_s * c_f2 / (2. * theta_1) * u[d] +
-        sgn_nb * alp_s * c_a / (2. * theta_2) * normal[d] +
+        sgn_nb * alp_s * c_a / (2. * theta_2) * normal_3d[d] +
         alp_f * c_f / (2. * theta_2) * n_perp[d];
       eigenvectors[5][first_magnetic_component + d] =
         -alp_f * c_f * std::sqrt(state[density_component]) *
@@ -814,9 +857,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
 
 
   // Right alfven mode l_7
-  eigenvectors[6][density_component] = -sgn_nb / 2. * normal * n_perp_cross_u;
-  eigenvectors[6][energy_component]  = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  eigenvectors[6][density_component] =
+    -sgn_nb / 2. * normal_3d * n_perp_cross_u;
+  eigenvectors[6][energy_component] = 0.;
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[6][first_momentum_component + d] =
         -sgn_nb / 2. * n_perp_cross_normal[d];
@@ -830,11 +874,11 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
     alp_f * a_s2 * u2 / (4. * theta_1) -
     (sgn_nb * alp_f * a_s * nu - alp_s * c_s * n_perp_u) / (2. * theta_2);
   eigenvectors[7][energy_component] = alp_f * a_s2 / (2. * theta_1);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[7][first_momentum_component + d] =
         -alp_f * a_s2 / (2. * theta_1) * u[d] +
-        sgn_nb * alp_f * a_s / (2. * theta_2) * normal[d] -
+        sgn_nb * alp_f * a_s / (2. * theta_2) * normal_3d[d] -
         alp_s * c_s / (2. * theta_2) * n_perp[d];
       eigenvectors[7][first_magnetic_component + d] =
         alp_s * c_f * std::sqrt(state[density_component]) *
@@ -848,15 +892,16 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::compute_transformation_matrices(
-  const state_type                                 &state,
-  std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
-  std::array<dealii::FullMatrix<double>, spacedim> &right_matrices) const
+  const state_type                            &state,
+  std::array<dealii::FullMatrix<double>, dim> &left_matrices,
+  std::array<dealii::FullMatrix<double>, dim> &right_matrices) const
 {
+  // TODO
   AssertDimension(state.size(), n_components);
 
-  dealii::Tensor<1, spacedim> direction;
+  dealii::Tensor<1, dim> direction;
 
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < dim; ++d)
     {
       AssertDimension(left_matrices[d].n(), n_components);
       AssertDimension(left_matrices[d].m(), n_components);
@@ -890,7 +935,7 @@ sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
 
   double u2 = 0.;
   double b2 = 0.;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       u2 += primitive_state[first_velocity_component + d] *
             primitive_state[first_velocity_component + d];
@@ -907,7 +952,7 @@ sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
 
   conserved_state[density_component] = primitive_state[density_component];
   conserved_state[energy_component]  = energy;
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       conserved_state[first_momentum_component + d] =
         primitive_state[density_component] *
@@ -930,7 +975,7 @@ sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
 
   primitive_state[density_component]  = conserved_state[density_component];
   primitive_state[pressure_component] = compute_pressure(conserved_state);
-  for (unsigned int d = 0; d < spacedim; ++d)
+  for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       primitive_state[first_velocity_component + d] =
         conserved_state[first_momentum_component + d] /
@@ -945,9 +990,9 @@ sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::convert_characteristic_to_conserved(
-  const state_type                  &characteristic_state,
-  const dealii::Tensor<1, spacedim> &normal,
-  state_type                        &conserved_state) const
+  const state_type             &characteristic_state,
+  const dealii::Tensor<1, dim> &normal,
+  state_type                   &conserved_state) const
 {
   dealii::FullMatrix<double> right_matrix(n_components);
   compute_right_eigenvector_matrix(conserved_state, normal, right_matrix);
@@ -960,9 +1005,9 @@ sapphirepp::MHD::MHDEquations<dim>::convert_characteristic_to_conserved(
 template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_characteristic(
-  const state_type                  &conserved_state,
-  const dealii::Tensor<1, spacedim> &normal,
-  state_type                        &characteristic_state) const
+  const state_type             &conserved_state,
+  const dealii::Tensor<1, dim> &normal,
+  state_type                   &characteristic_state) const
 {
   dealii::FullMatrix<double> left_matrix(n_components);
   compute_left_eigenvector_matrix(conserved_state, normal, left_matrix);
@@ -976,19 +1021,19 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::
   convert_gradient_characteristic_to_conserved(
-    const flux_type                                  &characteristic_gradient,
-    std::array<dealii::FullMatrix<double>, spacedim> &right_matrices,
-    flux_type                                        &conserved_gradient) const
+    const flux_type                             &characteristic_gradient,
+    std::array<dealii::FullMatrix<double>, dim> &right_matrices,
+    flux_type                                   &conserved_gradient) const
 {
-  for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
+  for (unsigned int d = 0; d < dim; ++d)
     {
       AssertDimension(right_matrices[d].n(), n_components);
       AssertDimension(right_matrices[d].m(), n_components);
 
-      for (unsigned int c1 = 0; c1 < MHDEquations<dim>::n_components; ++c1)
+      for (unsigned int c1 = 0; c1 < n_components; ++c1)
         {
           conserved_gradient[c1][d] = 0.;
-          for (unsigned int c2 = 0; c2 < MHDEquations<dim>::n_components; ++c2)
+          for (unsigned int c2 = 0; c2 < n_components; ++c2)
             {
               conserved_gradient[c1][d] +=
                 right_matrices[d][c1][c2] * characteristic_gradient[c2][d];
@@ -1003,19 +1048,19 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDEquations<dim>::
   convert_gradient_conserved_to_characteristic(
-    const flux_type                                  &conserved_gradient,
-    std::array<dealii::FullMatrix<double>, spacedim> &left_matrices,
-    flux_type &characteristic_gradient) const
+    const flux_type                             &conserved_gradient,
+    std::array<dealii::FullMatrix<double>, dim> &left_matrices,
+    flux_type                                   &characteristic_gradient) const
 {
-  for (unsigned int d = 0; d < MHDEquations<dim>::spacedim; ++d)
+  for (unsigned int d = 0; d < dim; ++d)
     {
       AssertDimension(left_matrices[d].n(), n_components);
       AssertDimension(left_matrices[d].m(), n_components);
 
-      for (unsigned int c1 = 0; c1 < MHDEquations<dim>::n_components; ++c1)
+      for (unsigned int c1 = 0; c1 < n_components; ++c1)
         {
           characteristic_gradient[c1][d] = 0;
-          for (unsigned int c2 = 0; c2 < MHDEquations<dim>::n_components; ++c2)
+          for (unsigned int c2 = 0; c2 < n_components; ++c2)
             {
               characteristic_gradient[c1][d] +=
                 left_matrices[d][c1][c2] * conserved_gradient[c2][d];
