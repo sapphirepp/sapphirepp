@@ -92,18 +92,19 @@ namespace sapphirepp
        *
        * @ref MHDEquations::spacedim
        */
-      static constexpr unsigned int spacedim = MHDEquations::spacedim;
+      static constexpr unsigned int spacedim = MHDEquations<dim>::spacedim;
       /**
        * @brief Number of components `c`.
        *
        * @ref MHDEquations::n_components
        */
-      static constexpr unsigned int n_components = MHDEquations::n_components;
+      static constexpr unsigned int n_components =
+        MHDEquations<dim>::n_components;
 
       /** @ref MHDEquations::state_type */
-      using state_type = typename MHDEquations::state_type;
+      using state_type = typename MHDEquations<dim>::state_type;
       /** @ref MHDEquations::flux_type */
-      using flux_type = typename MHDEquations::flux_type;
+      using flux_type = typename MHDEquations<dim>::flux_type;
 
 
       /**
@@ -295,7 +296,7 @@ namespace sapphirepp
        *
        * @return const MHDEquations&
        */
-      const MHDEquations &
+      const MHDEquations<dim> &
       get_mhd_equations() const;
 
       /**
@@ -397,9 +398,9 @@ namespace sapphirepp
 
       /** @{ */
       /** @ref MHDEquations */
-      MHDEquations mhd_equations;
+      MHDEquations<dim> mhd_equations;
       /** @ref NumericalFlux */
-      NumericalFlux<spacedim> numerical_flux;
+      NumericalFlux<dim> numerical_flux;
       /** @} */
 
       /** MPI communicator */
