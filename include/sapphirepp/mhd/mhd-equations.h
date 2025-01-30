@@ -50,7 +50,11 @@ namespace sapphirepp
     /**
      * @brief This exception is raised if a non-admissible MHD state is
      *        encountered, e.g. due to negative energy or pressure.
+     *
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
+     *         `dim`
      */
+    template <unsigned int dim = 1>
     class ExcNonAdmissibleState : public dealii::ExceptionBase
     {
     public:
@@ -62,9 +66,9 @@ namespace sapphirepp
        * @param point Point on the grid where the error occurred
        */
       ExcNonAdmissibleState(
-        const dealii::Vector<double>   &state,
-        const std::string              &msg   = "",
-        const dealii::Point<3, double> &point = dealii::Point<3, double>())
+        const dealii::Vector<double>     &state,
+        const std::string                &msg   = "",
+        const dealii::Point<dim, double> &point = dealii::Point<dim, double>())
         : state(state)
         , msg(msg)
         , point(point)
@@ -97,9 +101,9 @@ namespace sapphirepp
 
 
     private:
-      const dealii::Vector<double>   state;
-      const std::string              msg;
-      const dealii::Point<3, double> point;
+      const dealii::Vector<double>     state;
+      const std::string                msg;
+      const dealii::Point<dim, double> point;
     };
 
 
