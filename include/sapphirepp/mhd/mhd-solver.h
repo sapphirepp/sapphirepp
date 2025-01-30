@@ -87,10 +87,23 @@ namespace sapphirepp
     {
     public:
       /**
-       * Dimension of the space in which the equations operate, i.e. the
+       * @brief Dimension of the space in which the equations operate, i.e. the
        * dimension of the velocity and magnetic field.
+       *
+       * @ref MHDEquations::spacedim
        */
       static constexpr unsigned int spacedim = MHDEquations::spacedim;
+      /**
+       * @brief Number of components `c`.
+       *
+       * @ref MHDEquations::n_components
+       */
+      static constexpr unsigned int n_components = MHDEquations::n_components;
+
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEquations::state_type;
+      /** @ref MHDEquations::flux_type */
+      using flux_type = typename MHDEquations::flux_type;
 
 
       /**
@@ -551,8 +564,7 @@ namespace sapphirepp
        *              `false` otherwise.
        */
       bool
-      indicate_positivity_limiting(
-        const std::vector<MHDEquations::state_type> &states) const;
+      indicate_positivity_limiting(const std::vector<state_type> &states) const;
 
 
       /**
@@ -560,9 +572,9 @@ namespace sapphirepp
        *
        * @param cell The cell for which to compute the average.
        * @return Returns the cell average of the
-       *         @ref MHDEquations::state_type "MHD state".
+       *         @ref state_type "MHD state".
        */
-      inline typename MHDEquations::state_type
+      inline state_type
       get_cell_average(
         const typename dealii::DoFHandler<dim, spacedim>::cell_iterator &cell)
         const
@@ -577,8 +589,8 @@ namespace sapphirepp
           }
         else
           {
-            MHDEquations::state_type avg(MHDEquations::n_components);
-            double                   measure = 0;
+            state_type avg(n_components);
+            double     measure = 0;
             for (const auto &child_cell : cell->child_iterators())
               {
                 avg.add(child_cell->measure(), get_cell_average(cell));
