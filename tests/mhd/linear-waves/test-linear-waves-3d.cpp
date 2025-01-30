@@ -81,7 +81,6 @@ main(int argc, char *argv[])
 
 
       /** [Copy MHD parameter] */
-      const unsigned int spacedim    = MHDEquations<dim>::spacedim;
       physical_parameters.box_length = std::vector<double>(dim);
       for (unsigned int d = 0; d < dim; ++d)
         {
@@ -97,15 +96,15 @@ main(int argc, char *argv[])
       /** [Copy MHD parameter] */
 
       /** [Setup analytic solution] */
-      InitialConditionMHD<spacedim> analytic_solution(
+      InitialConditionMHD<dim> analytic_solution(
         physical_parameters, mhd_parameters.adiabatic_index);
       /** [Setup analytic solution] */
 
-      return test_run_mhd(mhd_parameters,
-                          physical_parameters,
-                          output_parameters,
-                          analytic_solution,
-                          max_L2_error);
+      return test_run_mhd<dim>(mhd_parameters,
+                               physical_parameters,
+                               output_parameters,
+                               analytic_solution,
+                               max_L2_error);
     }
   catch (std::exception &exc)
     {

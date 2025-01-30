@@ -52,9 +52,8 @@ int
 test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
              const sapphirepp::PhysicalParameters      &physical_parameters,
              sapphirepp::Utils::OutputParameters       &output_parameters,
-             dealii::Function<sapphirepp::MHD::MHDEquations<dim>::spacedim>
-                         &exact_solution,
-             const double max_L2_error = 1e-10)
+             dealii::Function<dim>                     &exact_solution,
+             const double                               max_L2_error = 1e-10)
 {
   try
     {
@@ -62,8 +61,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
       using namespace MHD;
 
       saplog << "Start test run mhd" << std::endl;
-      LogStream::Prefix  p("Test", saplog);
-      const unsigned int spacedim = MHDEquations<dim>::spacedim;
+      LogStream::Prefix p("Test", saplog);
 
       /** [Create error file] */
       std::ofstream error_file(output_parameters.output_path / "error.csv");
@@ -121,14 +119,14 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               LogStream::Prefix prefix("Output", saplog);
               saplog << "Output solution" << std::endl;
 
-              dealii::DataOut<dim, spacedim> data_out;
+              dealii::DataOut<dim> data_out;
               data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
               // Output numeric solution
               data_out.add_data_vector(
                 mhd_solver.get_current_solution(),
                 MHDEquations<dim>::create_component_name_list("numeric_"),
-                dealii::DataOut<dim, spacedim>::type_dof_data,
+                dealii::DataOut<dim>::type_dof_data,
                 MHDEquations<dim>::create_component_interpretation_list());
 
               // Output projected analytic solution
@@ -136,7 +134,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               data_out.add_data_vector(
                 analytic_solution_vector,
                 MHDEquations<dim>::create_component_name_list("project_"),
-                dealii::DataOut<dim, spacedim>::type_dof_data,
+                dealii::DataOut<dim>::type_dof_data,
                 MHDEquations<dim>::create_component_interpretation_list());
 
               // Output interpolated analytic solution
@@ -146,27 +144,27 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               data_out.add_data_vector(
                 analytic_solution_vector,
                 MHDEquations<dim>::create_component_name_list("interpol_"),
-                dealii::DataOut<dim, spacedim>::type_dof_data,
+                dealii::DataOut<dim>::type_dof_data,
                 MHDEquations<dim>::create_component_interpretation_list());
 
               // Output cell average and shock indicator
               data_out.add_data_vector(mhd_solver.get_cell_average_component(
                                          MHDEquations<dim>::density_component),
                                        "average_roh",
-                                       DataOut<dim, spacedim>::type_cell_data);
+                                       DataOut<dim>::type_cell_data);
               data_out.add_data_vector(mhd_solver.get_shock_indicator(),
                                        "shock_indicator",
-                                       DataOut<dim, spacedim>::type_cell_data);
+                                       DataOut<dim>::type_cell_data);
               data_out.add_data_vector(
                 mhd_solver.get_positivity_limiter_indicator(),
                 "positivity_limiter",
-                DataOut<dim, spacedim>::type_cell_data);
+                DataOut<dim>::type_cell_data);
               data_out.add_data_vector(mhd_solver.get_magnetic_divergence(),
                                        "magnetic_divergence",
-                                       DataOut<dim, spacedim>::type_cell_data);
+                                       DataOut<dim>::type_cell_data);
               data_out.add_data_vector(mhd_solver.get_cell_dt(),
                                        "cell_dt",
-                                       DataOut<dim, spacedim>::type_cell_data);
+                                       DataOut<dim>::type_cell_data);
 
               // Output the partition of the mesh
               const auto &triangulation = mhd_solver.get_triangulation();
@@ -177,7 +175,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               data_out.add_data_vector(subdomain, "subdomain");
 
               data_out.build_patches(mhd_parameters.polynomial_degree);
-              output_parameters.write_results<dim, spacedim>(
+              output_parameters.write_results<dim, dim>(
                 data_out,
                 discrete_time.get_step_number(),
                 discrete_time.get_current_time());
@@ -237,14 +235,14 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         LogStream::Prefix prefix("Output", saplog);
         saplog << "Output results" << std::endl;
 
-        dealii::DataOut<dim, spacedim> data_out;
+        dealii::DataOut<dim> data_out;
         data_out.attach_dof_handler(mhd_solver.get_dof_handler());
 
         // Output numeric solution
         data_out.add_data_vector(
           mhd_solver.get_current_solution(),
           MHDEquations<dim>::create_component_name_list("numeric_"),
-          dealii::DataOut<dim, spacedim>::type_dof_data,
+          dealii::DataOut<dim>::type_dof_data,
           MHDEquations<dim>::create_component_interpretation_list());
 
         // Output projected analytic solution
@@ -252,7 +250,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         data_out.add_data_vector(
           analytic_solution_vector,
           MHDEquations<dim>::create_component_name_list("project_"),
-          dealii::DataOut<dim, spacedim>::type_dof_data,
+          dealii::DataOut<dim>::type_dof_data,
           MHDEquations<dim>::create_component_interpretation_list());
 
         // Output interpolated analytic solution
@@ -262,26 +260,26 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         data_out.add_data_vector(
           analytic_solution_vector,
           MHDEquations<dim>::create_component_name_list("interpol_"),
-          dealii::DataOut<dim, spacedim>::type_dof_data,
+          dealii::DataOut<dim>::type_dof_data,
           MHDEquations<dim>::create_component_interpretation_list());
 
         // Output cell average and shock indicator
         data_out.add_data_vector(mhd_solver.get_cell_average_component(
                                    MHDEquations<dim>::density_component),
                                  "average_roh",
-                                 DataOut<dim, spacedim>::type_cell_data);
+                                 DataOut<dim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_shock_indicator(),
                                  "shock_indicator",
-                                 DataOut<dim, spacedim>::type_cell_data);
+                                 DataOut<dim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_positivity_limiter_indicator(),
                                  "positivity_limiter",
-                                 DataOut<dim, spacedim>::type_cell_data);
+                                 DataOut<dim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_magnetic_divergence(),
                                  "magnetic_divergence",
-                                 DataOut<dim, spacedim>::type_cell_data);
+                                 DataOut<dim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_cell_dt(),
                                  "cell_dt",
-                                 DataOut<dim, spacedim>::type_cell_data);
+                                 DataOut<dim>::type_cell_data);
 
         // Output the partition of the mesh
         const auto           &triangulation = mhd_solver.get_triangulation();
@@ -292,7 +290,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         data_out.add_data_vector(subdomain, "subdomain");
 
         data_out.build_patches(mhd_parameters.polynomial_degree);
-        output_parameters.write_results<dim, spacedim>(
+        output_parameters.write_results<dim, dim>(
           data_out,
           discrete_time.get_step_number(),
           discrete_time.get_current_time());
