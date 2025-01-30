@@ -87,13 +87,6 @@ namespace sapphirepp
     {
     public:
       /**
-       * @brief Dimension of the space in which the equations operate, i.e. the
-       * dimension of the velocity and magnetic field.
-       *
-       * @ref MHDEquations::spacedim
-       */
-      static constexpr unsigned int spacedim = MHDEquations<dim>::spacedim;
-      /**
        * @brief Number of components `c`.
        *
        * @ref MHDEquations::n_components
