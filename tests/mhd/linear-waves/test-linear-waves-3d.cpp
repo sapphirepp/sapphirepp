@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 
 
       /** [Copy MHD parameter] */
-      const unsigned int spacedim    = MHDEquations::spacedim;
+      const unsigned int spacedim    = MHDEquations<dim>::spacedim;
       physical_parameters.box_length = std::vector<double>(dim);
       for (unsigned int d = 0; d < dim; ++d)
         {
