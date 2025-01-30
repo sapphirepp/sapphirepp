@@ -89,19 +89,19 @@ main(int argc, char *argv[])
       /** [Main function setup] */
 
       /** [Setup exact solution] */
-      Utils::GridDataFunction<dim_mhd, MHDEquations<dim>::spacedim>
-        exact_solution(comparison_path,
-                       comparison_base_filename,
-                       MHDEquations<dim>::n_components,
-                       0.,
-                       5);
+      Utils::GridDataFunction<dim_mhd> exact_solution(
+        comparison_path,
+        comparison_base_filename,
+        MHDEquations<dim>::n_components,
+        0.,
+        5);
       /** [Setup exact solution] */
 
-      return test_run_mhd(mhd_parameters,
-                          physical_parameters,
-                          output_parameters,
-                          exact_solution,
-                          max_L2_error);
+      return test_run_mhd<dim_mhd>(mhd_parameters,
+                                   physical_parameters,
+                                   output_parameters,
+                                   exact_solution,
+                                   max_L2_error);
     }
   catch (std::exception &exc)
     {
