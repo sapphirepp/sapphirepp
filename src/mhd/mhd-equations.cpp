@@ -690,9 +690,9 @@ sapphirepp::MHD::MHDEquations::compute_left_eigenvector_matrix(
          ExcNonAdmissibleState(state,
                                "Expect positive value for theta_1 = " +
                                  std::to_string(theta_1)));
-  Assert(theta_2 > 0.,
+  Assert(std::fabs(theta_2) > epsilon_d,
          ExcNonAdmissibleState(state,
-                               "Expect positive value for theta_2 = " +
+                               "Expect non-zero value for theta_2 = " +
                                  std::to_string(theta_2)));
 
 
