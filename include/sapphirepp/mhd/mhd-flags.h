@@ -70,16 +70,17 @@ namespace sapphirepp
 
 
     /**
-     * @brief Implement the bitwise AND operator for the MHDFlags
+     * @brief Implement the bitwise AND operator for the MHDFlags,
+     *        to check if a specific flag is activated.
      *
      * @param f1 First MHDFlags
      * @param f2 Second MHDFlags
-     * @return constexpr MHDFlags f1 & f2
+     * @return constexpr bool f1 & f2
      */
-    constexpr MHDFlags
+    constexpr bool
     operator&(MHDFlags f1, MHDFlags f2)
     {
-      return static_cast<MHDFlags>(static_cast<int>(f1) & static_cast<int>(f2));
+      return (static_cast<int>(f1) & static_cast<int>(f2));
     }
 
 
@@ -97,8 +98,19 @@ namespace sapphirepp
     operator<<(StreamType &os, MHDFlags f)
     {
       os << "MHD flags: \n";
-      if ((f & MHDFlags::none) != MHDFlags::none)
-        os << "	 - None\n";
+      if (f & MHDFlags::no_limiting)
+        os << "	 - No limiting\n";
+      else
+        {
+          if (f & MHDFlags::primitive_limiting)
+            os << "	 - Limiting primitive variables\n";
+          else
+            os << "	 - Limiting conserved variables\n";
+        }
+      if (f & MHDFlags::no_shock_indicator)
+        os << "	 - Limit all cells (no shock indicator)\n";
+      if (f & MHDFlags::no_positivity_limiting)
+        os << "	 - No positivity limiting\n";
       return os;
     }
 

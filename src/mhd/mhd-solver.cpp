@@ -299,6 +299,18 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   LogStream::Prefix p2("Constructor", saplog);
   saplog << mhd_flags << std::endl;
   saplog << "dim_mhd=" << dim << std::endl;
+
+  AssertThrow(
+    (1 <= dim) && (dim <= 3),
+    ExcMessage("The dimension must be greater than or equal to one and smaller "
+               "or equal to three."));
+
+  if (mhd_flags & MHDFlags::primitive_limiting)
+    {
+      AssertThrow(mhd_flags & MHDFlags::no_limiting,
+                  ExcMessage(
+                    "Limiting must be activated to use primitive limiting."));
+    }
 }
 
 
@@ -607,7 +619,7 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
 {
-  if constexpr ((mhd_flags & MHDFlags::no_shock_indicator) != MHDFlags::none)
+  if constexpr (mhd_flags & MHDFlags::no_shock_indicator)
     {
       shock_indicator = 2.;
       return;
@@ -765,8 +777,7 @@ bool
 sapphirepp::MHD::MHDSolver<dim>::indicate_positivity_limiting(
   const std::vector<state_type> &states) const
 {
-  if constexpr ((mhd_flags & MHDFlags::no_positivity_limiting) !=
-                MHDFlags::none)
+  if constexpr (mhd_flags & MHDFlags::no_positivity_limiting)
     return false;
 
   const double eps = 1e-10;
@@ -790,7 +801,7 @@ template <unsigned int dim>
 void
 sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 {
-  if constexpr ((mhd_flags & MHDFlags::no_limiting) != MHDFlags::none)
+  if constexpr (mhd_flags & MHDFlags::no_limiting)
     return;
 
   TimerOutput::Scope t(timer, "Limiter - MHD");
@@ -933,8 +944,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
           }
 
         double diff;
-        if constexpr ((mhd_flags & MHDFlags::primitive_limiting) !=
-                      MHDFlags::none)
+        if constexpr (mhd_flags & MHDFlags::primitive_limiting)
           {
             // Primitive Limiting
             diff = SlopeLimiter::minmod_gradients<dim>(
