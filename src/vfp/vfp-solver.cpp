@@ -235,8 +235,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
     ExcMessage(
       "The total dimension must be greater than or equal to one and smaller or"
       " equal to three."));
-  if (((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none) and
-      (dim_cs != 0))
+  if (((vfp_flags & VFPFlags::spatial_advection) == false) && (dim_cs != 0))
     {
       std::cerr
         << "WARNING: spatial advection is deactivated, but dim_cs > 0"
@@ -247,18 +246,17 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
         << "  i.e. the dimension of the configuration space should be zero."
         << std::endl;
     }
-  if ((vfp_flags & VFPFlags::time_independent_fields) != VFPFlags::none)
+  if (vfp_flags & VFPFlags::time_independent_fields)
     {
-      AssertThrow(((vfp_flags & VFPFlags::spatial_advection) !=
-                   VFPFlags::none) ||
-                    ((vfp_flags & VFPFlags::rotation) != VFPFlags::none),
+      AssertThrow((vfp_flags & VFPFlags::spatial_advection) ||
+                    (vfp_flags & VFPFlags::rotation),
                   ExcMessage("Either the spatial advection or the rotation "
                              "term must be activated if the fields are time "
                              "independent."));
     }
-  if ((vfp_flags & VFPFlags::time_independent_source) != VFPFlags::none)
+  if (vfp_flags & VFPFlags::time_independent_source)
     {
-      AssertThrow((vfp_flags & VFPFlags::source) != VFPFlags::none,
+      AssertThrow(vfp_flags & VFPFlags::source,
                   ExcMessage(
                     "The source term must be activated if the source is time "
                     "independent."));
@@ -303,7 +301,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   // Assemble the dg matrix for t = 0
   assemble_dg_matrix(0);
   // Source term at t = 0;
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     {
       Source<dim_ps> source_function(physical_parameters,
                                      pde_system.system_size);
@@ -579,7 +577,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                                            mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
@@ -741,8 +739,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 const unsigned int component_j =
                   fe_v.get_fe().system_to_component_index(j).first;
-                if constexpr ((vfp_flags & VFPFlags::collision) !=
-                              VFPFlags::none)
+                if constexpr (vfp_flags & VFPFlags::collision)
                   {
                     if (component_i == component_j)
                       {
@@ -785,7 +782,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                         // matrices Ax, Ay and A_z are sparse. TODO:
                         // Performance check. If too bad, return to the
                         // strategy, which was used in v0.6.5
-                        if ((vfp_flags & VFPFlags::momentum) != VFPFlags::none)
+                        if (vfp_flags & VFPFlags::momentum)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_grad(i, q_index)[coordinate] *
@@ -806,8 +803,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((vfp_flags & VFPFlags::rotation) !=
-                              VFPFlags::none)
+                if constexpr (vfp_flags & VFPFlags::rotation)
                   {
                     // NOTE: All three components of the B-Field are
                     // included no matter, which dimension of the
@@ -815,7 +811,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                     for (unsigned int coordinate = 0; coordinate < 3;
                          ++coordinate)
                       {
-                        if ((vfp_flags & VFPFlags::momentum) != VFPFlags::none)
+                        if (vfp_flags & VFPFlags::momentum)
                           {
                             copy_data.cell_matrix(i, j) -=
                               fe_v.shape_value(i, q_index) *
@@ -840,8 +836,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           }
                       }
                   }
-                if constexpr ((vfp_flags & VFPFlags::momentum) !=
-                              VFPFlags::none)
+                if constexpr (vfp_flags & VFPFlags::momentum)
                   {
                     if constexpr (logarithmic_p)
                       {
@@ -1169,10 +1164,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 const unsigned int component_j =
                   fe_face_v.get_fe().system_to_component_index(j).first;
 
-                // TODO: Removed constexpr check - why was it here?
-                // if constexpr ((vfp_flags & VFPFlags::spatial_advection) !=
-                //               VFPFlags::none)
-
                 switch (boundary_condition)
                   {
                     case BoundaryConditions::continuous:
@@ -1403,10 +1394,10 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   dg_matrix.vmult(tmp, locally_owned_previous_solution);
   system_rhs.add(-time_step * (1 - theta), tmp);
   // Source term
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
-                    VFPFlags::none) // time dependent source
+                    false) // time dependent source
         {
           system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
           // Update the source term
@@ -1430,7 +1421,7 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   // reassembled every time step. This is not true for the mass matrix ( but
   // it may if the grid adapts after a specified amount of time steps)
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
-                VFPFlags::none) // time dependent fields
+                false) // time dependent fields
     {
       dg_matrix = 0;
       assemble_dg_matrix(time + time_step);
@@ -1504,7 +1495,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   PETScWrappers::MPI::Vector k_0(locally_owned_dofs, mpi_communicator);
   // dg_matrix(time)
   dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
@@ -1520,17 +1511,17 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   // Compute dg_matrix(time + c[1] * time_step) if the fields are time
   // dependent
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
-                VFPFlags::none) // time dependent fields
+                false) // time dependent fields
     {
       dg_matrix = 0;
       assemble_dg_matrix(time + c[1] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
-                    VFPFlags::none) // time dependent source
+                    false) // time dependent source
         {
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
@@ -1561,10 +1552,10 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   // since c[1] = c[2]
   temp.add(1., locally_owned_previous_solution, a[1] * time_step, k_1);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
-                    VFPFlags::none) // time dependent source
+                    false) // time dependent source
         {
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
@@ -1594,17 +1585,17 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   // Compute dg_matrix(time + c[1] * time_step) if the fields are time
   // dependent
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
-                VFPFlags::none) // time dependent fields
+                false) // time dependent fields
     {
       dg_matrix = 0;
       assemble_dg_matrix(time + c[3] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
   dg_matrix.vmult(system_rhs, temp);
-  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+  if constexpr (vfp_flags & VFPFlags::source)
     {
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
-                    VFPFlags::none) // time dependent source
+                    false) // time dependent source
         {
           Source<dim_ps> source_function(physical_parameters,
                                          pde_system.system_size);
@@ -1685,18 +1676,18 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
       // only assemble the dg_matrix in every stage if the fields are time
       // dependent
       if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
-                    VFPFlags::none) // time dependent fields
+                    false) // time dependent fields
         assemble_dg_matrix(time + c[s] * time_step);
 
       dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
       if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
-                    VFPFlags::none) // time dependent fields
+                    false) // time dependent fields
         dg_matrix = 0;
 
-      if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+      if constexpr (vfp_flags & VFPFlags::source)
         {
           if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
-                        VFPFlags::none) // time dependent source
+                        false) // time dependent source
             {
               Source<dim_ps> source_function(physical_parameters,
                                              pde_system.system_size);

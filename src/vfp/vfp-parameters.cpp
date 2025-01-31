@@ -41,7 +41,7 @@
 template <unsigned int dim>
 sapphirepp::VFP::VFPParameters<dim>::VFPParameters(const VFPFlags &vfp_flags)
   : vfp_flags{vfp_flags}
-  , momentum{(vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false}
+  , momentum{vfp_flags & VFPFlags::momentum}
   , dim_cs{dim - momentum}
 {}
 

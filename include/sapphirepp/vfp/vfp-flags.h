@@ -139,16 +139,17 @@ namespace sapphirepp
 
 
     /**
-     * @brief Implement the bitwise AND operator for the VFPFlags
+     * @brief Implement the bitwise AND operator for the VFPFlags,
+     *        to check if a specific flag is activated.
      *
      * @param f1 First VFPFlags
      * @param f2 Second VFPFlags
-     * @return constexpr VFPFlags f1 & f2
+     * @return constexpr bool f1 & f2
      */
-    constexpr VFPFlags
+    constexpr bool
     operator&(VFPFlags f1, VFPFlags f2)
     {
-      return static_cast<VFPFlags>(static_cast<int>(f1) & static_cast<int>(f2));
+      return (static_cast<int>(f1) & static_cast<int>(f2));
     }
 
 
@@ -166,28 +167,28 @@ namespace sapphirepp
     operator<<(StreamType &os, VFPFlags f)
     {
       os << "VFP flags: \n";
-      if ((f & VFPFlags::spatial_advection) != VFPFlags::none)
+      if (f & VFPFlags::spatial_advection)
         os << "	 - Spatial Advection\n";
-      if ((f & VFPFlags::collision) != VFPFlags::none)
+      if (f & VFPFlags::collision)
         os << "	 - Collision\n";
-      if ((f & VFPFlags::rotation) != VFPFlags::none)
+      if (f & VFPFlags::rotation)
         os << "	 - Rotation\n";
-      if ((f & VFPFlags::time_independent_fields) != VFPFlags::none)
+      if (f & VFPFlags::time_independent_fields)
         os << "	 - Time Independent Fields\n";
       else
         os << "	 - Time Dependent Fields\n";
-      if ((f & VFPFlags::momentum) != VFPFlags::none)
+      if (f & VFPFlags::momentum)
         {
           os << "	 - Momentum";
-          if ((f & VFPFlags::linear_p) != VFPFlags::none)
+          if (f & VFPFlags::linear_p)
             os << "	(linear)\n";
           else
             os << "	(logarithmic)\n";
         }
-      if ((f & VFPFlags::source) != VFPFlags::none)
+      if (f & VFPFlags::source)
         {
           os << "	 - Source";
-          if ((f & VFPFlags::time_independent_source) != VFPFlags::none)
+          if (f & VFPFlags::time_independent_source)
             os << "	(time independent)\n";
           else
             os << " (time dependent)\n";
