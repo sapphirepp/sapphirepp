@@ -77,9 +77,11 @@ t = n \times T_g) \neq 0$ even though the initial condition is isotropic.
 
 ## Implementation {#implementation-gyro-advection}
 
-You can find the implementation of this example in the `examples/gyro-advection`
-directory. The subsequent sections provide a concise guide on how to implement
-this example in @sapphire. This guide assumes that you have already gone through
+You can find the implementation of this example
+in the `examples/vfp/gyro-advection` directory.
+The subsequent sections provide a concise guide on
+how to implement this example in @sapphire.
+This guide assumes that you have already gone through
 the [quick start](#quick-start) and [parallel-shock](#parallel-shock) examples,
 and are familiar with the basic concepts of @sapphire.
 
@@ -90,7 +92,7 @@ we use a 2d configuration space, $(x,y)$. Given that we're examining a
 discrete momentum $\mathbf{p} = \gamma m \mathbf{v}$, we can equate the reduced
 phase space to the configuration space, setting `dim = dim_ps = dim_cs = 2`.
 
-@snippet{lineno} examples/gyro-advection/config.h Dimension
+@snippet{lineno} examples/vfp/gyro-advection/config.h Dimension
 
 Revisiting the VFP equation,
 
@@ -109,7 +111,7 @@ interactions, $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f
 Consequently, we activate these three @ref sapphirepp::VFP::VFPFlags
 "VFP flags":
 
-@snippet{lineno} examples/gyro-advection/config.h VFP Flags
+@snippet{lineno} examples/vfp/gyro-advection/config.h VFP Flags
 
 ### Runtime Parameters {#parameter-gyro-advection}
 
@@ -125,7 +127,7 @@ declare, and parse our custom runtime parameters, as demonstrated in the
 
    We start by defining our runtime parameters:
 
-   @snippet{lineno} examples/gyro-advection/config.h Define runtime parameter
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Define runtime parameter
 
 2. **Declare**
   
@@ -133,13 +135,13 @@ declare, and parse our custom runtime parameters, as demonstrated in the
    This ensures that $T_{\rm final} = n \times \gamma$ corresponds to exactly
    $n$ full gyroperiods $T_g$ (assuming $m = q = c =1$).
 
-   @snippet{lineno} examples/gyro-advection/config.h Declare runtime parameter
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Declare runtime parameter
 
 3. **Parse**
 
    Finally, we parse the runtime parameters:
 
-   @snippet{lineno} examples/gyro-advection/config.h Parse runtime parameter
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Parse runtime parameter
 
 ### Initial Condition {#initial-condition-gyro-advection}
 
@@ -150,7 +152,7 @@ x^2+y^2$, we employ the
 @dealref{point.norm_square(),classTensor,ac9829e8f74544262c6b0ec1f39429029}
 function.
 
-@snippet{lineno} examples/gyro-advection/config.h Initial value
+@snippet{lineno} examples/vfp/gyro-advection/config.h Initial value
 
 ### Magnetic field {#magnetic-field-gyro-advection}
 
@@ -158,7 +160,7 @@ The implementation of the magnetic field is straightforward. We assign
 $\mathbf{B} = B_0 \hat{\mathbf{e}}_z$ within the @ref
 sapphirepp::VFP::MagneticField "MagneticField" class:
 
-@snippet{lineno} examples/gyro-advection/config.h Magnetic field
+@snippet{lineno} examples/vfp/gyro-advection/config.h Magnetic field
 
 ### Velocity field {#velocity-gyro-advection}
 
@@ -171,20 +173,20 @@ field.
 1. Background velocity field value $\mathbf{u}(\mathbf{x}) = u_0
    \hat{\mathbf{e}}_x + u_0 \hat{\mathbf{e}}_y$:
 
-   @snippet{lineno} examples/gyro-advection/config.h Background velocity value
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Background velocity value
 
 2. Background velocity divergence $\nabla \cdot \mathbf{u}(\mathbf{x}) = 0$:
 
-   @snippet{lineno} examples/gyro-advection/config.h Background velocity divergence
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Background velocity divergence
 
 3. Background velocity material derivative $\frac{\mathrm{D}
    \mathbf{u}}{\mathrm{D} t} = 0$:
 
-   @snippet{lineno} examples/gyro-advection/config.h Background velocity material derivative
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Background velocity material derivative
 
 4. Background velocity Jacobian $\frac{\partial u_{x}}{\partial x} = 0$:
 
-   @snippet{lineno} examples/gyro-advection/config.h Background velocity Jacobian
+   @snippet{lineno} examples/vfp/gyro-advection/config.h Background velocity Jacobian
 
 ## Results {#results-gyro-advection}
 
@@ -219,12 +221,13 @@ that a higher $l_{\rm max}$ leads to a smaller residual.
 
 ### Example parameter file {#example-parameter-gyro-advection}
 
-The parameter file below can be used to run the simulation. Be aware that this
-is a high resolution simulation and may take a long time to execute (~200 core
-hours). Templates for lower resolution simulations are provided in
-`tests/gyro-advection`.
+The parameter file below can be used to run the simulation.
+Be aware that this is a high resolution simulation
+and may take a long time to execute (~200 core hours).
+Templates for lower resolution simulations
+are provided in `tests/vfp/gyro-advection`.
 
-@include{lineno} examples/gyro-advection/parameter.prm
+@include{lineno} examples/vfp/gyro-advection/parameter.prm
 
 <div class="section_buttons">
 

@@ -91,7 +91,7 @@ Given that the example considers a one-dimensional problem with decoupling of
 the momenta, we can set the dimensionality of the problem to `dim = dim_ps =
 dim_cs = 2`.
 
-@snippet{lineno} examples/convergence-study/config.h Dimension
+@snippet{lineno} examples/vfp/convergence-study/config.h Dimension
 
 In the VFP equation, we only have the @ref sapphirepp::VFP::VFPFlags::rotation
 "rotation", $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$,
@@ -101,7 +101,7 @@ the spatial case of a static background plasma, $\mathbf{u} = 0$. The magnetic
 field is time independent, hence we can use
 @ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent" flag.
 
-@snippet{lineno} examples/convergence-study/config.h VFP Flags
+@snippet{lineno} examples/vfp/convergence-study/config.h VFP Flags
 
 #### Runtime Parameters {#parameter-convergence-study}
 
@@ -124,7 +124,7 @@ goes for the velocity $v$, gamma factor $\gamma$, charge $q$, and mass $m$.
    $m$. We will copy their values in the [main
    function](#setup-convergence-study).
 
-   @snippet{lineno} examples/convergence-study/config.h Define runtime parameter
+   @snippet{lineno} examples/vfp/convergence-study/config.h Define runtime parameter
 
 2. **Declare**
   
@@ -135,13 +135,13 @@ goes for the velocity $v$, gamma factor $\gamma$, charge $q$, and mass $m$.
     \times \frac{2 \pi}{B_0} \frac{\gamma m}{q}$ corresponds to exactly $n$ full
    gyroperiods.
 
-   @snippet{lineno} examples/convergence-study/config.h Declare runtime parameter
+   @snippet{lineno} examples/vfp/convergence-study/config.h Declare runtime parameter
 
 3. **Parse**
 
    Last, we parse the runtime parameter $B_0$:
 
-   @snippet{lineno} examples/convergence-study/config.h Parse runtime parameter
+   @snippet{lineno} examples/vfp/convergence-study/config.h Parse runtime parameter
 
 #### Analytic solution {#initial-condition-convergence-study}
 
@@ -176,20 +176,20 @@ of the @dealref{dealii::Function,classFunction} class. We define the
 coefficients $A_n$ and $B_n$ as array, containing `A[0] = A_0`, `A[1] = A_1`,
 etc.
 
-@snippet{lineno} examples/convergence-study/config.h Initial value constants
+@snippet{lineno} examples/vfp/convergence-study/config.h Initial value constants
 
 Now, we implement the solution by looping over the modes $n=0$ until $n_{\rm
 max}$. Note that we took special care in the $f_{000}$ term to avoid division by
 $c_n$, which evaluates to zero for $n=0$.
 
-@snippet{lineno} examples/convergence-study/config.h Initial value
+@snippet{lineno} examples/vfp/convergence-study/config.h Initial value
 
 #### Magnetic field {#magnetic-field-convergence-study}
 
 The implementation of the magnetic field $\mathbf{B} = B_0 \hat{\mathbf{e}}_z$
 is straightforward:f
 
-@snippet{lineno} examples/convergence-study/config.h Magnetic field
+@snippet{lineno} examples/vfp/convergence-study/config.h Magnetic field
 
 ### convergence-study.cpp {#main-convergence-study}
 
@@ -205,25 +205,25 @@ the solution (see the [visualization](#visualization) section).
 The setup in the main function is fairly standard. We initialize MPI, and the
 @ref sapphirepp::saplog "saplog" stream. We then parse the runtime parameters.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Main function setup
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Main function setup
 
 One speciality is that we need to copy the runtime parameters $L$, $v$,
 $\gamma$, $q$, and $m$ to the @ref sapphirepp::PhysicalParameters
 "PhysicalParameters" class. In addition, we check if the assumptions of $l_{\rm
 max} = 1$ and periodic boundary conditions are met.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Copy VFP parameter
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Copy VFP parameter
 
 As we want to calculate the numerical error at every time step, we create a
 `csv` file to store the results.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Create error file
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Create error file
 
 Now we create and set up the @ref sapphirepp::VFP::VFPSolver "VFPSolver" object.
 Notice that we are not using the @ref sapphirepp::VFP::VFPSolver::run "run()"
 function, but implement the time loop ourselves.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Setup vfp_solver
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Setup vfp_solver
 
 Last, we have to prepare the analytic solution. To this end create an instance
 of the @ref sapphirepp::VFP::InitialValueFunction "InitialValueFunction" and a
@@ -231,7 +231,7 @@ of the @ref sapphirepp::VFP::InitialValueFunction "InitialValueFunction" and a
 @dealref{ComponentSelectFunction} in order to on;y compare the $f_{000}$ modes
 when calculating the error.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Setup analytic solution
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Setup analytic solution
 
 #### Time loop {#time-loop-convergence-study}
 
@@ -244,7 +244,7 @@ we have to perform the following steps:
 
 To keep track of the time steps, we use the @dealref{DiscreteTime} class.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Time loop
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Time loop
 
 We only want to output the solution every Nth time steps, where N is the
 `output_frequency`. Ensuring this with an `if` statement, we add three
@@ -254,7 +254,7 @@ different vectors to the output:
 - a projection of analytic solution onto the finite element DG space
 - an interpolation of the analytic solution
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Output solution
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Output solution
 
 Next we calculate the error and the norm of the solution. Notice that the
 `weight` function allows us to only select the $f_{000}$ mode. Having both the
@@ -269,13 +269,13 @@ $$
 
 We output this results and save them to the `csv` file.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Calculate error
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Calculate error
 
 Finally, we advance the time by performing an Euler or Runge-Kutta step. We
 select the method according to the `time_stepping_method` runtime parameter, and
 use the methods implemented in the @ref sapphirepp::VFP::VFPSolver "VFPSolver".
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Time step
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Time step
 
 #### End simulation {#end-simulation-convergence-study}
 
@@ -286,11 +286,11 @@ final error.
   Therefore, we additionally need to output the final results after the last
   time step.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp Last time step
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Last time step
 
 Finally, we can end the simulation and close the `csv` file.
 
-@snippet{lineno} examples/convergence-study/convergence-study.cpp End simulation
+@snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp End simulation
 
 ## Results {#results-convergence-study}
 
@@ -323,11 +323,11 @@ follow a $(\Delta x)^{k+1}$ scaling, assuming the projection error dominates.
 
 ### config.h {#plain-config-convergence-study}
 
-@include{lineno} examples/convergence-study/config.h
+@include{lineno} examples/vfp/convergence-study/config.h
 
 ### convergence-study.cpp {#plain-main-convergence-study}
 
-@include{lineno} examples/convergence-study/convergence-study.cpp
+@include{lineno} examples/vfp/convergence-study/convergence-study.cpp
 
 <div class="section_buttons">
 

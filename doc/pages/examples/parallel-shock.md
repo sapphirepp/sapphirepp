@@ -174,7 +174,7 @@ two-dimensional reduced phase space. The $\theta$ dependence is handled by the
 spherical harmonics with $l>0$. Because we don't have any
 dependence on $\varphi$, spherical harmonics with $m>0$ will be zero.
 
-@snippet{lineno} examples/parallel-shock/config.h Dimension
+@snippet{lineno} examples/vfp/parallel-shock/config.h Dimension
 
 Next, we need to specify which parts of the VFP equation are present in our
 problem. Here, we have the full VFP equation,
@@ -191,7 +191,7 @@ We therefore need to list all flags in the `vfp_flags` variable. In addition, we
 know that the velocity field and magnetic field time independent, as well as the
 source.
 
-@snippet{lineno} examples/parallel-shock/config.h VFP Flags
+@snippet{lineno} examples/vfp/parallel-shock/config.h VFP Flags
 
 ### Defining Custom Runtime Parameters {#parameter-parallel-shock}
 
@@ -223,7 +223,7 @@ Implementing these parameters in @sapphire involves a three-step process:
    "PhysicalParameters" class in the `config.h` file. This step informs the
    compiler about these parameters.
 
-   @snippet{lineno} examples/parallel-shock/config.h Define runtime parameter
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Define runtime parameter
 
 2. **Declare** the parameters in the parameter file. This step ensures that the
    parameter parser expects these parameters. The @dealii concept of a
@@ -242,7 +242,7 @@ Implementing these parameters in @sapphire involves a three-step process:
    sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()"
    function is edited to include the following code:
 
-   @snippet{lineno} examples/parallel-shock/config.h Declare runtime parameter
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Declare runtime parameter
 
 3. **Parse** the values defined in the parameter file. This step sets the values
    of the parameters according to the parameter file. The
@@ -252,7 +252,7 @@ Implementing these parameters in @sapphire involves a three-step process:
    sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()"
    function and the following code is included:
 
-   @snippet{lineno} examples/parallel-shock/config.h Parse runtime parameter
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Parse runtime parameter
 
 ### Scattering frequency {#scattering-frequency-parallel-shock}
 
@@ -269,7 +269,7 @@ in reduced phase space that is given to function. One peculiarity here is, that
 the function calculates the scattering frequency at multiple `points`. We use
 the index `q_index` to refer to an individual point:
 
-@snippet{lineno} examples/parallel-shock/config.h Scattering frequency
+@snippet{lineno} examples/vfp/parallel-shock/config.h Scattering frequency
 
 Notice that we use access the runtime parameter $\nu_0$ via the (previously
 modified) @ref sapphirepp::PhysicalParameters "PhysicalParameters" class `prm`.
@@ -293,7 +293,7 @@ distribution of particles, we can set all $l>0$ components to zero. Notice that
 here we use the index `i` to refer to the components of the spherical harmonics,
 $i(l,m,s)$, at one `point`.
 
-@snippet{lineno} examples/parallel-shock/config.h Source
+@snippet{lineno} examples/vfp/parallel-shock/config.h Source
 
 ### Magnetic field {#magnetic-field-parallel-shock}
 
@@ -301,7 +301,7 @@ As described above, we use a constant magnetic field parallel to the shock,
 $\mathbf{B} = B_0 \hat{\mathbf{e}}_x$. It does not influence the steady state
 solution, but nevertheless we include it for completeness.
 
-@snippet{lineno} examples/parallel-shock/config.h Magnetic field
+@snippet{lineno} examples/vfp/parallel-shock/config.h Magnetic field
 
 ### Velocity field {#velocity-parallel-shock}
 
@@ -315,20 +315,20 @@ u_{x}}{\partial x}$ stays the same.
 
 1. Background velocity field value $\mathbf{u}(\mathbf{x})$:
 
-   @snippet{lineno} examples/parallel-shock/config.h Background velocity value
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity value
 
 2. Background velocity divergence $\nabla \cdot \mathbf{u}(\mathbf{x})$:
 
-   @snippet{lineno} examples/parallel-shock/config.h Background velocity divergence
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity divergence
 
 3. Background velocity material derivative $\frac{\mathrm{D}
    \mathbf{u}}{\mathrm{D} t}$:
 
-   @snippet{lineno} examples/parallel-shock/config.h Background velocity material derivative
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity material derivative
 
 4. Background velocity Jacobian $\frac{\partial u_{x}}{\partial x}$:
 
-   @snippet{lineno} examples/parallel-shock/config.h Background velocity Jacobian
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity Jacobian
 
 ### Compile and run {#compile-parallel-shock}
 
@@ -340,25 +340,26 @@ recompile @sapphire:
   make
 ```
 
-Alternatively, you can use the implementation in the `examples/parallel-shock`
-folder. This executable will be named `parallel-shock` instead of `sapphirepp`.
-Note that for this to work, @sapphire must be configured with the
-`-DEXAMPLES=ON` option.
+Alternatively, you can use the implementation
+in the `examples/vfp/parallel-shock` folder.
+This executable will be named `parallel-shock` instead of `sapphirepp`.
+Note that for this to work,
+@sapphire must be configured with the `-DEXAMPLES=ON` option.
 
 ```shell
-  cd sapphirepp/build/examples/parallel-shock
+  cd sapphirepp/build/examples/vfp/parallel-shock
   make parallel-shock
 ```
 
 We recommend running the simulation with the parameters given in
-`examples/parallel-shock/parameter.prm`:
+`examples/vfp/parallel-shock/parameter.prm`:
 
-@include examples/parallel-shock/parameter.prm
+@include examples/vfp/parallel-shock/parameter.prm
 
 Run the simulation with:
 
 ```shell
-  cd sapphirepp/build/examples/parallel-shock
+  cd sapphirepp/build/examples/vfp/parallel-shock
   ./parallel-shock parameter.prm
 ```
 

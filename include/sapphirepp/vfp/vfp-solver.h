@@ -121,15 +121,14 @@ namespace sapphirepp
                                   parallel::shared::Triangulation<dim>>::type;
 
       /** Is the momentum term activated? */
-      static constexpr bool momentum =
-        (vfp_flags & VFPFlags::momentum) != VFPFlags::none ? true : false;
+      static constexpr bool momentum = vfp_flags & VFPFlags::momentum;
       /** Dimension in reduced phase space */
       static constexpr int dim_ps = dim;
       /** Dimension of the configuration space */
       static constexpr int dim_cs = dim - momentum;
       /** Do we use a logarithmic momentum variable? */
       static constexpr bool logarithmic_p =
-        (vfp_flags & VFPFlags::linear_p) == VFPFlags::none;
+        (vfp_flags & VFPFlags::linear_p) == false;
 
 
 
