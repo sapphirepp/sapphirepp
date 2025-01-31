@@ -747,18 +747,6 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
          ExcNonAdmissibleState(state,
                                "Expect positive value for theta_1 = " +
                                  std::to_string(theta_1)));
-  if ((theta_2 <= 0.) || (std::fabs(theta_2) <= epsilon_d))
-    {
-      saplog << "state = " << state << "\n n=" << normal
-             << ", n_perp=" << n_perp << "\n u=" << u << ", P=" << pressure
-             << "\n"
-             << b2 << " " << u2 << " " << nu << " " << nb << " " << b_perp
-             << "\n"
-             << a_s2 << " " << c_a2 << " " << d_n << "\n"
-             << a_s << " " << c_a << " " << c_s << " " << c_f << "\n"
-             << alp_s << " " << alp_f << " " << sgn_nb
-             << "\n theta_2=" << theta_2 << std::endl;
-    }
   Assert(std::fabs(theta_2) > epsilon_d,
          ExcNonAdmissibleState(state,
                                "Expect non-zero value for theta_2 = " +
