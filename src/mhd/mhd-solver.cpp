@@ -30,6 +30,7 @@
 #include <deal.II/base/data_out_base.h>
 #include <deal.II/base/discrete_time.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/base/polynomials_bdm.h>
 #include <deal.II/base/table.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
@@ -294,7 +295,8 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
        (mhd_flags & MHDFlags::divergence_free) ?
          (n_components - MHDEquations<dim>::n_vec_components) :
          n_components,
-       FE_DGNedelec<dim>(mhd_parameters.polynomial_degree),
+       FE_DGVector<PolynomialsBDM<dim>, dim>(mhd_parameters.polynomial_degree,
+                                             mapping_bdm),
        (mhd_flags & MHDFlags::divergence_free) ? 1 : 0,
        FE_DGQ<dim>(mhd_parameters.polynomial_degree),
        (mhd_flags & MHDFlags::divergence_free) ?
@@ -330,6 +332,12 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
       AssertThrow(mhd_flags & MHDFlags::no_limiting,
                   ExcMessage(
                     "Limiting must be activated to use primitive limiting."));
+    }
+  if (mhd_flags & MHDFlags::divergence_free)
+    {
+      AssertThrow(dim > 1,
+                  ExcMessage(
+                    "Divergence free basis are only defined in 2d and 3d."));
     }
 }
 
@@ -543,8 +551,17 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   DynamicSparsityPattern       dsp(locally_relevant_dofs);
   Table<2, DoFTools::Coupling> coupling(n_components, n_components);
   coupling.fill(DoFTools::Coupling::none);
-  for (unsigned int i = 0; i < n_components; i++)
+  for (unsigned int i = 0; i < n_components; ++i)
     coupling(i, i) = DoFTools::Coupling::always;
+  if constexpr (mhd_flags & MHDFlags::divergence_free)
+    {
+      /** @todo It works without this as well. Why? */
+      for (unsigned int i = 0; i < dim; ++i)
+        for (unsigned int j = 0; j < dim; ++j)
+          coupling(MHDEquations<dim>::first_magnetic_component + i,
+                   MHDEquations<dim>::first_magnetic_component + j) =
+            DoFTools::Coupling::always;
+    }
 
   // NON-PERIODIC
   DoFTools::make_sparsity_pattern(dof_handler, coupling, dsp);
