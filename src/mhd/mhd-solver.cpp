@@ -292,15 +292,14 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , dof_handler(triangulation)
   , mapping()
   , fe(FE_DGQ<dim>(mhd_parameters.polynomial_degree),
-       (mhd_flags & MHDFlags::divergence_free) ?
-         (n_components - MHDEquations<dim>::n_vec_components) :
-         n_components,
+       (mhd_flags & MHDFlags::divergence_free) ? first_magnetic_component :
+                                                 n_components,
        FE_DGVector<PolynomialsBDM<dim>, dim>(mhd_parameters.polynomial_degree,
                                              mapping_bdm),
        (mhd_flags & MHDFlags::divergence_free) ? 1 : 0,
        FE_DGQ<dim>(mhd_parameters.polynomial_degree),
        (mhd_flags & MHDFlags::divergence_free) ?
-         (MHDEquations<dim>::n_vec_components - dim) :
+         (n_components - (first_magnetic_component + dim)) :
          0)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)

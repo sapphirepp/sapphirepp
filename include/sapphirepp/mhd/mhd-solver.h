@@ -93,6 +93,10 @@ namespace sapphirepp
        */
       static constexpr unsigned int n_components =
         MHDEquations<dim>::n_components;
+      static constexpr unsigned int n_vec_components =
+        MHDEquations<dim>::n_vec_components;
+      static constexpr unsigned int first_magnetic_component =
+        MHDEquations<dim>::first_magnetic_component;
 
       /** @ref MHDEquations::state_type */
       using state_type = typename MHDEquations<dim>::state_type;
