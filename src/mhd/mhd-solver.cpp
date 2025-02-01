@@ -49,6 +49,7 @@
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/petsc_solver.h>
 #include <deal.II/lac/sparsity_tools.h>
@@ -1256,7 +1257,110 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
             }
 
 
-            // TODO: Implement projection for div_free part
+            // Projection for div_free part
+            // TODO: Maybe absorb in it's own function?!
+            {
+              Assert(
+                fe.component_to_base_index(first_magnetic_component) ==
+                  std::pair(1u, 0u),
+                ExcMessage(
+                  "Expect DivFree base to start at first_magnetic_component"));
+
+              const unsigned int base =
+                fe.component_to_base_index(first_magnetic_component).first;
+              const FiniteElement<dim> &base_element = fe.base_element(base);
+
+              Assert(base_element.is_primitive() == false,
+                     ExcMessage("Expect DivFree element to be non_primitive."));
+              Assert(base_element.n_components() == dim,
+                     ExcMessage(
+                       "Expect DivFree element to have dim components."));
+
+              // TODO: Not sure if I can only reinit fe_view
+              // TODO: Also not sure if dof_indices in fe_view run only till
+              // n_base_dof or to n_dof_cell of fe
+              FEValues<dim> &fe_v = scratch_data.fe_values_divergence_free;
+              fe_v.reinit(cell);
+              auto &fe_view =
+                fe_v[FEValuesExtractors::Vector(first_magnetic_component)];
+
+              const unsigned int n_base_dofs = base_element.n_dofs_per_cell();
+              const std::vector<Point<dim>> &q_points =
+                fe_v.get_quadrature_points();
+              const std::vector<double> &JxW = fe_v.get_JxW_values();
+
+              // First use as rhs, then replace in place with base_dofs
+              Vector<double>           rhs_dof_values(n_base_dofs);
+              LAPACKFullMatrix<double> base_mass_matrix(n_base_dofs);
+
+              // Fill rhs_dof_values and base_mass_matrix
+              for (const unsigned int q_index : fe_v.quadrature_point_indices())
+                {
+                  // To do this, we could really use a
+                  // base_to_system_index() function, but that doesn't
+                  // exist -- just do it by using the reverse table -- the
+                  // amount of work done here is not worth trying to
+                  // optimizing this.
+                  for (unsigned int i = 0; i < fe.n_dofs_per_cell(); ++i)
+                    if (fe.system_to_base_index(i).first ==
+                        std::make_pair(base, 0u))
+                      {
+                        const unsigned int base_i =
+                          fe.system_to_base_index(i).second;
+
+                        for (unsigned int c = first_magnetic_component;
+                             c < first_magnetic_component + dim;
+                             ++c)
+                          {
+                            const double limited_value =
+                              cell_avg[c] +
+                              limited_gradient[c] *
+                                (q_points[q_index] - cell->center());
+
+                            // TODO: Could also use fe_view here?!
+                            // limited_value * phi[c]_i
+                            rhs_dof_values[base_i] =
+                              limited_value *
+                              fe_v.shape_value_component(i, q_index, c) *
+                              JxW[q_index];
+                          }
+
+                        for (unsigned int j = 0; j < fe.n_dofs_per_cell(); ++j)
+                          if (fe.system_to_base_index(j).first ==
+                              std::make_pair(base, 0u))
+                            {
+                              const unsigned int base_j =
+                                fe.system_to_base_index(j).second;
+
+                              // phi_i * phi_j
+                              base_mass_matrix.set(base_i,
+                                                   base_j,
+                                                   fe_view.value(i, q_index) *
+                                                     fe_view.value(j, q_index) *
+                                                     JxW[q_index]);
+                            }
+                      }
+                }
+
+              // Project to dof cell_dof_values
+              saplog << "Project to dof cell_dof_values on cell " << cell_index
+                     << std::endl;
+              saplog << rhs_dof_values << std::endl;
+              saplog << "Matrix: " << std::endl;
+              base_mass_matrix.print_formatted(saplog);
+              // TODO: We need an other way to solve the system
+              //  base_mass_matrix.solve(rhs_dof_values);
+              rhs_dof_values = 0.;
+              saplog << rhs_dof_values << std::endl;
+
+              // Finally put these dof values back into cell dof
+              // values vector.
+              for (unsigned int i = 0; i < fe.n_dofs_per_cell(); ++i)
+                if (fe.system_to_base_index(i).first ==
+                    std::make_pair(base, 0u))
+                  copy_data.cell_dof_values[i] =
+                    rhs_dof_values[fe.system_to_base_index(i).second];
+            }
           }
         else
           {
