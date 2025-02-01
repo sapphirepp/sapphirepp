@@ -222,6 +222,11 @@ namespace sapphirepp
               fe_primitive,
               Quadrature<dim>(fe_primitive.get_generalized_support_points()),
               update_quadrature_points)
+          , fe_values_divergence_free(mapping,
+                                      fe,
+                                      quadrature,
+                                      update_values | update_quadrature_points |
+                                        update_JxW_values)
         {}
 
         // Copy Constructor
@@ -241,11 +246,17 @@ namespace sapphirepp
               scratch_data.fe_values_primitive.get_fe(),
               scratch_data.fe_values_primitive.get_quadrature(),
               scratch_data.fe_values_primitive.get_update_flags())
+          , fe_values_divergence_free(
+              scratch_data.fe_values_divergence_free.get_mapping(),
+              scratch_data.fe_values_divergence_free.get_fe(),
+              scratch_data.fe_values_divergence_free.get_quadrature(),
+              scratch_data.fe_values_divergence_free.get_update_flags())
         {}
 
         FEValues<dim> fe_values_gradient;
         FEValues<dim> fe_values_support;
         FEValues<dim> fe_values_primitive;
+        FEValues<dim> fe_values_divergence_free;
       };
 
 
