@@ -205,16 +205,22 @@ namespace sapphirepp
         // Constructor
         ScratchDataSlopeLimiter(const Mapping<dim>       &mapping,
                                 const FiniteElement<dim> &fe,
+                                const FiniteElement<dim> &fe_primitive,
                                 const Quadrature<dim>    &quadrature)
           : fe_values_gradient(mapping,
                                fe,
                                quadrature,
                                update_gradients | update_JxW_values)
-          , fe_values_support(mapping,
+          , fe_support_points(mapping,
+                              fe_primitive,
+                              Quadrature<dim>(
+                                fe_primitive.get_generalized_support_points()),
+                              update_quadrature_points)
+          , fe_support_values(mapping,
                               fe,
                               Quadrature<dim>(
-                                fe.get_generalized_support_points()),
-                              update_quadrature_points | update_values)
+                                fe_primitive.get_generalized_support_points()),
+                              update_values)
         {}
 
         // Copy Constructor
@@ -225,14 +231,19 @@ namespace sapphirepp
               scratch_data.fe_values_gradient.get_fe(),
               scratch_data.fe_values_gradient.get_quadrature(),
               scratch_data.fe_values_gradient.get_update_flags())
-          , fe_values_support(scratch_data.fe_values_support.get_mapping(),
-                              scratch_data.fe_values_support.get_fe(),
-                              scratch_data.fe_values_support.get_quadrature(),
-                              scratch_data.fe_values_support.get_update_flags())
+          , fe_support_points(scratch_data.fe_support_points.get_mapping(),
+                              scratch_data.fe_support_points.get_fe(),
+                              scratch_data.fe_support_points.get_quadrature(),
+                              scratch_data.fe_support_points.get_update_flags())
+          , fe_support_values(scratch_data.fe_support_values.get_mapping(),
+                              scratch_data.fe_support_values.get_fe(),
+                              scratch_data.fe_support_values.get_quadrature(),
+                              scratch_data.fe_support_values.get_update_flags())
         {}
 
         FEValues<dim> fe_values_gradient;
-        FEValues<dim> fe_values_support;
+        FEValues<dim> fe_support_points;
+        FEValues<dim> fe_support_values;
       };
 
 
@@ -1120,7 +1131,10 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   };
 
 
-  ScratchDataSlopeLimiter<dim> scratch_data(mapping, fe, quadrature);
+  ScratchDataSlopeLimiter<dim> scratch_data(mapping,
+                                            fe,
+                                            fe.base_element(0),
+                                            quadrature);
   CopyDataSlopeLimiter         copy_data;
   saplog << "Begin limiting of solution." << std::endl;
   const auto filtered_iterator_range =
