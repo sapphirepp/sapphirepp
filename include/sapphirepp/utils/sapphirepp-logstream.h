@@ -29,7 +29,13 @@
 #ifndef UTILS_SAPPHIREPPLOGSTREAM_H
 #define UTILS_SAPPHIREPPLOGSTREAM_H
 
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/logstream.h>
+
+#include <exception>
+#include <fstream>
+#include <string>
 
 /**
  * @namespace sapphirepp
@@ -63,6 +69,11 @@ namespace sapphirepp
       /** @brief Constructor */
       SapphireppLogStream();
 
+
+      /** @brief Destructor */
+      ~SapphireppLogStream();
+
+
       /**
        * @brief Initialize the log stream
        *
@@ -72,7 +83,7 @@ namespace sapphirepp
        *
        * @param depth_console The verbosity of the console output
        *        - `0` silence the program
-       *        - `1` shows only the start-up message
+       *        - `1` shows only the start-up message and warnings
        *        - `2` show progress
        *        - `>2` show different levels of debug messages
        * @param enable_mpi_output If `true`, all mpi processes will output to
@@ -93,21 +104,111 @@ namespace sapphirepp
        * @param argv Commandline arguments
        */
       void
-      init(int argc, char *argv[]);
+      init(const int argc, const char *const argv[]);
 
 
       /**
+       * @brief Attach a logfile to the stream
+       *
+       * @param filepath Path to the logfile
+       * @param depth_file The verbosity of the file output
+       * @param enable_mpi_output Enable output of all mpi processes
+       */
+      void
+      attach_file(const std::string &filepath,
+                  const unsigned int depth_file,
+                  const bool         enable_mpi_output = false);
+
+
+      /**
+       * @brief Prints an error message to `std:err` and this LogStream.
+       *
+       * This has the advantage, that error messages are also saved in the
+       * logfile.
+       *
+       * @param exc Exception
+       */
+      void
+      print_error(const std::exception &exc);
+
+
+      /**
+       * @brief Prints a warning to `std:err` and this LogStream.
+       *
+       * The warning is shown for `verbosity > 0`.
+       *
+       * @param warning Warning message
+       */
+      void
+      print_warning(const std::string &warning);
+
+
+      /** @{ */
+      /**
        * @brief Get the verbosity of the console output
        *
-       * @return unsigned int verbosity
+       * @return unsigned int verbosity of the console output
        */
       unsigned int
-      get_verbosity();
+      get_verbosity_console();
+
+      /**
+       * @brief Get the verbosity of the file output
+       *
+       * @return unsigned int verbosity of the file output
+       */
+      unsigned int
+      get_verbosity_file();
+      /** @} */
+
+
+      /** @{ */
+      /**
+       * @brief Conversion to std::ostream
+       *
+       * Returns either file or console output stream dependent on verbosity.
+       * If the target verbosity is larger then the logstream verbosity,
+       * return an empty stream.
+       *
+       * @param verbosity Target verbosity of the output
+       * @return std::ostream&
+       */
+      std::ostream &
+      to_ostream(const unsigned int verbosity = 3);
+
+      /**
+       * @brief Conversion to @dealref{ConditionalOStream}
+       *
+       * Returns either file or console output stream dependent on verbosity.
+       * If the target verbosity is larger then the logstream verbosity,
+       * the result will be silenced.
+       *
+       * @param verbosity Target verbosity of the output
+       * @return dealii::ConditionalOStream @dealref{ConditionalOStream}
+       */
+      dealii::ConditionalOStream
+      to_condition_ostream(const unsigned int verbosity = 3);
+
+      /** @brief Conversion operator to std::ostream  */
+      operator std::ostream &();
+
+      /** @brief Conversion operator to @dealref{ConditionalOStream}  */
+      operator dealii::ConditionalOStream();
+      /** @} */
+
+
+
+    private:
+      /** Output stream to logfile */
+      std::ofstream log_file;
     };
 
   } // namespace Utils
 
-  /** @brief The standard log stream for @sapphire */
+  /**
+   * @brief The standard @ref Utils::SapphireppLogStream "log stream"
+   *        for @sapphire
+   */
   extern sapphirepp::Utils::SapphireppLogStream saplog;
 } // namespace sapphirepp
 #endif
