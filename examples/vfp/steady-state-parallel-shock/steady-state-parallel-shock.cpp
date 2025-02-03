@@ -49,7 +49,7 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      saplog.init(2);
+      saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
@@ -58,7 +58,7 @@ main(int argc, char *argv[])
       dealii::ParameterHandler prm;
       PhysicalParameters       physical_parameters;
       Utils::OutputParameters  output_parameters;
-      VFPParameters<dimension> vfp_parameters;
+      VFPParameters<dimension> vfp_parameters(vfp_flags);
 
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
