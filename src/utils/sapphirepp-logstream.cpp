@@ -36,7 +36,7 @@
 
 #include <mpi.h>
 
-#include <string>
+#include <limits>
 
 #include "version.h"
 
@@ -51,6 +51,22 @@ sapphirepp::Utils::SapphireppLogStream::SapphireppLogStream()
 {
   this->pop();
   this->push("Sapphire");
+}
+
+
+
+sapphirepp::Utils::SapphireppLogStream::~SapphireppLogStream()
+{
+  // Ensure that the log_file is closed.
+  // I think we do not need the same precautions as for the deallog:
+  // https://www.dealii.org/current/doxygen/deal.II/logstream_8cc_source.html#l00088
+  if (log_file.is_open())
+    {
+      if (dealii::deallog.has_file())
+        dealii::deallog.detach();
+      this->detach();
+      log_file.close();
+    }
 }
 
 
@@ -71,7 +87,7 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console,
   if (mpi_rank > 0)
     {
       this->push("MPI" + dealii::Utilities::to_string(mpi_rank, 3));
-      if (enable_mpi_output == false)
+      if (!enable_mpi_output)
         this->depth_console(0);
     }
   this->push("Sapphire");
@@ -85,7 +101,8 @@ sapphirepp::Utils::SapphireppLogStream::init(const unsigned int depth_console,
 
 
 void
-sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
+sapphirepp::Utils::SapphireppLogStream::init(const int         argc,
+                                             const char *const argv[])
 {
   int is_initialized;
   MPI_Initialized(&is_initialized);
@@ -104,7 +121,15 @@ sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
     "  1 - show only start-up message\n"
     "  2 - show progress\n"
     "  >2 - show different levels of debug messages")(
-    "verbose-mpi", "show output from all mpi processes");
+    "verbose-mpi", "show output from all mpi processes")(
+    "logfile,l", po::value<std::string>(), "output to logfile")(
+    "logfile-verbosity",
+    po::value<unsigned int>()->default_value(
+      std::numeric_limits<unsigned int>::max()),
+    "verbosity of the logfile output")("deallog",
+                                       po::value<unsigned int>()->default_value(
+                                         0),
+                                       "verbosity of deallog");
 
   po::variables_map vm;
   auto              parsed = po::command_line_parser(argc, argv)
@@ -128,16 +153,164 @@ sapphirepp::Utils::SapphireppLogStream::init(int argc, char *argv[])
   PetscOptionsClearValue(nullptr, "-v");
   PetscOptionsClearValue(nullptr, "--verbosity");
   PetscOptionsClearValue(nullptr, "--verbose-mpi");
+  PetscOptionsClearValue(nullptr, "-l");
+  PetscOptionsClearValue(nullptr, "--logfile");
+  PetscOptionsClearValue(nullptr, "--logfile-verbosity");
+  PetscOptionsClearValue(nullptr, "--deallog");
 
+  if (vm.count("logfile"))
+    {
+      this->attach_file(vm["logfile"].as<std::string>(),
+                        vm["logfile-verbosity"].as<unsigned int>(),
+                        vm.count("verbose-mpi"));
+    }
   this->init(vm["verbosity"].as<unsigned int>(), vm.count("verbose-mpi"));
+
+  dealii::deallog.depth_console(vm["deallog"].as<unsigned int>());
+  if (this->has_file())
+    {
+      dealii::deallog.attach(log_file, false);
+      dealii::deallog.depth_file(vm["deallog"].as<unsigned int>());
+    }
+}
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::attach_file(
+  const std::string &filepath,
+  const unsigned int depth_file,
+  const bool         enable_mpi_output)
+{
+  Assert(!log_file.is_open(),
+         dealii::ExcMessage("You try to attach a log_file, "
+                            "but the log_filestream is already open. "
+                            "You can attach only one log_file!"));
+  int is_initialized;
+  MPI_Initialized(&is_initialized);
+  Assert(is_initialized,
+         dealii::ExcMessage("saplog.init() must be called after MPI "
+                            "initialization!"));
+
+  const unsigned int mpi_rank =
+    dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  if ((mpi_rank > 0) && !enable_mpi_output)
+    return;
+
+  log_file.open(filepath, std::ios::app);
+  AssertThrow(log_file.is_open(), dealii::ExcFileNotOpen(filepath));
+  saplog.attach(log_file, mpi_rank == 0);
+  this->depth_file(depth_file);
+}
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::print_error(const std::exception &exc)
+{
+  std::cerr << std::endl;
+  std::cerr << "\n"
+            << "----------------------------------------------------" << "\n"
+            << "Exception on processing: " << "\n"
+            << exc.what() << "\n"
+            << "Aborting!" << "\n"
+            << "----------------------------------------------------"
+            << std::endl;
+
+  *this << std::endl;
+  // Always print the error to the log file
+  const unsigned int depth_file =
+    this->depth_file(std::numeric_limits<unsigned int>::max());
+  *this << "\n"
+        << "----------------------------------------------------" << "\n"
+        << "Exception on processing: " << "\n"
+        << exc.what() << "\n"
+        << "Aborting!" << "\n"
+        << "----------------------------------------------------" << std::endl;
+  this->depth_file(depth_file);
+}
+
+
+
+void
+sapphirepp::Utils::SapphireppLogStream::print_warning(
+  const std::string &warning)
+{
+  if (this->get_verbosity_console() > 0)
+    {
+      std::cerr << std::endl;
+      std::cerr << "WARNING: " << warning << std::endl;
+    }
+
+  *this << std::endl;
+  // Always print the warning to the log file
+  const unsigned int depth_file =
+    this->depth_file(std::numeric_limits<unsigned int>::max());
+  *this << "\n"
+        << "WARNING: " << warning << std::endl;
+  this->depth_file(depth_file);
 }
 
 
 
 unsigned int
-sapphirepp::Utils::SapphireppLogStream::get_verbosity()
+sapphirepp::Utils::SapphireppLogStream::get_verbosity_console()
 {
   unsigned int n = this->depth_console(0);
   this->depth_console(n);
   return n;
+}
+
+
+
+unsigned int
+sapphirepp::Utils::SapphireppLogStream::get_verbosity_file()
+{
+  unsigned int n = this->depth_file(0);
+  this->depth_file(n);
+  return n;
+}
+
+
+
+std::ostream &
+sapphirepp::Utils::SapphireppLogStream::to_ostream(const unsigned int verbosity)
+{
+  if (this->has_file() && (this->get_verbosity_file() >= verbosity))
+    return this->get_file_stream();
+
+  if (this->get_verbosity_console() >= verbosity)
+    return this->get_console();
+
+  // If the logfile is activated, we use write to the logfile,
+  // otherwise the stream is discarded.
+  return log_file;
+}
+
+
+
+dealii::ConditionalOStream
+sapphirepp::Utils::SapphireppLogStream::to_condition_ostream(
+  const unsigned int verbosity)
+{
+  if (this->has_file())
+    return dealii::ConditionalOStream(this->get_file_stream(),
+                                      this->get_verbosity_file() >= verbosity);
+
+  return dealii::ConditionalOStream(this->get_console(),
+                                    this->get_verbosity_console() >= verbosity);
+}
+
+
+
+sapphirepp::Utils::SapphireppLogStream::operator std::ostream &()
+{
+  return this->to_ostream();
+}
+
+
+
+sapphirepp::Utils::SapphireppLogStream::operator dealii::ConditionalOStream()
+{
+  return this->to_condition_ostream();
 }
