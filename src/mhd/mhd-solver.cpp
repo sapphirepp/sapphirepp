@@ -36,6 +36,7 @@
 
 #include <deal.II/dofs/dof_tools.h>
 
+#include <deal.II/fe/fe_dg_vector.h>
 #include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/fe/fe_values.h>
 
@@ -289,7 +290,16 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
   , mapping()
-  , fe(FE_DGQ<dim>(mhd_parameters.polynomial_degree), n_components)
+  , fe(FE_DGQ<dim>(mhd_parameters.polynomial_degree),
+       (mhd_flags & MHDFlags::divergence_free) ?
+         (n_components - MHDEquations<dim>::n_vec_components) :
+         n_components,
+       FE_DGNedelec<dim>(mhd_parameters.polynomial_degree),
+       (mhd_flags & MHDFlags::divergence_free) ? 1 : 0,
+       FE_DGQ<dim>(mhd_parameters.polynomial_degree),
+       (mhd_flags & MHDFlags::divergence_free) ?
+         (MHDEquations<dim>::n_vec_components - dim) :
+         0)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
   , pcout(saplog.to_condition_ostream(3))
@@ -299,6 +309,16 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   LogStream::Prefix p2("Constructor", saplog);
   saplog << mhd_flags << std::endl;
   saplog << "dim_mhd=" << dim << std::endl;
+  saplog << "Using " << fe.get_name() << std::endl;
+  saplog << "n_base = " << fe.n_base_elements()
+         << ", n_dofs=" << fe.n_dofs_per_cell()
+         << ", n_blocks=" << fe.n_blocks()
+         << ", n_components=" << fe.n_components()
+         << ", tensor_degree=" << fe.tensor_degree()
+         << ", has_generalized_support_points="
+         << fe.has_generalized_support_points()
+         << ", is_primitive=" << fe.is_primitive() << std::endl;
+  AssertDimension(fe.n_components(), n_components);
 
   AssertThrow(
     (1 <= dim) && (dim <= 3),

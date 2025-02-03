@@ -50,6 +50,7 @@ namespace sapphirepp
       primitive_limiting     = 1 << 1,
       no_shock_indicator     = 1 << 2,
       no_positivity_limiting = 1 << 3,
+      divergence_free        = 1 << 4,
     };
 
 
@@ -111,6 +112,8 @@ namespace sapphirepp
           if (f & MHDFlags::no_positivity_limiting)
             os << "	 - No positivity limiting\n";
         }
+      if (f & MHDFlags::divergence_free)
+        os << "	 - Divergence free basis for B-field\n";
       return os;
     }
 
