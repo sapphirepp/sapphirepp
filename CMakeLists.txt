@@ -12,11 +12,12 @@ if(NOT DEFINED SAPPHIREPP_VERSION)
   file(READ ${CMAKE_SOURCE_DIR}/VERSION SAPPHIREPP_VERSION)
 endif()
 string(REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+)(-.*)?" "\\1"
-       PROJECT_VERSION ${SAPPHIREPP_VERSION})
+  PROJECT_VERSION ${SAPPHIREPP_VERSION}
+)
 
 message("Sapphire++ version ${SAPPHIREPP_VERSION}")
 
-option(SAPPHIREPP "Compile Sapphire++" ON )
+option(SAPPHIREPP "Compile Sapphire++" ON)
 option(VFP "Build with VFP module" ON)
 option(MHD "Build with MHD module" ON)
 option(EXAMPLES "Build with examples" OFF)
@@ -30,51 +31,49 @@ if(SAPPHIREPP)
 
   set(DEAL_II_DIR "~/.local/lib/dealii")
   find_package(deal.II ${DEAL_II_MIN_VERSION} REQUIRED
-               HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR})
-  IF(NOT ${deal.II_FOUND})
-  MESSAGE(FATAL_ERROR
-    "*** Could not locate a (sufficiently recent) version of deal.II. ***\n"
-    "You may want to either pass a flag -DDEAL_II_DIR=/path/to/deal.II to cmake"
-    " or set an environment variable \"DEAL_II_DIR\".")
-  ENDIF()
+    HINTS ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
+  )
+  if(NOT ${deal.II_FOUND})
+    message(FATAL_ERROR
+      "*** Could not locate a (sufficiently recent) version of deal.II. ***\n"
+      "You may want to either pass a flag -DDEAL_II_DIR=/path/to/deal.II to"
+      " cmake or set an environment variable \"DEAL_II_DIR\"."
+    )
+  endif()
 
-  IF(NOT DEAL_II_WITH_PETSC OR NOT DEAL_II_WITH_P4EST OR NOT DEAL_II_WITH_ASSIMP)
-  MESSAGE(FATAL_ERROR
-    "*** deal.II dependencies not met ***\n"
-    "Sapphire++ requires deal.II to be configured with the following options:
+  if(NOT DEAL_II_WITH_PETSC OR NOT DEAL_II_WITH_P4EST OR NOT DEAL_II_WITH_ASSIMP)
+    message(FATAL_ERROR
+      "*** deal.II dependencies not met ***\n"
+      "Sapphire++ requires deal.II to be configured with the following options:
      DEAL_II_WITH_PETSC = ON
      DEAL_II_WITH_P4EST = ON
      DEAL_II_WITH_ASSIMP = ON\n"
-    "However, the detected deal.II configuration found at ${DEAL_II_PATH} is:
+      "However, the detected deal.II configuration found at ${DEAL_II_PATH} is:
      DEAL_II_WITH_PETSC = ${DEAL_II_WITH_PETSC}
      DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}
-     DEAL_II_WITH_ASSIMP = ${DEAL_II_WITH_ASSIMP}")
-  ENDIF()
+     DEAL_II_WITH_ASSIMP = ${DEAL_II_WITH_ASSIMP}"
+    )
+  endif()
 
-  MESSAGE(STATUS "Preparing Sapphire++")
+  message(STATUS "Preparing Sapphire++")
 
   deal_ii_initialize_cached_variables()
-  file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR})
 
   configure_file(${PROJECT_SOURCE_DIR}/include/sapphirepp/version.h.in
-                 ${PROJECT_BINARY_DIR}/include/sapphirepp/version.h @ONLY)
+    ${PROJECT_BINARY_DIR}/include/sapphirepp/version.h @ONLY
+  )
 
   add_subdirectory(src/utils)
 
   if(VFP)
-    MESSAGE(STATUS "Preparing VFP module")
-    # VFP source files have to be compiled together with the main/config file
-    file(GLOB VFP_SOURCES src/vfp/*.cpp)
+    message(STATUS "Preparing VFP module")
+    add_subdirectory(src/vfp)
+    include(cmake/macro_sapphirepp_setup_target_vfp.cmake)
 
-    file(GLOB CONFIG_HEADER_DIR ${PROJECT_SOURCE_DIR}/include)
-    add_executable(sapphirepp sapphirepp.cpp ${VFP_SOURCES})
-    deal_ii_setup_target(sapphirepp)
-    target_include_directories(sapphirepp PUBLIC
-                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
-    target_include_directories(sapphirepp PUBLIC
-                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
-    target_include_directories(sapphirepp PUBLIC ${CONFIG_HEADER_DIR})
-    target_link_libraries(sapphirepp UtilsLib)
+    # VFP source files have to be compiled together with the main/config file
+    set(VFP_SOURCES ${PROJECT_SOURCE_DIR}/src/vfp/upwind-flux.cpp
+      ${PROJECT_SOURCE_DIR}/src/vfp/vfp-solver.cpp
+    )
   endif(VFP)
 
   if(MHD)
@@ -86,30 +85,43 @@ if(SAPPHIREPP)
     add_executable(test-mhd test-mhd.cpp ${MHD_SOURCES})
     deal_ii_setup_target(test-mhd)
     target_include_directories(test-mhd PUBLIC
-                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
+      ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp)
     target_include_directories(test-mhd PUBLIC
-                               ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
+      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
     target_include_directories(test-mhd PUBLIC ${CONFIG_HEADER_DIR})
     target_link_libraries(test-mhd UtilsLib)
   endif(MHD)
 
+  # Check if all modules are enabled
+  if(VFP)
+    set(SAPPHIREPP_ALL_MODULES ON)
+    include(cmake/macro_sapphirepp_setup_target.cmake)
+
+    add_executable(sapphirepp sapphirepp.cpp)
+    sapphirepp_setup_target(sapphirepp ${PROJECT_SOURCE_DIR}/include)
+    target_include_directories(sapphirepp PUBLIC
+      ${PROJECT_SOURCE_DIR}/include/sapphirepp/mhd)
+  else()
+    set(SAPPHIREPP_ALL_MODULES OFF)
+  endif()
+
   if(EXAMPLES)
-    MESSAGE(STATUS "Preparing Examples")
+    message(STATUS "Preparing Examples")
     add_subdirectory(examples)
   endif(EXAMPLES)
 
   if(TESTS)
     include(CTest)
-    MESSAGE(STATUS "Preparing Tests")
+    message(STATUS "Preparing Tests")
     add_subdirectory(tests)
   endif(TESTS)
 endif(SAPPHIREPP)
 
-  
+
 if(DOC)
   find_package(Doxygen ${DOXYGEN_MIN_VERSION})
   if(DOXYGEN_FOUND)
-    MESSAGE(STATUS "Preparing Documentation")
+    message(STATUS "Preparing Documentation")
     # An empty string implies the usage of a Content Delivery Network (CDN)
     # for Mathjax. Doxygen defaults to https://cdn.jsdelivr.net/npm/mathjax@3
     set(MATHJAX_PATH "" CACHE STRING "MathJax path")
@@ -123,14 +135,14 @@ if(DOC)
 
     # Add custom target for Doxygen documentation
     add_custom_target(doc
-        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Generating Doxygen documentation"
-        VERBATIM
+      COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMENT "Generating Doxygen documentation"
+      VERBATIM
     )
 
     set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/doc/latest"
+      "${CMAKE_CURRENT_BINARY_DIR}/doc/latest"
     )
   endif(DOXYGEN_FOUND)
 endif(DOC)
