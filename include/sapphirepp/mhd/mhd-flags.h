@@ -106,11 +106,11 @@ namespace sapphirepp
             os << "	 - Limiting primitive variables\n";
           else
             os << "	 - Limiting conserved variables\n";
+          if (f & MHDFlags::no_shock_indicator)
+            os << "	 - Limit all cells (no shock indicator)\n";
+          if (f & MHDFlags::no_positivity_limiting)
+            os << "	 - No positivity limiting\n";
         }
-      if (f & MHDFlags::no_shock_indicator)
-        os << "	 - Limit all cells (no shock indicator)\n";
-      if (f & MHDFlags::no_positivity_limiting)
-        os << "	 - No positivity limiting\n";
       return os;
     }
 
