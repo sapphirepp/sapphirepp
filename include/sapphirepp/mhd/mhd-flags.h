@@ -46,9 +46,24 @@ namespace sapphirepp
     {
       none = 0,
 
-      no_limiting            = 1 << 0,
-      primitive_limiting     = 1 << 1,
-      no_shock_indicator     = 1 << 2,
+      /**
+       * Deactivate slope limiter and positivity limiter
+       */
+      no_limiting = 1 << 0,
+
+      /**
+       * Limit conserved variables instead of characteristic variables
+       */
+      conserved_limiting = 1 << 1,
+
+      /**
+       * Do not use a shock indicator and slope limit all cells
+       */
+      no_shock_indicator = 1 << 2,
+
+      /**
+       * Deactivate positivity limiting
+       */
       no_positivity_limiting = 1 << 3,
     };
 
@@ -97,8 +112,19 @@ namespace sapphirepp
     operator<<(StreamType &os, MHDFlags f)
     {
       os << "MHD flags: \n";
-      if ((f & MHDFlags::none) != MHDFlags::none)
-        os << "	 - None\n";
+      if ((f & MHDFlags::no_limiting) != MHDFlags::none)
+        os << "	 - No limiting\n";
+      else
+        {
+          if ((f & MHDFlags::conserved_limiting) != MHDFlags::none)
+            os << "	 - Limiting conserved variables\n";
+          else
+            os << "	 - Limiting characteristic variables\n";
+          if ((f & MHDFlags::no_shock_indicator) != MHDFlags::none)
+            os << "	 - Limit all cells (no shock indicator)\n";
+          if ((f & MHDFlags::no_positivity_limiting) != MHDFlags::none)
+            os << "	 - No positivity limiting\n";
+        }
       return os;
     }
 

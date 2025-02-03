@@ -299,6 +299,18 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   LogStream::Prefix p2("Constructor", saplog);
   saplog << mhd_flags << std::endl;
   saplog << "dim_mhd=" << dim << std::endl;
+
+  AssertThrow(
+    (1 <= dim) && (dim <= 3),
+    ExcMessage("The dimension must be greater than or equal to one and smaller "
+               "or equal to three."));
+
+  if ((mhd_flags & MHDFlags::conserved_limiting) != MHDFlags::none)
+    {
+      AssertThrow((mhd_flags & MHDFlags::no_limiting) != MHDFlags::none,
+                  ExcMessage("Limiting must be activated to use limiting "
+                             "on conserved variables."));
+    }
 }
 
 
@@ -933,7 +945,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
           }
 
         double diff;
-        if constexpr ((mhd_flags & MHDFlags::primitive_limiting) !=
+        if constexpr ((mhd_flags & MHDFlags::conserved_limiting) !=
                       MHDFlags::none)
           {
             // Primitive Limiting
