@@ -67,7 +67,8 @@ and compare the results for different $l_{\text{max}}$.
 
 ## Implementation {#implementation-closure}
 
-The implementation of this example can be found in the `examples/closure` directory.
+The implementation of this example can be found
+in the `examples/vfp/closure` directory.
 In the following we discuss the details,
 assuming that the reader already familiarised himself with @sapphire.
 
@@ -78,7 +79,7 @@ and uses mono-energetic particles  with momentum $\mathbf{p} = \gamma m \mathbf{
 The reduced phase space is therefore only 1 dimensional,
 `dim = dim_ps = dim_cs = 1`.
 
-@snippet{lineno} examples/closure/config.h Dimension
+@snippet{lineno} examples/vfp/closure/config.h Dimension
 
 As stated above, in this example, we use the subsequent VFP equation,
 
@@ -93,10 +94,10 @@ the @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
 $(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$,
 and @ref sapphirepp::VFP::VFPFlags::collision "collisions",
 $\frac{\nu}{2} \Delta_{\theta, \varphi} f$.
-Furthermore, to decrease the computation time we include 
+Furthermore, to decrease the computation time we include
 @ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent fields" flag.
 
-@snippet{lineno} examples/closure/config.h VFP Flags
+@snippet{lineno} examples/vfp/closure/config.h VFP Flags
 
 ### Runtime Parameters {#parameter-closure}
 
@@ -110,19 +111,19 @@ we will these as runtime parameters.
 
    We start by declaring our runtime parameters:
 
-   @snippet{lineno} examples/closure/config.h Define runtime parameter
+   @snippet{lineno} examples/vfp/closure/config.h Define runtime parameter
 
 2. **Declare**
   
    Next, we inform the @dealref{ParameterHandler} that the declared parameters exist:
 
-   @snippet{lineno} examples/closure/config.h Declare runtime parameter
+   @snippet{lineno} examples/vfp/closure/config.h Declare runtime parameter
 
 3. **Parse**
 
    Finally, we parse them:
 
-   @snippet{lineno} examples/closure/config.h Parse runtime parameter
+   @snippet{lineno} examples/vfp/closure/config.h Parse runtime parameter
 
 ### Initial Condition {#initial-condition-closure}
 
@@ -137,19 +138,19 @@ $$
 Consequently, we set all expansion coefficients $f_{l>0}$ to zero,
 except for the isotropic component $f_{i(0,0,0)} = \sqrt{4\pi} f(t=0, x)$.
 
-@snippet{lineno} examples/closure/config.h Initial value
+@snippet{lineno} examples/vfp/closure/config.h Initial value
 
 ### Scattering frequency {#scattering-frequency-closure}
 
 For the scattering frequency we simply use the constant
 given as a runtime parameter.
 
-@snippet{lineno} examples/closure/config.h Scattering frequency
+@snippet{lineno} examples/vfp/closure/config.h Scattering frequency
 
 ## Phase space reconstruction {#phase-space-reconstruction-closure}
 
 To perform the phase-space reconstruction at speficic points in reduced phase
-space $\xi = (x, y, p)^{T}$, 
+space $\xi = (x, y, p)^{T}$,
 we can use the post-processor module provided in
 @ref sapphirepp::VFP::PhaseSpaceReconstruction "PhaseSpaceReconstruction".
 To activate it,
@@ -178,11 +179,11 @@ named `surface_plot_distribution_function_point_XX_t_XXXX.dat`
 and `spherical_density_map_point_XX_t_XXXX.dat`.
 The files save the values of $f(t,\xi,\theta, \varphi)$, where $\xi$ is one of
 the points in the list given in the parameter file. Moreover,
-$f(t,\xi,n_{p_x},n_{p_y}, n_{p_z})$ 
+$f(t,\xi,n_{p_x},n_{p_y}, n_{p_z})$
 is also stored for each point `XX` and time step `XXXX` respectively.
 
 We provide a gnuplot script,
-[`examples/closure/heatmap.gp`](https://github.com/sapphirepp/sapphirepp/tree/main/examples/closure/heatmap.gp),
+[`examples/vfp/closure/heatmap.gp`](https://github.com/sapphirepp/sapphirepp/tree/main/examples/vfp/closure/heatmap.gp),
 to create heatmaps from these files:
 
 ```shell
@@ -268,7 +269,7 @@ $l_{\text{max}}$, we plot the heatmaps at a single point, namely at $(x=6 \sigma
 t=6/\sqrt{3})$, for the different $l_{\text{max}}$. The left plot shows the
 the particle distribution with $l_{\text{max}} = 3$, the plot in the middle
 shows the $l_{\text{max}} = 4$ case and for the right heatmap, we ran a simulation with
-$l_{\text{max}} = 11$. 
+$l_{\text{max}} = 11$.
 
 <p float="center">
   <img src="https://sapphirepp.org/img/examples/closure/heatmap_l3_x6_t6.png" alt="Numerical solution for l_max=3, x=6, t=6/V" width="30%">
@@ -284,7 +285,7 @@ Therefore, a lower $l_{\text{max}}$ is sufficient to obtain accurate results.
 
 The full parameter file to reproduce the results is given below.
 
-@include{lineno} examples/closure/parameter.prm
+@include{lineno} examples/vfp/closure/parameter.prm
 
 <div class="section_buttons">
 

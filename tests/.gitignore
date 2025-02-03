@@ -1,0 +1,5 @@
+# Include parameter files
+!*.prm
+
+# Results folder
+results

@@ -1,7 +1,5 @@
 add_subdirectory(mhd)
 
-add_subdirectory(parallel-shock)
-add_subdirectory(gyro-advection)
-add_subdirectory(scattering-only)
-add_subdirectory(convergence-study)
-add_subdirectory(closure)
+if(VFP)
+  add_subdirectory(vfp)
+endif()
