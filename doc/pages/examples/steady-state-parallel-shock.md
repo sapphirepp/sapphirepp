@@ -25,18 +25,18 @@ diffusive shock acceleration. Since a detailed explanation of the described
 scencario is given in the two mentioned examples, we summarise the physical
 setup in the following table:
 
-| Physical scenario:   |                                                                                                                                                                    |
-|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Velocity profile     | $\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x$ if $x<0$ (upstream) and $\mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x$ if $x>0$ (downstream)                    |
-| Magnetic field       | $$\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$$                                                                                                                         |
-| Scattering frequency | $$\nu(x) = \nu_0 p^{-1} $$                                                                                                                                         |
+| Physical scenario:   |                                                                                                                                                                                       |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Velocity profile     | $$\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x  \text{ for } x < 0 \text{ and } \mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x \text{ for } x > 0 $$                                |
+| Magnetic field       | $$\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$$                                                                                                                                            |
+| Scattering frequency | $$\nu(x) = \nu_0 p^{-1} $$                                                                                                                                                            |
 | Source               | $$ S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$$ |
 
 
 ## Implementation {#implementation-steady-state-parallel-shock}
 
 The implementation of the sketched physical scenorio can be found in the
-directory `sapphirepp/examples/steady-state-parallel-shock`. Since the
+directory `sapphirepp/examples/vfp/steady-state-parallel-shock`. Since the
 implementation is essentially the same as in in the [parallel
 shock](#parallel-shock) example, we restrain our discussion to the changes
 necessary to directly compute the steady-state solution with Sapphire++.
@@ -57,7 +57,7 @@ $$
 
 Therefore, the list of `vfp_flags` is
 
-@snippet{lineno} examples/steady-state-parallel-shock/config.h VFP Flags
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h VFP Flags
 
 We note that we did _not_ include the `time_evolution` flag. Also, it was not
 necessary to explicitly state that the velocity field, the magnetic field and
@@ -84,7 +84,7 @@ $f(a p) = a^{k} f(p)$ for some scalar $a$ and exponent $k$.
 
 The implementation looks like
 
-@snippet{lineno} examples/steady-state-parallel-shock/config.h Scattering frequency
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h Scattering frequency
 
 Note that we chose to work with $\ln p$ instead of $p$ and, hence, $\nu(\ln p) =
 \nu_0 * \exp(-1 \ln p)$. We remember the user that the last component `point` in
@@ -121,7 +121,7 @@ $$
 
 All $S_{lms}$ with $l > 0$ are zero.
 
-@snippet{lineno} examples/steady-state-parallel-shock/config.h Source
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h Source
 
 We again note that we use the index `i` to refer to the components of the
 spherical harmonic decomposition of the source term. $i = 0$ corresponds $l = 0
@@ -132,19 +132,19 @@ spherical harmonic decomposition of the source term. $i = 0$ corresponds $l = 0
 
 If you configured @sapphire with the `-DEXAMPLES=ON` option, see
 [Compilation](#compilation), the steady-state shock example is compiled and the
-executable can be found in the `examples/steady-state-parallel-shock` folder.
+executable can be found in the `build/examples/steady-state-parallel-shock` folder.
 This executable is called `steady-state-parallel-shock`
 
 We supply the user with a set of parameters that are listed in the
-`examples/steady-state-parallel-shock/parameter.prm` file:
+`build/examples/steady-state-parallel-shock/parameter.prm` file:
 
-@include examples/steady-state-parallel-shock/parameter.prm
+@include examples/vfp/steady-state-parallel-shock/parameter.prm
 
 Run the simulation with:
 
 ```shell
 	cd sapphirepp/build/examples/steady-state-parallel-shock
-	mpirun -n 4 ./steady-state-parallel-shock parameter.prm
+	mpirun -n 2 ./steady-state-parallel-shock parameter.prm
 ```
 
 
@@ -172,9 +172,48 @@ $$
 For the additional factor of $\sqrt{4\pi}$ see @cite Schween2025 eq. 61. Because
 we set the compression ratio to $r=4$, we expect a $p^{-4}$ power law.
 
+Drury also gives a formula for the spatial dependence of the isotropic part
+of the distribution function $f_{000}$, see eq. 2.34 in @cite Drury1983, namely 
+
+\begin{equation}
+	f_{000}(x, p = \hat{p}) = 
+	\begin{cases}
+	f_{000}(x = 0, \hat{p})  \exp\left(3 U_{1} \nu(\hat{p})/\hat{v}^2\right) &\text{for } x < 0 \\
+	f_{000}(x = 0, \hat{p}) &\text{for } x > 0 
+	\end{cases} \,
+\end{equation}
+where $\hat{p}$ is an arbitrary but specified value of the magntiude of the
+momentum and $\hat{v}$ the corresponding velocity.
+
+The following two plots show a comparison of the simulation results with the
+expected analytical solution:
+
+<div style="text-align:center;">
+	<div style="display:inline-block;">
+		<img alt="Particle spectrum"
+	src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/particle-spectrum.png"
+	 height=450>
+	</div>
+<div style="display:inline-block;">
+		<img alt="Downstream particle distribution"
+	src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/spatial-distribution.png"
+		height=450>
+	</div>
+</div>
+
+Despite the differences in the simulation setup and the derivation of the
+analytical solution, namely point source and discontinuous velocity profile, the
+analytical prediction and the the simulation results agree well.
+
+## Discussion {#discussion-steady-state-parallel-shock}
+
+(3 * 0.1)/ (sqrt(4 * 2 * acos(0)) * 0.0167 * 2^3) * 4/3 * (exp(coordsY)/2)^(-4)
+3.91202300543
+
 <!--  To -->
 <!-- visualize these results, we plot $p^4 f(x,p)$, which should yield an -->
-<!-- approximately constant value in the downstream region ($x>0$). In the upstream -->
+<!-- approximately constant value in the downstream region ($x>0$).
+In the upstream -->
 <!-- region ($x<0$), we expect an exponential cut-off, which is dependent on the -->
 <!-- scattering frequency $\nu$. -->
 
