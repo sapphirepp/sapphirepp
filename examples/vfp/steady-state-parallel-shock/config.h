@@ -283,7 +283,9 @@ namespace sapphirepp
 
                 // S_000 = sqrt(4 pi) * S
                 source_values[0] =
-                  prm.Q / (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x) *
+                  prm.Q /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x *
+                   std::exp(point[1]) * std::exp(point[1])) *
                   std::exp(-p_shifted * p_shifted /
                            (2. * prm.sig_p * prm.sig_p)) *
                   std::exp(-x_shifted * x_shifted /
