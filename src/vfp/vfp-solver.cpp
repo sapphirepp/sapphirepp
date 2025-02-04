@@ -617,15 +617,20 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
   // NOTE: DealII does not allow to use different sparsity patterns for
   // matrices, which you would like to add. Even though the the mass matrix
   // differs from the dg matrix.
-  mass_matrix.reinit(locally_owned_dofs,
-                     locally_owned_dofs,
-                     dsp,
-                     mpi_communicator);
-  system_matrix.reinit(locally_owned_dofs,
-                       locally_owned_dofs,
-                       dsp,
-                       mpi_communicator);
 
+  // For the steady state solver it is not necessary to allocate memory for the
+  // mass_matrix and the system_matrix.
+  if constexpr ((vfp_flags & VFPFlags::time_evolution) != VFPFlags::none)
+    {
+      mass_matrix.reinit(locally_owned_dofs,
+                         locally_owned_dofs,
+                         dsp,
+                         mpi_communicator);
+      system_matrix.reinit(locally_owned_dofs,
+                           locally_owned_dofs,
+                           dsp,
+                           mpi_communicator);
+    }
   ps_reconstruction.reinit(triangulation, mapping);
 }
 
