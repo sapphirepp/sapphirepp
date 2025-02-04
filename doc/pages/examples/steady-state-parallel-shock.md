@@ -24,14 +24,14 @@ are scattered in the up- and downstream at a frequency $\nu$ and, thus, undergo
 diffusive shock acceleration. Since a detailed explanation of the described
 scencario is given in the two mentioned examples, we summarise the physical
 setup in the following table:
-
+<div style="text-align:center">
 | Physical scenario:   |                                                                                                                                                                                       |
 |----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Velocity profile     | $$\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x  \text{ for } x < 0 \text{ and } \mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x \text{ for } x > 0 $$                                |
 | Magnetic field       | $$\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$$                                                                                                                                            |
 | Scattering frequency | $$\nu(x) = \nu_0 p^{-1} $$                                                                                                                                                            |
 | Source               | $$ S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$$ |
-
+</div>
 
 ## Implementation {#implementation-steady-state-parallel-shock}
 
@@ -72,7 +72,7 @@ $$
   \nu(p) = \nu_0 p^{-1} \, ,
 $$
 
-where $nu_0$ is a parameter which can be freely set. This choice is called the
+where $\nu_0$ is a parameter which can be freely set. This choice is called the
 "Bohm limit" or "Bohm scaling". Such a choice could be understood in various
 ways: First, a plasma in which particles are scattered more often is not
 magnetised anymore. We note this choice of $\nu(p)$ leads to about one
@@ -203,12 +203,59 @@ expected analytical solution:
 
 Despite the differences in the simulation setup and the derivation of the
 analytical solution, namely point source and discontinuous velocity profile, the
-analytical prediction and the the simulation results agree well.
+analytical prediction and the simulation results agree well.
 
 ## Discussion {#discussion-steady-state-parallel-shock}
 
-(3 * 0.1)/ (sqrt(4 * 2 * acos(0)) * 0.0167 * 2^3) * 4/3 * (exp(coordsY)/2)^(-4)
-3.91202300543
+Since we use the dG method in combination with a spherical harmonic expansion of
+the distribution function $f$, we need to solve a large system of equations to
+obtain the steady state solution. We apply an iterative method, namely the
+[generalized minimal residual
+method](https://en.wikipedia.org/wiki/Generalized_minimal_residual_method)
+(GMRES) in combination with a Block-Jacobi preconditioner. We have not
+implemented this algorithm, but we use the @dealii interface to the
+[PETSc](https://petsc.org/release/) library.
+
+This has mutliple consequences for users of the steady-state solver. Firstly,
+an iterative method requires a termination criteria. These are the number of
+iterations, the magnitude of the relative (or absolute) preconditioned residual, i.e. $\|
+\mathbf{B}(\mathbf{b} - \mathbf{A}\mathbf{x})\|$ and the relative increase in
+the residual, see [PETSc
+documentation](https://petsc.org/main/manual/ksp/#convergence-tests) for more
+details. The number of iterations and the relative tolerance are currently
+hard-coded, i.e. $2000$ and $1e-10$ respectively. This implies that if a users
+computes a distribution functions whos values are smaller than than the
+tolerance, the solver will not convergence. This happens, for example, if the
+$p$-range covers many orders of magnitudes. (This issue can be addressed with a
+scaled distribution function.)
+
+Secondly, the Block-Jacobi preconditioner is not particularly designed for the
+system of equations we are solving. This means that we need many iterations.
+Moreover, the number of used blocks in the preconditioner is determined by the
+number of processes used to solve the system of equations. Its quality, thus, is
+probably better for a low number of MPI ranks. However, a single compute node does
+not have infinite memory, and it might necessary to use many cores to actually
+solve a problem.
+
+@note  If you, by chance, have experience with preconditioners for advection-reaction
+systems (or Friedrichs systems), please contact me. We are interested in
+developing a more robust preconditioner 
+
+If a user is familiar with PETSc, she can try to change the iterative method and
+the used preconditioner via the command line using PETSc commands. For example,
+each Jacobi block is solved with an
+[incomplete LU
+factorization](https://en.wikipedia.org/wiki/Incomplete_LU_factorization) (ILU),
+if complete LU factorization of the blocks is wanted, the program can be run
+with
+
+```shell
+mpirun -n 4 ./steady-state-parallel-shock /home/schween/Documents/PhD/VFP-Equation/sapphirepp/examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
+```
+
+In general, the option `ksp_monitor` allows a user to monitor the convergence of
+the iterative method.
+
 
 <!--  To -->
 <!-- visualize these results, we plot $p^4 f(x,p)$, which should yield an -->
