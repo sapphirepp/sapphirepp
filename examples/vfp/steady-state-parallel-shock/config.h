@@ -277,18 +277,16 @@ namespace sapphirepp
             /** [Source] */
             if (i == 0)
               {
-                // shifted Gaussian in x and p
-                const double p_shifted = std::exp(point[1]) - prm.p_inj;
-                const double x_shifted = point[0] - prm.x_inj;
+                const double p = std::exp(point[1]);
+                const double x = point[0];
 
                 // S_000 = sqrt(4 pi) * S
                 source_values[0] =
                   prm.Q /
-                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x *
-                   std::exp(point[1]) * std::exp(point[1])) *
-                  std::exp(-p_shifted * p_shifted /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
+                  std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
                            (2. * prm.sig_p * prm.sig_p)) *
-                  std::exp(-x_shifted * x_shifted /
+                  std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
                            (2. * prm.sig_x * prm.sig_x));
               }
             else

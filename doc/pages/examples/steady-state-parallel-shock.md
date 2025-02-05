@@ -2,7 +2,7 @@
 
 @tableofcontents
 
-This example is builds on the [parallel shock](#parallel-shock) example.
+This example builds on the [parallel shock](#parallel-shock) example.
 
 ## Introduction {#introduction-steady-state-parallel-shock}
 
@@ -12,7 +12,7 @@ front. It could be seen that after some time a steady state was reached, i.e.
 the phase-space distribution of the particles did not change anymore with time.
 The example, that you are currently reading, demonstrates how steady-state
 solutions of the VFP equation can be obtained directly. Though various physical
-scenarios lead to a steady state, we once more opted to compute the the particle
+scenarios lead to a steady state, we once more opted to compute the particle
 distribution for the case of a parallel shock.
 
 As in the [quick start](#quick-start) and in the [parallel
@@ -22,7 +22,7 @@ e.g. the interstellar medium. Particles are injected at a constant rate $Q$ with
 an energy determined by $p_{\text{inj}}$ at the position of the shock wave. They
 are scattered in the up- and downstream at a frequency $\nu$ and, thus, undergo
 diffusive shock acceleration. Since a detailed explanation of the described
-scencario is given in the two mentioned examples, we summarise the physical
+scenario is given in the two mentioned examples, we summarise the physical
 setup in the following table:
 <div style="text-align:center">
 | Physical scenario:   |                                                                                                                                                                                       |
@@ -35,9 +35,9 @@ setup in the following table:
 
 ## Implementation {#implementation-steady-state-parallel-shock}
 
-The implementation of the sketched physical scenorio can be found in the
+The implementation of the sketched physical scenario can be found in the
 directory `sapphirepp/examples/vfp/steady-state-parallel-shock`. Since the
-implementation is essentially the same as in in the [parallel
+implementation is essentially the same as in the [parallel
 shock](#parallel-shock) example, we restrain our discussion to the changes
 necessary to directly compute the steady-state solution with Sapphire++.
 
@@ -79,7 +79,7 @@ magnetised anymore. We note this choice of $\nu(p)$ leads to about one
 scattering per gyration. Secondly, the steady-state VFP equation has two
 physical essential parameters. These are the scattering frequency and the gyro
 frequency. In the Bohm limit their ratio is independent of $p$ and the solution
-of the steady-state VFP equation should, thus, be scale invariant in $p$, i.e.
+of the steady-state VFP equation could, thus, be scale invariant in $p$, i.e.
 $f(a p) = a^{k} f(p)$ for some scalar $a$ and exponent $k$.
 
 The implementation looks like
@@ -87,9 +87,9 @@ The implementation looks like
 @snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h Scattering frequency
 
 Note that we chose to work with $\ln p$ instead of $p$ and, hence, $\nu(\ln p) =
-\nu_0 * \exp(-1 \ln p)$. We remember the user that the last component `point` in
-reduced phase space is the magnitude of momentum variable. Since the reduced
-phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
+\nu_0 * \exp(-1 \ln p)$. We remember the user that the last component of `point`
+in reduced phase space is the magnitude of the momentum variable. Since the
+reduced phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
 
 Notice that $\nu_0$ is a runtime parameter that is set in the supplied parameter
 file.
@@ -97,10 +97,10 @@ file.
 ### Source term {#source-term-steady-state-parallel-shock}
 
 We also slightly changed the source term. We, namely, included the factor
-$1/4\pi p^2$. Thus will still inject isotropic and almost mono-energetic
-particles at the shock. Though, the additional factor gives the user-defined
-rate $Q$ a clearer physical interpretation. The reason is that the number
-density of injected particles is given by
+$1/4\pi p^2$. Thus we still inject isotropic and almost mono-energetic particles
+at the shock. However, the additional factor gives the user-defined rate $Q$ a
+clearer physical interpretation. The reason is that the _configuration space_
+number density of injected particles is given by
 
 $$
 	n_{\text{inj}} = \int S \, \mathrm{d}^3 p = 4\pi \int S p^2 \, \mathrm{d} p = \frac{Q}{\sqrt{2
@@ -108,10 +108,10 @@ $$
 $$
 which is now directly set by the parameter $Q$.
 
-We remind the user that we actually solve a system of PDEs that determines the
+Keeping in mind that we actually solve a system of PDEs that determines the
 expansion coefficients of the spherical harmonic expansion of the distribution
-function $f$. This implies that the source term also needs be expanded in
-spherical harmonics. A straightforward computation, because the source term is
+function $f$, implies that the source term also needs be expanded in
+spherical harmonics. This is a straightforward computation, because the source term is
 independent of $\theta$ and $\varphi$, i.e. we inject an isotropic particle
 distribution,
 
@@ -133,10 +133,10 @@ spherical harmonic decomposition of the source term. $i = 0$ corresponds $l = 0
 If you configured @sapphire with the `-DEXAMPLES=ON` option, see
 [Compilation](#compilation), the steady-state shock example is compiled and the
 executable can be found in the `build/examples/steady-state-parallel-shock` folder.
-This executable is called `steady-state-parallel-shock`
+The executable is called `steady-state-parallel-shock`
 
-We supply the user with a set of parameters that are listed in the
-`build/examples/steady-state-parallel-shock/parameter.prm` file:
+We supply the user with a physically reasonable set of parameters that are
+listed in the `build/examples/steady-state-parallel-shock/parameter.prm` file:
 
 @include examples/vfp/steady-state-parallel-shock/parameter.prm
 
@@ -156,12 +156,13 @@ He assumes a constant scattering frequency. However, in the case of Bohm scaling
 we expect the same result to hold, because the ratio of the scattering frequency
 to the gyro frequency is independent of $p$. Moreover, his source term is a
 delta distribution in $x$ and $p$ (point injection) and his velocity profile has
-a sharp discontinuity at the shock. We model the velocity discontinuity with a
-tanh function and the delta distribution with a narrow Gaussian profile. We,
-thus, do not expect that the analytic solution in @cite Drury1983 and our
-computation match exactly, but they should get closer to each other the smaller
-the shock width and the narrower the the injection profile. Adapting his
-solution to our source term, we expect the simulation result to be approximately
+a sharp discontinuity at the shock. In contrast to Drury, we model the velocity
+discontinuity with a tanh-function and the delta distribution with a narrow
+Gaussian profile. We, thus, do not expect that the analytic solution in @cite Drury1983 
+and our simulation results match exactly, but they should get closer
+to each other the smaller the shock width and the narrower the injection
+profile. Adapting his solution to our source term, we expect the simulation
+result to be approximately
 
 $$
  f_{000}(x = 0, p) = \frac{3}{\sqrt{4 \pi} p^{3}_{\text{inj}}} \frac{Q}{U_1 - U_2}
@@ -182,7 +183,7 @@ of the distribution function $f_{000}$, see eq. 2.34 in @cite Drury1983, namely
 	f_{000}(x = 0, \hat{p}) &\text{for } x > 0 
 	\end{cases} \,
 \end{equation}
-where $\hat{p}$ is an arbitrary but specified value of the magntiude of the
+where $\hat{p}$ is an arbitrary but specified value of the magnitude of the
 momentum and $\hat{v}$ the corresponding velocity.
 
 The following two plots show a comparison of the simulation results with the
@@ -202,8 +203,8 @@ expected analytical solution:
 </div>
 
 Despite the differences in the simulation setup and the derivation of the
-analytical solution, namely point source and discontinuous velocity profile, the
-analytical prediction and the simulation results agree well.
+analytical solution, the analytical prediction and the simulation results agree
+well.
 
 ## Discussion {#discussion-steady-state-parallel-shock}
 
@@ -216,26 +217,26 @@ method](https://en.wikipedia.org/wiki/Generalized_minimal_residual_method)
 implemented this algorithm, but we use the @dealii interface to the
 [PETSc](https://petsc.org/release/) library.
 
-This has mutliple consequences for users of the steady-state solver. Firstly,
-an iterative method requires a termination criteria. These are the number of
-iterations, the magnitude of the relative (or absolute) preconditioned residual, i.e. $\|
-\mathbf{B}(\mathbf{b} - \mathbf{A}\mathbf{x})\|$ and the relative increase in
-the residual, see [PETSc
+This has multiple consequences for users of the steady-state solver. Firstly, an
+iterative method requires termination criteria. These are the number of
+iterations, the magnitude of the relative (or absolute) preconditioned residual,
+i.e. $\| \mathbf{B}(\mathbf{b} - \mathbf{A}\mathbf{x})\|$ and the relative
+increase in the residual, see [PETSc
 documentation](https://petsc.org/main/manual/ksp/#convergence-tests) for more
 details. The number of iterations and the relative tolerance are currently
-hard-coded, i.e. $2000$ and $1e-10$ respectively. This implies that if a users
-computes a distribution functions whos values are smaller than than the
-tolerance, the solver will not convergence. This happens, for example, if the
-$p$-range covers many orders of magnitudes. (This issue can be addressed with a
-scaled distribution function.)
+hard-coded, i.e. $2000$ and $1 \times 10^{-10}$ respectively. This implies that
+if a user computes a distribution functions whose values are smaller than than
+the tolerance, the solver will not convergence. This happens, for example, if
+the $p$-range covers many orders of magnitudes. (This issue can be addressed
+with a scaled distribution function.)
 
 Secondly, the Block-Jacobi preconditioner is not particularly designed for the
-system of equations we are solving. This means that we need many iterations.
+system of equations that we are solve. This means that we need many iterations.
 Moreover, the number of used blocks in the preconditioner is determined by the
-number of processes used to solve the system of equations. Its quality, thus, is
-probably better for a low number of MPI ranks. However, a single compute node does
-not have infinite memory, and it might necessary to use many cores to actually
-solve a problem.
+number of processes, i.e. MPI ranks, used to solve the system of equations. Its
+quality, thus, is probably better for a low number of ranks. However, a single
+compute node does not have infinite memory, and it might necessary to use many
+cores to actually solve a problem.
 
 @note  If you, by chance, have experience with preconditioners for advection-reaction
 systems (or Friedrichs systems), please contact me. We are interested in
@@ -253,16 +254,13 @@ with
 mpirun -n 4 ./steady-state-parallel-shock /home/schween/Documents/PhD/VFP-Equation/sapphirepp/examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
 ```
 
-In general, the option `ksp_monitor` allows a user to monitor the convergence of
-the iterative method.
+In general, the option `-ksp_monitor` allows a user to monitor the convergence of
+the iterative method. More information about the iterative method and the
+preconditioner can be obtained with the option `-ksp_view`.
 
-
-<!--  To -->
-<!-- visualize these results, we plot $p^4 f(x,p)$, which should yield an -->
-<!-- approximately constant value in the downstream region ($x>0$).
-In the upstream -->
-<!-- region ($x<0$), we expect an exponential cut-off, which is dependent on the -->
-<!-- scattering frequency $\nu$. -->
+@note Unfortunately, it is not possible to overwrite the tolerance for the
+residual `-ksp_rtol`. The reason is that @dealii uses its own routine, namely
+`SolverBase::convergence_test()`, to check for convergence.
 
 <div class="section_buttons">
 
@@ -275,4 +273,4 @@ In the upstream -->
 ---
 
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@date 2025-01-02
+@date 2025-02-05
