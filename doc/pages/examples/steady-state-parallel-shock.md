@@ -103,8 +103,8 @@ clearer physical interpretation. The reason is that the _configuration space_
 number density of injected particles is given by
 
 $$
-	n_{\text{inj}} = \int S \, \mathrm{d}^3 p = 4\pi \int S p^2 \, \mathrm{d} p = \frac{Q}{\sqrt{2
-	\pi} \sigma_x} \exp\left(-\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x}\right) \,,
+  n_{\text{inj}} = \int S \, \mathrm{d}^3 p = 4\pi \int S p^2 \, \mathrm{d} p = \frac{Q}{\sqrt{2
+  \pi} \sigma_x} \exp\left(-\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x}\right) \,,
 $$
 which is now directly set by the parameter $Q$.
 
@@ -116,7 +116,7 @@ independent of $\theta$ and $\varphi$, i.e. we inject an isotropic particle
 distribution,
 
 $$
-	S_{000} = \int Y_{000} S \, \mathrm{d}\Omega = \sqrt{4\pi} S \,.
+  S_{000} = \int Y_{000} S \, \mathrm{d}\Omega = \sqrt{4\pi} S \,.
 $$
 
 All $S_{lms}$ with $l > 0$ are zero.
@@ -126,7 +126,6 @@ All $S_{lms}$ with $l > 0$ are zero.
 We again note that we use the index `i` to refer to the components of the
 spherical harmonic decomposition of the source term. $i = 0$ corresponds $l = 0
 , m = 0$ and $s = 0$.
-
 
 ### Compile and run {#compile-steady-state-parallel-shock}
 
@@ -143,10 +142,9 @@ listed in the `build/examples/steady-state-parallel-shock/parameter.prm` file:
 Run the simulation with:
 
 ```shell
-	cd sapphirepp/build/examples/steady-state-parallel-shock
-	mpirun -n 2 ./steady-state-parallel-shock parameter.prm
+cd sapphirepp/build/examples/steady-state-parallel-shock
+mpirun -n 2 ./steady-state-parallel-shock parameter.prm
 ```
-
 
 ## Results {#results-steady-state-parallel-shock}
 
@@ -158,7 +156,7 @@ to the gyro frequency is independent of $p$. Moreover, his source term is a
 delta distribution in $x$ and $p$ (point injection) and his velocity profile has
 a sharp discontinuity at the shock. In contrast to Drury, we model the velocity
 discontinuity with a tanh-function and the delta distribution with a narrow
-Gaussian profile. We, thus, do not expect that the analytic solution in @cite Drury1983 
+Gaussian profile. We, thus, do not expect that the analytic solution in @cite Drury1983
 and our simulation results match exactly, but they should get closer
 to each other the smaller the shock width and the narrower the injection
 profile. Adapting his solution to our source term, we expect the simulation
@@ -174,14 +172,14 @@ For the additional factor of $\sqrt{4\pi}$ see @cite Schween2025 eq. 61. Because
 we set the compression ratio to $r=4$, we expect a $p^{-4}$ power law.
 
 Drury also gives a formula for the spatial dependence of the isotropic part
-of the distribution function $f_{000}$, see eq. 2.34 in @cite Drury1983, namely 
+of the distribution function $f_{000}$, see eq. 2.34 in @cite Drury1983, namely
 
 \begin{equation}
-	f_{000}(x, p = \hat{p}) = 
-	\begin{cases}
-	f_{000}(x = 0, \hat{p})  \exp\left(3 U_{1} \nu(\hat{p})/\hat{v}^2\right) &\text{for } x < 0 \\
-	f_{000}(x = 0, \hat{p}) &\text{for } x > 0 
-	\end{cases} \,
+  f_{000}(x, p = \hat{p}) =
+  \begin{cases}
+  f_{000}(x = 0, \hat{p})  \exp\left(3 U_{1} \nu(\hat{p})/\hat{v}^2\right) &\text{for } x < 0 \\
+  f_{000}(x = 0, \hat{p}) &\text{for } x > 0
+  \end{cases} \,
 \end{equation}
 where $\hat{p}$ is an arbitrary but specified value of the magnitude of the
 momentum and $\hat{v}$ the corresponding velocity.
@@ -190,16 +188,16 @@ The following two plots show a comparison of the simulation results with the
 expected analytical solution:
 
 <div style="text-align:center;">
-	<div style="display:inline-block;">
-		<img alt="Particle spectrum"
-	src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/particle-spectrum.png"
-	 height=450>
-	</div>
+  <div style="display:inline-block;">
+    <img alt="Particle spectrum"
+  src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/particle-spectrum.png"
+   height=450>
+  </div>
 <div style="display:inline-block;">
-		<img alt="Downstream particle distribution"
-	src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/spatial-distribution.png"
-		height=450>
-	</div>
+    <img alt="Downstream particle distribution"
+  src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/spatial-distribution.png"
+    height=450>
+  </div>
 </div>
 
 Despite the differences in the simulation setup and the derivation of the
@@ -240,7 +238,7 @@ cores to actually solve a problem.
 
 @note  If you, by chance, have experience with preconditioners for advection-reaction
 systems (or Friedrichs systems), please contact me. We are interested in
-developing a more robust preconditioner 
+developing a more robust preconditioner
 
 If a user is familiar with PETSc, she can try to change the iterative method and
 the used preconditioner via the command line using PETSc commands. For example,
