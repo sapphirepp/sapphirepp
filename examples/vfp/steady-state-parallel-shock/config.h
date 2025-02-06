@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/gyro-advection/config.h
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for gyro-advection example
+ * @file examples/vfp/steady-state-parallel-shock/config.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @brief Implement physical setup for steady-state-parallel-shock example
  */
 
 #ifndef CONFIG_H
@@ -50,10 +50,21 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
+    double u_sh;
     double B0;
-    double u0;
-    double sigma;
+    double compression_ratio;
+    double shock_width;
+    double nu0;
+
+    // Source
+    double Q;
+    double p_inj;
+    double x_inj;
+    double sig_p;
+    double sig_x;
     /** [Define runtime parameter] */
+
+
 
     PhysicalParameters() = default;
 
@@ -68,18 +79,49 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("B0/2pi",
+      prm.declare_entry("u_sh",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The shock velocity.");
+      prm.declare_entry("B0",
                         "1.",
                         dealii::Patterns::Double(),
-                        "Magnetic field strength");
-      prm.declare_entry("u0",
-                        "0.",
+                        "The magnetic field strength upstream.");
+      prm.declare_entry("compression ratio",
+                        "4.",
                         dealii::Patterns::Double(),
-                        "Velocity of the background plasma");
-      prm.declare_entry("sigma",
-                        "1.",
-                        dealii::Patterns::Double(0),
-                        "Spread of the initial distribution");
+                        "The compression ratio of the shock.");
+      prm.declare_entry("shock width",
+                        "0.04",
+                        dealii::Patterns::Double(),
+                        "The width of the shock.");
+      prm.declare_entry("nu0",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The scattering frequency.");
+
+      prm.enter_subsection("Source");
+      prm.declare_entry("Q",
+                        "0.1",
+                        dealii::Patterns::Double(),
+                        "The injection rate.");
+      prm.declare_entry("p_inj",
+                        "2.",
+                        dealii::Patterns::Double(),
+                        "The injection momentum.");
+      prm.declare_entry("x_inj",
+                        "0.0",
+                        dealii::Patterns::Double(),
+                        "The injection position.");
+      prm.declare_entry("sig_p",
+                        "0.125",
+                        dealii::Patterns::Double(),
+                        "The width of the source in momentum space.");
+      prm.declare_entry("sig_x",
+                        "0.125",
+                        dealii::Patterns::Double(),
+                        "The width of the source in configuration space.");
+      prm.leave_subsection();
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -95,11 +137,21 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      B0    = prm.get_double("B0/2pi") * 2. * M_PI;
-      u0    = prm.get_double("u0");
-      sigma = prm.get_double("sigma");
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
+      u_sh              = prm.get_double("u_sh");
+      B0                = prm.get_double("B0");
+      compression_ratio = prm.get_double("compression ratio");
+      shock_width       = prm.get_double("shock width");
+      nu0               = prm.get_double("nu0");
+
+      prm.enter_subsection("Source");
+      p_inj = prm.get_double("p_inj");
+      x_inj = prm.get_double("x_inj");
+      sig_x = prm.get_double("sig_x");
+      sig_p = prm.get_double("sig_p");
+      Q     = prm.get_double("Q");
+      prm.leave_subsection();
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }
@@ -119,8 +171,8 @@ namespace sapphirepp
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution | VFPFlags::spatial_advection |
-      VFPFlags::rotation | VFPFlags::time_independent_fields;
+      VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
+      VFPFlags::rotation | VFPFlags::source;
     /** [VFP Flags] */
 
 
@@ -148,11 +200,8 @@ namespace sapphirepp
         for (unsigned int i = 0; i < f.size(); ++i)
           {
             /** [Initial value] */
-            if (i == 0)
-              f[0] =
-                std::exp(-point.norm_square() / (2. * prm.sigma * prm.sigma));
-            else
-              f[i] = 0.;
+            // No initial value
+            f[i] = 0.;
             /** [Initial value] */
           }
       }
@@ -188,8 +237,9 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
-            // No scattering frequency
-            scattering_frequencies[q_index] = 0;
+            // Bohm limit
+            scattering_frequencies[q_index] =
+              prm.nu0 * std::exp(-points[q_index][1]);
             /** [Scattering frequency] */
           }
       }
@@ -225,8 +275,22 @@ namespace sapphirepp
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             /** [Source] */
-            // No Source
-            source_values[i] = 0.;
+            if (i == 0)
+              {
+                const double p = std::exp(point[1]);
+                const double x = point[0];
+
+                // S_000 = sqrt(4 pi) * S
+                source_values[0] =
+                  prm.Q /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
+                  std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
+                           (2. * prm.sig_p * prm.sig_p)) *
+                  std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
+                           (2. * prm.sig_x * prm.sig_x));
+              }
+            else
+              source_values[i] = 0.;
             /** [Source] */
           }
       }
@@ -259,9 +323,9 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [Magnetic field] */
-        magnetic_field[0] = 0.;     // B_x
+        magnetic_field[0] = prm.B0; // B_x
         magnetic_field[1] = 0.;     // B_y
-        magnetic_field[2] = prm.B0; // B_z
+        magnetic_field[2] = 0.;     // B_z
         /** [Magnetic field] */
       }
 
@@ -292,10 +356,15 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [Background velocity value] */
-        // zero velocity field
-        velocity[0] = prm.u0; // u_x
-        velocity[1] = prm.u0; // u_y
-        velocity[2] = 0.;     // u_z
+        // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+
+        // u_x
+        velocity[0] =
+          prm.u_sh / (2 * prm.compression_ratio) *
+          ((1 - prm.compression_ratio) * std::tanh(point[0] / prm.shock_width) +
+           (1 + prm.compression_ratio));
+        velocity[1] = 0.; // u_y
+        velocity[2] = 0.; // u_z
         /** [Background velocity value] */
       }
 
@@ -311,8 +380,15 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity divergence] */
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => d/dx u(x) = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+
             // div u
-            divergence[q_index] = 0.;
+            divergence[q_index] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             /** [Background velocity divergence] */
           }
       }
@@ -330,8 +406,21 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
-            // zero velocity field
-            material_derivatives[q_index][0] = 0.; // D/Dt u_x
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => D/Dt u(x) = d/dt u(x) + u d/dx u(x)
+            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/x_s) + (1+r)) *
+            //        1/x_s (1-r) (1-tanh(x/x_s)^2)
+
+            // D/Dt u_x
+            material_derivatives[q_index][0] =
+              prm.u_sh * prm.u_sh /
+              (4 * prm.compression_ratio * prm.compression_ratio) /
+              prm.shock_width * (1 - prm.compression_ratio) *
+              ((1 - prm.compression_ratio) *
+                 std::tanh(points[q_index][0] / prm.shock_width) +
+               (1 + prm.compression_ratio)) *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             material_derivatives[q_index][1] = 0.; // D/Dt u_y
             material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
@@ -352,8 +441,15 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
-            // zero velocity field
-            jacobians[q_index][0][0] = 0.; // \partial u_x / \partial x
+            //  u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            //  => u_00 = du/dx = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+
+            // \partial u_x / \partial x
+            jacobians[q_index][0][0] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
             jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 

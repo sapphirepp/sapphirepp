@@ -170,6 +170,15 @@ namespace sapphirepp
       /** @} */
 
 
+      /**
+       * @brief Steady state solver for the VFP equation
+       *
+       * Solve the the linear system resulting from the weak formulation
+       * if not time derivative of the distribution function is present.
+       */
+      void
+      steady_state_solve();
+
 
       /**
        * @name Time stepping methods

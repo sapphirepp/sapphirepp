@@ -68,9 +68,11 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 #include "particle-functions.h"
 #include "phase-space-reconstruction.h"
 #include "sapphirepp-logstream.h"
+#include "vfp-flags.h"
 
 
 
@@ -197,8 +199,9 @@ namespace sapphirepp
       };
     } // namespace VFPSolver
   } // namespace sapinternal
+  /** @endcond */
 } // namespace sapphirepp
-/** @endcond */
+
 
 
 template <unsigned int dim>
@@ -275,24 +278,30 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   setup_system();
 
   {
-    TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
-    saplog << "Assemble mass matrix." << std::endl;
-    MatrixCreator::create_mass_matrix(mapping,
-                                      dof_handler,
-                                      quadrature,
-                                      mass_matrix);
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
+        saplog << "Assemble mass matrix." << std::endl;
+        MatrixCreator::create_mass_matrix(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          mass_matrix);
+      }
   }
 
   {
-    TimerOutput::Scope timer_section(timer, "Project initial condition");
-    InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
-                                                        pde_system.system_size);
-    PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
-                                                 mpi_communicator);
-    project(initial_value_function, initial_condition);
-    // Here a non ghosted vector, is copied into a ghosted vector. I think
-    // that is the moment where the ghost cells are filled.
-    locally_relevant_current_solution = initial_condition;
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "Project initial condition");
+        InitialValueFunction<dim_ps> initial_value_function(
+          physical_parameters, pde_system.system_size);
+        PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
+                                                     mpi_communicator);
+        project(initial_value_function, initial_condition);
+        // Here a non ghosted vector, is copied into a ghosted vector. I think
+        // that is the moment where the ghost cells are filled.
+        locally_relevant_current_solution = initial_condition;
+      }
   }
 
   // Assemble the dg matrix for t = 0
@@ -319,51 +328,59 @@ sapphirepp::VFP::VFPSolver<dim>::run()
 {
   setup();
   LogStream::Prefix p("VFP", saplog);
-
-  DiscreteTime discrete_time(0,
-                             vfp_parameters.final_time,
-                             vfp_parameters.time_step);
-  for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+  if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
-      saplog << "Time step " << std::setw(6) << std::right
-             << discrete_time.get_step_number()
-             << " at t = " << discrete_time.get_current_time() << " \t["
-             << Utilities::System::get_time() << "]" << std::endl;
-
-      if ((discrete_time.get_step_number() %
-           output_parameters.output_frequency) == 0)
-        output_results(discrete_time.get_step_number(),
-                       discrete_time.get_current_time());
-
-      switch (vfp_parameters.time_stepping_method)
-        {
-          case TimeSteppingMethod::forward_euler:
-          case TimeSteppingMethod::backward_euler:
-          case TimeSteppingMethod::crank_nicolson:
-            theta_method(discrete_time.get_current_time(),
-                         discrete_time.get_next_step_size());
-            break;
-          case TimeSteppingMethod::erk4:
-            explicit_runge_kutta(discrete_time.get_current_time(),
-                                 discrete_time.get_next_step_size());
-            break;
-          case TimeSteppingMethod::lserk:
-            low_storage_explicit_runge_kutta(
-              discrete_time.get_current_time(),
-              discrete_time.get_next_step_size());
-            break;
-          default:
-            AssertThrow(false, ExcNotImplemented());
-        }
+      steady_state_solve();
+      output_results(0, 0);
+      saplog << "Simulation ended. " << " \t[" << Utilities::System::get_time()
+             << "]" << std::endl
+             << std::endl;
     }
+  else
+    {
+      DiscreteTime discrete_time(0,
+                                 vfp_parameters.final_time,
+                                 vfp_parameters.time_step);
+      for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+        {
+          saplog << "Time step " << std::setw(6) << std::right
+                 << discrete_time.get_step_number()
+                 << " at t = " << discrete_time.get_current_time() << " \t["
+                 << Utilities::System::get_time() << "]" << std::endl;
 
-  // Output at the final result
-  output_results(discrete_time.get_step_number(),
-                 discrete_time.get_current_time());
+          if ((discrete_time.get_step_number() %
+               output_parameters.output_frequency) == 0)
+            output_results(discrete_time.get_step_number(),
+                           discrete_time.get_current_time());
 
-  saplog << "Simulation ended at t = " << discrete_time.get_current_time()
-         << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+          switch (vfp_parameters.time_stepping_method)
+            {
+              case TimeSteppingMethod::forward_euler:
+              case TimeSteppingMethod::backward_euler:
+              case TimeSteppingMethod::crank_nicolson:
+                theta_method(discrete_time.get_current_time(),
+                             discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::erk4:
+                explicit_runge_kutta(discrete_time.get_current_time(),
+                                     discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::lserk:
+                low_storage_explicit_runge_kutta(
+                  discrete_time.get_current_time(),
+                  discrete_time.get_next_step_size());
+                break;
+              default:
+                AssertThrow(false, ExcNotImplemented());
+            }
+        }
+      // Output at the final result
+      output_results(discrete_time.get_step_number(),
+                     discrete_time.get_current_time());
 
+      saplog << "Simulation ended at t = " << discrete_time.get_current_time()
+             << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+    }
   timer.print_wall_time_statistics(mpi_communicator);
 }
 
@@ -604,15 +621,20 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
   // NOTE: DealII does not allow to use different sparsity patterns for
   // matrices, which you would like to add. Even though the the mass matrix
   // differs from the dg matrix.
-  mass_matrix.reinit(locally_owned_dofs,
-                     locally_owned_dofs,
-                     dsp,
-                     mpi_communicator);
-  system_matrix.reinit(locally_owned_dofs,
-                       locally_owned_dofs,
-                       dsp,
-                       mpi_communicator);
 
+  // For the steady state solver it is not necessary to allocate memory for the
+  // mass_matrix and the system_matrix.
+  if constexpr ((vfp_flags & VFPFlags::time_evolution) != VFPFlags::none)
+    {
+      mass_matrix.reinit(locally_owned_dofs,
+                         locally_owned_dofs,
+                         dsp,
+                         mpi_communicator);
+      system_matrix.reinit(locally_owned_dofs,
+                           locally_owned_dofs,
+                           dsp,
+                           mpi_communicator);
+    }
   ps_reconstruction.reinit(triangulation, mapping);
 }
 
@@ -1382,6 +1404,34 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                         face_worker);
   dg_matrix.compress(VectorOperation::add);
   saplog << "The DG matrix was assembled." << std::endl;
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
+{
+  TimerOutput::Scope timer_section(timer, "Steady state solve");
+  LogStream::Prefix  p("steady_state", saplog);
+
+  SolverControl              solver_control(2000, 1e-10);
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+
+  // dg_matrix == system_matrix
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
+  preconditioner.initialize(dg_matrix);
+
+  solver.solve(dg_matrix,
+               locally_owned_previous_solution,
+               locally_owned_current_source, // right-hand side is determined by
+                                             // the source term
+               preconditioner);
+
+  locally_relevant_current_solution = locally_owned_previous_solution;
+
+  saplog << "Solver converged in " << solver_control.last_step()
+         << " iterations." << std::endl;
 }
 
 
