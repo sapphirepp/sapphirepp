@@ -199,8 +199,10 @@ namespace sapphirepp
       };
     } // namespace VFPSolver
   } // namespace sapinternal
+  /** @endcond */
 } // namespace sapphirepp
-/** @endcond */
+
+
 
 template <unsigned int dim>
 sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
