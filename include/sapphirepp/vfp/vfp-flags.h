@@ -58,7 +58,7 @@ namespace sapphirepp
      *   & \text{(collision term)} \\
      *   & + S \,. & \text{(source term)} \\
      * \f}
-     * These terms can be individually adctivated or deactivated.
+     * These terms can be individually activated or deactivated.
      */
     enum class VFPFlags
     {
@@ -82,7 +82,7 @@ namespace sapphirepp
       collision = 1 << 2,
 
       /**
-       * Activate the rotation term, i.e. the magentic field
+       * Activate the rotation term, i.e. the magnetic field
        * \f$ q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)
        * \f$
        */
