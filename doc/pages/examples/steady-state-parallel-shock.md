@@ -17,7 +17,7 @@ distribution for the case of a parallel shock.
 
 As in the [quick start](#quick-start) and in the [parallel
 shock](#parallel-shock) example, we examine a collisionless shock with
-compression ratio $r$ that propagates through through an astrophysical plasma,
+compression ratio $r$ that propagates through an astrophysical plasma,
 e.g. the interstellar medium. Particles are injected at a constant rate $Q$ with
 an energy determined by $p_{\text{inj}}$ at the position of the shock wave. They
 are scattered in the up- and downstream at a frequency $\nu$ and, thus, undergo
@@ -39,7 +39,7 @@ The implementation of the sketched physical scenario can be found in the
 directory `sapphirepp/examples/vfp/steady-state-parallel-shock`. Since the
 implementation is essentially the same as in the [parallel
 shock](#parallel-shock) example, we restrain our discussion to the changes
-necessary to directly compute the steady-state solution with Sapphire++.
+necessary to directly compute the steady-state solution with @sapphire.
 
 ### VFP equation {#dimension-steady-state-parallel-shock}
 
@@ -59,9 +59,10 @@ Therefore, the list of `vfp_flags` is
 
 @snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h VFP Flags
 
-We note that we did _not_ include the `time_evolution` flag. Also, it was not
-necessary to explicitly state that the velocity field, the magnetic field and
-the source term are time-independent.
+We note that we did _not_ include the
+@ref sapphirepp::VFP::VFPFlags::time_evolution "time_evolution" flag. Also, it
+was not necessary to explicitly state that the velocity field, the magnetic
+field and the source term are time-independent.
 
 ### Scattering frequency {#scattering-frequency-steady-state-parallel-shock}
 
@@ -223,22 +224,22 @@ increase in the residual, see [PETSc
 documentation](https://petsc.org/main/manual/ksp/#convergence-tests) for more
 details. The number of iterations and the relative tolerance are currently
 hard-coded, i.e. $2000$ and $1 \times 10^{-10}$ respectively. This implies that
-if a user computes a distribution functions whose values are smaller than than
+if a user computes a distribution functions whose values are smaller than
 the tolerance, the solver will not convergence. This happens, for example, if
 the $p$-range covers many orders of magnitudes. (This issue can be addressed
 with a scaled distribution function.)
 
 Secondly, the Block-Jacobi preconditioner is not particularly designed for the
-system of equations that we are solve. This means that we need many iterations.
+system of equations that we solve. This means that we need many iterations.
 Moreover, the number of used blocks in the preconditioner is determined by the
 number of processes, i.e. MPI ranks, used to solve the system of equations. Its
 quality, thus, is probably better for a low number of ranks. However, a single
-compute node does not have infinite memory, and it might necessary to use many
-cores to actually solve a problem.
+compute node does not have infinite memory, and it might be necessary to use
+many cores to actually solve a problem.
 
-@note  If you, by chance, have experience with preconditioners for advection-reaction
-systems (or Friedrichs systems), please contact me. We are interested in
-developing a more robust preconditioner
+@note If you, by chance, have experience with preconditioners for advection-reaction
+  systems (or Friedrichs systems), please contact me. We are interested in
+  developing a more robust preconditioner
 
 If a user is familiar with PETSc, she can try to change the iterative method and
 the used preconditioner via the command line using PETSc commands. For example,
@@ -249,7 +250,7 @@ if complete LU factorization of the blocks is wanted, the program can be run
 with
 
 ```shell
-mpirun -n 4 ./steady-state-parallel-shock /home/schween/Documents/PhD/VFP-Equation/sapphirepp/examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
+mpirun -n 4 ./steady-state-parallel-shock sapphirepp/examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
 ```
 
 In general, the option `-ksp_monitor` allows a user to monitor the convergence of
@@ -257,8 +258,8 @@ the iterative method. More information about the iterative method and the
 preconditioner can be obtained with the option `-ksp_view`.
 
 @note Unfortunately, it is not possible to overwrite the tolerance for the
-residual `-ksp_rtol`. The reason is that @dealii uses its own routine, namely
-`SolverBase::convergence_test()`, to check for convergence.
+  residual `-ksp_rtol`. The reason is that @dealii uses its own routine, namely
+  `SolverBase::convergence_test()`, to check for convergence.
 
 <div class="section_buttons">
 
