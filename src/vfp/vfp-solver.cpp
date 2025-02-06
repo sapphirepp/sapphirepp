@@ -1406,6 +1406,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   saplog << "The DG matrix was assembled." << std::endl;
 }
 
+
+
 template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
@@ -1431,6 +1433,8 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
 }
+
+
 
 template <unsigned int dim>
 void
