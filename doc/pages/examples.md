@@ -6,10 +6,7 @@
     moving through a plasma, and introduces the use of runtime parameters in
     @sapphire.
  2. @subpage steady-state-parallel-shock  
-    This example showcases the capabilities of @sapphire in the context of a
-    parallel shock scenario. It provides a simple 1D simulation of a shock wave
-    moving through a plasma, and introduces the use of runtime parameters in
-    @sapphire.
+    This example solves directly for the steady-state of the parallel shock scenario.
  3. @subpage gyro-advection  
     This example illustrates how an isotropic distribution of particles gyrates
     in a magnetic field, while being advected by a background plasma flow.
