@@ -25,12 +25,12 @@ diffusive shock acceleration. Since a detailed explanation of the described
 scenario is given in the two mentioned examples, we summarise the physical
 setup in the following table:
 <div style="text-align:center">
-| Physical scenario:   |                                                                                                                                                                                       |
-|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Velocity profile     | $$\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x  \text{ for } x < 0 \text{ and } \mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x \text{ for } x > 0 $$                                |
-| Magnetic field       | $$\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$$                                                                                                                                            |
-| Scattering frequency | $$\nu(x) = \nu_0 p^{-1} $$                                                                                                                                                            |
-| Source               | $$ S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$$ |
+| Physical scenario:   |                                                                                                                                                                                    |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Velocity profile     | $\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x  \text{ for } x < 0 \text{ and } \mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x \text{ for } x > 0$                                |
+| Magnetic field       | $\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$                                                                                                                                           |
+| Scattering frequency | $\nu(x) = \nu_0 p^{-1}$                                                                                                                                                            |
+| Source               | $S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$ |
 </div>
 
 ## Implementation {#implementation-steady-state-parallel-shock}
