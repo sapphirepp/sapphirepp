@@ -332,7 +332,9 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     {
       steady_state_solve();
       output_results(0, 0);
-      saplog << "Simulation ended." << std::endl;
+      saplog << "Simulation ended. " << " \t[" << Utilities::System::get_time()
+             << "]" << std::endl
+             << std::endl;
     }
   else
     {
