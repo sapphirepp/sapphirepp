@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/parallel-shock/config.h
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for parallel-shock example
+ * @file examples/vfp/steady-state-parallel-shock/config.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @brief Implement physical setup for steady-state-parallel-shock example
  */
 
 #ifndef CONFIG_H
