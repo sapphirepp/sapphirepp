@@ -114,7 +114,7 @@ namespace sapphirepp
     static constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
-
+    static constexpr double scaling_spectral_index = 4;
 
     /** [VFP Flags] */
     // !!!EDIT HERE!!!

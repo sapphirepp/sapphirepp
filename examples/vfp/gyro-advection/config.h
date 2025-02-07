@@ -123,7 +123,7 @@ namespace sapphirepp
       VFPFlags::rotation | VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
-
+    static constexpr double scaling_spectral_index = 4;
 
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
