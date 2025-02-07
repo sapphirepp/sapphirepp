@@ -175,7 +175,10 @@ namespace sapphirepp
       VFPFlags::rotation | VFPFlags::source;
     /** [VFP Flags] */
 
-
+    /** [Scaling exponent] */
+    /** Specify the exponent \f$ s \f$  of \f$ p^s f \f$ */
+    static constexpr double scaling_spectral_index = 4;
+    /** [Scaling exponent] */
 
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
