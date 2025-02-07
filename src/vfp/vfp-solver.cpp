@@ -904,6 +904,23 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               adv_x_gen_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                // \phi scaling_spectral_index 1/v * du^k/dt *
+                                // A_k * \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  scaling_spectral_index *
+                                  fe_v.shape_value(i, q_index)[dim_ps - 1] /
+                                  particle_velocities[q_index] *
+                                  material_derivative_vel[q_index][coordinate] *
+                                  advection_matrices[coordinate](component_i,
+                                                                 component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                              ++coordinate_1)
@@ -1017,6 +1034,23 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               adv_x_gen_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                // \phi scaling_spectral_index 1/v * du^k/dt *
+                                // A_k * \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  scaling_spectral_index *
+                                  fe_v.shape_value(i, q_index)[dim_ps - 1] /
+                                  particle_velocities[q_index] *
+                                  material_derivative_vel[q_index][coordinate] *
+                                  advection_matrices[coordinate](component_i,
+                                                                 component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                              ++coordinate_1)
