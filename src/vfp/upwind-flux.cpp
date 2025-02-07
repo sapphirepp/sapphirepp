@@ -139,7 +139,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // grid, the normal is the same for all quadrature points and it points either
   // in the x, y, z or p direction. Hence it can determined outside the loop
   // over the quadrature points
-  unsigned int component = 1000; // Produces an error if not overwritten
+  unsigned int          component    = 0;
+  [[maybe_unused]] bool found_normal = false;
   for (unsigned int i = 0; i < dim; ++i)
     {
       // NOTE: Such a simple comparison of doubles is only possible, because I
@@ -150,10 +151,17 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
       // for some faces.
       if (std::abs(1. - std::abs(normals[0][i])) < 1e-5)
         {
-          component = i;
+          component    = i;
+          found_normal = true;
           break;
         }
     }
+  // Check in Debug mode, if the normal was found. The double comparison could
+  // fail.
+  Assert(
+    found_normal,
+    dealii::ExcMessage(
+      "When computing the flux through a cell surface, it was not possible to determine the normal of the cell interface."));
 
   // Fluxes in the spatial directions
   //
