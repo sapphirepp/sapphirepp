@@ -114,8 +114,6 @@ namespace sapphirepp
     static constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
-    static constexpr double scaling_spectral_index = 4;
-
     /** [VFP Flags] */
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
@@ -123,7 +121,10 @@ namespace sapphirepp
       VFPFlags::time_evolution | VFPFlags::collision;
     /** [VFP Flags] */
 
-
+    /** [Scaling exponent] */
+    /** Specify the exponent \f$ s \f$  of \f$ p^s f \f$ */
+    static constexpr double scaling_spectral_index = 4;
+    /** [Scaling exponent] */
 
     /** [InitialValueFunction constructor] */
     template <unsigned int dim>
