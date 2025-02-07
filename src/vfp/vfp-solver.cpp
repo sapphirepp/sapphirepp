@@ -914,7 +914,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                 // A_k * \phi
                                 copy_data.cell_matrix(i, j) +=
                                   scaling_spectral_index *
-                                  fe_v.shape_value(i, q_index)[dim_ps - 1] /
+                                  fe_v.shape_value(i, q_index) /
                                   particle_velocities[q_index] *
                                   material_derivative_vel[q_index][coordinate] *
                                   advection_matrices[coordinate](component_i,
@@ -955,8 +955,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // \jacobian[coordinate_1][coordinate_2]
                                         // Ap_coordinate_1,coordinate_2 * \phi
                                         copy_data.cell_matrix(i, j) +=
-                                          fe_v.shape_value(
-                                            i, q_index)[dim_ps - 1] *
+                                          fe_v.shape_value(i, q_index) *
                                           scaling_spectral_index *
                                           jacobians_vel[q_index][coordinate_1]
                                                        [coordinate_2] *
@@ -1016,8 +1015,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // \jacobian[coordinate_1][coordinate_2]
                                         // Ap_coordinate_1,coordinate_2 * \phi
                                         copy_data.cell_matrix(i, j) +=
-                                          fe_v.shape_value(
-                                            i, q_index)[dim_ps - 1] *
+                                          fe_v.shape_value(i, q_index) *
                                           scaling_spectral_index *
                                           jacobians_vel[q_index][coordinate_1]
                                                        [coordinate_2] *
@@ -1035,8 +1033,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // \jacobian[coordinate_1][coordinate_2]
                                         // Ap_coordinate_1,coordinate_2 * \phi
                                         copy_data.cell_matrix(i, j) +=
-                                          fe_v.shape_grad(i,
-                                                          q_index)[dim_ps - 1] *
+                                          fe_v.shape_value(i, q_index) *
                                           scaling_spectral_index *
                                           jacobians_vel[q_index][coordinate_2]
                                                        [coordinate_1] *
@@ -1113,7 +1110,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                 // A_k * \phi
                                 copy_data.cell_matrix(i, j) +=
                                   scaling_spectral_index *
-                                  fe_v.shape_value(i, q_index)[dim_ps - 1] /
+                                  fe_v.shape_value(i, q_index) /
                                   particle_velocities[q_index] *
                                   material_derivative_vel[q_index][coordinate] *
                                   advection_matrices[coordinate](component_i,
@@ -1171,8 +1168,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // \jacobian[coordinate_1][coordinate_2]
                                         // Ap_coordinate_1,coordinate_2 * \phi
                                         copy_data.cell_matrix(i, j) +=
-                                          fe_v.shape_value(
-                                            i, q_index)[dim_ps - 1] *
+                                          fe_v.shape_value(i, q_index) *
                                           scaling_spectral_index *
                                           jacobians_vel[q_index][coordinate_1]
                                                        [coordinate_2] *
@@ -1265,8 +1261,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // \jacobian[coordinate_1][coordinate_2]
                                         // Ap_coordinate_1,coordinate_2 * \phi
                                         copy_data.cell_matrix(i, j) +=
-                                          fe_v.shape_value(
-                                            i, q_index)[dim_ps - 1] *
+                                          fe_v.shape_value(i, q_index) *
                                           scaling_spectral_index *
                                           jacobians_vel[q_index][coordinate_1]
                                                        [coordinate_2] *
@@ -1284,8 +1279,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // \jacobian[coordinate_1][coordinate_2]
                                         // Ap_coordinate_1,coordinate_2 * \phi
                                         copy_data.cell_matrix(i, j) +=
-                                          fe_v.shape_grad(i,
-                                                          q_index)[dim_ps - 1] *
+                                          fe_v.shape_value(i, q_index) *
                                           scaling_spectral_index *
                                           jacobians_vel[q_index][coordinate_2]
                                                        [coordinate_1] *
