@@ -229,6 +229,10 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   LogStream::Prefix p2("Constructor", saplog);
   saplog << vfp_flags << std::endl;
   saplog << "dim_ps=" << dim_ps << ", dim_cs=" << dim_cs << std::endl;
+  if constexpr ((vfp_flags & VFPFlags::scaled_distribution_function) !=
+                VFPFlags::none)
+    saplog << "Scaling spectral index s: " << scaling_spectral_index
+           << std::endl;
 
   // Consistency checks for vfp_flags:
   AssertThrow(
@@ -900,6 +904,23 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               adv_x_gen_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                // \phi scaling_spectral_index 1/v * du^k/dt *
+                                // A_k * \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  scaling_spectral_index *
+                                  fe_v.shape_value(i, q_index) /
+                                  particle_velocities[q_index] *
+                                  material_derivative_vel[q_index][coordinate] *
+                                  advection_matrices[coordinate](component_i,
+                                                                 component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                              ++coordinate_1)
@@ -924,6 +945,29 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                                 else
                                   {
@@ -959,6 +1003,49 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // component_1, component_2
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        // component_2, component_1
+                                        // \phi * scaling_spectral_index
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_2]
+                                                       [coordinate_1] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                               }
                           }
@@ -1013,6 +1100,23 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               adv_x_gen_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                // \phi scaling_spectral_index 1/v * du^k/dt *
+                                // A_k * \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  scaling_spectral_index *
+                                  fe_v.shape_value(i, q_index) /
+                                  particle_velocities[q_index] *
+                                  material_derivative_vel[q_index][coordinate] *
+                                  advection_matrices[coordinate](component_i,
+                                                                 component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                              ++coordinate_1)
@@ -1053,6 +1157,30 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                                 else
                                   {
@@ -1122,6 +1250,48 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // component_1, component_2
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        // component_2, component_1
+                                        // \phi * scaling_spectral_index
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_2]
+                                                       [coordinate_1] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                               }
                           }
