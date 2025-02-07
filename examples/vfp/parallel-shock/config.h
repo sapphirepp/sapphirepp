@@ -177,7 +177,7 @@ namespace sapphirepp
       VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
-
+    static constexpr double scaling_spectral_index = 4;
 
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
