@@ -227,8 +227,9 @@ details. The number of iterations and the relative tolerance are currently
 hard-coded, i.e. $2000$ and $1 \times 10^{-10}$ respectively. This implies that
 if a user computes a distribution functions whose values are smaller than
 the tolerance, the solver will not convergence. This happens, for example, if
-the $p$-range covers many orders of magnitudes. (This issue can be addressed
-with a scaled distribution function.)
+the $p$-range covers many orders of magnitudes. This issue can be addressed with
+a scaled distribution function, see Sec.
+[Extenstion](#scaled-f-steady-state-parallel-shock).
 
 Secondly, the Block-Jacobi preconditioner is not particularly designed for the
 system of equations that we solve. This means that we need many iterations.
@@ -261,6 +262,68 @@ preconditioner can be obtained with the option `-ksp_view`.
 @note Unfortunately, it is not possible to overwrite the tolerance for the
   residual `-ksp_rtol`. The reason is that @dealii uses its own routine, namely
   `SolverBase::convergence_test()`, to check for convergence.
+
+## Extension: A scaled distribution function {#scaled-f-steady-state-parallel-shock}
+
+As explained at the beginning of the [Disucssion
+section](#discussion-steady-state-parallel-shock), it might be that the value of
+the distribution function $f$ is below the termination tolerance of the
+iterative method, i.e. $f < 1 \times 10^{-10}$. If this is the case, it is
+possible to scale the distribution function with the factor $p^{s}$. We
+decided to call $s$ the `scaling_spectral_index`. To scale the distribution
+function it is necessary to add an additional `VFPFlag` and specify $s$. We
+included a subfolder `scaled` in the `steady-state-parallel-shock` example
+folder.
+
+It is only the `config.h` file that changes. The additional additional VFPFlag
+is `scaled_distribution_function`. Hence the variable `vfp_flags` becomes
+
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/scaled/config.h VFP Flags
+
+Moreover, it is necessary to the set scaling the spectral index $s$. For the example
+at hand we set it to $s = 4$. The corresponds to the following line in the
+`config.h` file:
+
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/scaled/config.h Scaling exponent
+
+If we scale the distribution function, we also have to scale the source $S$,
+i.e. we have to multiply it with $p^{s}$. This gives
+
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/scaled/config.h Source
+
+The steady-state shock example with a scaled distribution function can be run
+with 
+
+```shell
+cd sapphirepp/build/examples/vfp/steady-state-parallel-shock/scaled/
+mpirun -n 2 ./steady-state-parallel-shock-scaled parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
+```
+
+Note that we changed the preconditioner. We now use a LU factorisation instead
+of an ILU for the Jacobi-blocks. Since we only use two cores, this is close to a
+direct solve of the system of equations. The default preconditioner does not
+converge.
+
+@warning It seems that scaling the distribution function increases the condition
+number of the system of equations that we need to solve. This implies that the
+GMRES method may **not** converge. Choosing a smaller `scaling_spectral_index` could
+help.
+
+A result of the above simulation run is depicted in the following plot:
+
+<div style="text-align:center;">
+<img alt="Scaled particle spectrum at the shock"
+src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/scaled-particle-spectrum.png"
+height=450>
+</div>
+
+The plot shows the scaled particle spectrum at the shock. The slight deviation
+of the numerical solution's spectral index is a consequence of the fact that we
+cannot use a discontinuous velocity profile. Instead we use a tanh-function and,
+thus, have finite shock width. For a detailed discussion of the effect of a
+finite shock width on the spectral index, we refer our users to @cite Achterberg2011. 
+In the previous plot of the particle spectrum the deviation was not visible,
+because we used a log-scale for the $y$-axis.
 
 <div class="section_buttons">
 
