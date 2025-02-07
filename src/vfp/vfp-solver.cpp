@@ -229,6 +229,10 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   LogStream::Prefix p2("Constructor", saplog);
   saplog << vfp_flags << std::endl;
   saplog << "dim_ps=" << dim_ps << ", dim_cs=" << dim_cs << std::endl;
+  if constexpr ((vfp_flags & VFPFlags::scaled_distribution_function) !=
+                VFPFlags::none)
+    saplog << "Scaling spectral index s: " << scaling_spectral_index
+           << std::endl;
 
   // Consistency checks for vfp_flags:
   AssertThrow(
