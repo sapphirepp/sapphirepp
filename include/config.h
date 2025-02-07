@@ -111,12 +111,13 @@ namespace sapphirepp
 
   namespace VFP
   {
+
+
     /** [Dimension] */
     // !!!EDIT HERE!!!
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
     static constexpr unsigned int dimension = 2;
     /** [Dimension] */
-
 
 
     /** [VFP Flags] */
@@ -128,7 +129,16 @@ namespace sapphirepp
       VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
-    static constexpr double scaling_spectral_index = 4;
+
+    /** [Scaling exponent] */
+    /** @brief \f$ p^s f \f$, where \f$s\f$ is the scaling spectral index.
+     *
+     * @note The variable does not have any effect, if the VFP flag
+     *  `scaled_distribution_function` is **not** set.
+     */
+    constexpr double scaling_spectral_index = 4;
+    /** [Scaling exponent] */
+
 
     /**
      * @brief Initial condition
