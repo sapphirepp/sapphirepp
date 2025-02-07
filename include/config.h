@@ -128,7 +128,7 @@ namespace sapphirepp
       VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
-
+    static constexpr double scaling_spectral_index = 4;
 
     /**
      * @brief Initial condition
