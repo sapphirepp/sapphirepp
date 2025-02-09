@@ -584,6 +584,6 @@ We are happy to help you to get started!
 
 | Previous                            |                                  Next |
 |:------------------------------------|--------------------------------------:|
-| [Code of Conduct](#code-of-conduct) | [Acknowledgements](#acknowledgements) |
+| [Code of Conduct](#code-of-conduct) | [IDE](#ide) |
 
 </div>

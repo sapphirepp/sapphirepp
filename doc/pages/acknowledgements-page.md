@@ -21,8 +21,8 @@ Special thanks go to all
 
 <div class="section_buttons">
 
-| Previous                                  |                Next |
-|:------------------------------------------|--------------------:|
-| [Coding Conventions](#coding-conventions) | [Licence](#licence) |
+| Previous    |                Next |
+|:------------|--------------------:|
+| [IDE](#ide) | [Licence](#licence) |
 
 </div>
