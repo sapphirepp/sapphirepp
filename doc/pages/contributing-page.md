@@ -10,6 +10,8 @@
 
 @subpage coding-conventions "Coding Conventions"
 
+@subpage ide "IDE"
+
 <div class="section_buttons">
 
 | Previous              |                                Next |
