@@ -20,7 +20,7 @@ There are various IDEs available that fulfil these requirements. A very popular
 choice is [VS Code](https://code.visualstudio.com/). [Eclipse
 IDE](https://eclipseide.org/) is also widely used. I chose GNU [Editor
 Macros](https://www.gnu.org/software/emacs/) (Emacs). Its design differs much
-from VS Code and Eclispe, see the Section [General
+from VS Code and Eclipse, see the Section [General
 Architecture](https://en.wikipedia.org/wiki/Emacs#General_architecture) of the
 Wikipedia page for a concise discussion. Prejudices about Emacs being
 out-of-date or dead, are prejudices. Emacs does everything other IDEs do. The
@@ -102,39 +102,23 @@ code. Emacs traditionally relied for this on regular expressions. Tree-sitter
 unifies the interface for all programming modes and simplifies their
 implementation.
 
-```elisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; prog-mode configuration
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(use-package prog-mode
-  :hook ((prog-mode . display-fill-column-indicator-mode)
-	 (prog-mode . display-line-numbers-mode)
-	 (prog-mode . hl-line-mode)
-	 (prog-mode . highlight-indentation-current-column-mode)
-	 ))
-
-```
-
-The major programming modes, e.g. `python-mode`, are very often derived from `prog-mode`. This means
-that all settings done in the `prog-mode` block apply to them.
-
 ### Completion
 
 Completion may heavily speed-up typing. Many packages implement completion UIs
 for the mini-buffer. Particular popular choices are
 [helm](https://emacs-helm.github.io/helm/) and
-[https://oremacs.com/swiper/](ivy). A minimalistic option is
+[https://oremacs.com/swiper/](ivy). A minimalist option is
 [vertico](https://github.com/minad/vertico), which I am currently using. I would
 like to mention that I used ivy + swiper before and that I found it to be very
 reliable as well. If vertico is used, it is worth to take a look at the
-[consult](https://github.com/minad/consult) package. It provides search
-and navigation commands that feed vertico.
+[consult](https://github.com/minad/consult) package. It provides search and
+navigation commands that feed vertico.
 
 In-buffer completion can, for example, be achieved with the
 [company](https://company-mode.github.io/) or the
 [corfu](https://github.com/minad/corfu) package.
 
-All packages are highly customizable and it is worth to read their documentation
+All packages are highly customisable and it is worth to read their documentation
 if a specific behaviour is (un-)desired.
 
 ```elisp
@@ -184,6 +168,115 @@ if a specific behaviour is (un-)desired.
   (global-corfu-mode))
 ```
 
+### Programming
+
+The major programming modes, e.g. `python-mode`, are very often derived from `prog-mode`. This means
+that all settings done in the `prog-mode` block apply to them.
+
+```elisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; prog-mode configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package prog-mode
+  :hook ((prog-mode . display-fill-column-indicator-mode)
+	 (prog-mode . display-line-numbers-mode)
+	 (prog-mode . hl-line-mode)
+	 (prog-mode . highlight-indentation-current-column-mode)
+	 ))
+
+```
+
+Nested parentheses are very common. The package
+[rainbow-delimiters](https://github.com/Fanael/rainbow-delimiters) helps to know
+how far I went. I note that is a MELPA package.
+
+```
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rainbow Delimiters -  have delimiters be colored by their depth
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package rainbow-delimiters
+  :ensure t
+  :hook (prog-mode . rainbow-delimiters-mode))
+```
+
+Eglot is the Emacs client for the “Language Server Protocol” (LSP).  The
+name “Eglot” is an acronym that stands for “Emacs polyGLOT”. 
+
+```
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Eglot: Interface to language servers LSP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package eglot)
+```
+
+TODO: Write a passage about how to use it. 
+
+Very often, we have to write boiler plate code. The package
+[https://github.com/joaotavora/yasnippet](yasnippet) offers a good amount of
+code snippets. Though, I have to admit that I am not using them very often.
+
+```
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; yasnippet
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package yasnippet
+  :ensure t
+  :init
+  (yas-global-mode 1)
+  )
+
+(use-package yasnippet-snippets
+	     :ensure t
+	     :requires yasnippet
+	     )
+```
+
+### Version control 
+
+We use git to control the versions of our code. [Magit](https://magit.vc/) is
+wonderful git interface. It does everything I need with only a few key strokes.
+The package [forge](https://magit.vc/manual/forge.html) allows me to interact
+with the API of [github](https://github.com), i.e. can open issues,
+pull-requests etc. It also supports other git forges like
+[gitlab](https://about.gitlab.com/). Read its manual to set it up.
+
+```
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Magit - A git porcelain inside emacs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package magit
+  :ensure t
+  :bind ("C-x g" . magit-status)
+  :config
+  (setq magit-diff-refine-hunk t)
+  )
+
+(use-package forge
+  :after magit
+  :ensure t
+  )
+```
+
+### Documentation
+
+We use markdown to write our documentation. Emacs has a very good markdown mode.
+```
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;            Markdown-Mode          
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package markdown-mode
+  :ensure t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init
+  (setq markdown-command "multimarkdown")
+  ;; Hashes only on the left-hand side of the heading
+  (setq markdown-asymmetric-header t)
+  (setq markdown-enable-math t)
+  )
+```
 
 <div class="section_buttons">
 
