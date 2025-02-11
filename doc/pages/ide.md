@@ -44,7 +44,7 @@ choices whenever I know some. If you think, that I miss an essential package or
 if you have a better setup, please write me an
 [email](mailto:nils.schween@mpi-hd.mpg.de) and share it with me.
 
-### Basics
+### Basics {#basics}
 
 For the presented configuration to work, at least Emacs 29.1. is needed. Emacs
 is configured with a `.emacs` or a `init.el` file and the presented
@@ -72,6 +72,12 @@ loading an additional packages.
   ;; wrap at 80 characters
   (setq-default fill-column 80)
 
+  ;; COrfu
+  ;; Enable indentation+completion using the TAB key.
+  ;; `completion-at-point' is often bound to M-TAB.
+  (setq tab-always-indent 'complete)
+
+  ;; Tree-sitter
   ;; sources of the treesitter language grammars
   (setq treesit-language-source-alist
 	'((cpp "https://github.com/tree-sitter/tree-sitter-cpp")
@@ -104,22 +110,24 @@ implementation.
 
 ### Completion
 
-Completion may heavily speed-up typing. Many packages implement completion UIs
-for the mini-buffer. Particular popular choices are
+Minibuffer completion may heavily speed-up choosing canidates when opening files
+or executing commands. Many packages implement completion UIs for the
+minibuffer. Particular popular choices are
 [helm](https://emacs-helm.github.io/helm/) and
 [https://oremacs.com/swiper/](ivy). A minimalist option is
 [vertico](https://github.com/minad/vertico), which I am currently using. I would
 like to mention that I used ivy + swiper before and that I found it to be very
-reliable as well. If vertico is used, it is worth to take a look at the
-[consult](https://github.com/minad/consult) package. It provides search and
-navigation commands that feed vertico.
+reliable as well. If vertico is used, it is worth to take a look at vertico's
+extensions and the [consult](https://github.com/minad/consult) package. It
+provides search and navigation commands that feed vertico.
 
 In-buffer completion can, for example, be achieved with the
 [company](https://company-mode.github.io/) or the
-[corfu](https://github.com/minad/corfu) package.
+[corfu](https://github.com/minad/corfu) package. It helps to keep track of
+complicated variable names.
 
-All packages are highly customisable and it is worth to read their documentation
-if a specific behaviour is (un-)desired.
+I note that all mentioned packages are highly customisable and it is worth to
+read their documentation if a specific behaviour is (un-)desired.
 
 ```elisp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -168,6 +176,14 @@ if a specific behaviour is (un-)desired.
   (global-corfu-mode))
 ```
 
+To explore the new completion UI you can, for example, type `M-x` and execute an
+arbitrary command. In the [Basics](#basics) section, we changed the value of the
+variable `tab-always-indent` to `complete`. This allows to a spawn a child frame
+with possible completion candidates using `TAB`. If you prefer auto-completion,
+please read the
+[Auto-completion](https://elpa.gnu.org/packages/doc/corfu.html#Auto-completion)
+section in corfu's manual.
+
 ### Programming
 
 The major programming modes, e.g. `python-mode`, are very often derived from `prog-mode`. This means
@@ -178,9 +194,15 @@ that all settings done in the `prog-mode` block apply to them.
 ;; prog-mode configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package prog-mode
-  :hook ((prog-mode . display-fill-column-indicator-mode)
+  :hook (
+     ;; Activates the fill-column indication display, i.e. a vertical line is
+	 ;; drawn at the end of the column set by `fill-column` 
+	 (prog-mode . display-fill-column-indicator-mode)
+	 ;; Displays the line numbers at the left border of the screen
 	 (prog-mode . display-line-numbers-mode)
+	 ;; Highlights the current line 
 	 (prog-mode . hl-line-mode)
+	 ;; Adds visible columns to ease the recognition of the indentation level
 	 (prog-mode . highlight-indentation-current-column-mode)
 	 ))
 
@@ -199,17 +221,34 @@ how far I went. I note that is a MELPA package.
   :hook (prog-mode . rainbow-delimiters-mode))
 ```
 
-Eglot is the Emacs client for the “Language Server Protocol” (LSP).  The
-name “Eglot” is an acronym that stands for “Emacs polyGLOT”. 
+Eglot is the Emacs client for the “Language Server Protocol” (LSP). The name
+“Eglot” is an acronym that stands for “Emacs polyGLOT”.
 
 ```
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Eglot: Interface to language servers LSP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(use-package eglot)
+(use-package eglot
+  :bind (("C-x l" . eglot)
+     :map eglot-mode-map
+     ("C-x l w r" . eglot-reconnect)
+     ("C-x l w q" . eglot-shutdown)
+     ("C-x l w k" . eglot-shutdown-all)
+     ("C-x l = r" . eglot-format)
+     ("C-x l = =" . eglot-format-buffer)
+     ("C-x l r r" . eglot-rename)
+     ("C-x l a a" . eglot-code-actions)))
 ```
 
-TODO: Write a passage about how to use it. 
+TODO: Write a passage about how to use it. imenu, xref. Check if clangd needs
+the compilation output form cmake.
+
+project.el
+
+gdb 
+
+treemacs 
+
 
 Very often, we have to write boiler plate code. The package
 [https://github.com/joaotavora/yasnippet](yasnippet) offers a good amount of
@@ -257,6 +296,17 @@ pull-requests etc. It also supports other git forges like
   )
 ```
 
+Open a file in a git controlled folder and type `C-x g` to open magit. If you
+are familiar with git, magit is self-explanatory. Type `?` to open a transient
+buffer that shows the git commands that you can call from magit. For example, a
+simple work flow may be to edit a file, then stage the changes and subsequently
+commit. In magit this boils to the key sequence `s` (staging), `c c` (commiting)
+and subsequently entering a commit message. When you are done type `C-c C-c`. If
+you like to your changes to a remote type `P p`.
+
+With forge you can update your list of pull-requests, issues etc. by typing
+sequence `N f f`.
+
 ### Documentation
 
 We use markdown to write our documentation. Emacs has a very good markdown mode.
@@ -274,8 +324,30 @@ We use markdown to write our documentation. Emacs has a very good markdown mode.
   (setq markdown-command "multimarkdown")
   ;; Hashes only on the left-hand side of the heading
   (setq markdown-asymmetric-header t)
+  ;; Font lock for inline and display LaTeX math expressions
   (setq markdown-enable-math t)
   )
+```
+
+### Auxiliary packages
+
+In this section, I include packages that do not directly contribute to the IDE
+capabilities of Emacs, but that proved to be useful in my daily programmer life.
+
+An example, is the package `which-key`. Whenever you begin a series of key
+strokes, it opens a new window at the bottom of of your Emacs frame, showing
+possible continuations. This highly enhances the visibility of possible commands
+provided by the various packages. It is automatically activated, just type `C-x`
+to see its effect.
+
+```
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; which-key
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode))
 ```
 
 <div class="section_buttons">
