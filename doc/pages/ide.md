@@ -221,7 +221,7 @@ how far I went. I note that is a MELPA package.
   :hook (prog-mode . rainbow-delimiters-mode))
 ```
 
-Eglot is the Emacs client for the “Language Server Protocol” (LSP). The name
+Eglot is the ported Emacs client for the “Language Server Protocol” (LSP). The name
 “Eglot” is an acronym that stands for “Emacs polyGLOT”.
 
 ```
@@ -239,6 +239,52 @@ Eglot is the Emacs client for the “Language Server Protocol” (LSP). The name
      ("C-x l r r" . eglot-rename)
      ("C-x l a a" . eglot-code-actions)))
 ```
+
+A widely used and more feature rich alternative to eglot is
+[lsp-mode](https://emacs-lsp.github.io/lsp-mode/). The cumbersome shortcuts for
+the eglot commands are chosen to be close to the keymap used by lsp-mode. I used
+lsp-mode for quite some time and I was very satisfied. However, since Emacs 29.1
+eglot is part of the ported emacs packages and I decided to switch, since I only use a
+small subset of options language servers offer and eglot seems to cover them.
+For a LSP client to work, a language server is necessary to which the client can
+connect.
+
+For C/C++ I am using the [clangd](https://clangd.llvm.org/) server. An
+alternative option is [ccls](https://github.com/MaskRay/ccls). If installed,
+clangd should be automatically detected by eglot. If you have ccls and clangd
+installed, you can specify in your emacs configuration which one you would like to use with
+the variable `eglot-server-programs`. If you like to start the language server
+automatically whenever you open a C/C++ file, you need to add a hook to the corresponding
+major modes, i.e. `c-ts-mode` and `c++-ts-mode`; see the section [Editor
+plugins](https://clangd.llvm.org/installation#editor-plugins) of the clangd
+website. Clangd needs to know the build flags of your software projects, see
+[Project setup](https://clangd.llvm.org/installation#project-setup). If you use
+CMake, as we do for @sapphire, you can create a `compile_commands.json` file,
+that needs to be in the build directory of your project. 
+
+For Python ...
+
+To use eglot, open a source file in one of your (version controlled) software
+projects and type `C-x l`. The source code will be indexed and eglot is ready to
+use. Eglot functionality builds on other Emacs packages: 
+
+- It shows the documentation of symbols (functions, variables etc.) at point using
+[ElDoc](https://www.gnu.org/software/emacs/manual/html_node/emacs/Programming-Language-Doc.html),
+- It detects coding errors and suggests fixes with the help of
+[flymake.](https://www.gnu.org/software/emacs/manual/html_node/emacs/Flymake.html).
+Type `C-x l a a` to apply the fixes.
+- It allows users to jump to definitions of symbols at point with
+[xref](https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html) with
+`M-,`. To jump back type `M-.`. It is not anymore necessary to generate TAGS.
+- It allows buffer navigation by function, class, method etc. via
+  [Imenu.](https://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html).
+  Type `M-g i` to jump to a function.
+- It feeds corfu with completion candidates. 
+- It formats your buffer with clang-format. Type `C-x l = =`.
+- It allows you to easily rename symbol in your whole project, type `C-x l r r`
+
+And more, see [Eglot features](https://www.gnu.org/software/emacs/manual/html_node/eglot/Eglot-Features.html).
+
 
 TODO: Write a passage about how to use it. imenu, xref. Check if clangd needs
 the compilation output form cmake.
