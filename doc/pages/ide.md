@@ -204,13 +204,24 @@ that all settings done in the `prog-mode` block apply to them.
 	 (prog-mode . hl-line-mode)
 	 ;; Adds visible columns to ease the recognition of the indentation level
 	 (prog-mode . highlight-indentation-current-column-mode)
+	 ;; Activate spell checking of comments in code
+	 (prog-mode . flyspell-prog-mode)
 	 ))
 
 ```
+The spell checking of the comments while coding is done with the package
+[flyspell](https://www.gnu.org/software/emacs/manual/html_node/emacs/Spelling.html).
+I note that flyspell only works if a spell checker, e.g.
+[Aspell](http://aspell.net/), and a corresponding dictionary are installed. If
+your operating system has the [Enchant](https://rrthomas.github.io/enchant/)
+library installed, you can consider the spell checker
+[Nuspell](https://nuspell.github.io/) in conjunction with the Emacs package
+[jinx](https://github.com/minad/jinx). 
 
 Nested parentheses are very common. The package
 [rainbow-delimiters](https://github.com/Fanael/rainbow-delimiters) helps to know
-how far I went. I note that is a MELPA package.
+how far I went down in the hierarchy of parentheses. I note that
+rainbow-delimiters is a MELPA package.
 
 ```
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -285,16 +296,41 @@ Type `C-x l a a` to apply the fixes.
 
 And more, see [Eglot features](https://www.gnu.org/software/emacs/manual/html_node/eglot/Eglot-Features.html).
 
+Very often a software project does not exist of a single file. It has root
+directory out of which a tree of folder files grow. In this case the
+pre-installed
+[project.el](https://www.gnu.org/software/emacs/manual/html_node/emacs/Projects.html)
+comes very handy. To get you started, I list the commands I regularly use:
 
-TODO: Write a passage about how to use it. imenu, xref. Check if clangd needs
-the compilation output form cmake.
+- `C-x p f` Visit a file that belongs to the current project
+- `C-x p c` Run compilation in the current projects root directory
+- `C-x p &` Run shell command asynchronously in the current project's root
+directory 
 
-project.el
+For a complete list of commands, see [Project
+Commands](https://www.gnu.org/software/emacs/manual/html_node/emacs/Project-File-Commands.html)
+in the Emacs manual. I have to admit that I am missing a command to start a
+debugger in the project's root directory. For an alternative project managment
+tool, I refer the reader to the package [projectile](https://github.com/bbatsov/projectile). 
 
-gdb 
+To get an overview of the files in a directory, you can use the already
+installed package
+[dired](https://www.gnu.org/software/emacs/manual/html_node/emacs/Dired.html).
+If you prefer a tree view of your project, I suggest to use the package
+[treemacs](https://github.com/Alexander-Miller/treemacs). 
 
-treemacs 
+Many people like to fold their code. Emacs comes the
+[HideShow](https://www.gnu.org/software/emacs/manual/html_node/emacs/Hideshow.html)
+mode to do this. If you prefer a code folding based using treesitter, take a
+look at [treesit-fold](https://elpa.nongnu.org/nongnu/treesit-fold.html).
 
+To debug my code I used [gdb](https://sourceware.org/gdb/). Emacs has a great
+graphical interface to gdb. Just type `M-x gdb` and then `M-x gdb-many-windows`.
+Breakpoints can be set by clicking into the fringe of your code windows. 
+
+Peope working on clusters, sometimes like to use their emacs setup to remotely
+edit code. This is possible with the package
+[tramp](https://www.emacswiki.org/emacs/TrampMode) .
 
 Very often, we have to write boiler plate code. The package
 [https://github.com/joaotavora/yasnippet](yasnippet) offers a good amount of
@@ -395,6 +431,9 @@ to see its effect.
   :config
   (which-key-mode))
 ```
+
+- jinx for spell checking comments
+- multiple cursors
 
 <div class="section_buttons">
 
