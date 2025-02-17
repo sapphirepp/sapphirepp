@@ -111,10 +111,12 @@ There are some important points to note:
 - For higher polynomial degree $k>1$,
   the nodes in the output mesh do not correspond to the mesh used in the simulation,
   as @dealii introduces additional cell-internal nodes.
-- The `hdf5` format can only be used for `dim > 1`
+- The `hdf5` format can only be used for `dim > 1`.
 - The `vtu` format allows representing higher order polynomials on a cell,
   if we activate the `write_higher_order_cells` flag.
   We are not using it so far!
+- For `pvtu` files, the time variable is not saved correctly.
+  Therefore, only the time step can be as a proxy for the simulation time.
 - If one wants "smoother" results,
   we recommend using higher order polynomials.
   This is often more effective in reducing discontinuities
@@ -130,7 +132,7 @@ One can see that the discontinuities much less pronounced
 than in the $k=1$ case
 (figure in previous section).
 
-## VFP modules specialities {#vfp-visualization}
+## VFP modules output {#vfp-visualization}
 
 In the VFP module in @sapphire,
 we have to consider some additional points
@@ -154,37 +156,58 @@ when visualizing and interpreting the results:
 
 ## ParaView {#paraview-visualization}
 
-Here we want to give you some tips and tricks
+Here we want to share some tips and tricks
 we learned when using @paraview to visualize the results of @sapphire:
 
 - @paraview uses the values given at the nodes
   and linearly interpolates between them inside each cell.
-- @paraview has problems reading the mesh data
-  (especially in the 1D case).
-  Therefore, when using the `PlotOverLine` feature
-  one should *not* use the `Sample At Cell Boundaries`
-  or `Sample At Segment Centers` options.
-  Instead, one should use the option `Sample Uniformly`.
-- If you want to show "smooth" results
-  without jumps introduced by the DG method,
-  one way is to show only the cell average.
-  In the $k=1$ case this is equal to the cell-midpoint value.
-  Using `PlotOverLine:Sample Uniformly` this can be accomplished
-  by choosing a `Resolution` equal to the number of cells in the mesh.
-  For higher order polynomials $k>0$,
-  there is no direct way to visualize the cell average.  
-  @note Continuously connecting points other than the cell average
-   can lead to misleading representations.
-- When using the `PlotOverLine` feature in 2D or 3D,
-  one should make sure to *not* sample along a cell boundary.
-  Otherwise, the solution will have 4/8 values at a node
-  (one from each neighbouring cell).
-  ParaView is not able to interpret this
-  and will show a wrong representation of the solution.
-  We recommend using a small offset from the cell boundary when using this feature.
-  Combined with using the `Sample Uniformly` option,
-  this will ensure the solution is only sampled inside a cell,
-  where the solution is well-defined.
+- To extract a 1D line from 2D/3D data,
+  use the `PlotOverLine` feature.
+  The best way to use this feature
+  is to select the `Sample At Cell Boundaries` option
+  to get the full discontinuous representation of the data.
+  If you prefer a "smooth" result,
+  the `Sample At Segment Centers` option is a good choice.
+  (For $k=1$, this equals the cell average.)
+
+  Unfortunately,
+  the `PlotOverLine` feature has a few quirks we want to mention here:
+  - Using the `Sample Uniformly` option
+    can lead to sub-sampling and aliasing effects.
+    We therefore discourage using this option.
+  - In 1D,
+    the `Sample At Cell Boundaries` and `Sample At Segment Centers` options
+    do not work.
+    For the 1D case,
+    we recommend showing the original data in a `Line Chart View`.
+    After opening a new `Line Chart View`,
+    you can display the loaded data
+    by clicking to the left of it in the `Pipeline Browser`
+    (where the eye icon normally is,
+    this is also possible here,
+    even though the eye icon is not shown).
+    Then deactivate the `Use Index For X Axis` option,
+    and instead use `X Array Name = Points_X`.
+  - The `Sample At Segment Centers` option includes two additional points,
+    one at the start and one at the end of the defined line.
+    This is normally not an issue,
+    but it means that not all values are sampled at cell centres.
+  - In 2D or 3D, make sure to *not* sample along a cell boundary.
+    Otherwise, the solution will have 4/8 values at a node
+    (one from each neighbouring cell).
+    @paraview is not able to interpret this
+    and will arbitrarily switch cell sides.
+    We recommend using a small offset from the cell boundary.
+- We often encountered problems when exporting an animation as `avi` or `ogv`.
+  A workaround is to export the animation as a series of `png` files,
+  and convert them with an external tool instead.
+- As @paraview is in active development,
+  you might occasionally encounter bugs
+  (e.g., in the `PlotOverLine` feature).
+  Sometimes updating to a newer version can fix the issue.
+  Otherwise, we recommend checking the
+  [ParaView Discourse](https://discourse.paraview.org/)
+  and [ParaView Issues](https://gitlab.kitware.com/paraview/paraview/-/issues).
 
 <div class="section_buttons">
 
