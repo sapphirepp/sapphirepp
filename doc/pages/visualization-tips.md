@@ -211,9 +211,9 @@ we learned when using @paraview to visualize the results of @sapphire:
 
 <div class="section_buttons">
 
-| Previous                                |                  Next |
-|:----------------------------------------|----------------------:|
-| [ParaView Tutorial](#paraview-tutorial) | [Examples](#examples) |
+| Previous                                         |                  Next |
+|:-------------------------------------------------|----------------------:|
+| [ParaView Python Introduction](#paraview-python) | [Examples](#examples) |
 
 </div>
 

@@ -11,6 +11,8 @@ as they handle much of the heavy lifting involved
 in visualizing Finite Element simulation data.
 We provide a [tutorial for ParaView](#paraview-tutorial)
 to help new users become familiar with the basic concepts.
+For users preferring a Python interface,
+we give a [ParaView Python introduction](#paraview-python).
 If you are already familiar with @paraview
 or [VisIt](https://visit-dav.github.io/visit-website/),
 you can directly jump to the
@@ -19,6 +21,8 @@ Here, we explain some caveats of results
 produced by the discontinuous Galerkin method utilized by @sapphire.
 
 @subpage paraview-tutorial
+
+@subpage paraview-python
 
 @subpage visualization-tips
 

@@ -42,7 +42,7 @@ As an alternative,
 [conda](https://docs.conda.io/)/[conda-forge](https://conda-forge.org/).
 
 ```bash
-conda create --name ParaView
+conda create --name ParaView python=3.13
 conda activate ParaView
 conda install paraview
 ```
@@ -402,9 +402,9 @@ Finally, we can export the plot as an image and explore other useful features:
 
 <div class="section_buttons">
 
-| Previous                        |                                                     Next |
-|:--------------------------------|---------------------------------------------------------:|
-| [Visualization](#visualization) | [Tips and Tricks for Visualization](#visualization-tips) |
+| Previous                        |                                             Next |
+|:--------------------------------|-------------------------------------------------:|
+| [Visualization](#visualization) | [ParaView Python Introduction](#paraview-python) |
 
 </div>
 
