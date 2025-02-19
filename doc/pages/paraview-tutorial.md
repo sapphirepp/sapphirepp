@@ -37,6 +37,16 @@ you can use [Homebrew](https://brew.sh/) to install @paraview:
 brew install --cask paraview
 ```
 
+As an alternative,
+@paraview can be installed using
+[conda](https://docs.conda.io/)/[conda-forge](https://conda-forge.org/).
+
+```bash
+conda create --name ParaView
+conda activate ParaView
+conda install paraview
+```
+
 ## Open Files {#paraview-open}
 
 After launching @paraview,
@@ -330,6 +340,47 @@ we first need to label the axes:
 
    ![Label Axes](https://sapphirepp.org/img/paraview-tutorial/save-01-annotated.png)
 
+Next, we change to a logarithmic color map.
+
+1. **Set Custom Data Range:**
+   Click on **Rescale to Custom Data Range**
+   to open a dialog for entering the data range.
+
+2. **Disable automatic rescaling:**
+   Disable the **Enable automatic rescale** feature.
+
+3. **Enter Data Range:**
+   Enter a strictly positive data range,
+   e.g. from `1e-2` to `10`.
+   This step is crucial to avoid error warnings
+   when using a logarithmic color map.
+
+4. **Apply Changes:**
+   Click **Ok** to apply the changes.
+
+   ![Adjust Data Range](https://sapphirepp.org/img/paraview-tutorial/colormap-01-annotated.png)
+
+5. **Open Color Map Editor:**
+   Click on **Edit Color Map**
+   to open the Color Map Editor.
+
+6. **Color Map Editor:**
+   A new window, the *Color Map Editor* is created.
+
+7. **Logarithmic Color Map:**
+   To use a logarithmic color map,
+   click on **Use Log Scale When Mapping Data To Colors**.
+
+8. **Change Color Map:**
+   To use a perceptually uniform color map,
+   change to the **Virdis (matplotlib)** color map.
+
+9. **Close Color Map Editor:**
+   Close the *Color Map Editor*
+   by clicking on **x**.
+
+   ![Change Color Map](https://sapphirepp.org/img/paraview-tutorial/colormap-02-annotated.png)
+
 Finally, we can export the plot as an image and explore other useful features:
 
 1. **Export Plot:**
@@ -347,7 +398,7 @@ Finally, we can export the plot as an image and explore other useful features:
    Use **File** > **Load State...**
    to resume your work from where you left off.
 
-   ![Export Plot](https://sapphirepp.org/img/paraview-tutorial/save-02-annotated.png)
+   ![Export Plot](https://sapphirepp.org/img/paraview-tutorial/save-02.2-annotated.png)
 
 <div class="section_buttons">
 
