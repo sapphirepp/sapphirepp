@@ -41,7 +41,7 @@ subsection VFP
     set Point 2               = 2., 2.
 
     # Number of cells in each coordinate direction
-    set Number of cells       = 32, 32
+    set Number of cells       = 40, 40
 
     # Number of cells along x-direction in the shock (for Shock grid)
     set Number of shock cells = 8
