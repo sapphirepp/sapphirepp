@@ -88,6 +88,11 @@ guide](https://sapphirepp.org/latest/quick-start.html) and various
 [tutorials](https://sapphirepp.org/latest/examples.html). The source code for
 the examples is located in the [examples](examples) folder.
 
+If you have any questions,
+feel free to reach out to us
+via the [GitHub Discussions page](https://github.com/sapphirepp/sapphirepp/discussions)
+for support and community interaction.
+
 ## Licence
 
 Sapphire++ is distributed under the [LGPL 3.0 license](LICENSE).
