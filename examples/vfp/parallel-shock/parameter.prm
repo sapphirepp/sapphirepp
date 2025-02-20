@@ -1,10 +1,8 @@
 subsection Output
-  set Base file name               = solution
-  set Format                       = pvtu
-  set Number of digits for counter = 4
-  set Output frequency             = 1
   set Results folder               = ./results
   set Simulation identifier        = parallel-shock
+  set Format                       = pvtu
+  set Output frequency             = 1
 end
 subsection VFP
   subsection Expansion

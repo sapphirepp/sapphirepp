@@ -1,10 +1,8 @@
 subsection Output
-  set Base file name               = solution
-  set Format                       = pvtu
-  set Number of digits for counter = 4
-  set Output frequency             = 100
-  set Results folder               = results
+  set Results folder               = ./results
   set Simulation identifier        = closure
+  set Format                       = pvtu
+  set Output frequency             = 100
 end
 subsection Physical parameters
   set Standard deviation   = 1.
