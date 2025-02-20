@@ -19,36 +19,21 @@ Wolfgang Bangerth.
 
 ## Getting help
 
-There is a Sapphire++ mailing list to get in contact with the developers and our
-community, [users@sapphirepp.org](mailto:users@sapphirepp.org). It is the
-perfect place for questions and discussions about the library on all levels.
-Feel free to
-[subscribe](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a).
+We use
+[GitHub Discussions](https://github.com/sapphirepp/sapphirepp/discussions)
+as a forum for discussions.
+It is the perfect place for questions
+and discussions about the library on all levels.
+It also serves as a resource for any kind of problems users encounter
+when they use Sapphire++.
 
-The mailing list is a public forum, which can be accessed under
-[https://mailinglist.sapphirepp.org](https://mailinglist.sapphirepp.org) and
-which we consider a resource for any kind of problems users encounter when they
-use Sapphire++.
-
-We note that all emails sent to the list are distributed both to the list
-subscribers and copied to this public archive, for people to browse or search
-without the need to be subscribed.
-
-Subscribing to the mailing list is equivalent to confirming that you are okay
-with publishing the emails you sent to the mailing list on this archive.
-Nonetheless, we use all possibilities, which the mailing list archive software
-provides, to hide sensitive and irrelevant information. For example, your email
-address will be disguised.
-
-Please do not post any confidential information (e.g. email addresses of others)
-and follow our [code of
-conduct](https://sapphirepp.org/latest/code-of-conduct.html).
-
-To unsubscribe follow this
-[link](https://mein.manitu.de/public/webhosting/mailinglist/?id=156396&auth=tSGpYMy4VrSEjX9vtxJFpMsgFDbfjT1a)
-and enter your email address. If you would like us to delete any of your
-contributions, please write an email to
-[contact@sapphirepp.org](mailto:contact@sapphirepp.org).
+To ask a question or comment,
+you need to have a
+[GitHub Account](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account).
+To stay updated,
+you can either subscribe to individual discussions,
+or [watch the repository](https://docs.github.com/en/github/managing-subscriptions-and-notifications-on-github/setting-up-notifications/about-notifications)
+to receive notifications about all new announcements and developments.
 
 ## Bug reports
 
@@ -59,13 +44,15 @@ to include a minimal failing example that can help us reproduce the problem.
 
 ## Making changes and contributing new features
 
-To make a change to Sapphire++ you should create a *fork* (through GitHub) and a
-separate *branch* (sometimes called a feature branch). You can propose that your
-branch be combined with the main branch by opening a *pull request*. This will
-give a chance for others to review your code. While this seems very formal,
+To make a change to Sapphire++ you should create a *fork* (through GitHub)
+and a separate *branch* (sometimes called a feature branch).
+You can propose that your branch be combined with the main branch
+by opening a *pull request*.
+This will give a chance for others to review your code.
+While this seems very formal,
 keeping the code review in one place makes it easier to coordinate changes.
-Please do not hesitate to ask questions about the workflow on the mailing list
-if you are not sure what to do.
+Please do not hesitate to ask questions about the workflow
+on the GitHub Discussions page if you are not sure what to do.
 
 Since Sapphire++ builds heavily on the [deal.II](https://www.dealii.org) library
 for finite elements, we recommand to familiarize yourself with the

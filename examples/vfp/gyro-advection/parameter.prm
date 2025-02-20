@@ -1,10 +1,8 @@
 subsection Output
-  set Base file name               = solution
-  set Format                       = vtu
+  set Results folder               = ./results
+  set Simulation identifier        = gyro-advection
   set Number of digits for counter = 5
   set Output frequency             = 20
-  set Results folder               = results
-  set Simulation identifier        = gyro-advection
 end
 subsection Physical parameters
   set B0/2pi = 1.

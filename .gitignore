@@ -13,6 +13,10 @@ tmp*
 *#
 *.swp
 
+# Log files
+*.log
+*.out
+
 # CMake files
 CMakeFiles
 CMakeCache.txt

@@ -59,7 +59,7 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
     "Path to the folder in which the simulation results will be stored. "
     "Without a trailing slash.");
   prm.declare_entry("Simulation identifier",
-                    "",
+                    "01",
                     Patterns::Anything(),
                     "Name of the simulation run. It will be used to create a "
                     "subdirectory in the results folder.");

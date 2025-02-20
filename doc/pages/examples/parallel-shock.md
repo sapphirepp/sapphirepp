@@ -88,7 +88,7 @@ the start of the simulation. You can pass a parameter file to @sapphire using
 the following syntax:
 
 ```shell
-  ./sapphirepp parameter-file.prm
+./build/sapphirepp parameter-file.prm
 ```
 
 This feature enables you to modify the parameters without needing to recompile
@@ -332,12 +332,12 @@ u_{x}}{\partial x}$ stays the same.
 
 ### Compile and run {#compile-parallel-shock}
 
-To run the simulation, implement the above functions in the `config.h` file and
-recompile @sapphire:
+To run the simulation,
+implement the above functions in the `config.h` file
+and recompile @sapphire:
 
 ```shell
-  cd sapphirepp/build
-  make
+make --directory=build
 ```
 
 Alternatively, you can use the implementation
@@ -347,8 +347,8 @@ Note that for this to work,
 @sapphire must be configured with the `-DEXAMPLES=ON` option.
 
 ```shell
-  cd sapphirepp/build/examples/vfp/parallel-shock
-  make parallel-shock
+cmake -S . -B build -DEXAMPLES=ON
+make --directory=build parallel-shock
 ```
 
 We recommend running the simulation with the parameters given in
@@ -359,8 +359,7 @@ We recommend running the simulation with the parameters given in
 Run the simulation with:
 
 ```shell
-  cd sapphirepp/build/examples/vfp/parallel-shock
-  ./parallel-shock parameter.prm
+./build/examples/vfp/parallel-shock/parallel-shock examples/vfp/parallel-shock/parameter.prm 
 ```
 
 ## Results {#results-parallel-shock}

@@ -82,9 +82,9 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Number of cells",
-                      (dim == 1) ? "32" :
-                      (dim == 2) ? "32, 32" :
-                                   "32, 32, 32",
+                      (dim == 1) ? "40" :
+                      (dim == 2) ? "40, 40" :
+                                   "40, 40, 40",
                       Patterns::List(Patterns::Integer(1), dim, dim, ","),
                       "Number of cells in each coordinate direction");
 

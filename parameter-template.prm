@@ -11,7 +11,7 @@ subsection Output
 
   # Name of the simulation run. It will be used to create a subdirectory in
   # the results folder.
-  set Simulation identifier        = 
+  set Simulation identifier        = 01
 
   # The base file name for the output files.
   set Base file name               = solution
@@ -41,7 +41,7 @@ subsection VFP
     set Point 2               = 2., 2.
 
     # Number of cells in each coordinate direction
-    set Number of cells       = 32, 32
+    set Number of cells       = 40, 40
 
     # Number of cells along x-direction in the shock (for Shock grid)
     set Number of shock cells = 8

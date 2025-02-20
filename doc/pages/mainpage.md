@@ -57,9 +57,9 @@ equation.
 
 A distinguishing feature of @sapphire is that it solves this system of PDEs by
 applying the discontinuous Galerkin (dG) method. The dG method is a finite
-element method which is particularly suited for the shown VFP equation. 
+element method which is particularly suited for the shown VFP equation.
 
-The full implementation details can be found in @cite Schween2024a and 
+The full implementation details can be found in @cite Schween2024a and
 @cite Schween2025.
 
 Even though primarily developed in the context of cosmic-ray physics, @sapphire
@@ -138,6 +138,10 @@ For macOS user, @dealii offers prepackaged `.dmg` files with all dependencies
 included. To install, follow the
 [deal.II Mac OS X Instructions](https://github.com/dealii/dealii/wiki/MacOSX).
 
+If you have trouble installing @dealii,
+refer to the
+[deal.II installation instructions](https://www.dealii.org/current/readme.html).
+
 ## Compiling @sapphire {#compilation}
 
 You can obtain @sapphire either as a tarball from the
@@ -168,7 +172,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -
 
 ## Getting started {#getting-started}
 
-To run @sapphire, you need to provide a configuration file:
+To run @sapphire, you need to provide a parameter file:
 
 ```shell
 ./build/sapphirepp parameter-template.prm
@@ -185,6 +189,11 @@ where `N` is the number of processors to use.
 For a brief introduction, refer to our [quick-start guide](#quick-start).
 Additional information and detailed examples can be found in the
 [examples](#examples) section.
+
+If you have any questions,
+feel free to reach out to us
+via the [GitHub Discussions page](https://github.com/sapphirepp/sapphirepp/discussions)
+for support and community interaction.
 
 <div class="section_buttons">
 
