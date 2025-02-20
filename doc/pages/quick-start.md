@@ -137,7 +137,7 @@ $\left( \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} + \mathbf{p}
 \cdot\nabla_{x} \mathbf{u} \right) \cdot \nabla_{p} f$, describing the
 (perceived) acceleration of particles in the mixed coordinate frame due to
 changes in background velocity. The third effect are @ref
-sapphirepp::VFP::VFPFlags::collision "collisions" (i.e. elastic 
+sapphirepp::VFP::VFPFlags::collision "collisions" (i.e. elastic
 interactions of the particles with the magnetohydrodynamic turbulence of the background plasma)
 that we model with an effective scattering
 term, $\frac{\nu}{2} \Delta_{\theta, \varphi} f$, which only changes the
@@ -358,15 +358,19 @@ to compile the code to prepare it for running the simulation.
 ### Compile and run {#compile-quick-start}
 
 After modifying `sapphirepp/include/config.h` to implement the physical setup,
-we need to recompile @sapphire. First, we use [CMake](https://cmake.org/) to
-locate and link all dependencies and prepare the compilation process. To keep
-source code and executables separate, we create a `sapphirepp/build` directory
-to store the compiled executable and related files. To prepare for compilation,
-execute the following commands (this may be redundant if you have already
-followed the instructions in [Compiling @sapphire](#compilation)):
+we need to recompile @sapphire.
+First, we use [CMake](https://cmake.org/)
+to locate and link all dependencies and prepare the compilation process.
+To keep source code and executables separate,
+we create a `sapphirepp/build` directory
+to store the compiled executable and related files.
+To prepare for compilation,
+execute the following commands
+(this may be redundant if you have already followed the instructions
+in [Compiling @sapphire](#compilation)):
 
 ```shell
-cd sapphirepp
+cd path/to/sapphirepp
 mkdir build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 ```
@@ -382,6 +386,7 @@ Sapphire++ version 1.1.0
 ...
 -- Preparing Sapphire++
 -- Preparing VFP module
+-- Set up sapphirepp for Sapphire++ using /home/schulze/Documents/PhD/Code/sapphirepp/include/config.h
 -- Configuring done (0.3s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/schulze/Documents/PhD/Code/sapphirepp/build
@@ -389,46 +394,49 @@ Sapphire++ version 1.1.0
 
 <br>
 
-Next, we have to compile @sapphire. Change to the `sapphirepp/build` directory
-and execute:
+Next, we have to compile @sapphire in the `build` directory:
 
 ```shell
-cd build
-make
+make --directory=build
 ```
 
 To speed up the compilation, you can use multiple processes in parallel by
 running:
 
 ```shell
-make -j N
+make --directory=build -j N
 ```
 
 where `N` is the number of processes to use. You should see output similar to
 the following:
 
 ```text
-[ 10%] Building CXX object src/utils/CMakeFiles/UtilsLib.dir/output-parameters.cpp.o
-[ 20%] Building CXX object src/utils/CMakeFiles/UtilsLib.dir/sapphirepp-logstream.cpp.o
+[  7%] Building CXX object src/utils/CMakeFiles/UtilsLib.dir/output-parameters.cpp.o
+[ 15%] Building CXX object src/utils/CMakeFiles/UtilsLib.dir/sapphirepp-logstream.cpp.o
+[ 23%] Building CXX object src/utils/CMakeFiles/UtilsLib.dir/tools.cpp.o
 [ 30%] Linking CXX static library libUtilsLib.a
 [ 30%] Built target UtilsLib
-[ 40%] Building CXX object CMakeFiles/sapphirepp.dir/sapphirepp.cpp.o
-[ 50%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/particle-functions.cpp.o
-[ 60%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/pde-system.cpp.o
-[ 70%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/upwind-flux.cpp.o
-[ 80%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/vfp-parameters.cpp.o
-[ 90%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/vfp-solver.cpp.o
+[ 38%] Building CXX object src/vfp/CMakeFiles/VFPLib.dir/particle-functions.cpp.o
+[ 46%] Building CXX object src/vfp/CMakeFiles/VFPLib.dir/pde-system.cpp.o
+[ 53%] Building CXX object src/vfp/CMakeFiles/VFPLib.dir/phase-space-reconstruction.cpp.o
+[ 61%] Building CXX object src/vfp/CMakeFiles/VFPLib.dir/vfp-parameters.cpp.o
+[ 69%] Linking CXX static library libVFPLib.a
+[ 69%] Built target VFPLib
+[ 76%] Building CXX object CMakeFiles/sapphirepp.dir/sapphirepp.cpp.o
+[ 84%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/upwind-flux.cpp.o
+[ 92%] Building CXX object CMakeFiles/sapphirepp.dir/src/vfp/vfp-solver.cpp.o
 [100%] Linking CXX executable sapphirepp
 [100%] Built target sapphirepp
 ```
 
 <br>
 
-Once compiled, we can run the `sapphirepp` executable inside the
-`sapphirepp/build` folder using the following command:
+Once compiled,
+the `sapphirepp` executable is created in the `build` folder.
+We execute it using the following command:
 
 ```shell
-./sapphirepp
+./build/sapphirepp
 ```
 
 A successful execution will produce output similar to the following:
@@ -463,7 +471,7 @@ Sapphire:VFP::Simulation ended at t = 200.000   [10:44:48]
 processors, use the `mpirun` command:
 
 ```shell
-mpirun -np N ./sapphirepp
+mpirun -np N ./build/sapphirepp
 ```
 
 You can verify if the parallelization is successful by checking the startup
@@ -476,7 +484,7 @@ Sapphire::Start Sapphire++ v1.1.0 with N MPI process(es) [2024/7/31 10:43:50]
 
 ## Results {#results-quick-start}
 
-Running the simulation will create a `results` directory in `sapphirepp/build`.
+Running the simulation will create a `results` directory.
 Listing the contents of this folder with:
 
 ```shell
@@ -496,26 +504,31 @@ solution_0199.pvtu  solution_0199.0.vtu solution_0199.1.vtu ... solution_0199.N-
 solution_0200.pvtu  solution_0200.0.vtu solution_0200.1.vtu ... solution_0200.N-1.vtu
 ```
 
-The first file, `log.prm`, contains the parameters used for the run. An
-introduction to parameter files is given in the [parallel
-shock](#parameter-files-parallel-shock) example. The other files,
-`solution_XXXX.*`, contain the simulation results. The `_XXXX` suffix indicates
-the time step the result corresponds to. Each time step has multiple associated
-files:
+The first file, `log.prm`, contains the parameters used for the run.
+An introduction to parameter files
+is given in the [parallel shock](#parameter-files-parallel-shock) example.
+The other files, `solution_XXXX.*`, contain the simulation results.
+The `_XXXX` suffix indicates the time step the result corresponds to.
+Each time step has multiple associated files:
 
-- `solution_XXXX.pvtu`: Contains metadata for the results at each time step,
-  primarily collecting the distributed data from different processors in a
-  multiprocessor run.
-- `solution_XXXX.n.vtu`: Contains part of the solution handled by processor
-  number `n`. In a single-threaded run, you will only have the
-  `solution_XXXX.0.vtu` files. Otherwise, the index `n` runs up to `N-1`, with
-  `N` being the number of processors.
+- `solution_XXXX.pvtu`:
+  Contains metadata for the results at each time step,
+  primarily collecting the distributed data from different processors
+  in a multiprocessor run.
+- `solution_XXXX.n.vtu`:
+  Contains part of the solution handled by processor number `n`.
+  In a single-threaded run,
+  you will only have the `solution_XXXX.0.vtu` files.
+  Otherwise, the index `n` runs up to `N-1`,
+  with `N` being the number of processors.
 
 @note @sapphire supports other output formats, like `hdf5`.
 
-@note @sapphire overwrites previous results upon rerunning. We recommend using a
-      unique identifier for each run. For more details, refer to the
-      documentation on [Parameter files](#parameter-files-parallel-shock) and
+@note @sapphire overwrites previous results upon rerunning.
+      We recommend using a unique identifier for each run.
+      For more details, refer to the documentation on
+      [Parameter files](#parameter-files-parallel-shock)
+      and
       @ref sapphirepp::Utils::OutputParameters::simulation_id
       "OutputParameters".
 

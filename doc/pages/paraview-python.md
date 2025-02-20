@@ -50,7 +50,7 @@ We illustrate their usage using the [quick-start](#quick-start) example.
 The script for the quick-start is located at
 [scripts/plot-quick-start.py](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/plot-quick-start.py).
 This script takes the path to the results,
-i.e., `sapphirepp/build/results`,
+i.e., `sapphirepp/results`,
 either as a command line argument
 or as prompted input from the user.
 It loads the data from that folder,
@@ -65,7 +65,7 @@ This script can be executed in multiple ways:
   2. Click on **Run Script**
      and select `sapphirepp/scripts/plot-quick-start.py`.
   3. When prompted, enter the path to the results folder,
-     e.g., `/path/to/sapphirepp/build/results`.
+     e.g., `/path/to/sapphirepp/results`.
   4. The plots will open automatically in @paraview.
 
 - **Open in Script Editor in ParaView:**
@@ -92,8 +92,7 @@ This script can be executed in multiple ways:
      and provide the results path as a command line argument:
 
      ```shell
-     cd sapphirepp
-     pvpython scripts/plot-quick-start.py build/results 
+     pvpython scripts/plot-quick-start.py results 
      ```
 
   3. This opens a temporary @paraview preview window,
@@ -109,8 +108,7 @@ This script can be executed in multiple ways:
      and provide the results path as a command line argument:
 
      ```shell
-     cd sapphirepp
-     pvbatch scripts/plot-quick-start.py build/results 
+     pvbatch scripts/plot-quick-start.py results 
      ```
 
   3. This does not open a @paraview preview window.
@@ -126,8 +124,9 @@ you can use
 [ImageMagick Convert](https://imagemagick.org/script/convert.php):
 
 ```shell
-cd sapphirepp/build/results
+cd results
 magick -delay 1 -loop 0 quick-start-2D.*.png quick-start-2D.gif
+rm quick-start-2D.*.png
 ```
 
 @todo Add `PlotOverLine` plots and export `csv` data.

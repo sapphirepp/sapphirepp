@@ -172,7 +172,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -
 
 ## Getting started {#getting-started}
 
-To run @sapphire, you need to provide a configuration file:
+To run @sapphire, you need to provide a parameter file:
 
 ```shell
 ./build/sapphirepp parameter-template.prm

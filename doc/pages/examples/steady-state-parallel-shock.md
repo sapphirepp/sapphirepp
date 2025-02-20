@@ -130,21 +130,22 @@ spherical harmonic decomposition of the source term. $i = 0$ corresponds $l = 0
 
 ### Compile and run {#compile-steady-state-parallel-shock}
 
-If you configured @sapphire with the `-DEXAMPLES=ON` option, see
-[Compilation](#compilation), the steady-state shock example is compiled and the
-executable can be found in the `build/examples/steady-state-parallel-shock` folder.
+If you configured @sapphire with the `-DEXAMPLES=ON` option,
+see [Compilation](#compilation),
+the steady-state shock example is compiled
+and the executable can be found in the
+`build/examples/vfp/steady-state-parallel-shock` folder.
 The executable is called `steady-state-parallel-shock`
 
 We supply the user with a physically reasonable set of parameters that are
-listed in the `build/examples/steady-state-parallel-shock/parameter.prm` file:
+listed in the `examples/vfp/steady-state-parallel-shock/parameter.prm` file:
 
 @include examples/vfp/steady-state-parallel-shock/parameter.prm
 
 Run the simulation with:
 
 ```shell
-cd sapphirepp/build/examples/steady-state-parallel-shock
-mpirun -n 2 ./steady-state-parallel-shock parameter.prm
+mpirun -n 2 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm 
 ```
 
 ## Results {#results-steady-state-parallel-shock}

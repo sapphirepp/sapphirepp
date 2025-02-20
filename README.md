@@ -60,7 +60,7 @@ Afterwards you can compile Sapphire++, with `cmake` and `make`:
 cd sapphirepp
 export DEAL_II_DIR="path/to/deal.II"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
-cd build && make
+make --directory=build
 ```
 
 A detailed description of the installation process can be found in the
@@ -68,16 +68,16 @@ A detailed description of the installation process can be found in the
 
 ## Getting started
 
-To run Sapphire++ you need to provide a configuration file:
+To run Sapphire++ you need to provide a parameter file:
   
 ```shell
-./sapphirepp parameter.prm
+./build/sapphirepp parameter-template.prm
 ```
 
 You enable parallel execution by using `mpirun`:
 
 ```shell
-mpirun -np N ./sapphirepp parameter.prm
+mpirun -np N ./build/sapphirepp parameter-template.prm
 ```
 
 where `N` is the number of processors to use.

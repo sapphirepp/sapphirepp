@@ -496,27 +496,28 @@ there are only two steps to follow:
 After these steps, re-run `cmake` to update the build system:
 
 ```shell
-cd sapphirepp
-rm -rf build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
 ```
 
-@note For development, we recommend using the Debug mode. You can switch between
-  Debug and Release mode by changing the `CMAKE_BUILD_TYPE` variable.
+@note For development, we recommend using the Debug mode.
+  You can switch between Debug and Release mode
+  by changing the `CMAKE_BUILD_TYPE` variable.
 
 This process will create a
 `sapphirepp/build/examples/vfp/scattering-only` folder.
-To build the executable for the example, execute `make` in this folder:
+To build the executable for the example,
+execute `make` with the target `scattering-only`:
 
 ```shell
-cd sapphirepp/build/examples/scattering-only
-make
+make --directory=build scattering-only
 ```
 
-This will create the executable `scattering-only`, which can be run with:
+This will create the executable `scattering-only`
+in the `build/examples/vfp/scattering-only` folder,
+which can be run with:
 
 ```shell
-./scattering-only parameter.prm
+./build/examples/vfp/scattering-only/scattering-only parameter-file.prm
 ```
 
 ### parameter.prm {#example-parameter-scattering-only}
@@ -542,12 +543,13 @@ precision for this simulation.
 
 ## Executing the example {#execute-scattering-only}
 
-Once the example program is compiled, it can be executed with the following
-command:
+Once the example program is compiled,
+and the parameter file is defined,
+e.g. `examples/vfp/scattering-only/parameter.prm`,
+it can be executed with the following command:
 
 ```shell
-cd sapphirepp/build/examples/vfp/scattering-only
-./scattering-only parameter.prm
+./build/examples/vfp/scattering-only/scattering-only examples/vfp/scattering-only/parameter.prm
 ```
 
 The console output should resemble the following:
@@ -579,9 +581,10 @@ solution in 10 time steps. The relative error is approximately $5 \times
 10^{-5}$, which is expected for a 4th order Runge-Kutta scheme with a time step
 size of $0.1$.
 
-The program creates a `results` folder in the current directory, with a
-`scattering-only` subdirectory. This folder contains a log file of the
-parameters (`log.prm`), the analytic solution (`analytic_solution_0000.vtu`),
+Inside the `results` folder
+the program creates a subdirectory `scattering-only`.
+This folder contains a log file of the parameters (`log.prm`),
+the analytic solution (`analytic_solution_0000.vtu`),
 and the numerical solution at each time step (`solution_*.vtu`).
 
 The `*.vtu` files can be opened in visualization software like @paraview or
