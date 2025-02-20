@@ -128,7 +128,16 @@ magick -delay 1 -loop 0 results/01/quick-start-2D.*.png results/01/quick-start-2
 rm results/01/quick-start-2D.*.png
 ```
 
-@todo Add `PlotOverLine` plots and export `csv` data.
+The f(x) and f(p) plots created in the [ParaView tutorial](#paraview-tutorial)
+are saved as `quick-start-f-x.png` and `quick-start-f-p.png`, respectively.
+Additionally, the underlying `PlotOverLine` data is saved as `csv` files,
+`quick-start-f-x.csv` and `quick-start-f-p.csv`.
+This 1D data can be used for further analysis,
+as @paraview has already interpolated the data
+and tabulated it in an easy-to-understand format.
+However, be aware of the quirks of the `PlotOverLine` feature,
+as discussed on the [next page](#paraview-visualization).
+
 @todo Add simple calculation of spectral index to the script
       as example for `numpy` interface.
 

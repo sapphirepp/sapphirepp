@@ -598,7 +598,7 @@ for $p > p_0$, specifically $f_{000}(p) \propto p^{-4}$ @cite Drury1983
 captures this behaviour, we present a log-log plot of $p^4 f_{000}$, using a
 cut-out at constant $x$:
 
-![Steady state f(ln(p)) plot](https://sapphirepp.org/img/quick-start/quick-start-f-lnp.png)
+![Steady state f(ln(p)) plot](https://sapphirepp.org/img/quick-start/quick-start-f-p.png)
 
 <br>
 

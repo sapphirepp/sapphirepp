@@ -326,12 +326,145 @@ SaveData(
 )
 
 
+# =============================================================================
+# Create Calculator p^4 f_000
+# =============================================================================
+
+# create a new 'Calculator'
+calculator_p4f = Calculator(registrationName="p^4 f_000", Input=solution)
+
+# Properties modified on calculator_p4f
+calculator_p4f.ResultArrayName = "$p^4 f_{000}$"
+calculator_p4f.Function = "exp(4*coordsY) * f_000"
+
+
+# =============================================================================
+# Plot p^4 f(p)
+# =============================================================================
+
+# create a new 'Plot Over Line'
+plotOverLine_f_p = PlotOverLine(
+    registrationName="f(p) Plot", Input=calculator_p4f
+)
+
+# Get the bounds in y
+# Get data information from the solution
+data_info = solution.GetDataInformation()
+# Get bounds of the data
+bounds = data_info.GetBounds()
+# Extract min_y and max_y from the bounds
+min_y = bounds[2]
+max_y = bounds[3]
+
+# Properties modified on plotOverLine_f_p
+plotOverLine_f_p.Point1 = [0.1, min_y, 0.0]
+plotOverLine_f_p.Point2 = [0.1, max_y, 0.0]
+plotOverLine_f_p.SamplingPattern = "Sample At Segment Centers"
+
+
+# ------------------------------------
+# Create new layout and LineChartView
+# ------------------------------------
+
+# create new layout object 'f(p) Plot'
+layout_f_p = CreateLayout(name="f(p) Plot")
+
+# Create a new 'Line Chart View'
+lineChartView_f_p = CreateView("XYChartView")
+# lineChartView_f_p.ChartTitle = "f(p) Plot"
+lineChartView_f_p.LeftAxisTitle = "$p^4 f_{000}(\\ln p)$"
+lineChartView_f_p.BottomAxisTitle = "$\\ln p$"
+lineChartView_f_p.ChartTitleFontSize = 30
+lineChartView_f_p.LeftAxisTitleFontSize = 24
+lineChartView_f_p.BottomAxisTitleFontSize = 24
+lineChartView_f_p.LegendFontSize = 18
+lineChartView_f_p.LeftAxisLabelFontSize = 18
+lineChartView_f_p.BottomAxisLabelFontSize = 18
+
+# assign view to a particular cell in the layout
+AssignViewToLayout(view=lineChartView_f_p, layout=layout_f_p, hint=0)
+
+# set active view
+SetActiveView(lineChartView_f_p)
+
+# set active source
+SetActiveSource(plotOverLine_f_p)
+
+
+# ---------------------
+# Display PlotOverLine
+# ---------------------
+
+# show data in view
+fpPlotDisplay = Show(
+    plotOverLine_f_p, lineChartView_f_p, "XYChartRepresentation"
+)
+
+# Enter preview mode
+layout_f_p.PreviewMode = [1280, 720]
+# layout/tab size in pixels
+layout_f_p.SetSize(1280, 720)
+
+# Properties modified on fpPlotDisplay
+fpPlotDisplay.XArrayName = "Points_Y"
+fpPlotDisplay.SeriesVisibility = ["$p^4 f_{000}$"]
+fpPlotDisplay.SeriesLineThickness = [
+    "$p^4 f_{000}$",
+    "3",
+]
+
+
+# -----------------------
+# Use logarithmic y axis
+# -----------------------
+
+# Properties modified on lineChartView_f_p
+lineChartView_f_p.LeftAxisUseCustomRange = 1
+lineChartView_f_p.LeftAxisRangeMaximum = 16.0
+lineChartView_f_p.LeftAxisRangeMinimum = 1e-2
+lineChartView_f_p.LeftAxisLogScale = 1
+
+
+# ----------------
+# Save screenshot
+# ----------------
+
+print(f"Save screenshot '{results_folder}/quick-start-f-p.png'")
+
+# save screenshot
+SaveScreenshot(
+    filename=results_folder + "/quick-start-f-p.png",
+    viewOrLayout=layout_f_p,
+    location=vtkPVSession.DATA_SERVER,
+    TransparentBackground=1,
+)
+
+
+# ----------
+# Save data
+# ----------
+
+print(f"Save data '{results_folder}/quick-start-f-p.csv'")
+
+# save data
+SaveData(
+    filename=results_folder + "/quick-start-f-p.csv",
+    proxy=plotOverLine_f_p,
+    location=vtkPVSession.DATA_SERVER,
+    ChooseArraysToWrite=1,
+    PointDataArrays=["f_000", "f_100", "$p^4 f_{000}$"],
+    Precision=5,
+    UseScientificNotation=1,
+)
+
+
 ##--------------------------------------------
 ## You may need to add some code at the end of this python script depending on your usage, eg:
 #
 ## Exit preview mode
 # layout2D.PreviewMode = [0, 0]
 # layout_f_x.PreviewMode = [0, 0]
+# layout_f_p.PreviewMode = [0, 0]
 #
 ## Render all views to see them appears
 # RenderAllViews()
