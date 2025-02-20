@@ -138,8 +138,16 @@ and tabulated it in an easy-to-understand format.
 However, be aware of the quirks of the `PlotOverLine` feature,
 as discussed on the [next page](#paraview-visualization).
 
-@todo Add simple calculation of spectral index to the script
-      as example for `numpy` interface.
+Last, the script also calculates the spectral index $s$:
+`Spectral Index: s = -4.049119472503662`.
+This section in the
+[plot-quick-start.py](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/plot-quick-start.py)
+script serves as an introduction
+on how to combine [NumPy](https://numpy.org/) with @paraview.
+It utilizes the
+[`vtk.util.numpy_support`](https://docs.vtk.org/en/latest/api/python/vtkmodules/vtkmodules.util.numpy_support.html)
+package
+to facilitate the conversion between VTK and NumPy arrays.
 
 To further familiarize yourself with @paraview Python,
 we recommend using the **Tools** > **Start Trace** option,

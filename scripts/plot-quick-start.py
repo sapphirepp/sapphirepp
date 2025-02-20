@@ -5,7 +5,6 @@
 
 #### import the simple module from the paraview
 from paraview.simple import *
-from paraview.util import *
 
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
@@ -30,6 +29,8 @@ print(f"Using results in '{results_folder}'")
 # =============================================================================
 # Load pvtu files
 # =============================================================================
+
+from paraview.util import *
 
 pvtu_files = paraview.util.Glob(results_folder + "/solution_*.pvtu")
 if not pvtu_files:
@@ -456,6 +457,41 @@ SaveData(
     Precision=5,
     UseScientificNotation=1,
 )
+
+
+# =============================================================================
+# ParaView Python and NumPy Introduction: Calculate Spectral Index
+# =============================================================================
+
+import numpy as np
+from paraview.vtk.util import numpy_support
+
+# Fetch the data from the plotOverLine object
+plot_over_line_data = servermanager.Fetch(plotOverLine_f_p)
+
+# Get the points and f_000 array
+points_vtk = plot_over_line_data.GetPoints()
+f_000_vtk = plot_over_line_data.GetPointData().GetArray("f_000")
+
+# Convert points and f_000 to numpy array
+points = numpy_support.vtk_to_numpy(points_vtk.GetData())
+f_000 = numpy_support.vtk_to_numpy(f_000_vtk)
+
+# Extract ln_p array array from y-coordinates
+ln_p = points[:, 1]
+
+# Filter out data below 2x injection momentum (p_inj = 1)
+mask = ln_p > np.log(2.0)
+ln_p = ln_p[mask]
+f_000 = f_000[mask]
+
+# Calculate ln(f)
+ln_f = np.log(f_000)
+
+# Calculate log-log-slope of spectrum to find the spectral index
+spectral_index = (ln_f[-1] - ln_f[0]) / (ln_p[-1] - ln_p[0])
+
+print(f"Spectral Index: s = {spectral_index}")
 
 
 ##--------------------------------------------
