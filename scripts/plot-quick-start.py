@@ -44,6 +44,8 @@ solution = XMLPartitionedUnstructuredGridReader(
 )
 # for pvtu, the time variable does not work
 solution.TimeArray = "None"
+# Only show 'f_000' and 'f_100'
+solution.PointArrayStatus = ["f_000", "f_100"]
 
 
 # =============================================================================
@@ -58,13 +60,13 @@ animationScene1.UpdateAnimationUsingDataTimeSteps()
 
 # create new layout object '2D Plot'
 # Using a new layout for every plot simplifies the scaling of fonts
-layout1 = CreateLayout(name="2D Plot")
+layout2D = CreateLayout(name="2D Plot")
 
 # Create a new 'Render View'
 renderView1 = CreateView("RenderView")
 
 # add view to a layout so it's visible in UI
-AssignViewToLayout(view=renderView1, layout=layout1, hint=0)
+AssignViewToLayout(view=renderView1, layout=layout2D, hint=0)
 
 # set active view
 SetActiveView(renderView1)
@@ -72,11 +74,11 @@ SetActiveView(renderView1)
 # show data in view
 solutionDisplay = Show(solution, renderView1, "UnstructuredGridRepresentation")
 
+# PreviewMode and SetSize must be done after Show
 # Enter preview mode
-layout1.PreviewMode = [1024, 1024]
-
+layout2D.PreviewMode = [1024, 1024]
 # layout/tab size in pixels
-layout1.SetSize(1024, 1024)
+layout2D.SetSize(1024, 1024)
 
 # reset view to fit data
 renderView1.ResetCamera(False, 0.9)
@@ -209,11 +211,127 @@ SaveAnimation(
 )
 
 
+# =============================================================================
+# Plot f(x)
+# =============================================================================
+
+# create a new 'Plot Over Line'
+plotOverLine_f_x = PlotOverLine(registrationName="f(x) Plot", Input=solution)
+
+# Properties modified on plotOverLine_f_x
+# Adjust only y coordinate of start and end point,
+# this way the x coordinate goes from the start to the end of the grid.
+plotOverLine_f_x.Point1[1] = 0.05
+plotOverLine_f_x.Point2[1] = 0.05
+
+
+# -----------------------
+# Change SamplingPattern
+# -----------------------
+
+# Default
+plotOverLine_f_x.SamplingPattern = "Sample Uniformly"
+plotOverLine_f_x.Resolution = 1000
+
+# Sample at cell boundaries for full DG data (preferred)
+plotOverLine_f_x.SamplingPattern = "Sample At Cell Boundaries"
+
+# Sample at cell centers for smooth line
+plotOverLine_f_x.SamplingPattern = "Sample At Segment Centers"
+
+
+# ------------------------------------
+# Create new layout and LineChartView
+# ------------------------------------
+
+# create new layout object 'f(x) Plot'
+layout_f_x = CreateLayout(name="f(x) Plot")
+
+# Create a new 'Line Chart View'
+lineChartView_f_x = CreateView("XYChartView")
+# lineChartView_f_x.ChartTitle = "$f(x)$ Plot"
+lineChartView_f_x.LeftAxisTitle = "$f_{lms}(x)$"
+lineChartView_f_x.BottomAxisTitle = "$x$"
+lineChartView_f_x.ChartTitleFontSize = 30
+lineChartView_f_x.LeftAxisTitleFontSize = 24
+lineChartView_f_x.BottomAxisTitleFontSize = 24
+lineChartView_f_x.LegendFontSize = 18
+lineChartView_f_x.LeftAxisLabelFontSize = 18
+lineChartView_f_x.BottomAxisLabelFontSize = 18
+
+# assign view to a particular cell in the layout
+AssignViewToLayout(view=lineChartView_f_x, layout=layout_f_x, hint=0)
+
+# set active view
+SetActiveView(lineChartView_f_x)
+
+# set active source
+SetActiveSource(plotOverLine_f_x)
+
+
+# ---------------------
+# Display PlotOverLine
+# ---------------------
+
+# show data in view
+fxPlotDisplay = Show(
+    plotOverLine_f_x, lineChartView_f_x, "XYChartRepresentation"
+)
+
+# Enter preview mode
+layout_f_x.PreviewMode = [1280, 720]
+# layout/tab size in pixels
+layout_f_x.SetSize(1280, 720)
+
+# Properties modified on fxPlotDisplay
+fxPlotDisplay.XArrayName = "Points_X"
+fxPlotDisplay.SeriesLineThickness = [
+    "f_000",
+    "3",
+    "f_100",
+    "3",
+]
+
+
+# ----------------
+# Save screenshot
+# ----------------
+
+print(f"Save screenshot '{results_folder}/quick-start-f-x.png'")
+
+# save screenshot
+SaveScreenshot(
+    filename=results_folder + "/quick-start-f-x.png",
+    viewOrLayout=layout_f_x,
+    location=vtkPVSession.DATA_SERVER,
+    TransparentBackground=1,
+)
+
+
+# ----------
+# Save data
+# ----------
+
+print(f"Save data '{results_folder}/quick-start-f-x.csv'")
+
+# save data
+SaveData(
+    filename=results_folder + "/quick-start-f-x.csv",
+    proxy=plotOverLine_f_x,
+    location=vtkPVSession.DATA_SERVER,
+    ChooseArraysToWrite=1,
+    PointDataArrays=["f_000", "f_100"],
+    Precision=5,
+    UseScientificNotation=1,
+)
+
+
 ##--------------------------------------------
 ## You may need to add some code at the end of this python script depending on your usage, eg:
 #
 ## Exit preview mode
-# layout1.PreviewMode = [0, 0]
+# layout2D.PreviewMode = [0, 0]
+# layout_f_x.PreviewMode = [0, 0]
 #
 ## Render all views to see them appears
 # RenderAllViews()
