@@ -484,11 +484,12 @@ Sapphire::Start Sapphire++ v1.1.0 with N MPI process(es) [2024/7/31 10:43:50]
 
 ## Results {#results-quick-start}
 
-Running the simulation will create a `results` directory.
+Running the simulation will create a `results` directory,
+with a subdirectory `01` identifying the current run.
 Listing the contents of this folder with:
 
 ```shell
-ls results
+ls results/01
 ```
 
 we see the following files:

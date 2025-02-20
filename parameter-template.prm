@@ -11,7 +11,7 @@ subsection Output
 
   # Name of the simulation run. It will be used to create a subdirectory in
   # the results folder.
-  set Simulation identifier        = 
+  set Simulation identifier        = 01
 
   # The base file name for the output files.
   set Base file name               = solution
