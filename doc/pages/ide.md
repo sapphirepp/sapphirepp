@@ -39,39 +39,45 @@ The basic configuration concerns all modes and variables that can be set without
 ;; Emacs configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package emacs
-  :config
+  :custom
+  ;; package.el
   ;; add the melpa archive to the list of package archives
-  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-
-  ;; automatically inserts the second parenthesis
-  (electric-pair-mode)
-
-  ;; highlights the matching parenthesis when point is before opening or after closing one
-  (show-paren-mode)
+  (package-archives
+   '(("gnu" . "https://elpa.gnu.org/packages/")
+     ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+     ("melpa" . "https://melpa.org/packages/")))
 
   ;; wrap at 80 characters
-  (setq-default fill-column 80)
+  (fill-column 80)
 
   ;; Corfu
   ;; Enable indentation+completion using the TAB key.
   ;; `completion-at-point' is often bound to M-TAB.
-  (setq tab-always-indent 'complete)
+  (tab-always-indent 'complete)
 
   ;; Tree-sitter
-  ;; sources of the treesitter language grammars
-  (setq treesit-language-source-alist
-	'((cpp "https://github.com/tree-sitter/tree-sitter-cpp")
-	  (c "https://github.com/tree-sitter/tree-sitter-c")
-	  (cmake "https://github.com/uyha/tree-sitter-cmake")
-	  (python "https://github.com/tree-sitter/tree-sitter-python")
-	  ))
-
   ;; Remap major modes to their corresponding treesitter-mode
-  (setq major-mode-remap-alist
-	'((c-mode . c-ts-mode)
-	  (c++-mode . c++-ts-mode)
-	  (cmake-mode . cmake-ts-mode)
-	  ))
+  (major-mode-remap-alist
+   '((c-mode . c-ts-mode)
+     (c++-mode . c++-ts-mode)
+     (python-mode . python-ts-mode)
+     ))
+  :config
+  ;; Tree-sitter
+  ;; sources of the treesitter language grammars
+  (setopt treesit-language-source-alist
+	  '((cpp . ("https://github.com/tree-sitter/tree-sitter-cpp"))
+	    (c . ("https://github.com/tree-sitter/tree-sitter-c"))
+	    (cmake . ("https://github.com/uyha/tree-sitter-cmake"))
+	    (python . ("https://github.com/tree-sitter/tree-sitter-python"))
+	    ))
+
+  ;; automatically inserts the second parenthesis
+  (electric-pair-mode)
+
+  ;; highlights the matching parenthesis when point is before opening or after
+  ;; closing one
+  (show-paren-mode)
   )
 ```
 
@@ -105,21 +111,19 @@ I note that all mentioned packages are highly customisable and it is worth to re
 ;; Vertico - VERTical Interactive COmpletion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package vertico
+  :ensure t
+  ;; :custom
+  ;; Different scroll margin
+  ;; (vertico-scroll-margin 0)
+  ;; Show more candidates
+  ;; (vertico-count 20)
+  ;; Grow and shrink the Vertico minibuffer
+  ;; (vertico-resize t)
+  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+  ;; (vertico-cycle t)
+
   :init
   (vertico-mode)
-  :ensure t
-
-  ;; Different scroll margin
-  ;; (setq vertico-scroll-margin 0)
-
-  ;; Show more candidates
-  ;; (setq vertico-count 20)
-
-  ;; Grow and shrink the Vertico minibuffer
-  ;; (setq vertico-resize t)
-
-  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-  ;; (setq vertico-cycle t)
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -162,20 +166,19 @@ This means that all settings done in the `prog-mode` block apply to them.
 ;; prog-mode configuration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package prog-mode
-  :hook (
-     ;; Activates the fill-column indication display, i.e. a vertical line is
+  :hook (;; Activates the fill-column indication display, i.e. a vertical line is
 	 ;; drawn at the end of the column set by `fill-column`
 	 (prog-mode . display-fill-column-indicator-mode)
 	 ;; Displays the line numbers at the left border of the screen
 	 (prog-mode . display-line-numbers-mode)
 	 ;; Highlights the current line
 	 (prog-mode . hl-line-mode)
-	 ;; Adds visible columns to ease the recognition of the indentation level
-	 (prog-mode . highlight-indentation-current-column-mode)
 	 ;; Activate spell checking of comments in code
 	 (prog-mode . flyspell-prog-mode)
-     ;; Activate the HideShow minor mode to allow code folding
+	 ;; Activate the HideShow minor mode to allow code folding
 	 (prog-mode . hs-minor-mode)
+	 ;; Activate completion-preview-mode to complement corfu (Emacs version > 30.1)
+	 ;; (prog-mode . completion-preview-mode)
 	 ))
 
 ```
@@ -188,8 +191,34 @@ Many people like to fold their code.
 Emacs comes with the [HideShow](https://www.gnu.org/software/emacs/manual/html_node/emacs/Hideshow.html) mode to do this.
 If you prefer a code folding based on tree sitter, take a look at [treesit-fold](https://elpa.nongnu.org/nongnu/treesit-fold.html).
 
+When coding, in particular Python, it is useful to know at which indentation
+level your are currently typing.
+A simple version of this is provided by the
+[highlight-indentation.el](https://github.com/antonj/Highlight-Indentation-for-Emacs)
+package.
+A more complex version is implemented in the [highlight-indent-guides.el](https://github.com/DarthFennec/highlight-indent-guides).
+Both packages are only available on MELPA.
+
+```elisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; highlight-indentation.el - Highlighting indentation for Emacs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package highlight-indentation
+  :ensure t
+  :hook (prog-mode . highlight-indentation-mode))
+```
+
+Emacs does not include a non-tree-sitter CMake mode.
+I, thus, have to explicitly load the `cmake-ts-mode` to make Emacs recognise CMakeLists files
+
+```elisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; cmake-ts-mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package cmake-ts-mode)
+```
+
 Nested parentheses are very common. The package [rainbow-delimiters](https://github.com/Fanael/rainbow-delimiters) helps to know how far I went down in the hierarchy of parentheses.
-I note that rainbow-delimiters is a MELPA package.
 
 ```elisp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -294,7 +323,7 @@ To debug my code I used [gdb](https://sourceware.org/gdb/).
 Emacs has a great graphical interface to gdb. Just type `M-x gdb` and then `M-x gdb-many-windows`.
 Breakpoints can be set by clicking into the fringe of your code windows.
 
-Peope working on clusters, sometimes like to use their emacs setup to remotely edit code. This is possible with the package [tramp](https://www.emacswiki.org/emacs/TrampMode) .
+People working on clusters, sometimes like to use their emacs setup to remotely edit code. This is possible with the package [tramp](https://www.emacswiki.org/emacs/TrampMode) .
 
 Very often, we have to write boiler plate code.
 The package [https://github.com/joaotavora/yasnippet](yasnippet) offers a good amount of code snippets and you can easily write your own snippets.
@@ -332,13 +361,15 @@ Read its manual to set it up.
 (use-package magit
   :ensure t
   :bind ("C-x g" . magit-status)
-  :config
-  (setq magit-diff-refine-hunk t)
+  :custom
+  (magit-diff-refine-hunk t)
   )
 
 (use-package forge
   :after magit
   :ensure t
+  ;; :config
+  ;; (add-to-list 'forge-alist '("git.mpi-hd.mpg.de" "git.mpi-hd.mpg.de/api/v1" forge-gitlab-repository))
   )
 ```
 
@@ -365,12 +396,12 @@ We use markdown to write our documentation. Emacs has a very good markdown mode.
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
-  :init
-  (setq markdown-command "multimarkdown")
+  :custom
+  (markdown-command "multimarkdown")
   ;; Hashes only on the left-hand side of the heading
-  (setq markdown-asymmetric-header t)
+  (markdown-asymmetric-header t)
   ;; Font lock for inline and display LaTeX math expressions
-  (setq markdown-enable-math t)
+  (markdown-enable-math t)
   )
 ```
 
@@ -426,5 +457,5 @@ Here is a simple configuration to get started with:
 </div>
 
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@date Thu Feb 27 11:24:30 AM CET 2025
+@date Thu Feb 27 05:16:58 PM CET 2025
 
