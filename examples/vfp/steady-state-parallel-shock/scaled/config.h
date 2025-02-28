@@ -177,10 +177,6 @@ namespace sapphirepp
       VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
-    /** [Scaling exponent] */
-    /** Specify the exponent \f$ s \f$  of \f$ p^s f \f$ */
-    constexpr double scaling_spectral_index = 4;
-    /** [Scaling exponent] */
 
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
@@ -287,7 +283,7 @@ namespace sapphirepp
 
                 // S_000 = sqrt(4 pi) * S
                 source_values[0] =
-                  std::pow(p, scaling_spectral_index) * prm.Q /
+                  std::pow(p, 3) * prm.Q /
                   (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
                   std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
                            (2. * prm.sig_p * prm.sig_p)) *

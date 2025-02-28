@@ -130,16 +130,6 @@ namespace sapphirepp
     /** [VFP Flags] */
 
 
-    /** [Scaling exponent] */
-    /** @brief \f$ p^s f \f$, where \f$s\f$ is the scaling spectral index.
-     *
-     * @note The variable does not have any effect, if the VFP flag
-     *  `scaled_distribution_function` is **not** set.
-     */
-    constexpr double scaling_spectral_index = 4;
-    /** [Scaling exponent] */
-
-
     /**
      * @brief Initial condition
      *
