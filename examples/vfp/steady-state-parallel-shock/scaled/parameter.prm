@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 0
   set Output frequency             = 1
   set Results folder               = ./results
-  set Simulation identifier        = steady-state-parallel-shock
+  set Simulation identifier        = steady-state-parallel-shock-scaled
 end
 subsection VFP
   subsection Expansion
