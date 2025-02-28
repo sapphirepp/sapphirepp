@@ -119,7 +119,6 @@ namespace sapphirepp
     /** [VFP Flags] */
 
 
-
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {

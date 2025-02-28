@@ -20,9 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/parallel-shock/config.h
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for parallel-shock example
+ * @file examples/steady-state-parallel-shock/scaled/config.h
+ * @author Nils Schween (florian.schulze@mpi-hd.mpg.de)
+ * @brief Implement the physical setup for a steady-state parallel shock
+ * and use a scaled distribution function.
  */
 
 #ifndef CONFIG_H
@@ -171,10 +172,9 @@ namespace sapphirepp
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution | VFPFlags::spatial_advection |
-      VFPFlags::momentum | VFPFlags::collision | VFPFlags::rotation |
-      VFPFlags::source | VFPFlags::time_independent_fields |
-      VFPFlags::time_independent_source;
+      VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
+      VFPFlags::rotation | VFPFlags::source |
+      VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
 
@@ -238,9 +238,9 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
-            // Constant scattering frequency
+            // Bohm limit
             scattering_frequencies[q_index] =
-              prm.nu0 * std::exp(1. / 3. * points[q_index][1]);
+              prm.nu0 * std::exp(-points[q_index][1]);
             /** [Scattering frequency] */
           }
       }
@@ -278,15 +278,17 @@ namespace sapphirepp
             /** [Source] */
             if (i == 0)
               {
-                // shifted Gaussian in x and p
-                const double p = std::exp(point[1]) - prm.p_inj;
-                const double x = point[0] - prm.x_inj;
+                const double p = std::exp(point[1]);
+                const double x = point[0];
 
-                // s_000 = sqrt(4 pi) * s
+                // S_000 = sqrt(4 pi) * S
                 source_values[0] =
-                  prm.Q / (std::sqrt(M_PI) * prm.sig_p * prm.sig_x) *
-                  std::exp(-p * p / (2. * prm.sig_p * prm.sig_p)) *
-                  std::exp(-x * x / (2. * prm.sig_x * prm.sig_x));
+                  std::pow(p, 3) * prm.Q /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
+                  std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
+                           (2. * prm.sig_p * prm.sig_p)) *
+                  std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
+                           (2. * prm.sig_x * prm.sig_x));
               }
             else
               source_values[i] = 0.;
