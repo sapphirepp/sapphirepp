@@ -175,8 +175,6 @@ namespace sapphirepp
       VFPFlags::rotation | VFPFlags::source;
     /** [VFP Flags] */
 
-
-
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
