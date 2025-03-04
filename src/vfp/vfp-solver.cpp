@@ -1586,9 +1586,10 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   TimerOutput::Scope timer_section(timer, "Steady state solve");
   LogStream::Prefix  p("steady_state", saplog);
 
-  SolverControl              solver_control(2000, 1e-10);
+  SolverControl              solver_control(5000);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
+  solver_control.set_tolerance(1e-6 * locally_owned_current_source.l2_norm());
   // dg_matrix == system_matrix
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(dg_matrix);
