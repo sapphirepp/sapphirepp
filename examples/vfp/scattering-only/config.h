@@ -114,12 +114,15 @@ namespace sapphirepp
     static constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
+
+
     /** [VFP Flags] */
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
       VFPFlags::time_evolution | VFPFlags::collision;
     /** [VFP Flags] */
+
 
 
     /** [InitialValueFunction constructor] */

@@ -20,8 +20,8 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/steady-state-parallel-shock/scaled/config.h
- * @author Nils Schween (florian.schulze@mpi-hd.mpg.de)
+ * @file examples/vfp/steady-state-parallel-shock/scaled/config.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @brief Implement the physical setup for a steady-state parallel shock
  * and use a scaled distribution function.
  */
@@ -176,6 +176,7 @@ namespace sapphirepp
       VFPFlags::rotation | VFPFlags::source |
       VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
+
 
 
     template <unsigned int dim>

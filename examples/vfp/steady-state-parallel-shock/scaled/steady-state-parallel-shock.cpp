@@ -20,9 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/parallel-shock/parallel-shock.cpp
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for parallel-shock example
+ * @file
+ * examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @brief Implement main function for steady-state-parallel-shock example
  */
 
 #include <deal.II/base/mpi.h>
@@ -48,7 +49,6 @@ main(int argc, char *argv[])
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-
       saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter.prm";
@@ -77,25 +77,17 @@ main(int argc, char *argv[])
     }
   catch (std::exception &exc)
     {
-      std::cerr << std::endl
-                << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
-      std::cerr << "Exception on processing: " << std::endl
-                << exc.what() << std::endl
-                << "Aborting!" << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
+      sapphirepp::saplog.print_error(exc);
       return 1;
     }
   catch (...)
     {
-      std::cerr << std::endl
-                << std::endl
+      std::cerr << std::endl;
+      std::cerr << "\n"
                 << "----------------------------------------------------"
-                << std::endl;
-      std::cerr << "Unknown exception!" << std::endl
-                << "Aborting!" << std::endl
+                << "\n"
+                << "Unknown exception!" << "\n"
+                << "Aborting!" << "\n"
                 << "----------------------------------------------------"
                 << std::endl;
       return 1;

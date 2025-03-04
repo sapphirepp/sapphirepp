@@ -123,6 +123,8 @@ namespace sapphirepp
       VFPFlags::rotation | VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
+
+
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {

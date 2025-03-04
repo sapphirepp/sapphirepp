@@ -111,13 +111,12 @@ namespace sapphirepp
 
   namespace VFP
   {
-
-
     /** [Dimension] */
     // !!!EDIT HERE!!!
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
     static constexpr unsigned int dimension = 2;
     /** [Dimension] */
+
 
 
     /** [VFP Flags] */
@@ -128,6 +127,7 @@ namespace sapphirepp
       VFPFlags::momentum | VFPFlags::collision | VFPFlags::source |
       VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
     /** [VFP Flags] */
+
 
 
     /**
