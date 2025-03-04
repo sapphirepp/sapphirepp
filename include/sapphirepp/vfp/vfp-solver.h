@@ -465,6 +465,10 @@ namespace sapphirepp
       PhaseSpaceReconstruction<dim_ps> ps_reconstruction;
       /** @} */
 
+      /** The exponent \f$ s \f$ of \f$ p^{s}\f$ used to rescale the
+          distribution function as \f$ p^{s} f\f$ **/
+      const double scaling_spectral_index;
+
       /** @{ */
       /**
        * Output stream for timer output
