@@ -237,7 +237,7 @@ namespace sapphirepp
             /** [Scattering frequency] */
             // Bohm limit
             scattering_frequencies[q_index] =
-              prm.nu0 * std::exp(-points[q_index][1]);
+              prm.nu0 * prm.B0 * std::exp(-points[q_index][1]);
             /** [Scattering frequency] */
           }
       }
