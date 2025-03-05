@@ -73,22 +73,21 @@ $$
   \nu(p) = \nu_0 B_0 p^{-1} \, ,
 $$
 
-where $\nu_0$ is a parameter which can be freely set. Because $h = \omega_g/\nu$, where $\omega_g = q B/\gamma m$ is the gyro frequency, is the hall parameter, $1/nu_0$  gives approximately the number of gyrations a particle performs before being scattered. 
-$\nu_0 = 1$ is called the "Bohm limit" or "Bohm scaling". 
-We note that a plasma in which particles are scattered more often is not magnetised anymore. 
+where $\nu_0$ is a parameter which can be freely set. Because $h = \omega_g/\nu$, where $\omega_g = q B/\gamma m$ is the gyro frequency, is the hall parameter, $1/nu_0$  gives approximately the number of gyrations a particle performs before being scattered.
+$\nu_0 = 1$ is called the "Bohm limit" or "Bohm scaling".
+We note that a plasma in which particles are scattered more often is not magnetised anymore.
 
-
-Furthermore, for the above choice of $\nu(p)$ the Hall parameter becomes independent of $p$. 
-We, thus, expect the steady-state solution of the parallel shock case to be the same as for a constant scattering frequency. 
+Furthermore, for the above choice of $\nu(p)$ the Hall parameter becomes independent of $p$.
+We, thus, expect the steady-state solution of the parallel shock case to be the same as for a constant scattering frequency.
 
 The implementation looks like
 
 @snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h Scattering frequency
 
-Note that we chose to work with $\ln p$ instead of $p$ and, hence, 
-$\nu(\ln p) = \nu_0 * B_0 \exp(-1 \ln p)$. 
+Note that we chose to work with $\ln p$ instead of $p$ and, hence,
+$\nu(\ln p) = \nu_0 * B_0 \exp(-1 \ln p)$.
 We remember the user that the last component of `point` in reduced phase space
-is the magnitude of the momentum variable. 
+is the magnitude of the momentum variable.
 Since the reduced phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
 
 Notice that $\nu_0$ is a runtime parameter that is set in the supplied parameter
@@ -144,10 +143,11 @@ listed in the `examples/vfp/steady-state-parallel-shock/parameter.prm` file:
 Run the simulation with:
 
 ```shell
-mpirun -n 6 /build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm 
+mpirun -n 6 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm
 ```
 
 The plots can be created with the command:
+
 ```shell
 pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-parallel-shock
 ```
@@ -256,7 +256,7 @@ if complete LU factorization of the blocks is wanted, the program can be run
 with
 
 ```shell
-mpirun -n 4 ./steady-state-parallel-shock sapphirepp/examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
+mpirun -n 4 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
 ```
 
 In general, the option `-ksp_monitor` allows a user to monitor the convergence of
@@ -290,7 +290,7 @@ i.e. we have to multiply it with $p^{3}$. This gives
 @snippet{lineno} examples/vfp/steady-state-parallel-shock/scaled/config.h Source
 
 The steady-state shock example with a scaled distribution function can be run
-with 
+with
 
 ```shell
 mpirun -n 6 build/examples/vfp/steady-state-parallel-shock/scaled/steady-state-parallel-shock-scaled examples/vfp/steady-state-parallel-shock/scaled/parameter.prm &&
@@ -313,7 +313,7 @@ The plot shows the scaled particle spectrum multiplied with $p$ at the shock. Th
 of the numerical solution's spectral index is a consequence of the fact that we
 cannot use a discontinuous velocity profile. Instead we use a tanh-function and,
 thus, have finite shock width. For a detailed discussion of the effect of a
-finite shock width on the spectral index, we refer our users to @cite Achterberg2011. 
+finite shock width on the spectral index, we refer our users to @cite Achterberg2011.
 
 <div class="section_buttons">
 
