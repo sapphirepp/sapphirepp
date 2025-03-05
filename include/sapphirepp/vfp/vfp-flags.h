@@ -126,8 +126,10 @@ namespace sapphirepp
       time_independent_source = 1 << 8,
 
       /**
-       * Use a scaled in distribution function, i.e. \f$ p^s f \f$. The exponent
-       * \f$ s \f$ is set separately in the config.h file.
+       * Use a scaled in distribution function,
+       * \f$ F = p^s f \f$.
+       * The exponent is fixed to \f$ s = 3 \f$,
+       * i.e. \f$ F = p^3 f \f$.
        */
       scaled_distribution_function = 1 << 9
     };
