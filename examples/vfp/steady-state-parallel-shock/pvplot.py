@@ -404,22 +404,22 @@ if isdir(results_folder + '/scaled'):
     # Load pvtu files
     # ==========================================================================
 
-    pvtu_files_scaled = paraview.util.Glob(results_folder + "/scaled/f_*.pvtu")
+    pvtu_files_scaled = paraview.util.Glob(results_folder + "/scaled/g_*.pvtu")
     if not pvtu_files:
         raise FileNotFoundError(
-            f"No .pvtu files found matching '{results_folder}/scaled/f_*.pvtu'"
+            f"No .pvtu files found matching '{results_folder}/scaled/g_*.pvtu'"
         )
 
     # create a new 'XML Partitioned Unstructured Grid Reader'
     solution_scaled = XMLPartitionedUnstructuredGridReader(
-        registrationName="f_scaled",
+        registrationName="g_scaled",
         FileName=pvtu_files_scaled,
     )
 
     # for pvtu, the time variable does not work
     solution_scaled.TimeArray = "None"
     # Only access 'f_000'
-    solution_scaled.PointArrayStatus = ["F_000"]
+    solution_scaled.PointArrayStatus = ["g_000"]
 
     # Get the bounds
     # Get data information from the solution
@@ -430,20 +430,20 @@ if isdir(results_folder + '/scaled'):
     # Scale f_000, i.e. multiply with p to get p^4 f_000
     # -----------------------
     calc_scale_f_000 = Calculator(
-        registrationName='f_000_scaled',
+        registrationName='g_000_scaled',
         Input=solution_scaled
     )
-    calc_scale_f_000.ResultArrayName = 'f_000_scaled'
-    calc_scale_f_000.Function = 'exp(coordsY) * F_000'
+    calc_scale_f_000.ResultArrayName = 'g_000_scaled'
+    calc_scale_f_000.Function = 'exp(coordsY) * g_000'
     
     # -----------------------
     # Compute the analytical solution
     # -----------------------
     python_calc_ana_p_scaled = PythonCalculator(
-        registrationName="f_000_ana_p_scaled",
+        registrationName="g_000_ana_p_scaled",
         Input=calc_scale_f_000
     )
-    python_calc_ana_p_scaled.ArrayName = 'f_000_ana_p_scaled'
+    python_calc_ana_p_scaled.ArrayName = 'g_000_ana_p_scaled'
     python_calc_ana_p_scaled.UseMultilineExpression = 1
 
     python_cal_expression_p_scaled = """#########
@@ -456,7 +456,7 @@ u_one = {u_one}       # shock velocity
 N = 3*Q/(numpy.sqrt(4 * numpy.pi) * u_one * p_inj**3) \
     * r/(r - 1) * (p_inj)**(3*r/(r-1)) 
 
-outputArray = N * numpy.ones(inputs[0].PointData['F_000'].shape[0])
+outputArray = N * numpy.ones(inputs[0].PointData['g_000'].shape[0])
 
 return outputArray""".format(Q = Q,
                              p_inj = p_inj,
@@ -548,29 +548,29 @@ return outputArray""".format(Q = Q,
     # Properties modified on fpScaledPlotDisplay
     fpScaledPlotDisplay.XArrayName = "Points_Y"
     # Set the labels of the plots
-    fpScaledPlotDisplay.SeriesLabel =  [ 'F_000', '$p^{3}f_{000}$',
-                                         'f_000_scaled','$p^{4}f_{000}$',
-                                         'f_000_ana_p_scaled', '$p^{4}f_{000}$-ana']
+    fpScaledPlotDisplay.SeriesLabel =  [ 'g_000', '$p^{3}f_{000}$',
+                                         'g_000_scaled','$p^{4}f_{000}$',
+                                         'g_000_ana_p_scaled', '$p^{4}f_{000}$-ana']
     
     # Adapt line thickness
-    fpScaledPlotDisplay.SeriesLineThickness = ['F_000', '2',
-                                               'f_000_scaled', '2',
-                                               'f_000_ana_p_scaled', '2']
+    fpScaledPlotDisplay.SeriesLineThickness = ['g_000', '2',
+                                               'g_000_scaled', '2',
+                                               'g_000_ana_p_scaled', '2']
     
     # Line style
-    fpScaledPlotDisplay.SeriesLineStyle = ['F_000', '1',
-                                           'f_000_scaled', '1',
-                                           'f_000_ana_p_scaled', '2'] # ana dashed
+    fpScaledPlotDisplay.SeriesLineStyle = ['g_000', '1',
+                                           'g_000_scaled', '1',
+                                           'g_000_ana_p_scaled', '2'] # ana dashed
     
     # Color the plots
     fpScaledPlotDisplay.SeriesColor = [
-        'F_000', '0.10980392156862745', '0.5843137254901961', '0.8039215686274',
-        'f_000_scaled', '0.3058823529411765', '0.8509803921568627', '0.9176470588235294',
-        'f_000_ana_p_scaled', '0.25882352941176473', '0.23921568627450981', '0.6627450980392157'
+        'g_000', '0.10980392156862745', '0.5843137254901961', '0.8039215686274',
+        'g_000_scaled', '0.3058823529411765', '0.8509803921568627', '0.9176470588235294',
+        'g_000_ana_p_scaled', '0.25882352941176473', '0.23921568627450981', '0.6627450980392157'
     ]
     
     # Ensure that f_000 and f_000_ana_p are displayed
-    fpScaledPlotDisplay.SeriesVisibility = ['F_000', 'f_000_scaled', 'f_000_ana_p_scaled']
+    fpScaledPlotDisplay.SeriesVisibility = ['g_000', 'g_000_scaled', 'g_000_ana_p_scaled']
     
     # ----------------
     # Save screenshot
@@ -596,7 +596,7 @@ return outputArray""".format(Q = Q,
         filename=results_folder + "/scaled-particle-spectrum.csv",
         proxy=plotOverLine_f_p_scaled,
         ChooseArraysToWrite=3,
-        PointDataArrays=['F_000', 'f_000_scaled', 'f_000_ana_p_scaled'],
+        PointDataArrays=['g_000', 'g_000_scaled', 'g_000_ana_p_scaled'],
         Precision=6,
         UseScientificNotation=1,
     )

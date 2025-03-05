@@ -1968,7 +1968,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
     PDESystem::create_component_name_list(
       pde_system.system_size,
       ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
-        "F_" :
+        "g_" :
         "f_"));
 
   // Output the partition of the mesh

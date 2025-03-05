@@ -127,9 +127,9 @@ namespace sapphirepp
 
       /**
        * Use a scaled in distribution function,
-       * \f$ F = p^s f \f$.
+       * \f$ g = p^s f \f$.
        * The exponent is fixed to \f$ s = 3 \f$,
-       * i.e. \f$ F = p^3 f \f$.
+       * i.e. \f$ g = p^3 f \f$.
        */
       scaled_distribution_function = 1 << 9
     };

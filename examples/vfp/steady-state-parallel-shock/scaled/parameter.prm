@@ -1,5 +1,5 @@
 subsection Output
-  set Base file name               = f
+  set Base file name               = g
   set Format                       = pvtu
   set Number of digits for counter = 0
   set Output frequency             = 1
