@@ -107,16 +107,16 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 1;
+    constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    static constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |
-                                          VFPFlags::spatial_advection |
-                                          VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |
+                                   VFPFlags::spatial_advection |
+                                   VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
