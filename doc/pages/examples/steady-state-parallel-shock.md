@@ -29,7 +29,7 @@ setup in the following table:
 |----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Velocity profile     | $$\mathbf{U} = U_{\text{sh}} \hat{\mathbf{e}}_x  \text{ for } x < 0 \text{ and } \mathbf{U} = U_{\text{sh}}/r \hat{\mathbf{e}}_x \text{ for } x > 0 $$                                |
 | Magnetic field       | $$\mathbf{B}(x) = B_0 \hat{\mathbf{e}}_x$$                                                                                                                                            |
-| Scattering frequency | $$\nu(x) = \nu_0 p^{-1} $$                                                                                                                                                            |
+| Scattering frequency | $$\nu(x) = \nu_0 B_0 p^{-1} $$                                                                                                                                                        |
 | Source               | $$ S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$$ |
 </div>
 
@@ -67,30 +67,26 @@ field and the source term are time-independent.
 ### Scattering frequency {#scattering-frequency-steady-state-parallel-shock}
 
 The steady-state parallel shock scenario also differs from the time-dependent
-case in the momentum dependence of scattering frequency. We set
+case in the momentum dependence of the scattering frequency. We set
 
 $$
-  \nu(p) = \nu_0 p^{-1} \, ,
+  \nu(p) = \nu_0 B_0 p^{-1} \, ,
 $$
 
-where $\nu_0$ is a parameter which can be freely set. This choice is called the
-"Bohm limit" or "Bohm scaling". Such a choice could be understood in various
-ways: First, a plasma in which particles are scattered more often is not
-magnetised anymore. We note this choice of $\nu(p)$ leads to about one
-scattering per gyration. Secondly, the steady-state VFP equation has two
-physical essential parameters. These are the scattering frequency and the gyro
-frequency. In the Bohm limit their ratio is independent of $p$ and the solution
-of the steady-state VFP equation could, thus, be scale invariant in $p$, i.e.
-$f(a p) = a^{k} f(p)$ for some scalar $a$ and exponent $k$.
+where $\nu_0$ is a parameter which can be freely set. Because $h = \omega_g/\nu$, where $\omega_g = q B/\gamma m$ is the gyro frequency, is the hall parameter, $1/nu_0$  gives approximately the number of gyrations a particle performs before being scattered.
+$\nu_0 = 1$ is called the "Bohm limit" or "Bohm scaling".
+We note that a plasma in which particles are scattered more often is not magnetised anymore.
+Furthermore, for the above choice of $\nu(p)$ the Hall parameter becomes independent of $p$.
 
 The implementation looks like
 
 @snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h Scattering frequency
 
-Note that we chose to work with $\ln p$ instead of $p$ and, hence, $\nu(\ln p) =
-\nu_0 * \exp(-1 \ln p)$. We remember the user that the last component of `point`
-in reduced phase space is the magnitude of the momentum variable. Since the
-reduced phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
+Note that we chose to work with $\ln p$ instead of $p$ and, hence,
+$\nu(\ln p) = \nu_0 * B_0 \exp(-1 \ln p)$.
+We remember the user that the last component of `point` in reduced phase space
+is the magnitude of the momentum variable.
+Since the reduced phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
 
 Notice that $\nu_0$ is a runtime parameter that is set in the supplied parameter
 file.
@@ -111,8 +107,8 @@ which is now directly set by the parameter $Q$.
 
 Keeping in mind that we actually solve a system of PDEs that determines the
 expansion coefficients of the spherical harmonic expansion of the distribution
-function $f$, implies that the source term also needs be expanded in
-spherical harmonics. This is a straightforward computation, because the source term is
+function $f$, we need to also expand the source term in spherical harmonics.
+This is a straightforward computation, because the source term is
 independent of $\theta$ and $\varphi$, i.e. we inject an isotropic particle
 distribution,
 
@@ -145,16 +141,20 @@ listed in the `examples/vfp/steady-state-parallel-shock/parameter.prm` file:
 Run the simulation with:
 
 ```shell
-mpirun -n 2 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm 
+mpirun -n 6 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm
+```
+
+The plots can be created with the command:
+
+```shell
+pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-parallel-shock
 ```
 
 ## Results {#results-steady-state-parallel-shock}
 
 In @cite Drury1983 eq. 3.24, Drury derives an analytic solution for the
-isotropic part $f_{000}$ of the distribution function at shock, i.e. at $x = 0$.
-He assumes a constant scattering frequency. However, in the case of Bohm scaling
-we expect the same result to hold, because the ratio of the scattering frequency
-to the gyro frequency is independent of $p$. Moreover, his source term is a
+isotropic part $f_{000}$ of the distribution function at the shock, i.e. at $x = 0$.
+He assumes a constant scattering frequency. However, in the case of a parallel shock the $p$-dependence of the $\nu$ does not change the solution. Moreover, his source term is a
 delta distribution in $x$ and $p$ (point injection) and his velocity profile has
 a sharp discontinuity at the shock. In contrast to Drury, we model the velocity
 discontinuity with a tanh-function and the delta distribution with a narrow
@@ -179,7 +179,7 @@ of the distribution function $f_{000}$, see eq. 2.34 in @cite Drury1983, namely
 \begin{equation}
   f_{000}(x, p = \hat{p}) =
   \begin{cases}
-  f_{000}(x = 0, \hat{p})  \exp\left(3 U_{1} \nu(\hat{p})/\hat{v}^2\right) &\text{for } x < 0 \\
+  f_{000}(x = 0, \hat{p})  \exp\left(3 U_{1} \nu(\hat{p})/\hat{v}^2 x \right) &\text{for } x < 0 \\
   f_{000}(x = 0, \hat{p}) &\text{for } x > 0
   \end{cases} \,
 \end{equation}
@@ -224,11 +224,12 @@ i.e. $\| \mathbf{B}(\mathbf{b} - \mathbf{A}\mathbf{x})\|$ and the relative
 increase in the residual, see [PETSc
 documentation](https://petsc.org/main/manual/ksp/#convergence-tests) for more
 details. The number of iterations and the relative tolerance are currently
-hard-coded, i.e. $2000$ and $1 \times 10^{-10}$ respectively. This implies that
-if a user computes a distribution functions whose values are smaller than
+hard-coded, i.e. $5000$ and $1 \times 10^{-8} * \|\mathbf{b}\|_2$ respectively.
+This implies that if a user computes a distribution functions whose values are smaller than
 the tolerance, the solver will not convergence. This happens, for example, if
-the $p$-range covers many orders of magnitudes. (This issue can be addressed
-with a scaled distribution function.)
+the $p$-range covers many orders of magnitudes. This issue can be addressed with
+a scaled distribution function, see Sec.
+[Extenstion](#scaled-f-steady-state-parallel-shock).
 
 Secondly, the Block-Jacobi preconditioner is not particularly designed for the
 system of equations that we solve. This means that we need many iterations.
@@ -239,7 +240,7 @@ compute node does not have infinite memory, and it might be necessary to use
 many cores to actually solve a problem.
 
 @note If you, by chance, have experience with preconditioners for advection-reaction
-  systems (or Friedrichs systems), please contact me. We are interested in
+  systems (or Friedrichs' systems), please contact me. We are interested in
   developing a more robust preconditioner
 
 If a user is familiar with PETSc, she can try to change the iterative method and
@@ -247,11 +248,11 @@ the used preconditioner via the command line using PETSc commands. For example,
 each Jacobi block is solved with an
 [incomplete LU
 factorization](https://en.wikipedia.org/wiki/Incomplete_LU_factorization) (ILU),
-if complete LU factorization of the blocks is wanted, the program can be run
+if a complete LU factorization of the blocks is wanted, the program can be run
 with
 
 ```shell
-mpirun -n 4 ./steady-state-parallel-shock sapphirepp/examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
+mpirun -n 4 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm -ksp_monitor -sub_pc_type lu -sub_ksp_type preonly
 ```
 
 In general, the option `-ksp_monitor` allows a user to monitor the convergence of
@@ -261,6 +262,55 @@ preconditioner can be obtained with the option `-ksp_view`.
 @note Unfortunately, it is not possible to overwrite the tolerance for the
   residual `-ksp_rtol`. The reason is that @dealii uses its own routine, namely
   `SolverBase::convergence_test()`, to check for convergence.
+
+## Extension: A scaled distribution function {#scaled-f-steady-state-parallel-shock}
+
+As explained at the beginning of the [Disucssion
+section](#discussion-steady-state-parallel-shock), it might be that the value of
+the distribution function $f$ is below the termination tolerance of the
+iterative method, i.e. $f < 1 \times 10^{-8} * \|\mathbf{b}\|$.
+If this is the case, it is possible to scale the distribution function with the factor $p^{s}$. We
+decided to call $s$ the `scaling_spectral_index` and it is set to three, i.e. $s = 3$.
+Moreover, we define $g = p^3 f$.
+To scale the distribution function it is necessary to add an additional `VFPFlag`. We
+included a subfolder `scaled` in the `steady-state-parallel-shock` example
+folder.
+
+It is only the `config.h` file that changes. The additional VFPFlag
+is called `scaled_distribution_function`. Hence the variable `vfp_flags` becomes
+
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/scaled/config.h VFP Flags
+
+If we scale the distribution function, we also have to scale the source $S$,
+i.e. we have to multiply it with $p^{3}$. This gives
+
+@snippet{lineno} examples/vfp/steady-state-parallel-shock/scaled/config.h Source
+
+The steady-state shock example with a scaled distribution function can be run
+with
+
+```shell
+mpirun -n 6 build/examples/vfp/steady-state-parallel-shock/scaled/steady-state-parallel-shock-scaled examples/vfp/steady-state-parallel-shock/scaled/parameter.prm &&
+pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-parallel-shock
+```
+
+@warning It seems that scaling the distribution function increases the condition
+number of the system of equations that we need to solve. This implies that the
+GMRES method may **not** converge or take very long to converge. It might be necessary to increase the number of allowed iterations.
+
+A result of the above simulation run is depicted in the following plot:
+
+<div style="text-align:center;">
+<img alt="Scaled particle spectrum at the shock"
+src="https://sapphirepp.org/img/examples/steady-state-parallel-shock/scaled-particle-spectrum.png"
+height=450>
+</div>
+
+The plot shows the scaled particle spectrum $g(0,p)$ multiplied with $p$ at the shock.
+The slight deviation of the numerical solution's spectral index is a consequence of the fact that we
+cannot use a discontinuous velocity profile. Instead we use a tanh-function and,
+thus, have finite shock width. For a detailed discussion of the effect of a
+finite shock width on the spectral index, we refer our users to @cite Achterberg2011.
 
 <div class="section_buttons">
 

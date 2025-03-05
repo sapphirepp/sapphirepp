@@ -20,9 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/steady-state-parallel-shock/config.h
+ * @file examples/vfp/steady-state-parallel-shock/scaled/config.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
- * @brief Implement physical setup for steady-state-parallel-shock example
+ * @brief Implement the physical setup for a steady-state parallel shock
+ * and use a scaled distribution function.
  */
 
 #ifndef CONFIG_H
@@ -172,7 +173,8 @@ namespace sapphirepp
     /** Specify which terms of the VFP equation should be active */
     static constexpr VFPFlags vfp_flags =
       VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
-      VFPFlags::rotation | VFPFlags::source;
+      VFPFlags::rotation | VFPFlags::source |
+      VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
 
@@ -282,7 +284,7 @@ namespace sapphirepp
 
                 // S_000 = sqrt(4 pi) * S
                 source_values[0] =
-                  prm.Q /
+                  std::pow(p, 3) * prm.Q /
                   (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
                   std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
                            (2. * prm.sig_p * prm.sig_p)) *

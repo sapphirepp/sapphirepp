@@ -124,6 +124,14 @@ namespace sapphirepp
        * \n By default the source is assumed to be time dependent.
        */
       time_independent_source = 1 << 8,
+
+      /**
+       * Use a scaled in distribution function,
+       * \f$ g = p^s f \f$.
+       * The exponent is fixed to \f$ s = 3 \f$,
+       * i.e. \f$ g = p^3 f \f$.
+       */
+      scaled_distribution_function = 1 << 9
     };
 
 
@@ -172,7 +180,7 @@ namespace sapphirepp
     {
       os << "VFP flags: \n";
       if ((f & VFPFlags::time_evolution) != VFPFlags::none)
-        os << "	 - Time_evolution term\n";
+        os << "	 - Time evolution term\n";
       if ((f & VFPFlags::spatial_advection) != VFPFlags::none)
         os << "	 - Spatial Advection\n";
       if ((f & VFPFlags::collision) != VFPFlags::none)
@@ -199,6 +207,8 @@ namespace sapphirepp
           else
             os << " (time dependent)\n";
         }
+      if ((f & VFPFlags::scaled_distribution_function) != VFPFlags::none)
+        os << "	 - Scaled distribution function\n";
 
       return os;
     }
