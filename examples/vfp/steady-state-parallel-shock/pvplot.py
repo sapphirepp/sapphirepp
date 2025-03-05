@@ -419,7 +419,7 @@ if isdir(results_folder + '/scaled'):
     # for pvtu, the time variable does not work
     solution_scaled.TimeArray = "None"
     # Only access 'f_000'
-    solution_scaled.PointArrayStatus = ["f_000"]
+    solution_scaled.PointArrayStatus = ["F_000"]
 
     # Get the bounds
     # Get data information from the solution
@@ -434,7 +434,7 @@ if isdir(results_folder + '/scaled'):
         Input=solution_scaled
     )
     calc_scale_f_000.ResultArrayName = 'f_000_scaled'
-    calc_scale_f_000.Function = 'exp(coordsY) * f_000'
+    calc_scale_f_000.Function = 'exp(coordsY) * F_000'
     
     # -----------------------
     # Compute the analytical solution
@@ -456,7 +456,7 @@ u_one = {u_one}       # shock velocity
 N = 3*Q/(numpy.sqrt(4 * numpy.pi) * u_one * p_inj**3) \
     * r/(r - 1) * (p_inj)**(3*r/(r-1)) 
 
-outputArray = N * numpy.ones(inputs[0].PointData['f_000'].shape[0])
+outputArray = N * numpy.ones(inputs[0].PointData['F_000'].shape[0])
 
 return outputArray""".format(Q = Q,
                              p_inj = p_inj,
@@ -548,29 +548,29 @@ return outputArray""".format(Q = Q,
     # Properties modified on fpScaledPlotDisplay
     fpScaledPlotDisplay.XArrayName = "Points_Y"
     # Set the labels of the plots
-    fpScaledPlotDisplay.SeriesLabel =  [ 'f_000', '$p^{3}f_{000}$',
+    fpScaledPlotDisplay.SeriesLabel =  [ 'F_000', '$p^{3}f_{000}$',
                                          'f_000_scaled','$p^{4}f_{000}$',
                                          'f_000_ana_p_scaled', '$p^{4}f_{000}$-ana']
     
     # Adapt line thickness
-    fpScaledPlotDisplay.SeriesLineThickness = ['f_000', '2',
+    fpScaledPlotDisplay.SeriesLineThickness = ['F_000', '2',
                                                'f_000_scaled', '2',
                                                'f_000_ana_p_scaled', '2']
     
     # Line style
-    fpScaledPlotDisplay.SeriesLineStyle = ['f_000', '1',
+    fpScaledPlotDisplay.SeriesLineStyle = ['F_000', '1',
                                            'f_000_scaled', '1',
                                            'f_000_ana_p_scaled', '2'] # ana dashed
     
     # Color the plots
     fpScaledPlotDisplay.SeriesColor = [
-        'f_000', '0.10980392156862745', '0.5843137254901961', '0.8039215686274',
+        'F_000', '0.10980392156862745', '0.5843137254901961', '0.8039215686274',
         'f_000_scaled', '0.3058823529411765', '0.8509803921568627', '0.9176470588235294',
         'f_000_ana_p_scaled', '0.25882352941176473', '0.23921568627450981', '0.6627450980392157'
     ]
     
     # Ensure that f_000 and f_000_ana_p are displayed
-    fpScaledPlotDisplay.SeriesVisibility = ['f_000', 'f_000_scaled', 'f_000_ana_p_scaled']
+    fpScaledPlotDisplay.SeriesVisibility = ['F_000', 'f_000_scaled', 'f_000_ana_p_scaled']
     
     # ----------------
     # Save screenshot
@@ -596,7 +596,7 @@ return outputArray""".format(Q = Q,
         filename=results_folder + "/scaled-particle-spectrum.csv",
         proxy=plotOverLine_f_p_scaled,
         ChooseArraysToWrite=3,
-        PointDataArrays=['f_000', 'f_000_scaled', 'f_000_ana_p_scaled'],
+        PointDataArrays=['F_000', 'f_000_scaled', 'f_000_ana_p_scaled'],
         Precision=6,
         UseScientificNotation=1,
     )

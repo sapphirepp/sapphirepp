@@ -337,9 +337,8 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     {
       steady_state_solve();
       output_results(0, 0);
-      saplog << "Simulation ended. " << " \t[" << Utilities::System::get_time()
-             << "]" << std::endl
-             << std::endl;
+      saplog << "Simulation ended. " << " \t\t["
+             << Utilities::System::get_time() << "]" << std::endl;
     }
   else
     {
@@ -1964,9 +1963,13 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   TimerOutput::Scope timer_section(timer, "Output");
   DataOut<dim_ps>    data_out;
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(locally_relevant_current_solution,
-                           PDESystem::create_component_name_list(
-                             pde_system.system_size));
+  data_out.add_data_vector(
+    locally_relevant_current_solution,
+    PDESystem::create_component_name_list(
+      pde_system.system_size,
+      ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
+        "F_" :
+        "f_"));
 
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());
