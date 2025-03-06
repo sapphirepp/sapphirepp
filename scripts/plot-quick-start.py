@@ -219,11 +219,18 @@ SaveAnimation(
 # create a new 'Plot Over Line'
 plotOverLine_f_x = PlotOverLine(registrationName="f(x) Plot", Input=solution)
 
+# Get the bounds in x
+# Fetch data information from the solution
+solution_data = servermanager.Fetch(solution)
+# Get bounds of the data
+bounds = solution_data.GetBounds()
+# Extract min_x and max_x from the bounds
+min_x = bounds[0]
+max_x = bounds[1]
+
 # Properties modified on plotOverLine_f_x
-# Adjust only y coordinate of start and end point,
-# this way the x coordinate goes from the start to the end of the grid.
-plotOverLine_f_x.Point1[1] = 0.05
-plotOverLine_f_x.Point2[1] = 0.05
+plotOverLine_f_x.Point1 = [min_x, 0.05, 0.0]
+plotOverLine_f_x.Point2 = [max_x, 0.05, 0.0]
 
 
 # -----------------------
@@ -349,11 +356,11 @@ plotOverLine_f_p = PlotOverLine(
 )
 
 # Get the bounds in y
-# Get data information from the solution
-data_info = solution.GetDataInformation()
+# Fetch data information from the solution
+solution_data = servermanager.Fetch(solution)
 # Get bounds of the data
-bounds = data_info.GetBounds()
-# Extract min_y and max_y from the bounds
+bounds = solution_data.GetBounds()
+# Extract min_x and max_x from the bounds
 min_y = bounds[2]
 max_y = bounds[3]
 

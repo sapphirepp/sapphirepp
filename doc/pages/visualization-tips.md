@@ -162,7 +162,8 @@ we learned when using @paraview to visualize the results of @sapphire:
 - @paraview uses the values given at the nodes
   and linearly interpolates between them inside each cell.
 - To extract a 1D line from 2D/3D data,
-  use the `PlotOverLine` feature.
+  use the
+  [`PlotOverLine` feature](https://www.paraview.org/paraview-docs/latest/python/paraview.simple.PlotOverLine.html).
   The best way to use this feature
   is to select the `Sample At Cell Boundaries` option
   to get the full discontinuous representation of the data.
@@ -198,6 +199,14 @@ we learned when using @paraview to visualize the results of @sapphire:
     @paraview is not able to interpret this
     and will arbitrarily switch cell sides.
     We recommend using a small offset from the cell boundary.
+  - For a large
+    @ref sapphirepp::VFP::GridType::shock "shock grids",
+    @paraview has some trouble automatically finding the cells
+    for `Sample At Cell Boundaries/Segment Centers`.
+    In this case,
+    deactivating the `Compute Tolerance` option
+    and manually setting the `Tolerance` to an appropriate value
+    has proven effective.
 - We often encountered problems when exporting an animation as `avi` or `ogv`.
   A workaround is to export the animation as a series of `png` files,
   and convert them with an external tool instead.

@@ -132,10 +132,14 @@ plotOverLine_f_x.Point1 = [min_x,ln_p_hat, 0.0]
 plotOverLine_f_x.Point2 = [max_x,ln_p_hat, 0.0]
 
 # Set SamplingPattern
-# Default
-plotOverLine_f_x.SamplingPattern = "Sample Uniformly"
-plotOverLine_f_x.Resolution = 1000
-# for alternative choices, see quick-start plot script
+plotOverLine_f_x.SamplingPattern = "Sample At Segment Centers"
+# The automatic ComputeTolerance does not work for large shock-grids,
+# so we set it manually
+plotOverLine_f_x.ComputeTolerance = 0
+# A tolerance of 1e-8 works well,
+# this is approx (dx_min / dx_max) / 1000,
+# with dx_min/max the minimum/maximum cell size in x
+plotOverLine_f_x.Tolerance = 1e-8
 
 # ------------------------------------
 # Create new layout and LineChartView
@@ -214,10 +218,7 @@ print(f"Save screenshot '{results_folder}/spatial-distribution.png'")
 # save screenshot
 SaveScreenshot(
     filename=results_folder + '/spatial-distribution.png',
-    #Location where the screenshot should be saved. If you use a remote ParaView
-    #sessions and to like to store the images on the remote server, uncomment
-    #the next line.
-    # location = vtkPVSession.DATA_SERVER,
+    location = vtkPVSession.DATA_SERVER,
     viewOrLayout=layout_f_x,
 )
 
@@ -232,6 +233,7 @@ print(f"Save data '{results_folder}/spatial-distribution.csv'")
 SaveData(
     filename=results_folder + "/spatial-distribution.csv",
     proxy=plotOverLine_f_x,
+    location = vtkPVSession.DATA_SERVER,
     ChooseArraysToWrite=2,
     PointDataArrays=['f_000','f_000_ana_x'],
     Precision=6,
@@ -287,8 +289,7 @@ plotOverLine_f_p.Point1 = [0.1, min_y, 0.0]
 plotOverLine_f_p.Point2 = [0.1, max_y, 0.0]
 
 # Set SamplingPattern
-plotOverLine_f_p.SamplingPattern = "Sample Uniformly"
-plotOverLine_f_p.Resolution = 1000
+plotOverLine_f_p.SamplingPattern = "Sample At Segment Centers"
 
 # ------------------------------------
 # Create new layout and LineChartView
@@ -376,6 +377,7 @@ print(f"Save screenshot '{results_folder}/particle-spectrum.png'")
 SaveScreenshot(
     filename=results_folder + "/particle-spectrum.png",
     viewOrLayout=layout_f_p,
+    location = vtkPVSession.DATA_SERVER,
 )
 
 
@@ -389,6 +391,7 @@ print(f"Save data '{results_folder}/particle-spectrum.csv'")
 SaveData(
     filename=results_folder + "/particle-spectrum.csv",
     proxy=plotOverLine_f_p,
+    location = vtkPVSession.DATA_SERVER,
     ChooseArraysToWrite=2,
     PointDataArrays=['f_000', 'f_000_ana_p'],
     Precision=6,
@@ -483,8 +486,7 @@ return outputArray""".format(Q = Q,
     plotOverLine_f_p_scaled.Point2 = [0.1, max_y, 0.0]
 
     # Set SamplingPattern
-    plotOverLine_f_x.SamplingPattern = "Sample Uniformly"
-    plotOverLine_f_x.Resolution = 1000
+    plotOverLine_f_p_scaled.SamplingPattern = "Sample At Segment Centers"
 
 
     # ------------------------------------
@@ -582,6 +584,7 @@ return outputArray""".format(Q = Q,
     SaveScreenshot(
         filename=results_folder + "/scaled-particle-spectrum.png",
         viewOrLayout=layout_f_p_scaled,
+        location = vtkPVSession.DATA_SERVER,
     )
     
     
@@ -595,6 +598,7 @@ return outputArray""".format(Q = Q,
     SaveData(
         filename=results_folder + "/scaled-particle-spectrum.csv",
         proxy=plotOverLine_f_p_scaled,
+        location = vtkPVSession.DATA_SERVER,
         ChooseArraysToWrite=3,
         PointDataArrays=['g_000', 'g_000_scaled', 'g_000_ana_p_scaled'],
         Precision=6,
