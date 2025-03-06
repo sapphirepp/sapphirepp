@@ -235,15 +235,13 @@ namespace sapphirepp
       {
         AssertDimension(scattering_frequencies.size(), points.size());
         static_cast<void>(component); // suppress compiler warning
-
+        /** [Scattering frequency] */
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            /** [Scattering frequency] */
             // Constant scattering frequency
-            scattering_frequencies[q_index] =
-              prm.nu0 * std::exp(1. / 3. * points[q_index][1]);
-            /** [Scattering frequency] */
+            scattering_frequencies[q_index] = prm.nu0;
           }
+        /** [Scattering frequency] */
       }
 
 

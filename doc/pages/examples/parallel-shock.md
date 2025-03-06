@@ -102,18 +102,18 @@ Parameters in @sapphire are organised into categories and subcategories,
 primarily focusing on `Output` and `VFP` equation parameters.
 Key parameters are:
 
-| Parameter Name | Category | Description |
-|:--------------|:---------|:------------|
-| Results directory | `Output` | Specifies the directory for output files. |
-| Format | `Output` | Defines the output format (e.g., `vtu/pvtu/hdf5`). |
-| Output frequency | `Output` | Determines the frequency of output. |
-| Simulation identifier | `Output` | Name of the simulation run, i.e. subfolder for the simulation. |
-| Expansion order | `VFP:Expansion` | Sets the expansion order in spherical harmonics. |
-| Polynomial degree | `VFP:Finite Elements` | Indicates the polynomial degree of the finite element method. |
-| Grid type | `VFP:Mesh` | Specifies the grid type (e.g., `Shock grid/Hypercube/File`). |
-| Final time | `VFP:Time stepping` | Sets the final time of the simulation. |
-| Time step size | `VFP:Time stepping` | Determines the time step size of the simulation. |
-| Method | `VFP:Time stepping` | Defines the time stepping method (e.g., `CN/ERK4/...`). |
+| Parameter Name        | Category              | Description                                                    |
+|:----------------------|:----------------------|:---------------------------------------------------------------|
+| Results directory     | `Output`              | Specifies the directory for output files.                      |
+| Format                | `Output`              | Defines the output format (e.g., `vtu/pvtu/hdf5`).             |
+| Output frequency      | `Output`              | Determines the frequency of output.                            |
+| Simulation identifier | `Output`              | Name of the simulation run, i.e. subfolder for the simulation. |
+| Expansion order       | `VFP:Expansion`       | Sets the expansion order in spherical harmonics.               |
+| Polynomial degree     | `VFP:Finite Elements` | Indicates the polynomial degree of the finite element method.  |
+| Grid type             | `VFP:Mesh`            | Specifies the grid type (e.g., `Shock grid/Hypercube/File`).   |
+| Final time            | `VFP:Time stepping`   | Sets the final time of the simulation.                         |
+| Time step size        | `VFP:Time stepping`   | Determines the time step size of the simulation.               |
+| Method                | `VFP:Time stepping`   | Defines the time stepping method (e.g., `CN/ERK4/...`).        |
 
 A comprehensive and descriptive sample parameter file, `template-parameter.prm`,
 is located in the `sapphirepp` folder.
@@ -162,125 +162,118 @@ An example of this can be found in the [Implementation](#parameter-parallel-shoc
 
 ## Implementation {#implementation-parallel-shock}
 
-An implementation of this example can be found in the example directory
-`sapphirepp/examples/parallel-shock`. The following sections will explain the
-implementation in detail. As shown in the [quick start](#quick-start), there are
-only a few lines in the `config.h` file that need to be adjusted.
+The implementation of this example can be found in the example directory `sapphirepp/examples/vfp/parallel-shock`.
+The following sections explain it in detail.
+As shown in the [quick start](#quick-start),
+there are only a few lines in the `config.h` file that need to be adjusted.
 
 ### VFP equation {#dimension-parallel-shock}
 
-As we see in the analytic solution, the distribution function $f$ depends only
-on $(x, p, \theta)$. This means that we only need a single dimension in
-configuration space. Together with the $p$ dependence this results in a
-two-dimensional reduced phase space. The $\theta$ dependence is handled by the
-spherical harmonics with $l>0$. Because we don't have any
-dependence on $\varphi$, spherical harmonics with $m>0$ will be zero.
+As can be seen in the analytic solution presented above,
+the distribution function $f$ depends only on $(x, p, \theta)$.
+This means that we need a single dimension in configuration space.
+Together with the $p$ dependence this results in a two-dimensional reduced phase space.
+The $\theta$ dependence is handled by the spherical harmonics with $l>0$.
+Because we don't have any dependence on $\varphi$, spherical harmonics with $m>0$ will be zero.
 
 @snippet{lineno} examples/vfp/parallel-shock/config.h Dimension
 
-Next, we need to specify which parts of the VFP equation are present in our
-problem. Here, we have the full VFP equation,
+Next, we need to specify which terms of the VFP equation are necessary to model the transport
+and acceleration of particles at a parallel shock.
+We actually have to solve the full VFP equation,
 
 $$
-  \frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f -
-  \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p}f -
-  \mathbf{p} \cdot\nabla_{x} \mathbf{u}\cdot \nabla_{p} f +
+  \frac{\partial f}{\partial t} + (\mathbf{U} + \mathbf{v}) \cdot \nabla_{x} f -
+  \gamma m \frac{\mathrm{D} \mathbf{U}}{\mathrm{D} t} \cdot \nabla_{p}f -
+  \mathbf{p} \cdot\nabla_{x} \mathbf{U}\cdot \nabla_{p} f +
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S \,.
 $$
 
-We therefore need to list all flags in the `vfp_flags` variable. In addition, we
-know that the velocity field and magnetic field time independent, as well as the
-source.
+We therefore need to activate all flags in the `vfp_flags` variable.
+In addition, we know that the velocity field and magnetic field are time independent.
+This also holds true for the source term.
 
 @snippet{lineno} examples/vfp/parallel-shock/config.h VFP Flags
 
-### Defining Custom Runtime Parameters {#parameter-parallel-shock}
+### User-defined runtime parameters {#parameter-parallel-shock}
 
-This section outlines the process of defining custom runtime parameters that
-describe the physical setup. The parameters include:
+This section outlines the process of implementing user-defined runtime parameters
+that describe their physical setup.
+The example parameters include:
 
-| Name | Symbol | Code | Description |
-|:-----|:-------|:-----|:------------|
-| Shock velocity | $U_{\rm sh}$ | `u_sh` | Velocity of the shock. |
-| Compression ratio | $r$ | `compression_ratio` | Compression ratio of the shock. |
-| Injection momentum | $p_{\rm inj}$ | `p_inj` | Momentum of the injected particles. |
-| Injection rate | $Q$ | `Q` | Rate of injected particles. |
-| Scattering frequency | $\nu_0$ | `nu0` | Scattering frequency of the particles. |
-| Magnetic field | $B_0$ | `B0` | Magnetic field strength. |
+| Name                 | Symbol        | Code                | Description                            |
+|:---------------------|:--------------|:--------------------|:---------------------------------------|
+| Shock velocity       | $U_{\rm sh}$  | `u_sh`              | Velocity of the shock.                 |
+| Compression ratio    | $r$           | `compression_ratio` | Compression ratio of the shock.        |
+| Injection momentum   | $p_{\rm inj}$ | `p_inj`             | Momentum of the injected particles.    |
+| Injection rate       | $Q$           | `Q`                 | Rate of injected particles.            |
+| Scattering frequency | $\nu_0$       | `nu0`               | Scattering frequency of the particles. |
+| Magnetic field       | $B_0$         | `B0`                | Magnetic field strength.               |
 
-Additionally, there are several numerical parameters that are not part of the
-physical setup:
+Additionally, there are several numerical parameters that are not part of the physical setup:
 
-| Name | Symbol |  Code | Description |
-|:-----|:-------|:------|:------------|
-| Shock width | $d_{\rm sh}$ | `shock_width` | Width of the shock. |
-| Injection width in $p$ | $\sigma_p$ | `sig_p` | Width of the injection in momentum. |
-| Injection width in $x$ | $\sigma_x$ | `sig_x` | Width of the injection in configuration space. |
-| Injection position | $x_{\rm inj}$ | `x_inj` | Position of the injection. |
+| Name                   | Symbol        | Code          | Description                                    |
+|:-----------------------|:--------------|:--------------|:-----------------------------------------------|
+| Shock width            | $d_{\rm sh}$  | `shock_width` | Width of the shock.                            |
+| Injection width in $p$ | $\sigma_p$    | `sig_p`       | Width of the injection in momentum.            |
+| Injection width in $x$ | $\sigma_x$    | `sig_x`       | Width of the injection in configuration space. |
+| Injection position     | $x_{\rm inj}$ | `x_inj`       | Position of the injection.                     |
 
 Implementing these parameters in @sapphire involves a three-step process:
 
-1. **Define** the parameters within the @ref sapphirepp::PhysicalParameters
-   "PhysicalParameters" class in the `config.h` file. This step informs the
-   compiler about these parameters.
+1. **Define** the parameters within the @ref sapphirepp::PhysicalParameters "PhysicalParameters"   class in the `config.h` file.
+   This step informs the compiler about their existence.
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Define runtime parameter
 
-2. **Declare** the parameters in the parameter file. This step ensures that the
-   parameter parser expects these parameters. The @dealii concept of a
-   @dealref{ParameterHandler} `prm` and the
-   @dealref{declare_entry,classParameterHandler,a6d65f458be69e23a348221cb67fc411d}
-   function are used for this purpose:
+2. **Declare** the parameters in the parameter file.
+   This step ensures that the parameter parser expects these parameters.
+   The @dealii class @dealref{ParameterHandler} `prm`
+   and its  @dealref{declare_entry,classParameterHandler,a6d65f458be69e23a348221cb67fc411d} method
+   are used for this purpose:
 
    ```cpp
    prm.declare_entry("name", "default value",    dealii::Patterns::Type(),
                      "Description of the parameter");
    ```
 
-   All parameters related to the source are collected in a subsection. This is
-   achieved by entering the subsection before declaring the parameters and
-   leaving it afterwards. The @ref
-   sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()"
-   function is edited to include the following code:
+	All parameters related to the source are collected in a subsection.
+	This is achieved by entering the subsection before declaring the parameters
+	and leaving it afterwards.
+	The @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" method
+	is edited to include the following code:
 
-   @snippet{lineno} examples/vfp/parallel-shock/config.h Declare runtime parameter
+	@snippet{lineno} examples/vfp/parallel-shock/config.h Declare runtime parameter
 
-3. **Parse** the values defined in the parameter file. This step sets the values
-   of the parameters according to the parameter file. The
-   @dealref{ParameterHandler} getter function
+3. **Parse** the values defined in the parameter file.
+   This step sets the values of the parameters according to the parameter file.
+   The @dealref{ParameterHandler} getter method
    @dealref{get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
-   is utilized inside the @ref
-   sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()"
-   function and the following code is included:
+   is utilised inside the @ref sapphirepp::PhysicalParameters::parse_parameters()
+   "parse_parameters()" method and the following code is included:
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Parse runtime parameter
 
 ### Scattering frequency {#scattering-frequency-parallel-shock}
 
-Now we implement the functions related to the physical setup, starting with the
-scattering frequency. As stated above, we use a scattering with a weak momentum
-dependency,
-
-$$
-  \nu = \nu_0 \left(\frac{p}{p_0}\right)^{1/3} \, .
-$$
-
-To get the momentum variable $\ln p$ we use the second component of the `point`
-in reduced phase space that is given to function. One peculiarity here is, that
-the function calculates the scattering frequency at multiple `points`. We use
-the index `q_index` to refer to an individual point:
+We now implement the functions modelling the physical scenario.
+We start with the scattering frequency.
+As stated above, we assume a constant scattering frequency, i.e. $\nu = \nu_0$.
+This translates to
 
 @snippet{lineno} examples/vfp/parallel-shock/config.h Scattering frequency
 
-Notice that we use access the runtime parameter $\nu_0$ via the (previously
-modified) @ref sapphirepp::PhysicalParameters "PhysicalParameters" class `prm`.
+The function calculates the scattering frequency at multiple `points` in the $(x,\ln p)$--domain.
+We use the index `q_index` to refer to an individual point.
+Notice that we access the runtime parameter $\nu_0$
+via the (previously modified) @ref sapphirepp::PhysicalParameters "PhysicalParameters" class `prm`.
 
 ### Source term {#source-term-parallel-shock}
 
-We want to inject mono-energetic particles at the shock. To model this we use a
-Gaussian centred at $(x_{\rm inj}, p_{\rm inj})$ with width $\sigma_x$ and
-$\sigma_p$,
+Furthermore, we would like to inject mono-energetic particles at the shock.
+To model this we use a Gaussian profile centred at $(x_{\rm inj}, p_{\rm inj})$
+with width $\sigma_x$ and $\sigma_p$,
 
 $$
   S(x, p) = \frac{Q}{2\pi\sigma_x\sigma_p} \exp\left[
@@ -289,64 +282,62 @@ $$
   \right] \, .
 $$
 
-As already explained in the [quick start](#quick-start), the source term needs
-to be decomposed into spherical harmonics. As want to inject an isotropic
-distribution of particles, we can set all $l>0$ components to zero. Notice that
-here we use the index `i` to refer to the components of the spherical harmonics,
-$i(l,m,s)$, at one `point`.
+As already explained in the [quick start](#quick-start),
+the source term needs to be decomposed into spherical harmonics.
+As we inject an isotropic distribution of particles, we can set all $l>0$ components to zero.
+Notice that we use the index `i` to refer to the components of the spherical harmonic decomposition,
+$i(l,m,s)$, at at a single `point` in the $(x,\ln p)$--domain.
 
 @snippet{lineno} examples/vfp/parallel-shock/config.h Source
+
+We emphasise that the second component of point, i.e. `point[1]`,
+corresponds to the momentum variable $\ln p$.
 
 ### Magnetic field {#magnetic-field-parallel-shock}
 
 As described above, we use a constant magnetic field parallel to the shock,
-$\mathbf{B} = B_0 \hat{\mathbf{e}}_x$. It does not influence the steady state
-solution, but nevertheless we include it for completeness.
+$\mathbf{B} = B_0 \hat{\mathbf{e}}_x$.
+It does not influence the steady-state solution, but nevertheless we include it for completeness.
 
 @snippet{lineno} examples/vfp/parallel-shock/config.h Magnetic field
 
 ### Velocity field {#velocity-parallel-shock}
 
-The velocity field is the same as in the [quick start](#quick-start) example. We
-use a $\tanh$ profile to model the transition at the shock. The only
-modification is, that we now use the custom runtime parameters $U_{\rm sh}$, $r$
-and $d_{\rm sh}$. Otherwise, of the value $\mathbf{u}(\mathbf{x})$, the
-divergence $\nabla \cdot \mathbf{u}(\mathbf{x})$, the material derivative
-$\frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t}$ and the Jacobian $\frac{\partial
-u_{x}}{\partial x}$ stays the same.
+The velocity field is the same as in the [quick start](#quick-start) example.
+We use a $\tanh$ profile to model the transition at the shock wave.
+The only modification is, that we now use the user-defined runtime parameters $U_{\rm sh}$,
+$r$ and $d_{\rm sh}$.
+Otherwise, $\mathbf{U}(\mathbf{x})$, its divergence $\nabla \cdot \mathbf{U}(\mathbf{x})$,
+the material derivative $\mathrm{D} \mathbf{U}/\mathrm{D} t$
+and the its Jacobian $\partial U_{x}/\partial x$ stay the same.
 
-1. Background velocity field value $\mathbf{u}(\mathbf{x})$:
+1. Background velocity field value $\mathbf{U}(\mathbf{x})$:
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity value
 
-2. Background velocity divergence $\nabla \cdot \mathbf{u}(\mathbf{x})$:
+2. Background velocity divergence $\nabla \cdot \mathbf{U}(\mathbf{x})$:
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity divergence
 
-3. Background velocity material derivative $\frac{\mathrm{D}
-   \mathbf{u}}{\mathrm{D} t}$:
+3. Background velocity material derivative $\mathrm{D}\mathbf{U}/\mathrm{D} t$:
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity material derivative
 
-4. Background velocity Jacobian $\frac{\partial u_{x}}{\partial x}$:
+4. Background velocity Jacobian $\partial U_{x}/ \partial x$:
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Background velocity Jacobian
 
 ### Compile and run {#compile-parallel-shock}
 
-To run the simulation,
-implement the above functions in the `config.h` file
-and recompile @sapphire:
+To run the simulation, implement the above functions in the `config.h` file and recompile @sapphire:
 
 ```shell
 make --directory=build
 ```
 
-Alternatively, you can use the implementation
-in the `examples/vfp/parallel-shock` folder.
+Alternatively, you can use the implementation in the `examples/vfp/parallel-shock` folder.
 This executable will be named `parallel-shock` instead of `sapphirepp`.
-Note that for this to work,
-@sapphire must be configured with the `-DEXAMPLES=ON` option.
+Note that for this to work, @sapphire must be configured with the `-DEXAMPLES=ON` option.
 
 ```shell
 cmake -S . -B build -DEXAMPLES=ON
@@ -361,7 +352,7 @@ We recommend running the simulation with the parameters given in
 Run the simulation with:
 
 ```shell
-./build/examples/vfp/parallel-shock/parallel-shock examples/vfp/parallel-shock/parameter.prm 
+mpirun -n 4 ./build/examples/vfp/parallel-shock/parallel-shock examples/vfp/parallel-shock/parameter.prm
 ```
 
 ## Results {#results-parallel-shock}
