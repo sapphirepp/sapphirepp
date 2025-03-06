@@ -164,17 +164,17 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 2;
+    constexpr unsigned int dimension = 2;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    static constexpr VFPFlags vfp_flags =
-      VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
-      VFPFlags::rotation | VFPFlags::source |
-      VFPFlags::scaled_distribution_function;
+    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
+                                   VFPFlags::momentum | VFPFlags::collision |
+                                   VFPFlags::rotation | VFPFlags::source |
+                                   VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
 
