@@ -160,8 +160,8 @@ as well as the following tutorials:
 [Batch Python Scripting](https://docs.paraview.org/en/latest/Tutorials/SelfDirectedTutorial/batchPythonScripting.html)
 and
 [Python & Batch: ParaView & Python](https://docs.paraview.org/en/latest/Tutorials/ClassroomTutorials/pythonAndBatchParaViewAndPython.html).
-The documentation for the Python module can be found here:
-[`paraview.simple` documentation](https://www.paraview.org/paraview-docs/latest/python/paraview.simple.html).
+The documentation for the Python interface of the Paraview filters can be found here:
+[`paraview.simple` documentation](https://www.paraview.org/paraview-docs/nightly/python/paraview.servermanager_proxies.html#).
 
 <div class="section_buttons">
 
