@@ -35,7 +35,7 @@ $$
 $$
 
 For the case of a constant scattering frequency,
-an analytic solution for the distribution function in mixed coordinates is presented in
+an analytic solution for the steady-state distribution function in mixed coordinates is presented in
 @cite Drury1983 :
 
 \f[
@@ -75,6 +75,34 @@ while the downstream is isotropic, i.e.
 $$
   f_{100} = 0 \quad \text{ for } x \geq 0 \,.
 $$
+
+An **approximate** analytic expression for the temporal evolution of the distribution function $f$
+has been given in @cite Drury1991 and @cite Forman1983 .
+At the shock wave
+
+\f[
+	F(t, x = 0, p) = f(x = 0, p) \phi(t)
+\f]
+
+where $F$ is the time-dependent distribution function and
+
+\f[
+  \phi(t) = \frac{1}{2}\left[\exp\left(\frac{2 c^{2}_{1}}{c_{2}}\right) \mathrm{erfc}\left(\sqrt{\frac{c^{3}_{1}}{2 t c_{2}}} + \sqrt{\frac{c^{\phantom{3}}_{1} t}{2 c_{2}}}\right)  +
+\mathrm{erfc}\left(\sqrt{\frac{c^{3}_{1}}{2 t c_{2}}} - \sqrt{\frac{c^{\phantom{3}}_{1}t}{2 c_{2}}}\right)\right] \,.
+\f]
+
+The constants $c_1$ and $c_2$ are the mean and the variance of the acceleration time.
+They are
+
+\f[
+	\begin{align}
+	c_1 &= \frac{r}{2 U^{2}_{1} \nu} \frac{r + 1}{r - 1} \ln\left(\frac{1 + p^{2}}{1 + p^{2}_{\rm inj}}\right) \, \\
+	c_2 &= \frac{1}{3\nu^{2}} \frac{r}{U^{4}_{1}} \frac{r^{3} + 1}{r - 1}
+    \left[ \frac{1}{1 + p^{2}} - \frac{1}{1 + p^{2}_{\rm inj}} + \ln\left(\frac{1 + p^{2}}{1 + p^{2}_{\rm inj}}\right)\right] \,.
+	\end{align}
+\f]
+
+More details can be found in @cite Schween2025 .
 
 ## Parameter files {#parameter-files-parallel-shock}
 
