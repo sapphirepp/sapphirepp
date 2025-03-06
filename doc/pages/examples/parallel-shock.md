@@ -4,73 +4,73 @@
 
 ## Introduction {#introduction-parallel-shock}
 
-In this example we simulate the transport and acceleration of particles in a
-parallel shock. The setup is similar to the [quick start](#quick-start), but we
-use an advanced and more realistic configuration. You can find a detailed
-description of the setup and an analytic solution in @cite Schween2025.
+In this example we simulate the time-dependent transport and acceleration of
+particles at a parallel shock.
+The setup is similar to the [quick start](#quick-start), but we use an advanced
+and more realistic configuration.
+You can find a detailed description of the setup in @cite Schween2025.
 
-We're examining an astrophysical shock moving along the $x$-axis. The background
-plasma's velocity is represented as $\mathbf{U}_1 = U_{\rm sh}
-\hat{\mathbf{e}}_x$ upstream ($x<0$) and $\mathbf{U}_1 = U_{\rm sh}/r
-\hat{\mathbf{e}}_x$ downstream ($x>0$). Here, $r$ stands for the compression
-ratio and $U_{\rm sh}$ for the shock velocity. As this represents a simple plain
-shock, we only require a single dimension in configuration space for the
-simulation. We also employ a constant magnetic field, parallel to the shock
-normal, denoted as $\mathbf{B} = B_0 \hat{\mathbf{e}}_x$. This kind of setup is
-referred to as a parallel shock.
+The astrophysical shock is assumed to move along the $x$-axis.
+In the rest frame of the shock wave, the background plasma's velocity is represented as
+$\mathbf{U}_1 = U_{\rm sh} \hat{\mathbf{e}}_x$ upstream ($x<0$) and
+$\mathbf{U}_1 = U_{\rm sh}/r \hat{\mathbf{e}}_x$ downstream ($x>0$).
+Here, $r$ is the compression ratio of the shock and $U_{\rm sh}$ is its velocity.
+As this represents a simple plain shock wave,
+we only require a single dimension in configuration space for the simulation.
+We also presuppose a constant magnetic field that is parallel to the shock normal,
+i.e. $\mathbf{B} = B_0 \hat{\mathbf{e}}_x$.
+This kind of setup is referred to as a parallel shock.
 
-In astrophysical shocks, particles can be accelerated to high energies through
-the process of diffusive shock acceleration @cite Drury1983 @cite Kirk1994. This
-involves injecting particles at the shock with a momentum of $p_{\rm inj}$ at a
-rate $Q$. These particles originate from the thermal background plasma and
-propagate around the shock. Particles scatter at Alvén waves in the magnetic
-field, a process we describe by the scattering frequency $\nu$. In our scenario,
-the scattering frequency exhibits a minor momentum dependency, which can be
-represented as:
+In astrophysical shocks, particles can be accelerated to high energies
+through the process of diffusive shock acceleration @cite Drury1983 @cite Kirk1994.
+This involves injecting particles at the shock with a momentum of $p_{\rm inj}$ at a rate $Q$.
+These particles originate from the thermal background plasma and propagate around the shock.P
+These particles may be scattered by Alvén waves travelling through the background plasma,
+a process we model with the help of scattering frequency $\nu$.
+In @cite Schween2025  a constant scattering frequency is assumed,
+i.e. it is independent of $p$ and $x$:
 
 $$
-  \nu = \nu_0 \left(\frac{p}{p_0}\right)^{1/3} \, .
+  \nu = \nu_0  \, .
 $$
 
-@todo We can also just use $\nu = \nu_0 \left(\frac{p}{p_0}\right)^{\alpha}$
-  with $\alpha$ a free parameter.
-
-In @cite Schween2025 we derive an analytic solution for the distribution
-function in mixed coordinates:
+For the case of a constant scattering frequency,
+an analytic solution for the distribution function in mixed coordinates is presented in
+@cite Drury1983 :
 
 \f[
   f(x, p, \theta) = \frac{Q}{p_{\rm inj}U_{1}} \frac{3r}{r - 1}
   \left(\frac{p}{p_{\rm inj}}\right)^{-3r/(r - 1)} \times
   \begin{cases}
     e^{3U_{1} \nu / V^{2} x} \left[1 - 3 U_{1}/V \cos\theta\right]
-    \quad \text{ for } x < 0 \\
-    1 \quad \text{ for } x \geq 0
+    &\quad \text{ for } x < 0 \\
+    1 &\quad \text{ for } x \geq 0
   \end{cases}
 \f]
 
-where $V = \frac{p}{\gamma m}$ is the particle velocity in mixed coordinates.
-Decomposing this solution into spherical harmonics, we find that the isotropic
-part of the distribution function is given by
+where $V = p/\gamma m$ is the particle velocity in mixed coordinates.
+Decomposing this solution into spherical harmonics,
+we find that the isotropic part of the distribution function is given by
 
 \f[
   f_{000}(x, p) = \sqrt{4\pi} \frac{Q}{p_{\rm inj}U_{1}} \frac{3r}{r - 1}
   \left(\frac{p}{p_{\rm inj}}\right)^{-3r/(r - 1)} \times
   \begin{cases}
-    e^{3U_{1} \nu / V^{2} x} \quad \text{ for } x < 0 \\
-    1 \quad \text{ for } x \geq 0
+    e^{3U_{1} \nu / V^{2} x} &\quad \text{ for } x < 0 \\
+    1 &\quad \text{ for } x \geq 0
   \end{cases}
 \f]
 
-In the upstream we have an anisotropy,
+Moreover, in the upstream we have a non-trivial anisotropy, namely
 
-$$
+\f[
   f_{100}(x, p) = -3 U_{1}/V \sqrt{\frac{4\pi}{3}}
   \frac{Q}{p_{\rm inj}U_{1}} \frac{3r}{r - 1}
   \left(\frac{p}{p_{\rm inj}}\right)^{-3r/(r - 1)}
   e^{3U_{1} \nu / V^{2} x} \quad \text{ for } x < 0 \,,
-$$
+\f]
 
-while the downstream is isotropic,
+while the downstream is isotropic, i.e.
 
 $$
   f_{100} = 0 \quad \text{ for } x \geq 0 \,.
