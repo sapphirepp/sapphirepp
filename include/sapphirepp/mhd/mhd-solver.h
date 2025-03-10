@@ -65,6 +65,7 @@
 #include "mhd-parameters.h"
 #include "numerical-flux.h"
 #include "output-parameters.h"
+#include "slope-limiter.h"
 
 
 
@@ -393,6 +394,8 @@ namespace sapphirepp
       MHDEquations<dim> mhd_equations;
       /** @ref NumericalFlux */
       NumericalFlux<dim> numerical_flux;
+      /** @ref SlopeLimiter */
+      SlopeLimiter<dim> slope_limiter;
       /** @} */
 
       /** MPI communicator */

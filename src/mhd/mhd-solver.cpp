@@ -70,7 +70,6 @@
 #include <vector>
 
 #include "sapphirepp-logstream.h"
-#include "slope-limiter.h"
 
 
 namespace sapphirepp
@@ -285,6 +284,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , output_parameters{output_parameters}
   , mhd_equations(mhd_parameters.adiabatic_index)
   , numerical_flux(mhd_equations)
+  , slope_limiter()
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
