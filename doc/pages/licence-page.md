@@ -4,7 +4,7 @@ Sapphire++ is distributed under the [LGPL 3.0 license](https://github.com/sapphi
 
 If you use this software in your research, please cite the following paper:
 
-> Schween, N. W. and Schulze, F. and Reville, B., Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous Galerkin Method, 2024, DOI: http://dx.doi.org/10.2139/ssrn.4808843
+> Schween, N. W. and Schulze, F. and Reville, B., Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous Galerkin Method, 2024, DOI: https://doi.org/10.1016/j.jcp.2024.113690 
 
 Here's the BibTeX entry for the paper:
 
@@ -13,7 +13,7 @@ Here's the BibTeX entry for the paper:
  note = {Preprint},
  pubstate = {submitted},
  date = {2024},
- doi = {10.2139/ssrn.4808843},
+ doi = {10.1016/j.jcp.2024.113690},
  title = {Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous {Galerkin} Method},
  author = {Schween, Nils Walter and Schulze, Florian and Reville, Brian}
 }
