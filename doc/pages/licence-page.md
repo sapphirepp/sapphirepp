@@ -9,13 +9,12 @@ If you use this software in your research, please cite the following paper:
 Here's the BibTeX entry for the paper:
 
 ```bibtex
-@Article{Sapphirepp2024,
- note = {Preprint},
- pubstate = {submitted},
- date = {2024},
- doi = {10.1016/j.jcp.2024.113690},
- title = {Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous {Galerkin} Method},
- author = {Schween, Nils Walter and Schulze, Florian and Reville, Brian}
+@ARTICLE{Sapphirepp2025,
+       author = {{Schween}, Nils W. and {Schulze}, Florian and {Reville}, Brian},
+       title = "{Sapphire++: A particle transport code combining a spherical harmonic expansion and the discontinuous Galerkin method}",
+       journal = {Journal of Computational Physics},
+       date = {2025},
+       doi = {10.1016/j.jcp.2024.113690},
 }
 ```
 
