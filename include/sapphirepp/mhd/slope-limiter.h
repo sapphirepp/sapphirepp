@@ -135,6 +135,18 @@ namespace sapphirepp
                           "boundary cells."));
         return cell->neighbor(face_no)->center() - cell->center();
       }
+
+
+
+      /**
+       * @brief Enforce that the limited gradients
+       *        have a divergence free magnetic field
+       *
+       * @param limited_gradient limited gradient
+       */
+      static void
+      enforce_divergence_free_limited_gradient(
+        typename MHDEquations<dim>::flux_type &limited_gradient);
     };
   } // namespace MHD
 } // namespace sapphirepp

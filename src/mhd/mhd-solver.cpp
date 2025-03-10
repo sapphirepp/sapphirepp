@@ -1015,6 +1015,13 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
         // Only limit if average gradient was changed
         limit_cell = (diff > 1e-10);
+
+        // Enforce divergence free limited B-field
+        if (limit_cell)
+          {
+            SlopeLimiter<dim>::enforce_divergence_free_limited_gradient(
+              limited_gradient);
+          }
       }
 
 

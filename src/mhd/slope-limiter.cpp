@@ -94,6 +94,46 @@ sapphirepp::MHD::SlopeLimiter<dim>::minmod_gradients(
 
 
 
+template <unsigned int dim>
+void
+sapphirepp::MHD::SlopeLimiter<dim>::enforce_divergence_free_limited_gradient(
+  typename MHDEquations<dim>::flux_type &limited_gradient)
+{
+  double delta_p = 0;
+  double delta_m = 0;
+
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      delta_p += std::max(
+        limited_gradient[MHDEquations<dim>::first_magnetic_component + d][d],
+        0.);
+      delta_m += std::max(
+        -limited_gradient[MHDEquations<dim>::first_magnetic_component + d][d],
+        0.);
+    }
+
+  const double delta = delta_p - delta_m;
+
+  if (delta > 0)
+    {
+      for (unsigned int d = 0; d < dim; ++d)
+        if (limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
+                            [d] > 0)
+          limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
+                          [d] *= delta_m / delta_p;
+    }
+  else
+    {
+      for (unsigned int d = 0; d < dim; ++d)
+        if (limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
+                            [d] < 0)
+          limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
+                          [d] *= delta_p / delta_m;
+    }
+}
+
+
+
 // Explicit instantiations
 template class sapphirepp::MHD::SlopeLimiter<1>;
 template class sapphirepp::MHD::SlopeLimiter<2>;
