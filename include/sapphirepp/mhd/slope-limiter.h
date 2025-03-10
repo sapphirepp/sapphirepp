@@ -31,7 +31,7 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/tensor.h>
 
-#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/dofs/dof_handler.h>
 
 #include <deal.II/lac/vector.h>
 
@@ -45,13 +45,24 @@ namespace sapphirepp
 {
   namespace MHD
   {
+    using namespace dealii;
+
+
 
     /**
-     * @namespace sapphirepp::MHD::SlopeLimiter
-     * @brief Namespace for functions related to slope limiting
+     * @brief Collect functions related to slope limiting
+     *
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
+     *         `dim`
      */
-    namespace SlopeLimiter
+    template <unsigned int dim>
+    class SlopeLimiter
     {
+    public:
+      /** Constructor */
+      SlopeLimiter() = default;
+
+
 
       /**
        * @brief Calculate the minmod function of a list of values.
@@ -71,7 +82,7 @@ namespace sapphirepp
        * @return double The minmod function of the input values,
        *                \f$ {\rm minmod}(v_1, \dots, v_k) \f$.
        */
-      double
+      static double
       minmod(const std::vector<double> &values);
 
 
@@ -84,7 +95,6 @@ namespace sapphirepp
        * entires into account. It furthermore uses only the modified minmod
        * function.
        *
-       * @tparam dim Dimension
        * @param cell_gradient Average gradient on the cell.
        * @param neighbor_gradients Gradients to neighbor cells.
        * @param limited_gradient Component and direction wise minmod function,
@@ -93,8 +103,7 @@ namespace sapphirepp
        * @return double Average difference between cell_gradient and limited_gradient
        *                per component and direction.
        */
-      template <unsigned int dim>
-      double
+      static double
       minmod_gradients(
         const typename MHDEquations<dim>::flux_type &cell_gradient,
         const std::vector<typename MHDEquations<dim>::flux_type>
@@ -108,27 +117,25 @@ namespace sapphirepp
        * @brief Computes the distance form the neighbor cell to this cell in
        *        direction of face `face_no`, accounting for periodic boundaries.
        *
-       * @tparam TriaIterator @dealref{TriaIterator}
-       * @tparam dim dimensions
        * @param cell Current cell.
        * @param face_no Face number for direction of neighbor.
-       * @return dealii::Tensor<1, dim> Distance between this cell and the
+       * @return Tensor<1, dim> Distance between this cell and the
        *         neighbor cell, accounting for periodic boundaries.
        */
-      template <typename TriaIterator, unsigned int dim>
-      inline dealii::Tensor<1, dim>
-      compute_periodic_distance_cell_neighbor(const TriaIterator &cell,
-                                              const unsigned int  face_no)
+      static inline Tensor<1, dim>
+      compute_periodic_distance_cell_neighbor(
+        const typename DoFHandler<dim>::active_cell_iterator &cell,
+        const unsigned int                                    face_no)
       {
         if (cell->has_periodic_neighbor(face_no))
           return (cell->face(face_no)->center() - cell->center()) * 2.;
 
         Assert(!cell->at_boundary(face_no),
-               dealii::ExcMessage("Can not compute distance for non-periodic "
-                                  "boundary cells."));
+               ExcMessage("Can not compute distance for non-periodic "
+                          "boundary cells."));
         return cell->neighbor(face_no)->center() - cell->center();
       }
-    } // namespace SlopeLimiter
+    };
   } // namespace MHD
 } // namespace sapphirepp
 #endif

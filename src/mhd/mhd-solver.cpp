@@ -949,8 +949,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
               {
                 auto neighbor = cell->neighbor_or_periodic_neighbor(face_no);
                 const state_type    &neighbor_avg = get_cell_average(neighbor);
-                const Tensor<1, dim> distance     = SlopeLimiter::
-                  compute_periodic_distance_cell_neighbor<Iterator, dim>(
+                const Tensor<1, dim> distance =
+                  SlopeLimiter<dim>::compute_periodic_distance_cell_neighbor(
                     cell, face_no);
 
                 for (unsigned int c = 0; c < n_components; ++c)
@@ -965,7 +965,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                       MHDFlags::none)
           {
             // Primitive Limiting
-            diff = SlopeLimiter::minmod_gradients<dim>(
+            diff = SlopeLimiter<dim>::minmod_gradients(
               cell_avg_gradient,
               neighbor_gradients,
               limited_gradient,
@@ -1002,7 +1002,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                 char_neighbor_gradients[i]);
 
             // Computed limited gradient
-            diff = SlopeLimiter::minmod_gradients<dim>(
+            diff = SlopeLimiter<dim>::minmod_gradients(
               char_cell_avg_gradient,
               char_neighbor_gradients,
               char_limited_gradient,

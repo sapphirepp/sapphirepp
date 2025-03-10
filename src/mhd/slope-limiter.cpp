@@ -33,8 +33,9 @@
 
 
 
+template <unsigned int dim>
 double
-sapphirepp::MHD::SlopeLimiter::minmod(const std::vector<double> &values)
+sapphirepp::MHD::SlopeLimiter<dim>::minmod(const std::vector<double> &values)
 {
   auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
   if ((*min_it) * (*max_it) < 0.0)
@@ -49,7 +50,7 @@ sapphirepp::MHD::SlopeLimiter::minmod(const std::vector<double> &values)
 
 template <unsigned int dim>
 double
-sapphirepp::MHD::SlopeLimiter::minmod_gradients(
+sapphirepp::MHD::SlopeLimiter<dim>::minmod_gradients(
   const typename MHDEquations<dim>::flux_type              &cell_gradient,
   const std::vector<typename MHDEquations<dim>::flux_type> &neighbor_gradients,
   typename MHDEquations<dim>::flux_type                    &limited_gradient,
@@ -93,24 +94,7 @@ sapphirepp::MHD::SlopeLimiter::minmod_gradients(
 
 
 
-/** @cond sapinternal */
 // Explicit instantiations
-template double
-sapphirepp::MHD::SlopeLimiter::minmod_gradients<1>(
-  const typename MHDEquations<1>::flux_type &,
-  const std::vector<typename MHDEquations<1>::flux_type> &,
-  typename MHDEquations<1>::flux_type &,
-  const double);
-template double
-sapphirepp::MHD::SlopeLimiter::minmod_gradients<2>(
-  const typename MHDEquations<2>::flux_type &,
-  const std::vector<typename MHDEquations<2>::flux_type> &,
-  typename MHDEquations<2>::flux_type &,
-  const double);
-template double
-sapphirepp::MHD::SlopeLimiter::minmod_gradients<3>(
-  const typename MHDEquations<3>::flux_type &,
-  const std::vector<typename MHDEquations<3>::flux_type> &,
-  typename MHDEquations<3>::flux_type &,
-  const double);
-/** @endcond */
+template class sapphirepp::MHD::SlopeLimiter<1>;
+template class sapphirepp::MHD::SlopeLimiter<2>;
+template class sapphirepp::MHD::SlopeLimiter<3>;
