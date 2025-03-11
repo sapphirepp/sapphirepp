@@ -81,9 +81,9 @@ solutionDisplay = Show(solution, renderView1, "UnstructuredGridRepresentation")
 
 # PreviewMode and SetSize must be done after Show
 # Enter preview mode
-layout2D.PreviewMode = [1024, 1024]
+layout2D.PreviewMode = [width, height]
 # layout/tab size in pixels
-layout2D.SetSize(1024, 1024)
+layout2D.SetSize(width, height)
 
 # reset view to fit data
 renderView1.ResetCamera(False, 0.9)
@@ -103,30 +103,52 @@ renderView1.Background = [1.0, 1.0, 1.0]
 solutionDisplay.DisableLighting = 1
 solutionDisplay.Diffuse = 1.0
 
-# ------------------
-# Show DataAxesGrid
-# ------------------
+# --------------
+# Show AxesGrid
+# --------------
 
-solutionDisplay.DataAxesGrid.GridAxesVisibility = 1
-solutionDisplay.DataAxesGrid.XTitle = "$x$"
-solutionDisplay.DataAxesGrid.YTitle = "$\\ln p$"
+# We have to use AxesGrid instead of DataAxesGrid
+# to support scaling of the p axes (see below)
+
+renderView1.AxesGrid.Visibility = 1
+renderView1.AxesGrid.XTitle = "$x$"
+renderView1.AxesGrid.YTitle = "$\\ln p$"
 # Only show Axes Min-X//Y/Z
-solutionDisplay.DataAxesGrid.AxesToLabel = 7
-# solutionDisplay.DataAxesGrid.FacesToRender = 7
+renderView1.AxesGrid.AxesToLabel = 7
+# renderView1.AxesGrid.FacesToRender = 7
 # Set default font size: 24 for title, 18 for label
-solutionDisplay.DataAxesGrid.XTitleFontSize = 24
-solutionDisplay.DataAxesGrid.YTitleFontSize = 24
-solutionDisplay.DataAxesGrid.XLabelFontSize = 18
-solutionDisplay.DataAxesGrid.YLabelFontSize = 18
+renderView1.AxesGrid.XTitleFontSize = 24
+renderView1.AxesGrid.YTitleFontSize = 24
+renderView1.AxesGrid.XLabelFontSize = 18
+renderView1.AxesGrid.YLabelFontSize = 18
 # Use gray color for label for good visibility in both light and dark mode
-solutionDisplay.DataAxesGrid.XTitleColor = [0.5, 0.5, 0.5]
-solutionDisplay.DataAxesGrid.YTitleColor = [0.5, 0.5, 0.5]
-solutionDisplay.DataAxesGrid.XLabelColor = [0.5, 0.5, 0.5]
-solutionDisplay.DataAxesGrid.YLabelColor = [0.5, 0.5, 0.5]
-solutionDisplay.DataAxesGrid.GridColor = [0.5, 0.5, 0.5]
+renderView1.AxesGrid.XTitleColor = [0.5, 0.5, 0.5]
+renderView1.AxesGrid.YTitleColor = [0.5, 0.5, 0.5]
+renderView1.AxesGrid.XLabelColor = [0.5, 0.5, 0.5]
+renderView1.AxesGrid.YLabelColor = [0.5, 0.5, 0.5]
+renderView1.AxesGrid.GridColor = [0.5, 0.5, 0.5]
+
+
+# -------------
+# Scale p axes
+# -------------
+
+# Define factor to scale p axes
+scale_p_axes = 16.0
+
+# Properties modified on solutionDisplay
+solutionDisplay.Scale = [1.0, scale_p_axes, 1.0]
+
+# Properties modified on renderView1.AxesGrid
+renderView1.AxesGrid.DataScale = [1.0, scale_p_axes, 1.0]
+
 
 # update the view to ensure updated data information
 renderView1.Update()
+
+# reset view to fit data
+renderView1.ResetCamera(True, 0.85)
+
 
 # ----------------------
 # Create color bar plot
