@@ -15,12 +15,12 @@ from paraview.simple import *
 results_folder = ""
 # Either using command line argument, or using input
 if __name__ == "__main__":
-        import sys
+    import sys
 
-        if len(sys.argv) > 1:
-                results_folder = sys.argv[1]
+    if len(sys.argv) > 1:
+        results_folder = sys.argv[1]
 if not results_folder:
-        results_folder = input("Path to results folder: ")
+    results_folder = input("Path to results folder: ")
 print(f"Using results in '{results_folder}'")
 
 # =============================================================================
@@ -31,14 +31,14 @@ from paraview.util import *
 
 pvtu_files = paraview.util.Glob(results_folder + "/solution_*.pvtu")
 if not pvtu_files:
-        raise FileNotFoundError(
-                f"No .pvtu files found matching '{results_folder}/solution_*.pvtu'"
-        )
+    raise FileNotFoundError(
+        f"No .pvtu files found matching '{results_folder}/solution_*.pvtu'"
+    )
 
 # create a new 'XML Partitioned Unstructured Grid Reader'
 solution = XMLPartitionedUnstructuredGridReader(
-        registrationName="solution",
-        FileName=pvtu_files,
+    registrationName="solution",
+    FileName=pvtu_files,
 )
 solution.UpdatePipeline()
 
@@ -213,7 +213,7 @@ height = 720
 # Physical Parameters for the analytical solution
 # =============================================================================
 Q = 0.1  # number density of the injected particles
-p_inj = 1.  # magnitude of the injection momentum
+p_inj = 1.0  # magnitude of the injection momentum
 r = 4  # compression ratio of the shock
 u_one = 0.03  # shock velocity
 nu_0 = 1  # inverse of the hall parameter h, i.e. h = omega_g/nu
@@ -233,9 +233,10 @@ bounds = solution.GetDataInformation().GetBounds()
 # =============================================================================
 # Plot f(p)
 # =============================================================================
-python_calc_f_000_ana_p = PythonCalculator(registrationName="f_000_ana_p",
-                                           Input=solution)
-python_calc_f_000_ana_p.ArrayName = 'f_000_ana_p'
+python_calc_f_000_ana_p = PythonCalculator(
+    registrationName="f_000_ana_p", Input=solution
+)
+python_calc_f_000_ana_p.ArrayName = "f_000_ana_p"
 python_calc_f_000_ana_p.UseMultilineExpression = 1
 
 python_calc_expression_f_000_p = """#########
@@ -248,12 +249,15 @@ u_one = {u_one}      # shock velocity
 p_coords = numpy.exp(inputs[0].Points[:,1]) 
 outputArray = numpy.sqrt(4 * numpy.pi) * 3*Q/(u_one * p_inj) \
     * r/(r - 1) * (p_coords/p_inj)**(-3*r/(r-1))
-return outputArray""".format(Q=Q, p_inj=p_inj, r=r, u_one=u_one)
+return outputArray""".format(
+    Q=Q, p_inj=p_inj, r=r, u_one=u_one
+)
 
 python_calc_f_000_ana_p.MultilineExpression = python_calc_expression_f_000_p
 
-plotOverLine_f_p = PlotOverLine(registrationName="f(p) Plot",
-                                Input=python_calc_f_000_ana_p)
+plotOverLine_f_p = PlotOverLine(
+    registrationName="f(p) Plot", Input=python_calc_f_000_ana_p
+)
 
 # Set SamplingPattern
 plotOverLine_f_p.SamplingPattern = "Sample At Segment Centers"
@@ -263,8 +267,8 @@ min_y = p_inj * -0.1
 max_y = bounds[3]
 
 # Specify where to plot over line
-plotOverLine_f_p.Point1 = [0., min_y, 0.0]
-plotOverLine_f_p.Point2 = [0., max_y, 0.0]
+plotOverLine_f_p.Point1 = [0.001, min_y, 0.0]
+plotOverLine_f_p.Point2 = [0.001, max_y, 0.0]
 
 # ------------------------------------
 # Create new layout and LineChartView
@@ -284,7 +288,7 @@ lineChartView_f_p = CreateView("XYChartView")
 # images
 lineChartView_f_p.ViewSize = [width, height]
 lineChartView_f_p.ViewTime = solution.TimestepValues[-1]  # last time step
-lineChartView_f_p.LegendLocation = 'TopRight'
+lineChartView_f_p.LegendLocation = "TopRight"
 lineChartView_f_p.LeftAxisTitle = "$f_{000}(p)$"
 lineChartView_f_p.LeftAxisLogScale = 1
 lineChartView_f_p.BottomAxisTitle = "$\\ln p$"
@@ -303,31 +307,39 @@ AssignViewToLayout(view=lineChartView_f_p, layout=layout_f_p, hint=0)
 # ---------------------
 
 # show data in view
-fpPlotDisplay = Show(plotOverLine_f_p, lineChartView_f_p,
-                     "XYChartRepresentation")
+fpPlotDisplay = Show(
+    plotOverLine_f_p, lineChartView_f_p, "XYChartRepresentation"
+)
 # Set which data to use for the x-axis
 fpPlotDisplay.XArrayName = "Points_Y"
 
 # Set the labels of the plots
 fpPlotDisplay.SeriesLabel = [
-        'f_000', '$f_{000}$', 'f_000_ana_p', '$f_{000}$-ana'
+    "f_000",
+    "$f_{000}$",
+    "f_000_ana_p",
+    "$f_{000}$-ana",
 ]
 
 # Adapt line thickness
-fpPlotDisplay.SeriesLineThickness = ['f_000', '2', 'f_000_ana_p', '2']
+fpPlotDisplay.SeriesLineThickness = ["f_000", "2", "f_000_ana_p", "2"]
 
 # Line style
-fpPlotDisplay.SeriesLineStyle = ['f_000', '1', 'f_000_ana_p',
-                                 '2']  # ana dashed
+fpPlotDisplay.SeriesLineStyle = ["f_000", "1", "f_000_ana_p", "2"]  # ana dashed
 
 # Color the plots
 fpPlotDisplay.SeriesColor = [
-        'f_000', '0.10980392156862745', '0.5843137254901961',
-        '0.8039215686274', 'f_000_ana_p', '0.25882352941176473',
-        '0.23921568627450981', '0.6627450980392157'
+    "f_000",
+    "0.10980392156862745",
+    "0.5843137254901961",
+    "0.8039215686274",
+    "f_000_ana_p",
+    "0.25882352941176473",
+    "0.23921568627450981",
+    "0.6627450980392157",
 ]
 
-fpPlotDisplay.SeriesVisibility = ['f_000', 'f_000_ana_p']
+fpPlotDisplay.SeriesVisibility = ["f_000", "f_000_ana_p"]
 
 # ----------------
 # Save screenshot
@@ -337,9 +349,9 @@ print(f"Save screenshot '{results_folder}/particle-spectrum.png'")
 
 # save screenshot
 SaveScreenshot(
-        filename=results_folder + '/particle-spectrum.png',
-        location=vtkPVSession.DATA_SERVER,
-        viewOrLayout=layout_f_p,
+    filename=results_folder + "/particle-spectrum.png",
+    location=vtkPVSession.DATA_SERVER,
+    viewOrLayout=layout_f_p,
 )
 
 # ----------
@@ -350,13 +362,13 @@ print(f"Save data '{results_folder}/particle-spectrum.csv'")
 
 # save data
 SaveData(
-        filename=results_folder + "/particle-spectrum.csv",
-        proxy=plotOverLine_f_p,
-        location=vtkPVSession.DATA_SERVER,
-        ChooseArraysToWrite=2,
-        PointDataArrays=['f_000', 'f_000_ana_p'],
-        Precision=6,
-        UseScientificNotation=1,
+    filename=results_folder + "/particle-spectrum.csv",
+    proxy=plotOverLine_f_p,
+    location=vtkPVSession.DATA_SERVER,
+    ChooseArraysToWrite=2,
+    PointDataArrays=["f_000", "f_000_ana_p"],
+    Precision=6,
+    UseScientificNotation=1,
 )
 
 # =============================================================================
@@ -366,9 +378,10 @@ SaveData(
 # Compute the analytical solution
 # ----------------------
 
-python_calc_f_000_ana_x = PythonCalculator(registrationName="f_000_ana_x",
-                                           Input=solution)
-python_calc_f_000_ana_x.ArrayName = 'f_000_ana_x'
+python_calc_f_000_ana_x = PythonCalculator(
+    registrationName="f_000_ana_x", Input=solution
+)
+python_calc_f_000_ana_x.ArrayName = "f_000_ana_x"
 python_calc_f_000_ana_x.UseMultilineExpression = 1
 
 python_calc_expression_f_000_x = """#########
@@ -394,18 +407,16 @@ outputArray[x_coords < 0] = N * numpy.exp(3 * u_one * nu_0 * x_coords[x_coords <
 # Downstream
 outputArray[x_coords > 0] = N
 
-return outputArray""".format(Q=Q,
-                             p_inj=p_inj,
-                             r=r,
-                             u_one=u_one,
-                             nu_0=nu_0,
-                             p_hat=p_hat)
+return outputArray""".format(
+    Q=Q, p_inj=p_inj, r=r, u_one=u_one, nu_0=nu_0, p_hat=p_hat
+)
 
 python_calc_f_000_ana_x.MultilineExpression = python_calc_expression_f_000_x
 
-python_calc_f_100_ana_x = PythonCalculator(registrationName="f_100_ana_x",
-                                           Input=python_calc_f_000_ana_x)
-python_calc_f_100_ana_x.ArrayName = 'f_100_ana_x'
+python_calc_f_100_ana_x = PythonCalculator(
+    registrationName="f_100_ana_x", Input=python_calc_f_000_ana_x
+)
+python_calc_f_100_ana_x.ArrayName = "f_100_ana_x"
 python_calc_f_100_ana_x.UseMultilineExpression = 1
 
 python_calc_expression_f_100_x = """#########
@@ -431,12 +442,9 @@ outputArray[x_coords < 0] = N * numpy.exp(3 * u_one * nu_0 * x_coords[x_coords <
 # Downstream
 outputArray[x_coords > 0] = 0
 
-return outputArray""".format(Q=Q,
-                             p_inj=p_inj,
-                             r=r,
-                             u_one=u_one,
-                             nu_0=nu_0,
-                             p_hat=p_hat)
+return outputArray""".format(
+    Q=Q, p_inj=p_inj, r=r, u_one=u_one, nu_0=nu_0, p_hat=p_hat
+)
 
 python_calc_f_100_ana_x.MultilineExpression = python_calc_expression_f_100_x
 
@@ -444,11 +452,12 @@ python_calc_f_100_ana_x.MultilineExpression = python_calc_expression_f_100_x
 # Create a 'Plot Over Line'
 # -----------------------
 
-plotOverLine_f_x = PlotOverLine(registrationName="f(x) Plot",
-                                Input=python_calc_f_100_ana_x)
+plotOverLine_f_x = PlotOverLine(
+    registrationName="f(x) Plot", Input=python_calc_f_100_ana_x
+)
 
 # Extract min_x and max_x from the bounds
-min_x = bounds[0]  # 10 % of the upstream
+min_x = bounds[0]
 max_x = bounds[1]
 
 from math import log
@@ -488,7 +497,7 @@ lineChartView_f_x = CreateView("XYChartView")
 lineChartView_f_x.ViewSize = [width, height]
 lineChartView_f_x.ViewTime = solution.TimestepValues[-1]  # last time step
 # lineChartView_f_x.ChartTitle = "Spatial dependence"
-lineChartView_f_x.LegendLocation = 'TopLeft'
+lineChartView_f_x.LegendLocation = "TopLeft"
 lineChartView_f_x.LeftAxisTitle = "$f_{000}(x)$"
 lineChartView_f_x.LeftAxisLogScale = 0
 lineChartView_f_x.BottomAxisTitle = "$x$"
@@ -513,40 +522,75 @@ AssignViewToLayout(view=lineChartView_f_x, layout=layout_f_x, hint=0)
 # ---------------------
 
 # show data in view
-fxPlotDisplay = Show(plotOverLine_f_x, lineChartView_f_x,
-                     "XYChartRepresentation")
+fxPlotDisplay = Show(
+    plotOverLine_f_x, lineChartView_f_x, "XYChartRepresentation"
+)
 
 # Set which data to use for the x-axis
 fxPlotDisplay.XArrayName = "Points_X"
 
 # Set the labels of the plots
 fxPlotDisplay.SeriesLabel = [
-        'f_000', '$f_{000}$', 'f_100', '$f_{100}$', 'f_000_ana_x',
-        '$f_{000}$-ana', 'f_100_ana_x', '$f_{100}$-ana'
+    "f_000",
+    "$f_{000}$",
+    "f_100",
+    "$f_{100}$",
+    "f_000_ana_x",
+    "$f_{000}$-ana",
+    "f_100_ana_x",
+    "$f_{100}$-ana",
 ]
 
 # Adapt line thickness
 fxPlotDisplay.SeriesLineThickness = [
-        'f_000', '2', 'f_000_ana_x', '2', 'f_100', '2', 'f_100_ana_x', '2'
+    "f_000",
+    "2",
+    "f_000_ana_x",
+    "2",
+    "f_100",
+    "2",
+    "f_100_ana_x",
+    "2",
 ]
 
 # Line style
 fxPlotDisplay.SeriesLineStyle = [
-        'f_000', '1', 'f_000_ana_x', '2', 'f_100', '1', 'f_100_ana_x', '2'
+    "f_000",
+    "1",
+    "f_000_ana_x",
+    "2",
+    "f_100",
+    "1",
+    "f_100_ana_x",
+    "2",
 ]  # ana dashed
 
 # Color the plots
 fxPlotDisplay.SeriesColor = [
-        'f_000', '0.10980392156862745', '0.5843137254901961',
-        '0.8039215686274', 'f_000_ana_x', '0.25882352941176473',
-        '0.23921568627450981', '0.6627450980392157', 'f_100', '0.450980392157',
-        '0.603921568627', '0.835294117647', 'f_100_ana_x',
-        '0.25882352941176473', '0.23921568627450981', '0.6627450980392157'
+    "f_000",
+    "0.10980392156862745",
+    "0.5843137254901961",
+    "0.8039215686274",
+    "f_000_ana_x",
+    "0.25882352941176473",
+    "0.23921568627450981",
+    "0.6627450980392157",
+    "f_100",
+    "0.450980392157",
+    "0.603921568627",
+    "0.835294117647",
+    "f_100_ana_x",
+    "0.25882352941176473",
+    "0.23921568627450981",
+    "0.6627450980392157",
 ]
 
 # Ensure that f_000 and f_000_ana_x are displayed
 fxPlotDisplay.SeriesVisibility = [
-        'f_000', 'f_000_ana_x', 'f_100', 'f_100_ana_x'
+    "f_000",
+    "f_000_ana_x",
+    "f_100",
+    "f_100_ana_x",
 ]
 
 # ----------------
@@ -557,9 +601,9 @@ print(f"Save screenshot '{results_folder}/spatial-distribution.png'")
 
 # save screenshot
 SaveScreenshot(
-        filename=results_folder + '/spatial-distribution.png',
-        location=vtkPVSession.DATA_SERVER,
-        viewOrLayout=layout_f_x,
+    filename=results_folder + "/spatial-distribution.png",
+    location=vtkPVSession.DATA_SERVER,
+    viewOrLayout=layout_f_x,
 )
 
 # ----------
@@ -570,34 +614,35 @@ print(f"Save data '{results_folder}/spatial-distribution.csv'")
 
 # save data
 SaveData(
-        filename=results_folder + "/spatial-distribution.csv",
-        proxy=plotOverLine_f_x,
-        location=vtkPVSession.DATA_SERVER,
-        ChooseArraysToWrite=2,
-        PointDataArrays=['f_000', 'f_000_ana_x'],
-        Precision=6,
-        UseScientificNotation=1,
+    filename=results_folder + "/spatial-distribution.csv",
+    proxy=plotOverLine_f_x,
+    location=vtkPVSession.DATA_SERVER,
+    ChooseArraysToWrite=2,
+    PointDataArrays=["f_000", "f_000_ana_x"],
+    Precision=6,
+    UseScientificNotation=1,
 )
 
 # =============================================================================
 # Plot over time (Time-dependent acceleration)
 # =============================================================================
 
-probeLocation = ProbeLocation(registrationName='PointEvaluation',
-                              Input=solution,
-                              ProbeType='Fixed Radius Point Source')
+probeLocation = ProbeLocation(
+    registrationName="PointEvaluation",
+    Input=solution,
+    ProbeType="Fixed Radius Point Source",
+)
 
-probeLocation.ProbeType.Center = [0., ln_p_hat, 0.]
+probeLocation.ProbeType.Center = [0.001, ln_p_hat, 0.0]
 # https://stackoverflow.com/questions/45811123/point-cell-selection-in-paraview-using-coordinates-for-script
 # I updated the based on the ParaView trace and
 # https://discourse.paraview.org/t/plot-selection-over-time-with-script-issue/10505/2
-plotOverLine_f_t = PlotSelectionOverTime(registrationName='TemporalEvolution',
-                                         OnlyReportSelectionStatistics=0,
-                                         Input=probeLocation,
-                                         Selection=IDSelectionSource(
-                                                 FieldType=1,
-                                                 IDs=[-1, 0],
-                                                 ContainingCells=0))
+plotOverLine_f_t = PlotSelectionOverTime(
+    registrationName="TemporalEvolution",
+    OnlyReportSelectionStatistics=0,
+    Input=probeLocation,
+    Selection=IDSelectionSource(FieldType=1, IDs=[-1, 0], ContainingCells=0),
+)
 # # # ------------------------------------
 # # Create new layout and LineChartView
 # # ------------------------------------
@@ -617,7 +662,7 @@ lineChartView_f_t = CreateView("XYChartView")
 # images
 lineChartView_f_t.ViewSize = [width, height]
 # lineChartView_f_t.ChartTitle = "Temporal dependence"
-lineChartView_f_t.LegendLocation = 'TopLeft'
+lineChartView_f_t.LegendLocation = "TopLeft"
 lineChartView_f_t.LeftAxisTitle = "$f_{000}(t)$"
 lineChartView_f_t.LeftAxisLogScale = 0
 lineChartView_f_t.BottomAxisTitle = "$t$"
@@ -636,40 +681,47 @@ AssignViewToLayout(view=lineChartView_f_t, layout=layout_f_t, hint=0)
 # ---------------------
 
 # show data in view
-ftPlotDisplay = Show(plotOverLine_f_t, lineChartView_f_t,
-                     "XYChartRepresentation")
+ftPlotDisplay = Show(
+    plotOverLine_f_t, lineChartView_f_t, "XYChartRepresentation"
+)
 
 # Set which data to use for the x-axis
 ftPlotDisplay.XArrayName = "Time"
 
 # Set the labels of the plots
 ftPlotDisplay.SeriesLabel = [
-        'f_000 (originalId=0)', '$f_{000}$', 'f_100 (originalId=0)',
-        '$f_{100}$'
+    "f_000 (originalId=0)",
+    "$f_{000}$",
+    "f_100 (originalId=0)",
+    "$f_{100}$",
 ]
 
 # Adapt line thickness
 ftPlotDisplay.SeriesLineThickness = [
-        'f_000 (originalId=0)', '2', 'f_100 (originalId=0)'
+    "f_000 (originalId=0)",
+    "2",
+    "f_100 (originalId=0)",
 ]
 
 ftPlotDisplay.SeriesColor = [
-        'f_000 (originalId=0)',
-        '0.10980392156862745',
-        '0.5843137254901961',
-        '0.8039215686274',
-        'f_100 (originalId=0)',
-        '0.450980392157',
-        '0.603921568627',
-        '0.835294117647',
+    "f_000 (originalId=0)",
+    "0.10980392156862745",
+    "0.5843137254901961",
+    "0.8039215686274",
+    "f_100 (originalId=0)",
+    "0.450980392157",
+    "0.603921568627",
+    "0.835294117647",
 ]
 
 ftPlotDisplay.SeriesVisibility = [
-        'f_000 (originalId=0)', 'f_100 (originalId=0)'
+    "f_000 (originalId=0)",
+    "f_100 (originalId=0)",
 ]
 
-python_calc_f_000_ana_t = PythonCalculator(registrationName='f_000_ana_t',
-                                           Input=plotOverLine_f_t)
+python_calc_f_000_ana_t = PythonCalculator(
+    registrationName="f_000_ana_t", Input=plotOverLine_f_t
+)
 python_calc_f_000_ana_t.UseMultilineExpression = 1
 
 python_calc_f_000_ana_t.MultilineExpression = """#########
@@ -704,24 +756,22 @@ phi_t[1:] = 0.5 * (numpy.exp(2 * c1**2/c2) * erfc(numpy.sqrt(c1**3/(2 * t_coords
 
 outputArray = N * phi_t
 
-return outputArray""".format(Q=Q,
-                             p_inj=p_inj,
-                             r=r,
-                             u_one=u_one,
-                             nu_0=nu_0,
-                             p_hat=p_hat,
-                             delta_t=delta_t)
-python_calc_f_000_ana_t.ArrayName = 'f_000_ana_t'
+return outputArray""".format(
+    Q=Q, p_inj=p_inj, r=r, u_one=u_one, nu_0=nu_0, p_hat=p_hat, delta_t=delta_t
+)
+python_calc_f_000_ana_t.ArrayName = "f_000_ana_t"
 PlotCalc = Show(python_calc_f_000_ana_t, lineChartView_f_t)
-PlotCalc.SeriesLabel = ['f_000_ana_t (originalId=0)', '$f_{000}$-ana']
-PlotCalc.SeriesLineThickness = ['f_000_ana_t (originalId=0)', '2']
-PlotCalc.SeriesLineStyle = ['f_000_ana_t (originalId=0)', '2']
+PlotCalc.SeriesLabel = ["f_000_ana_t (originalId=0)", "$f_{000}$-ana"]
+PlotCalc.SeriesLineThickness = ["f_000_ana_t (originalId=0)", "2"]
+PlotCalc.SeriesLineStyle = ["f_000_ana_t (originalId=0)", "2"]
 PlotCalc.SeriesColor = [
-        'f_000_ana_t (originalId=0)', '0.25882352941176473',
-        '0.23921568627450981', '0.6627450980392157'
+    "f_000_ana_t (originalId=0)",
+    "0.25882352941176473",
+    "0.23921568627450981",
+    "0.6627450980392157",
 ]
 
-PlotCalc.SeriesVisibility = ['f_000_ana_t (originalId=0)']
+PlotCalc.SeriesVisibility = ["f_000_ana_t (originalId=0)"]
 
 # ----------------
 # Save screenshot
@@ -731,9 +781,9 @@ print(f"Save screenshot '{results_folder}/temporal-evolution.png'")
 
 # save screenshot
 SaveScreenshot(
-        filename=results_folder + '/temporal-evolution.png',
-        location=vtkPVSession.DATA_SERVER,
-        viewOrLayout=layout_f_t,
+    filename=results_folder + "/temporal-evolution.png",
+    location=vtkPVSession.DATA_SERVER,
+    viewOrLayout=layout_f_t,
 )
 
 # # ----------
@@ -744,12 +794,12 @@ print(f"Save data '{results_folder}/temporal-evolution.csv'")
 
 # save data
 SaveData(
-        filename=results_folder + "/temporal-evolution.csv",
-        proxy=plotOverLine_f_t,
-        location=vtkPVSession.DATA_SERVER,
-        Precision=6,
-        UseScientificNotation=1,
+    filename=results_folder + "/temporal-evolution.csv",
+    proxy=plotOverLine_f_t,
+    location=vtkPVSession.DATA_SERVER,
+    Precision=6,
+    UseScientificNotation=1,
 )
 
-Render()
-Interact()
+# Render()
+# Interact()
