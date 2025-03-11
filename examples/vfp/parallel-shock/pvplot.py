@@ -634,14 +634,11 @@ probeLocation = ProbeLocation(
 )
 
 probeLocation.ProbeType.Center = [0.001, ln_p_hat, 0.0]
-# https://stackoverflow.com/questions/45811123/point-cell-selection-in-paraview-using-coordinates-for-script
-# I updated the based on the ParaView trace and
-# https://discourse.paraview.org/t/plot-selection-over-time-with-script-issue/10505/2
-plotOverLine_f_t = PlotSelectionOverTime(
+
+plotOverLine_f_t = PlotDataOverTime(
     registrationName="TemporalEvolution",
     OnlyReportSelectionStatistics=0,
     Input=probeLocation,
-    Selection=IDSelectionSource(FieldType=1, IDs=[-1, 0], ContainingCells=0),
 )
 # # # ------------------------------------
 # # Create new layout and LineChartView
@@ -690,33 +687,33 @@ ftPlotDisplay.XArrayName = "Time"
 
 # Set the labels of the plots
 ftPlotDisplay.SeriesLabel = [
-    "f_000 (originalId=0)",
+    "f_000 (id=0)",
     "$f_{000}$",
-    "f_100 (originalId=0)",
+    "f_100 (id=0)",
     "$f_{100}$",
 ]
 
 # Adapt line thickness
 ftPlotDisplay.SeriesLineThickness = [
-    "f_000 (originalId=0)",
+    "f_000 (id=0)",
     "2",
-    "f_100 (originalId=0)",
+    "f_100 (id=0)",
 ]
 
 ftPlotDisplay.SeriesColor = [
-    "f_000 (originalId=0)",
+    "f_000 (id=0)",
     "0.10980392156862745",
     "0.5843137254901961",
     "0.8039215686274",
-    "f_100 (originalId=0)",
+    "f_100 (id=0)",
     "0.450980392157",
     "0.603921568627",
     "0.835294117647",
 ]
 
 ftPlotDisplay.SeriesVisibility = [
-    "f_000 (originalId=0)",
-    "f_100 (originalId=0)",
+    "f_000 (id=0)",
+    "f_100 (id=0)",
 ]
 
 python_calc_f_000_ana_t = PythonCalculator(
@@ -761,17 +758,17 @@ return outputArray""".format(
 )
 python_calc_f_000_ana_t.ArrayName = "f_000_ana_t"
 PlotCalc = Show(python_calc_f_000_ana_t, lineChartView_f_t)
-PlotCalc.SeriesLabel = ["f_000_ana_t (originalId=0)", "$f_{000}$-ana"]
-PlotCalc.SeriesLineThickness = ["f_000_ana_t (originalId=0)", "2"]
-PlotCalc.SeriesLineStyle = ["f_000_ana_t (originalId=0)", "2"]
+PlotCalc.SeriesLabel = ["f_000_ana_t (id=0)", "$f_{000}$-ana"]
+PlotCalc.SeriesLineThickness = ["f_000_ana_t (id=0)", "2"]
+PlotCalc.SeriesLineStyle = ["f_000_ana_t (id=0)", "2"]
 PlotCalc.SeriesColor = [
-    "f_000_ana_t (originalId=0)",
+    "f_000_ana_t (id=0)",
     "0.25882352941176473",
     "0.23921568627450981",
     "0.6627450980392157",
 ]
 
-PlotCalc.SeriesVisibility = ["f_000_ana_t (originalId=0)"]
+PlotCalc.SeriesVisibility = ["f_000_ana_t (id=0)"]
 
 # ----------------
 # Save screenshot
