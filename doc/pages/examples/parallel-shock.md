@@ -76,15 +76,15 @@ $$
   f_{100} = 0 \quad \text{ for } x \geq 0 \,.
 $$
 
-An **approximate** analytic expression for the temporal evolution of the distribution function $f$
+An **approximate** analytic expression for the temporal evolution of the isotropic part of the distribution function $f$
 has been given in @cite Drury1991 and @cite Forman1983 .
 At the shock wave
 
 \f[
-	F(t, x = 0, p) = f(x = 0, p) \phi(t)
+	F(t, x = 0, p) = f_{000}(x = 0, p) \phi(t)
 \f]
 
-where $F$ is the time-dependent distribution function and
+where $F$ is the time-dependent isotropic part of the distribution function and
 
 \f[
   \phi(t) = \frac{1}{2}\left[\exp\left(\frac{2 c^{2}_{1}}{c_{2}}\right) \mathrm{erfc}\left(\sqrt{\frac{c^{3}_{1}}{2 t c_{2}}} + \sqrt{\frac{c^{\phantom{3}}_{1} t}{2 c_{2}}}\right)  +
@@ -385,25 +385,27 @@ mpirun -n 4 ./build/examples/vfp/parallel-shock/parallel-shock examples/vfp/para
 
 ## Results {#results-parallel-shock}
 
-The analytic solution predicts that the distribution function will follow a
-$p^{-3r/(r - 1)}$ power law for $p > p_{\rm inj}$. Given a compression ratio
-$r=4$, we anticipate a $p^{-4}$ power law. To visualize these results, we plot
-$p^4 f(x,p)$, which should yield an approximately constant value in the
-downstream region ($x>0$). In the upstream region ($x<0$), we expect an
-exponential cut-off, which is dependent on the scattering frequency $\nu$.
+The analytic solution predicts that the energy spectrum of the particles at shock
+follows a $p^{-3r/(r - 1)}$ power law for $p > p_{\rm inj}$.
+Given a compression ratio $r=4$, we anticipate a $p^{-4}$ power law.
+We plot $f_{000}(x = 0, \ln p)$ and compare it with our expectation.
 
-![2D time series](https://sapphirepp.org/img/examples/parallel-shock-2d.gif)
+![Steady state f(ln(p)) plot](https://sapphirepp.org/img/examples/parallel-shock/particle-spectrum.png)
 
-As discussed in the introduction, we also observe an upstream anisotropy,
-$f_{100}$. When comparing our simulation results to the analytic solution, we
-find they are in good agreement. The figure below showcases $p^4 f(\ln(p))$:
+In the upstream region ($x<0$), we expect an exponential cut-off,
+which is dependent on the scattering frequency $\nu$.
+As discussed in the introduction, we also observe an upstream anisotropy, $f_{100}$.
+Note that the anisotropic part disappears in the downstream region.
+When comparing our simulation results to the analytic solution, we find they are in good agreement. The figure below shows $f_{000}(x, p = 10)$ and $f_{100}(x, p = 10)$:
 
-![Steady state f(ln(p)) plot](https://sapphirepp.org/img/examples/parallel-shock-f-lnp.png)
+![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock/spatial-distribution.png)
 
-In the last figure we present $p^4 f(x)$. Note that the anisotropic part
-disappears in the downstream region.
+In the last figure we present the temporal evolution of the energy spectrum at the shock
+for a specific $p$, namely $p=10$. 
+The simulation results are compared to the **approximate** analytical solution
+mentioned in the introduction.
 
-![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock-f-x.png)
+![f(t) plot](https://sapphirepp.org/img/examples/parallel-shock/temporal-evolution.png)
 
 <div class="section_buttons">
 
@@ -417,5 +419,5 @@ disappears in the downstream region.
 
 @author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@date 2025-03-06
+@date 2025-03-11
 
