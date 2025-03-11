@@ -231,6 +231,203 @@ SaveAnimation(
     FrameStride=1,
 )
 
+
+# =============================================================================
+# Create Clip for shock region
+# =============================================================================
+
+# create a new 'Clip'
+clipShock = Clip(registrationName="Clip Shock", Input=solution)
+
+# toggle interactive widget visibility (only when running from the GUI)
+ShowInteractiveWidgets(proxy=clipShock.ClipType)
+
+# Properties modified on clipShock
+clipShock.ClipType = "Box"
+clipShock.Crinkleclip = 1
+
+# Get the bounds of solution
+# Fetch data information from the solution
+solution_data = servermanager.Fetch(solution)
+# Get bounds of the data
+bounds = solution_data.GetBounds()
+# Extract min_y and max_y from the bounds
+min_y = bounds[2]
+max_y = bounds[3]
+
+# Use small epsilon in z to capture cells inside box
+epsilon_z = 0.1
+
+# Define min_x and max_x to capture shock
+min_x = -6.0
+max_x = 6.0
+
+# Properties modified on clipShock.ClipType
+clipShock.ClipType.Position = [min_x, min_y, -epsilon_z]
+clipShock.ClipType.Length = [max_x - min_x, max_y - min_y, 2 * epsilon_z]
+
+# toggle interactive widget visibility (only when running from the GUI)
+HideInteractiveWidgets(proxy=clipShock.ClipType)
+
+
+# =============================================================================
+# Plot 2D render view of shock region
+# =============================================================================
+
+# create new layout object 'Shock Region'
+layoutShock = CreateLayout(name="Shock Region")
+
+# Create a new 'Render View'
+renderViewShock = CreateView("RenderView")
+
+# add view to a layout so it's visible in UI
+AssignViewToLayout(view=renderViewShock, layout=layoutShock, hint=0)
+
+# set active view
+SetActiveView(renderViewShock)
+
+# show data in view
+clipDisplay = Show(clipShock, renderViewShock, "UnstructuredGridRepresentation")
+
+# change representation type
+clipDisplay.SetRepresentationType("Surface With Edges")
+
+# PreviewMode and SetSize must be done after Show
+# Enter preview mode
+layoutShock.PreviewMode = [width, height]
+# layout/tab size in pixels
+layoutShock.SetSize(width, height)
+
+# reset view to fit data
+renderViewShock.ResetCamera(False, 0.9)
+
+# Hide orientation axes
+renderViewShock.OrientationAxesVisibility = 0
+
+# current camera placement for renderViewShock
+renderViewShock.InteractionMode = "2D"
+
+# Properties modified on renderViewShock
+renderViewShock.UseColorPaletteForBackground = 0
+renderViewShock.BackgroundColorMode = "Single Color"
+renderViewShock.Background = [1.0, 1.0, 1.0]
+
+# Properties modified on clipDisplay
+clipDisplay.DisableLighting = 1
+clipDisplay.Diffuse = 1.0
+
+
+# --------------
+# Show AxesGrid
+# --------------
+
+# We have to use AxesGrid instead of DataAxesGrid
+# to support scaling of the p axes (see below)
+
+renderViewShock.AxesGrid.Visibility = 1
+renderViewShock.AxesGrid.XTitle = "$x$"
+renderViewShock.AxesGrid.YTitle = "$\\ln p$"
+# Only show Axes Min-X//Y/Z
+renderViewShock.AxesGrid.AxesToLabel = 7
+# renderViewShock.AxesGrid.FacesToRender = 7
+# Set default font size: 24 for title, 18 for label
+renderViewShock.AxesGrid.XTitleFontSize = 24
+renderViewShock.AxesGrid.YTitleFontSize = 24
+renderViewShock.AxesGrid.XLabelFontSize = 18
+renderViewShock.AxesGrid.YLabelFontSize = 18
+# Use gray color for label for good visibility in both light and dark mode
+renderViewShock.AxesGrid.XTitleColor = [0.5, 0.5, 0.5]
+renderViewShock.AxesGrid.YTitleColor = [0.5, 0.5, 0.5]
+renderViewShock.AxesGrid.XLabelColor = [0.5, 0.5, 0.5]
+renderViewShock.AxesGrid.YLabelColor = [0.5, 0.5, 0.5]
+renderViewShock.AxesGrid.GridColor = [0.5, 0.5, 0.5]
+
+
+# -------------
+# Scale p axes
+# -------------
+
+# Define factor to scale p axes
+scale_p_axes = 1.0
+# Properties modified on clipDisplay
+clipDisplay.Scale = [1.0, scale_p_axes, 1.0]
+
+# Properties modified on renderViewShock.AxesGrid
+renderViewShock.AxesGrid.DataScale = [1.0, scale_p_axes, 1.0]
+
+
+# update the view to ensure updated data information
+renderViewShock.Update()
+
+# reset view to fit data
+renderViewShock.ResetCamera(True, 0.85)
+
+
+# ----------------------
+# Create color bar plot
+# ----------------------
+
+# set scalar coloring
+ColorBy(clipDisplay, ("POINTS", "f_000"))
+
+# show color bar/color legend
+clipDisplay.SetScalarBarVisibility(renderViewShock, True)
+
+# get color transfer function/color map for 'f_000'
+f_000LUT = GetColorTransferFunction("f_000")
+# get opacity transfer function/opacity map for 'f_000'
+f_000PWF = GetOpacityTransferFunction("f_000")
+# get 2D transfer function for 'f_000'
+f_000TF2D = GetTransferFunction2D("f_000")
+
+# Rescale transfer function
+f_000LUT.RescaleTransferFunction(1e-2, 10.0)
+# Rescale transfer function
+f_000PWF.RescaleTransferFunction(1e-2, 10.0)
+# Rescale 2D transfer function
+f_000TF2D.RescaleTransferFunction(1e-2, 10.0, 0.0, 1.0)
+
+# convert to log space
+f_000LUT.MapControlPointsToLogSpace()
+
+# Properties modified on f_000LUT
+f_000LUT.UseLogScale = 1
+
+# Apply a preset using its name. Note this may not work as expected when presets have duplicate names.
+f_000LUT.ApplyPreset("Viridis (matplotlib)", True)
+
+# get color legend/bar for f_000LUT in view renderViewShock
+f_000LUTColorBar = GetScalarBar(f_000LUT, renderViewShock)
+
+# Properties modified on f_000LUTColorBar
+f_000LUTColorBar.Title = "$f_{000}$"
+f_000LUTColorBar.TitleFontSize = 24
+f_000LUTColorBar.LabelFontSize = 18
+f_000LUTColorBar.TitleColor = [0.5, 0.5, 0.5]
+f_000LUTColorBar.LabelColor = [0.5, 0.5, 0.5]
+
+# change scalar bar placement
+f_000LUTColorBar.WindowLocation = "Any Location"
+f_000LUTColorBar.ScalarBarLength = 0.25
+f_000LUTColorBar.Position = [0.15, 0.55]
+
+
+# ----------------
+# Save screenshot
+# ----------------
+
+# Save screenshot in results folder (at data server).
+print(f"Save screenshot '{results_folder}/shock-region.png'")
+
+# save screenshot
+SaveScreenshot(
+    filename=results_folder + "/shock-region.png",
+    viewOrLayout=renderViewShock,
+    location=vtkPVSession.DATA_SERVER,
+    TransparentBackground=1,
+)
+
+
 # =============================================================================
 # Physical Parameters for the analytical solution
 # =============================================================================
