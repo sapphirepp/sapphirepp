@@ -24,10 +24,10 @@ This kind of setup is referred to as a parallel shock.
 In astrophysical shocks, particles can be accelerated to high energies
 through the process of diffusive shock acceleration @cite Drury1983 @cite Kirk1994.
 This involves injecting particles at the shock with a momentum of $p_{\rm inj}$ at a rate $Q$.
-These particles originate from the thermal background plasma and propagate around the shock.P
+These particles originate from the thermal background plasma and propagate around the shock.
 These particles may be scattered by Alvén waves travelling through the background plasma,
 a process we model with the help of scattering frequency $\nu$.
-In @cite Schween2025  a constant scattering frequency is assumed,
+In @cite Schween2025 a constant scattering frequency is assumed,
 i.e. it is independent of $p$ and $x$:
 
 $$
@@ -81,7 +81,7 @@ has been given in @cite Drury1991 and @cite Forman1983 .
 At the shock wave
 
 \f[
-	F(t, x = 0, p) = f_{000}(x = 0, p) \phi(t)
+  F(t, x = 0, p) = f_{000}(x = 0, p) \phi(t)
 \f]
 
 where $F$ is the time-dependent isotropic part of the distribution function and
@@ -95,11 +95,11 @@ The constants $c_1$ and $c_2$ are the mean and the variance of the acceleration 
 They are
 
 \f[
-	\begin{align}
-	c_1 &= \frac{r}{2 U^{2}_{1} \nu} \frac{r + 1}{r - 1} \ln\left(\frac{1 + p^{2}}{1 + p^{2}_{\rm inj}}\right) \, \\
-	c_2 &= \frac{1}{3\nu^{2}} \frac{r}{U^{4}_{1}} \frac{r^{3} + 1}{r - 1}
+  \begin{align}
+  c_1 &= \frac{r}{2 U^{2}_{1} \nu} \frac{r + 1}{r - 1} \ln\left(\frac{1 + p^{2}}{1 + p^{2}_{\rm inj}}\right) \, \\
+  c_2 &= \frac{1}{3\nu^{2}} \frac{r}{U^{4}_{1}} \frac{r^{3} + 1}{r - 1}
     \left[ \frac{1}{1 + p^{2}} - \frac{1}{1 + p^{2}_{\rm inj}} + \ln\left(\frac{1 + p^{2}}{1 + p^{2}_{\rm inj}}\right)\right] \,.
-	\end{align}
+  \end{align}
 \f]
 
 More details can be found in @cite Schween2025 .
@@ -250,7 +250,7 @@ Additionally, there are several numerical parameters that are not part of the ph
 
 Implementing these parameters in @sapphire involves a three-step process:
 
-1. **Define** the parameters within the @ref sapphirepp::PhysicalParameters "PhysicalParameters"   class in the `config.h` file.
+1. **Define** the parameters within the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class in the `config.h` file.
    This step informs the compiler about their existence.
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Define runtime parameter
@@ -258,7 +258,7 @@ Implementing these parameters in @sapphire involves a three-step process:
 2. **Declare** the parameters in the parameter file.
    This step ensures that the parameter parser expects these parameters.
    The @dealii class @dealref{ParameterHandler} `prm`
-   and its  @dealref{declare_entry,classParameterHandler,a6d65f458be69e23a348221cb67fc411d} method
+   and its @dealref{declare_entry,classParameterHandler,a6d65f458be69e23a348221cb67fc411d} method
    are used for this purpose:
 
    ```cpp
@@ -266,13 +266,13 @@ Implementing these parameters in @sapphire involves a three-step process:
                      "Description of the parameter");
    ```
 
-	All parameters related to the source are collected in a subsection.
-	This is achieved by entering the subsection before declaring the parameters
-	and leaving it afterwards.
-	The @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" method
-	is edited to include the following code:
+   All parameters related to the source are collected in a subsection.
+   This is achieved by entering the subsection before declaring the parameters
+   and leaving it afterwards.
+   The @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" method
+   is edited to include the following code:
 
-	@snippet{lineno} examples/vfp/parallel-shock/config.h Declare runtime parameter
+   @snippet{lineno} examples/vfp/parallel-shock/config.h Declare runtime parameter
 
 3. **Parse** the values defined in the parameter file.
    This step sets the values of the parameters according to the parameter file.
@@ -314,7 +314,7 @@ As already explained in the [quick start](#quick-start),
 the source term needs to be decomposed into spherical harmonics.
 As we inject an isotropic distribution of particles, we can set all $l>0$ components to zero.
 Notice that we use the index `i` to refer to the components of the spherical harmonic decomposition,
-$i(l,m,s)$, at at a single `point` in the $(x,\ln p)$--domain.
+$i(l,m,s)$, at a single `point` in the $(x,\ln p)$--domain.
 
 @snippet{lineno} examples/vfp/parallel-shock/config.h Source
 
@@ -337,7 +337,7 @@ The only modification is, that we now use the user-defined runtime parameters $U
 $r$ and $d_{\rm sh}$.
 Otherwise, $\mathbf{U}(\mathbf{x})$, its divergence $\nabla \cdot \mathbf{U}(\mathbf{x})$,
 the material derivative $\mathrm{D} \mathbf{U}/\mathrm{D} t$
-and the its Jacobian $\partial U_{x}/\partial x$ stay the same.
+and the Jacobian $\partial U_{x}/\partial x$ stay the same.
 
 1. Background velocity field value $\mathbf{U}(\mathbf{x})$:
 
@@ -383,6 +383,12 @@ Run the simulation with:
 mpirun -n 4 ./build/examples/vfp/parallel-shock/parallel-shock examples/vfp/parallel-shock/parameter.prm
 ```
 
+We provide a [Paraview Python](#paraview-python) script to generate the plots:
+
+```shell
+pvbatch examples/vfp/parallel-shock/pvplot.py results/parallel-shock
+```
+
 ## Results {#results-parallel-shock}
 
 The analytic solution predicts that the energy spectrum of the particles at shock
@@ -401,7 +407,7 @@ When comparing our simulation results to the analytic solution, we find they are
 ![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock/spatial-distribution.png)
 
 In the last figure we present the temporal evolution of the energy spectrum at the shock
-for a specific $p$, namely $p=10$. 
+for a specific $p$, namely $p=10$.
 The simulation results are compared to the **approximate** analytical solution
 mentioned in the introduction.
 
@@ -420,4 +426,3 @@ mentioned in the introduction.
 @author Florian Schulze (<florian.schulze@mpi-hd.mpg.de>)
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
 @date 2025-03-11
-
