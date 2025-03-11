@@ -15,7 +15,7 @@ subsection VFP
     set Grid type             = Shock grid
     set Point 1               = -100, -2.3
     set Point 2               = 100, 4.6
-    set Number of cells       = 64, 64
+    set Number of cells       = 120, 64
     set Shock width           = 0.5
     set Number of shock cells = 10
     set Scaling factor shock  = 1.1
