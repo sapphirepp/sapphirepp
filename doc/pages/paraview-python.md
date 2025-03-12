@@ -1,5 +1,11 @@
 # ParaView Python Introduction {#paraview-python}
 
+@tableofcontents
+
+@warning The ParaView Python interface is recommended for advanced users only.
+         You should have a solid understanding of the @paraview GUI
+         before attempting to use its Python interface.
+
 Often, we need to produce the same plots for multiple datasets
 or perform additional manipulations on the data,
 such as calculating the spectral index.
@@ -41,6 +47,8 @@ Using an installation with
 [conda/conda-forge](#paraview-installation)
 simplifies this
 by linking @paraview and the Python environment.
+
+## Execute a ParaView Python script {#paraview-python-execute}
 
 To get started with @paraview Python,
 we provide some scripts as a starting point.
@@ -149,10 +157,56 @@ It utilizes the
 package
 to facilitate the conversion between VTK and NumPy arrays.
 
+## Creating a ParaView Python script {#paraview-python-create-script}
+
+If your plots are similar to those in the [quick-start](#quick-start) or [examples](#examples),
+you can use the provided scripts and adapt them to your needs.
+However, if you need to create a different kind of plot
+or a new pipeline, you will likely want to create a new script.
+Be aware that the @paraview Python package can be a bit unintuitive to use.
+It is better to think of it as a remote control to manipulate the @paraview GUI
+rather than an independent scripting language.
+Therefore, we recommend using the *trace* feature to create new scripts:
+
+1. **Start Trace:**
+   Open @paraview and start the trace via **Tools** > **Start Trace**,
+   selecting the `Only *User-Modified* Properties` option.
+
+2. **Preview Mode:**
+   Enter the [Preview mode](https://www.kitware.com/preview-mode-in-paraview/)
+   via **View** > **Preview**,
+   choosing the resolution you want to use for your plots
+   (e.g., `1280 x 720 (HD)`).
+   This ensures that everything,
+   including the font size,
+   will be properly scaled when exporting figures
+   and will be independent of screen size.
+
+3. **Create Plots:**
+   Create your plots using the @paraview pipeline.
+   Export your plots or data as normal.
+   We recommend using a new *Layout* for each plot.
+
+4. **Stop Trace:**
+   Stop the trace via **Tools** > **Stop Trace**.
+   This will open the *ParaView Python Script Editor*
+   with the Python trace of your actions to create the plots.
+   Save the script as a Python file via **File** > **Save As...**
+
+5. **Change Input Files:**
+   The Python file is now functional and can be used in any of the ways presented above.
+   However, the input and output files are hardcoded in the script.
+   To adjust them according to user input,
+   copy the first section of the
+   [plot-quick-start.py](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/plot-quick-start.py)
+   script and adjust the input/output paths accordingly.
+
+@note If you only want to see how one specific @paraview feature is translated to Python,
+      you can use the `Show Incremental Trace` option
+      to interactively see what each GUI action does.
+
 To further familiarize yourself with @paraview Python,
-we recommend using the **Tools** > **Start Trace** option,
-which generates Python scripts from your interactions with the GUI.
-Additionally, we refer to the relevant chapters in the
+we refer to the relevant chapters in the
 [ParaView User's Guide](https://docs.paraview.org/en/latest/UsersGuide/introduction.html#getting-started-with-pvpython)
 and the
 [ParaView Reference Manual](https://docs.paraview.org/en/latest/ReferenceManual/parallelDataVisualization.html#sec-usingpvbatch),
@@ -160,7 +214,7 @@ as well as the following tutorials:
 [Batch Python Scripting](https://docs.paraview.org/en/latest/Tutorials/SelfDirectedTutorial/batchPythonScripting.html)
 and
 [Python & Batch: ParaView & Python](https://docs.paraview.org/en/latest/Tutorials/ClassroomTutorials/pythonAndBatchParaViewAndPython.html).
-The documentation for the Python interface of the Paraview filters can be found here:
+The documentation for the Python interface of the @paraview filters can be found here:
 [`paraview.simple` documentation](https://www.paraview.org/paraview-docs/nightly/python/paraview.servermanager_proxies.html#).
 
 <div class="section_buttons">
