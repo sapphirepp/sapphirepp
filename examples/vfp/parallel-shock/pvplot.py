@@ -154,25 +154,28 @@ renderView1.ResetCamera(True, 0.85)
 # Create color bar plot
 # ----------------------
 
+# change use separate color map
+solutionDisplay.UseSeparateColorMap = 1
+
 # set scalar coloring
-ColorBy(solutionDisplay, ("POINTS", "f_000"))
+ColorBy(solutionDisplay, ("POINTS", "f_000"), True)
 
 # show color bar/color legend
 solutionDisplay.SetScalarBarVisibility(renderView1, True)
 
 # get color transfer function/color map for 'f_000'
-f_000LUT = GetColorTransferFunction("f_000")
+f_000LUT = GetColorTransferFunction("f_000", solutionDisplay, separate=True)
 # get opacity transfer function/opacity map for 'f_000'
-f_000PWF = GetOpacityTransferFunction("f_000")
+f_000PWF = GetOpacityTransferFunction("f_000", solutionDisplay, separate=True)
 # get 2D transfer function for 'f_000'
-f_000TF2D = GetTransferFunction2D("f_000")
+f_000TF2D = GetTransferFunction2D("f_000", solutionDisplay, separate=True)
 
 # Rescale transfer function
-f_000LUT.RescaleTransferFunction(1e-2, 10.0)
+f_000LUT.RescaleTransferFunction(1e-6, 30.0)
 # Rescale transfer function
-f_000PWF.RescaleTransferFunction(1e-2, 10.0)
+f_000PWF.RescaleTransferFunction(1e-6, 30.0)
 # Rescale 2D transfer function
-f_000TF2D.RescaleTransferFunction(1e-2, 10.0, 0.0, 1.0)
+f_000TF2D.RescaleTransferFunction(1e-6, 30.0, 0.0, 1.0)
 
 # convert to log space
 f_000LUT.MapControlPointsToLogSpace()
@@ -196,7 +199,7 @@ f_000LUTColorBar.LabelColor = [0.5, 0.5, 0.5]
 # change scalar bar placement
 f_000LUTColorBar.WindowLocation = "Any Location"
 f_000LUTColorBar.ScalarBarLength = 0.25
-f_000LUTColorBar.Position = [0.15, 0.55]
+f_000LUTColorBar.Position = [0.1, 0.6]
 
 # Go to last simulation time step
 animationScene1.GoToLast()
@@ -367,25 +370,28 @@ renderViewShock.ResetCamera(True, 0.85)
 # Create color bar plot
 # ----------------------
 
+# change use separate color map
+clipDisplay.UseSeparateColorMap = 1
+
 # set scalar coloring
-ColorBy(clipDisplay, ("POINTS", "f_000"))
+ColorBy(clipDisplay, ("POINTS", "f_000"), True)
 
 # show color bar/color legend
 clipDisplay.SetScalarBarVisibility(renderViewShock, True)
 
 # get color transfer function/color map for 'f_000'
-f_000LUT = GetColorTransferFunction("f_000")
+f_000LUT = GetColorTransferFunction("f_000", clipDisplay, separate=True)
 # get opacity transfer function/opacity map for 'f_000'
-f_000PWF = GetOpacityTransferFunction("f_000")
+f_000PWF = GetOpacityTransferFunction("f_000", clipDisplay, separate=True)
 # get 2D transfer function for 'f_000'
-f_000TF2D = GetTransferFunction2D("f_000")
+f_000TF2D = GetTransferFunction2D("f_000", clipDisplay, separate=True)
 
 # Rescale transfer function
-f_000LUT.RescaleTransferFunction(1e-2, 10.0)
+f_000LUT.RescaleTransferFunction(1e-6, 30.0)
 # Rescale transfer function
-f_000PWF.RescaleTransferFunction(1e-2, 10.0)
+f_000PWF.RescaleTransferFunction(1e-6, 30.0)
 # Rescale 2D transfer function
-f_000TF2D.RescaleTransferFunction(1e-2, 10.0, 0.0, 1.0)
+f_000TF2D.RescaleTransferFunction(1e-6, 30.0, 0.0, 1.0)
 
 # convert to log space
 f_000LUT.MapControlPointsToLogSpace()
@@ -403,13 +409,13 @@ f_000LUTColorBar = GetScalarBar(f_000LUT, renderViewShock)
 f_000LUTColorBar.Title = "$f_{000}$"
 f_000LUTColorBar.TitleFontSize = 24
 f_000LUTColorBar.LabelFontSize = 18
-f_000LUTColorBar.TitleColor = [0.5, 0.5, 0.5]
-f_000LUTColorBar.LabelColor = [0.5, 0.5, 0.5]
+f_000LUTColorBar.TitleColor = [0.8, 0.8, 0.8]
+f_000LUTColorBar.LabelColor = [0.8, 0.8, 0.8]
 
 # change scalar bar placement
 f_000LUTColorBar.WindowLocation = "Any Location"
 f_000LUTColorBar.ScalarBarLength = 0.25
-f_000LUTColorBar.Position = [0.15, 0.55]
+f_000LUTColorBar.Position = [0.1, 0.6]
 
 
 # ----------------
