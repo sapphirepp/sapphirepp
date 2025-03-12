@@ -391,6 +391,17 @@ pvbatch examples/vfp/parallel-shock/pvplot.py results/parallel-shock
 
 ## Results {#results-parallel-shock}
 
+Before we analyse the results,
+we check that the solution has converged to a steady state.
+To demonstrate this, we show the time series of the 2D data in a logarithmic scale.
+
+![2D time series](https://sapphirepp.org/img/examples/parallel-shock/parallel-shock-2D.gif)
+![Plot of shock region](https://sapphirepp.org/img/examples/parallel-shock/shock-region.png)
+
+From the first figure we can conclude that the solution reached steady state even for large momenta.
+The second figure shows a cut-out of the solution in the shock region.
+This serves an illustrative purpose demonstrating the stretched `Shock grid` used in the simulation.
+
 The analytic solution predicts that the energy spectrum of the particles at shock
 follows a $p^{-3r/(r - 1)}$ power law for $p > p_{\rm inj}$.
 Given a compression ratio $r=4$, we anticipate a $p^{-4}$ power law.
