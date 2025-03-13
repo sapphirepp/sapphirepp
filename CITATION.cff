@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Schween"
+  given-names: "Nils W."
+  orcid: "https://orcid.org/0000-0003-0105-8733"
+- family-names: "Schulze"
+  given-names: "Florian"
+  orcid: "https://orcid.org/0000-0003-1644-8697"
+- family-names: "Reville"
+  given-names: "Brian"
+  orcid: "https://orcid.org/0000-0002-3778-1432"
+title: "Sapphire++"
+doi: 10.5281/zenodo.14506754
+url: "https://sapphirepp.org"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Schween"
+    given-names: "Nils W."
+    orcid: "https://orcid.org/0000-0003-0105-8733"
+  - family-names: "Schulze"
+    given-names: "Florian"
+    orcid: "https://orcid.org/0000-0003-1644-8697"
+  - family-names: "Reville"
+    given-names: "Brian"
+    orcid: "https://orcid.org/0000-0002-3778-1432"
+  doi: "10.1016/j.jcp.2024.113690"
+  journal: "Journal of Computational Physics"
+  month: 2
+  issn: "0021-9991"
+  url: "https://www.sciencedirect.com/science/article/pii/S0021999124009380"
+  keywords: "Numerical methods, Vlasov-Fokker-Planck, Cosmic rays, Discontinuous Galerkin method, Spherical harmonics, Particle acceleration"
+  start: 113690 # First page number
+  end:  # Last page number
+  title: "Sapphire++: A particle transport code combining a spherical harmonic expansion and the discontinuous Galerkin method"
+  volume: 523
+  year: 2025
