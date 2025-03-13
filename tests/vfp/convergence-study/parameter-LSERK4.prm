@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 5
   set Output frequency             = 20
   set Results folder               = ./results
-  set Simulation identifier        = convergence-study-LSERK
+  set Simulation identifier        = convergence-study-LSERK4
 end
 subsection Physical parameters
   set B0/2pi = 1.
@@ -32,7 +32,7 @@ subsection VFP
   end
   subsection Time stepping
     set Final time     = 20.
-    set Method         = LSERK
+    set Method         = LSERK4
     set Time step size = 0.01
   end
   subsection TransportOnly

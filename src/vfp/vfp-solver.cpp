@@ -369,7 +369,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
                 explicit_runge_kutta(discrete_time.get_current_time(),
                                      discrete_time.get_next_step_size());
                 break;
-              case TimeSteppingMethod::lserk:
+              case TimeSteppingMethod::lserk4:
                 low_storage_explicit_runge_kutta(
                   discrete_time.get_current_time(),
                   discrete_time.get_next_step_size());
@@ -1663,7 +1663,7 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
 
-  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  SolverControl              solver_control(1000, 1e-8 * system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
@@ -1732,7 +1732,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
   saplog << "Stage s: " << 0 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1771,7 +1771,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
   saplog << "	Stage s: " << 1 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1805,7 +1805,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
   saplog << "	Stage s: " << 2 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1845,7 +1845,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
   saplog << "	Stage s: " << 3 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1864,8 +1864,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "LSERK");
-  LogStream::Prefix  p("LSERK", saplog);
+  TimerOutput::Scope timer_section(timer, "LSERK4");
+  LogStream::Prefix  p("LSERK4", saplog);
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
   Vector<double> a({0.,
@@ -1938,7 +1938,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
             }
         }
 
-      solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+      solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
       cg.solve(mass_matrix, temp, system_rhs, preconditioner);
       saplog << "	Stage s: " << s << "	Solver converged in "
              << solver_control.last_step() << " iterations." << std::endl;

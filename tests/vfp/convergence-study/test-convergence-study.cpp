@@ -239,7 +239,7 @@ main(int argc, char *argv[])
                   discrete_time.get_current_time(),
                   discrete_time.get_next_step_size());
                 break;
-              case TimeSteppingMethod::lserk:
+              case TimeSteppingMethod::lserk4:
                 vfp_solver.low_storage_explicit_runge_kutta(
                   discrete_time.get_current_time(),
                   discrete_time.get_next_step_size());

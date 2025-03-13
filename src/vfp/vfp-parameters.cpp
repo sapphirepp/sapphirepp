@@ -155,9 +155,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   {
     prm.declare_entry("Method",
                       "CN",
-                      /** @todo "LSERK" is not working, so we exclude it */
-                      // Patterns::Selection("FE|BE|CN|ERK4|LSERK"),
-                      Patterns::Selection("FE|BE|CN|ERK4"),
+                      Patterns::Selection("FE|BE|CN|ERK4|LSERK4"),
                       "The time stepping method.");
     prm.declare_entry("Time step size",
                       "1.0",
@@ -345,8 +343,8 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
       }
     else if (s == "ERK4")
       time_stepping_method = TimeSteppingMethod::erk4;
-    else if (s == "LSERK")
-      time_stepping_method = TimeSteppingMethod::lserk;
+    else if (s == "LSERK4")
+      time_stepping_method = TimeSteppingMethod::lserk4;
     else
       Assert(false, ExcNotImplemented());
 

@@ -1,4 +1,4 @@
-file(COPY parameter-CN.prm parameter-ERK4.prm parameter-LSERK.prm
+file(COPY parameter-CN.prm parameter-ERK4.prm parameter-LSERK4.prm
   parameter-FE.prm parameter-BE.prm
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -31,15 +31,15 @@ set_property(TEST convergence-study-ERK4 PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
-# add_test(NAME convergence-study-LSERK COMMAND
-#   ./test-convergence-study parameter-LSERK.prm 1e-8
-# )
-# set_property(TEST convergence-study-LSERK PROPERTY LABELS
-#   "convergence-study"
-#   "1d" "scattering"
-#   "LSERK" "periodic BC"
-#   "full-suite-Debug" "full-suite-Release"
-# )
+add_test(NAME convergence-study-LSERK4 COMMAND
+  ./test-convergence-study parameter-LSERK4.prm 1e-8
+)
+set_property(TEST convergence-study-LSERK4 PROPERTY LABELS
+  "convergence-study"
+  "1d" "scattering"
+  "LSERK4" "periodic BC"
+  "full-suite-Debug" "full-suite-Release"
+)
 
 add_test(NAME convergence-study-FE COMMAND
   ./test-convergence-study parameter-FE.prm 2e-3
