@@ -413,7 +413,8 @@ In the upstream region ($x<0$), we expect an exponential cut-off,
 which is dependent on the scattering frequency $\nu$.
 As discussed in the introduction, we also observe an upstream anisotropy, $f_{100}$.
 Note that the anisotropic part disappears in the downstream region.
-When comparing our simulation results to the analytic solution, we find they are in good agreement. The figure below shows $f_{000}(x, p = 10)$ and $f_{100}(x, p = 10)$:
+When comparing our simulation results to the analytic solution, we find they are in good agreement.
+The figure below shows $f_{000}(x, p = 10)$ and $f_{100}(x, p = 10)$:
 
 ![Steady state f(x) plot](https://sapphirepp.org/img/examples/parallel-shock/spatial-distribution.png)
 
@@ -423,6 +424,11 @@ The simulation results are compared to the **approximate** analytical solution
 mentioned in the introduction.
 
 ![f(t) plot](https://sapphirepp.org/img/examples/parallel-shock/temporal-evolution.png)
+
+We note that there exists an **exact** analytical solution
+for a specific choice of the scattering frequency in the up- and downstream,
+see, for example, eq. 16 and 21 in @cite Drury1991 .
+In @cite Dann2025 it is demonstrated that @sapphire reproduces it accurately.
 
 <div class="section_buttons">
 
