@@ -209,8 +209,6 @@ namespace sapphirepp
        *
        * @param time Current time
        * @param time_step Time step size
-       *
-       * @todo The method is not forth order yet
        */
       void
       low_storage_explicit_runge_kutta(const double time,

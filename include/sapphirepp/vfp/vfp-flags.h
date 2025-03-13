@@ -268,7 +268,7 @@ namespace sapphirepp
       /**
        * Low storage fourth order Runge-Kutta method.
        */
-      lserk
+      lserk4
     };
 
 
