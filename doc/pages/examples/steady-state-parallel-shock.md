@@ -311,6 +311,7 @@ The slight deviation of the numerical solution's spectral index is a consequence
 cannot use a discontinuous velocity profile. Instead we use a tanh-function and,
 thus, have finite shock width. For a detailed discussion of the effect of a
 finite shock width on the spectral index, we refer our users to @cite Achterberg2011.
+The results in the cited paper were reproduced with @sapphire in @cite Dann2025.
 
 <div class="section_buttons">
 
