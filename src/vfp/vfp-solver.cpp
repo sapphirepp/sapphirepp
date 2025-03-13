@@ -741,8 +741,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                         Vector<double>(3));
     background_velocity_field.material_derivative_list(q_points,
                                                        material_derivative_vel);
-    std::vector<std::vector<Vector<double>>> jacobians_vel(
-      q_points.size(), std::vector<Vector<double>>(3, Vector<double>(3)));
+
+    std::vector<FullMatrix<double>> jacobians_vel(q_points.size(),
+                                                  FullMatrix<double>(3));
     background_velocity_field.jacobian_list(q_points, jacobians_vel);
 
     // Magnetic field

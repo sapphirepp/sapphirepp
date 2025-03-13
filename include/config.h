@@ -34,6 +34,7 @@
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/point.h>
 
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
@@ -614,8 +615,6 @@ namespace sapphirepp
        * the velocity field \f$ \nabla \mathbf{u}(t, \mathbf{x}) \f$ at all
        * `points` in space.
        *
-       * @todo Add more documentation, maybe change to vector of FullMatrix?
-       *
        * @param points List of points in reduced phase space
        * @param jacobians List of Jacobian matrices
        * @see ScatteringFrequency::value_list()
@@ -623,13 +622,12 @@ namespace sapphirepp
        * @see @dealref{Function::value_list(),classFunction,abe86ee7f7f12cf4041d1e714c0fb42f3}
        */
       void
-      jacobian_list(
-        const std::vector<dealii::Point<dim>>            &points,
-        std::vector<std::vector<dealii::Vector<double>>> &jacobians) const
+      jacobian_list(const std::vector<dealii::Point<dim>>   &points,
+                    std::vector<dealii::FullMatrix<double>> &jacobians) const
       {
         AssertDimension(jacobians.size(), points.size());
-        AssertDimension(jacobians[0].size(), this->n_components);
-        AssertDimension(jacobians[0][0].size(), this->n_components);
+        AssertDimension(jacobians[0].m(), this->n_components);
+        AssertDimension(jacobians[0].n(), this->n_components);
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
