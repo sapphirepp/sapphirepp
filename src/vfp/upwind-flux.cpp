@@ -30,6 +30,7 @@
 
 #include <deal.II/base/exceptions.h>
 
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/lapack_support.h>
 // direct access to the Fortran driver routines of Lapack
 #include <deal.II/lac/lapack_templates.h>
@@ -210,9 +211,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
       background_velocity_field.material_derivative_list(
         q_points, material_derivative_vel);
 
-      std::vector<std::vector<dealii::Vector<double>>> jacobians_vel(
-        q_points.size(),
-        std::vector<dealii::Vector<double>>(3, dealii::Vector<double>(3)));
+      std::vector<dealii::FullMatrix<double>> jacobians_vel(
+        q_points.size(), dealii::FullMatrix<double>(3));
       background_velocity_field.jacobian_list(q_points, jacobians_vel);
 
       std::vector<double> particle_gammas(q_points.size());
@@ -278,12 +278,15 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   lwork  = -1;
   liwork = -1;
   // create dummy variables for the matrix sum
-  double                              n_p_dummy   = 1.;
-  double                              gamma_dummy = 1.;
-  double                              p_dummy     = 1.;
-  dealii::Vector<double>              material_derivative_dummy{1., 1., 1.};
-  std::vector<dealii::Vector<double>> jacobian_dummy(
-    3, dealii::Vector<double>{1., 1., 1.});
+  double                     n_p_dummy   = 1.;
+  double                     gamma_dummy = 1.;
+  double                     p_dummy     = 1.;
+  dealii::Vector<double>     material_derivative_dummy{1., 1., 1.};
+  dealii::FullMatrix<double> jacobian_dummy(3);
+  for (unsigned int i = 0; i < jacobian_dummy.m(); ++i)
+    for (unsigned int j = 0; j < jacobian_dummy.n(); ++j)
+      jacobian_dummy[i][j] = 1.;
+
   compute_matrix_sum(
     n_p_dummy, p_dummy, gamma_dummy, material_derivative_dummy, jacobian_dummy);
   // call Lapack routine
@@ -485,22 +488,16 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
   rnd_number_generator.seed(seed());
 
   // Fill the arguments of compute_flux_in_p_directon with randon numbers
-  double                 test_n_p   = 1.;
-  double                 test_gamma = rnd_number_generator();
-  double                 test_p     = rnd_number_generator();
-  dealii::Vector<double> test_material_derivative{rnd_number_generator(),
+  double                     test_n_p   = 1.;
+  double                     test_gamma = rnd_number_generator();
+  double                     test_p     = rnd_number_generator();
+  dealii::Vector<double>     test_material_derivative{rnd_number_generator(),
                                                   rnd_number_generator(),
                                                   rnd_number_generator()};
-  std::vector<dealii::Vector<double>> test_jacobian(3);
-  test_jacobian[0] = dealii::Vector<double>{rnd_number_generator(),
-                                            rnd_number_generator(),
-                                            rnd_number_generator()};
-  test_jacobian[1] = dealii::Vector<double>{rnd_number_generator(),
-                                            rnd_number_generator(),
-                                            rnd_number_generator()};
-  test_jacobian[2] = dealii::Vector<double>{rnd_number_generator(),
-                                            rnd_number_generator(),
-                                            rnd_number_generator()};
+  dealii::FullMatrix<double> test_jacobian(3);
+  for (unsigned int i = 0; i < test_jacobian.m(); ++i)
+    for (unsigned int j = 0; j < test_jacobian.n(); ++j)
+      test_jacobian[i][j] = rnd_number_generator();
 
   // Print out the random values:
   saplog << "n_p: " << test_n_p << "\n";
@@ -510,8 +507,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
   test_material_derivative.print(saplog);
   saplog << "Jacobian: "
          << "\n";
-  for (const auto &row : test_jacobian)
-    row.print(saplog);
+  test_jacobian.print(saplog);
 
   // Python array ouput to ease testing
   saplog << std::fixed << std::setprecision(9) << "[" << test_n_p << ", "
@@ -613,11 +609,11 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
-  compute_matrix_sum(const double                  n_p,
-                     const double                  momentum,
-                     const double                  gamma,
-                     const dealii::Vector<double> &material_derivative,
-                     const std::vector<dealii::Vector<double>> &jacobian)
+  compute_matrix_sum(const double                      n_p,
+                     const double                      momentum,
+                     const double                      gamma,
+                     const dealii::Vector<double>     &material_derivative,
+                     const dealii::FullMatrix<double> &jacobian)
 {
   if (logarithmic_p)
     {
@@ -656,14 +652,13 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
-  compute_flux_in_p_direction(
-    const double                               n_p,
-    const double                               momentum,
-    const double                               gamma,
-    const dealii::Vector<double>              &material_derivative,
-    const std::vector<dealii::Vector<double>> &jacobian,
-    dealii::FullMatrix<double>                &positive_flux_matrix,
-    dealii::FullMatrix<double>                &negative_flux_matrix)
+  compute_flux_in_p_direction(const double                  n_p,
+                              const double                  momentum,
+                              const double                  gamma,
+                              const dealii::Vector<double> &material_derivative,
+                              const dealii::FullMatrix<double> &jacobian,
+                              dealii::FullMatrix<double> &positive_flux_matrix,
+                              dealii::FullMatrix<double> &negative_flux_matrix)
 {
   // compute the matrix sum at the point q at time t. Overwrites the member
   // variable matrix_sum
