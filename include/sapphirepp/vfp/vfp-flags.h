@@ -232,6 +232,11 @@ namespace sapphirepp
       zero_inflow,
 
       /**
+       * Non_homogenous. Inflow at the boundary is determined by a function.
+       */
+      non_homogeneous,
+
+      /**
        * Periodic boundary conditions. Has to be set on both sides of the
        * boundary.
        */
