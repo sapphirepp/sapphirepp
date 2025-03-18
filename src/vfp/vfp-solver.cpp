@@ -1438,11 +1438,11 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                           component_j) *
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
 
-                        copy_data.cell_matrix(i, j) +=
+                        copy_data.cell_rhs(i) +=
                           fe_face_v.shape_value(i, q_index) *
                           negative_flux_matrices[q_index](component_i,
                                                           component_j) *
-                          1. * JxW[q_index];
+                          (j == 0 ? 1. : 0.) * JxW[q_index];
                         break;
                       }
                     case BoundaryConditions::periodic:
