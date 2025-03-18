@@ -29,6 +29,7 @@
 #define UTILS_TOOLS_H
 
 
+#include <deal.II/base/point.h>
 #include <deal.II/base/table.h>
 
 #include <array>
@@ -64,6 +65,32 @@ namespace sapphirepp
       create_linear_range(const double       start,
                           const double       stop,
                           const unsigned int num);
+
+
+
+      /**
+       * @brief Convert a point of dim1 into a point of dim2.
+       *
+       * For dim1 > dim2 it neglects the additional components,
+       * for dim2 > dim1 it sets the additional components to 0.
+       *
+       * @tparam dim1 Dimension of input point
+       * @tparam dim2 Dimension of output point
+       * @param point @dealref{Point} of dimension dim1
+       * @return dealii::Point<dim2> @dealref{Point} of dimension dim2
+       */
+      template <unsigned int dim1, unsigned int dim2>
+      inline dealii::Point<dim2>
+      convert_point_dimension(const dealii::Point<dim1> &point)
+      {
+        if constexpr (dim1 == dim2)
+          return point;
+
+        dealii::Point<dim2> point_out;
+        for (unsigned int d = 0; d < dim1 && d < dim2; ++d)
+          point_out[d] = point[d];
+        return point_out;
+      };
 
 
 
