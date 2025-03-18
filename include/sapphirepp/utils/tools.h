@@ -29,6 +29,11 @@
 #define UTILS_TOOLS_H
 
 
+#include <deal.II/base/table.h>
+
+#include <array>
+#include <filesystem>
+#include <string>
 #include <vector>
 
 
@@ -59,6 +64,36 @@ namespace sapphirepp
       create_linear_range(const double       start,
                           const double       stop,
                           const unsigned int num);
+
+
+
+      /**
+       * @brief Read a csv file into a @dealref{Table}.
+       *
+       * Skips empty lines and lines starting with '#'.
+       *
+       * @note The table is only filled in one processor,
+       *       and then replicated across all processors.
+       *
+       * @param filename Path to the csv file
+       * @param n_rows Number of rows
+       * @param n_columns Number of columns
+       * @param delimiter Delimiter for the csv file
+       * @param transpose Transpose the table?
+       * @param reverse_rows Reverse the ordering of rows?
+       * @param reverse_columns Reverse the ordering of columns?
+       * @return @dealref{dealii::Table<2\, double>,classTable_3_012_00_01T_01_4}
+       *         of size n_rows x n_columns.
+       *         (For transposed table: n_columns x n_rows.)
+       */
+      dealii::Table<2, double>
+      read_csv_to_table(const std::filesystem::path &filename,
+                        const unsigned int           n_rows,
+                        const unsigned int           n_columns,
+                        const std::string           &delimiter       = ",",
+                        const bool                   transpose       = false,
+                        const bool                   reverse_rows    = false,
+                        const bool                   reverse_columns = false);
 
     } // namespace Tools
   } // namespace Utils
