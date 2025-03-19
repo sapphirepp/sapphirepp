@@ -232,6 +232,11 @@ namespace sapphirepp
       zero_inflow,
 
       /**
+       * Reflectiv. The flow is relfected at the boundary.
+       */
+      reflectiv,
+
+      /**
        * Periodic boundary conditions. Has to be set on both sides of the
        * boundary.
        */
