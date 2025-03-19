@@ -112,16 +112,16 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    constexpr unsigned int dimension = 2;
+    constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution | VFPFlags::spatial_advection |
-      VFPFlags::rotation | VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |
+                                   VFPFlags::spatial_advection |
+                                   VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -260,9 +260,9 @@ namespace sapphirepp
         static_cast<void>(point); // suppress compiler warning
 
         /** [Magnetic field] */
-        magnetic_field[0] = 0.;     // B_x
-        magnetic_field[1] = 0.;     // B_y
-        magnetic_field[2] = prm.B0; // B_z
+        magnetic_field[0] = 0.; // B_x
+        magnetic_field[1] = 0.; // B_y
+        magnetic_field[2] = 0.; // B_z
         /** [Magnetic field] */
       }
 
@@ -294,9 +294,9 @@ namespace sapphirepp
 
         /** [Background velocity value] */
         // zero velocity field
-        velocity[0] = prm.u0; // u_x
-        velocity[1] = prm.u0; // u_y
-        velocity[2] = 0.;     // u_z
+        velocity[0] = 0.; // u_x
+        velocity[1] = 0.; // u_y
+        velocity[2] = 0.; // u_z
         /** [Background velocity value] */
       }
 
