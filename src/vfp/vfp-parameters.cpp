@@ -112,7 +112,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
     prm.enter_subsection("Boundary conditions");
     {
       const auto boundary_pattern =
-        Patterns::Selection("continuous|zero inflow|periodic");
+        Patterns::Selection("continuous|zero inflow|reflectiv|periodic");
       prm.declare_entry("lower x",
                         "continuous",
                         boundary_pattern,
@@ -314,6 +314,9 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
           else if (s == "zero inflow")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::zero_inflow;
+	  else if (s == "reflectiv")
+            boundary_conditions[boundary_id] =
+              VFP::BoundaryConditions::reflectiv;
           else if (s == "periodic")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::periodic;
