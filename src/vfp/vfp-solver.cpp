@@ -624,7 +624,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
 
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
-
+  // TODO: add if to check if there are non-homogeneous bc
   locally_owned_current_bc.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
@@ -1653,15 +1653,18 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   SolverControl              solver_control(5000);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
-  solver_control.set_tolerance(1e-6 * locally_owned_current_source.l2_norm());
-  // dg_matrix == system_matrix
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(dg_matrix);
-
+  // Right-hand side is determined by the source and the non-homogeneous
+  // boundary condition
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    system_rhs.add(1., locally_owned_current_source);
+  // TODO: add check if non-homogeneous bc is set
+  system_rhs.add(1.,locally_owned_current_bc);
+  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
   solver.solve(dg_matrix,
                locally_owned_previous_solution,
-               locally_owned_current_source, // right-hand side is determined by
-                                             // the source term
+               system_rhs,
                preconditioner);
 
   locally_relevant_current_solution = locally_owned_previous_solution;
