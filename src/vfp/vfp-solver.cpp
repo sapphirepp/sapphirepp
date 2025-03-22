@@ -733,6 +733,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   ScatteringFrequency<dim_ps> scattering_frequency(physical_parameters);
   scattering_frequency.set_time(time);
 
+  BoundaryValueFunction<dim_ps> bc_value_function(physical_parameters,
+                                                  pde_system.system_size);
+  bc_value_function.set_time(time);
+
   ParticleVelocity<dim_ps, logarithmic_p> particle_velocity(
     vfp_parameters.mass);
   ParticleGamma<dim_ps, logarithmic_p> particle_gamma(vfp_parameters.mass);
@@ -1376,6 +1380,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                       normals,
                                       positive_flux_matrices,
                                       negative_flux_matrices);
+    std::vector<Vector<double>> bc_values(
+      q_points.size(), Vector<double>(pde_system.system_size));
+    bc_value_function.vector_value_list(q_points, bc_values);
+
     for (unsigned int q_index : fe_face_v.quadrature_point_indices())
       {
         for (unsigned int i = 0; i < n_facet_dofs; ++i)
@@ -1444,7 +1452,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(i, q_index) *
                           negative_flux_matrices[q_index](component_i,
                                                           component_j) *
-                          (component_j == 0 ? 1. : 0) * JxW[q_index];
+                          bc_values[q_index][component_j] * JxW[q_index];
                         break;
                       }
                     case BoundaryConditions::periodic:

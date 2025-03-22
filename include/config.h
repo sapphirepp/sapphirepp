@@ -129,6 +129,35 @@ namespace sapphirepp
       VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
+    template <unsigned int dim>
+    class BoundaryValueFunction : public dealii::Function<dim>
+    {
+    public:
+      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
+                            const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
+      {}
+
+
+
+      void
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &bc) const override
+      {
+        AssertDimension(bc.size(), this->n_components);
+        static_cast<void>(point); // suppress compiler warning
+
+        // constant isotropic part only
+        bc[0] = 1.;
+      }
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
 
 
     /**
