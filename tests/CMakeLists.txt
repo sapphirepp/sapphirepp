@@ -23,5 +23,5 @@ set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
 )
 
 if(VFP)
-  add_subdirectory(vfp)
+  # add_subdirectory(vfp)
 endif()
