@@ -447,6 +447,8 @@ namespace sapphirepp
       PETScWrappers::MPI::SparseMatrix system_matrix;
       /** Source */
       PETScWrappers::MPI::Vector locally_owned_current_source;
+      /** Non-homogeneous boundary conditions */
+      PETScWrappers::MPI::Vector locally_owned_current_bc;
       /** System right hand side, depends on time stepping method */
       PETScWrappers::MPI::Vector system_rhs;
       /** @} */
