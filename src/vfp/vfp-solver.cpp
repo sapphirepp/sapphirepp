@@ -625,6 +625,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
 
+  locally_owned_current_bc.reinit(locally_owned_dofs, mpi_communicator);
+
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
   DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
@@ -1438,11 +1440,11 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                           component_j) *
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
 
-                        copy_data.cell_rhs(i) +=
+                        copy_data.cell_rhs(i) -=
                           fe_face_v.shape_value(i, q_index) *
                           negative_flux_matrices[q_index](component_i,
                                                           component_j) *
-                          (j == 0 ? 1. : 0.) * JxW[q_index];
+                          (component_j == 0 ? 1. : 0) * JxW[q_index];
                         break;
                       }
                     case BoundaryConditions::periodic:
@@ -1585,8 +1587,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
     constraints.distribute_local_to_global(c.cell_matrix,
+                                           c.cell_rhs,
                                            c.local_dof_indices,
-                                           dg_matrix);
+                                           dg_matrix,
+                                           locally_owned_current_bc);
     for (auto &cdf : c.face_data)
       {
         for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
@@ -1625,6 +1629,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                         boundary_worker,
                         face_worker);
   dg_matrix.compress(VectorOperation::add);
+  locally_owned_current_bc.compress(VectorOperation::add);
   saplog << "The DG matrix was assembled." << std::endl;
 }
 
@@ -1784,6 +1789,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
   saplog << "Stage s: " << 0 << "	Solver converged in "
@@ -1798,7 +1804,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      dg_matrix                = 0;
+      locally_owned_current_bc = 0;
       assemble_dg_matrix(time + c[1] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
@@ -1823,6 +1830,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
   saplog << "	Stage s: " << 1 << "	Solver converged in "
@@ -1857,6 +1865,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
   saplog << "	Stage s: " << 2 << "	Solver converged in "
@@ -1872,7 +1881,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      dg_matrix                = 0;
+      locally_owned_current_bc = 0;
       assemble_dg_matrix(time + c[3] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
@@ -1897,6 +1907,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
   saplog << "	Stage s: " << 3 << "	Solver converged in "
