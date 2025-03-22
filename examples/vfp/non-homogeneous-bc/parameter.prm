@@ -6,7 +6,7 @@ subsection Output
 end
 subsection VFP
   subsection Expansion
-    set Expansion order = 1
+    set Expansion order = 3
   end
   subsection Finite element
     set Polynomial degree = 1
@@ -24,7 +24,7 @@ subsection VFP
     end
   end
   subsection Time stepping
-    set Final time     = 10
+    set Final time     = 1
     set Method         = ERK4
     set Time step size = 0.1
   end
