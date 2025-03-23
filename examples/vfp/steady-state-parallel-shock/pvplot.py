@@ -64,6 +64,9 @@ solution.TimeArray = "None"
 # Only access 'f_000'
 solution.PointArrayStatus = ["f_000"]
 
+# Update Pipeline
+solution.UpdatePipeline()
+
 # Get the bounds
 # Get data information from the solution
 solution_data = servermanager.Fetch(solution)
