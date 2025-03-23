@@ -48,6 +48,9 @@ solution.TimeArray = "None"
 # Only show 'f_000' and 'f_100'
 solution.PointArrayStatus = ["f_000", "f_100"]
 
+# Update Pipeline
+solution.UpdatePipeline()
+
 
 # =============================================================================
 # Plot 2D render view
