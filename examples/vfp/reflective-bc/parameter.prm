@@ -1,7 +1,7 @@
 subsection Output
   set Results folder               = ./results
   set Simulation identifier        = reflective-bc
-  # set Simulation identifier        = reflective-bc-per
+  # set Simulation identifier        = reflective-bc-periodic
   set Number of digits for counter = 5
   set Output frequency             = 20
 end
@@ -16,7 +16,7 @@ subsection VFP
     set Expansion order = 3
   end
   subsection Finite element
-    set Polynomial degree = 3
+    set Polynomial degree = 2
   end
   subsection Mesh
     set Grid type             = Hypercube
@@ -27,7 +27,7 @@ subsection VFP
       # set lower x = periodic
       # set upper x = periodic
       set lower x = reflectiv
-      set upper x = reflectiv
+      set upper x = zero inflow
       # set lower y = periodic
       # set upper y = periodic
     end
@@ -37,7 +37,7 @@ subsection VFP
     set Mass   = 1.
   end
   subsection Time stepping
-    set Final time     = 200.
+    set Final time     = 75.
     set Method         = ERK4
     set Time step size = 0.02
   end

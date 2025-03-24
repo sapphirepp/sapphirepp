@@ -223,6 +223,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , quadrature_face(fe.tensor_degree() + 1)
   , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
   , scaling_spectral_index{3.}
+  , reflective_bc_signature_x(pde_system.system_size)
   , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
@@ -235,6 +236,15 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
     saplog << "Scaling spectral index s: " << scaling_spectral_index
            << std::endl;
 
+  // Compute sign changes for reflecting boundaries
+  std::vector<std::array<unsigned int, 3>> lms_indices =
+    pde_system.create_lms_indices(pde_system.system_size);
+  for (unsigned int i = 0; i < pde_system.system_size; ++i)
+    reflective_bc_signature_x[i] =
+      ((lms_indices[i][0] - lms_indices[i][1]) % 2 == 0 ? 1 : -1);
+  for (auto i : reflective_bc_signature_x)
+    std::cout << i << "\n";
+  
   // Consistency checks for vfp_flags:
   AssertThrow(
     1 <= dim and dim <= 3,
@@ -1396,7 +1406,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::reflectiv:
                       {
-                        copy_data.cell_matrix(i, j) -=
+                        copy_data.cell_matrix(i, j) +=
                           fe_face_v.shape_value(i, q_index) *
                           positive_flux_matrices[q_index](component_i,
                                                           component_j) *
@@ -1405,6 +1415,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(i, q_index) *
                           negative_flux_matrices[q_index](component_i,
                                                           component_j) *
+                          reflective_bc_signature_x[component_j] *
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
