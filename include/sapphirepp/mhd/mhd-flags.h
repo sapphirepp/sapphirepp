@@ -65,6 +65,11 @@ namespace sapphirepp
        * Deactivate positivity limiting
        */
       no_positivity_limiting = 1 << 3,
+
+      /**
+       * Use hyperbolic divergence cleaning
+       */
+      hyperbolic_divergence_cleaning = 1 << 4,
     };
 
 
@@ -125,6 +130,8 @@ namespace sapphirepp
           if ((f & MHDFlags::no_positivity_limiting) != MHDFlags::none)
             os << "	 - No positivity limiting\n";
         }
+      if ((f & MHDFlags::hyperbolic_divergence_cleaning) != MHDFlags::none)
+        os << "	 - Hyperbolic divergence cleaning\n";
       return os;
     }
 
