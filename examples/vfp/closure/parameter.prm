@@ -29,10 +29,11 @@ subsection VFP
     set Charge = 1.
     set Mass   = 1.
   end
-  subsection Phase space reconstruction
-    set reconstruction points = -6; -3; 0; 3; 6
-    set n_phi                 = 75
-    set n_theta               = 75
+  subsection Probe location
+    set points                 = -6; -3; 0; 3; 6
+    set Perform reconstruction = true
+    set n_phi                  = 75
+    set n_theta                = 75
   end
   subsection Time stepping
     set Final time     = 6.9282032303 # = 12/sqrt(3)

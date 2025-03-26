@@ -149,24 +149,28 @@ given as a runtime parameter.
 
 ## Phase space reconstruction {#phase-space-reconstruction-closure}
 
-To perform the phase-space reconstruction at speficic points in reduced phase
-space $\xi = (x, y, p)^{T}$,
+To perform the phase-space reconstruction at specific points
+in reduced phase space $\xi = (x, y, p)^{T}$,
 we can use the post-processor module provided in
-@ref sapphirepp::VFP::PhaseSpaceReconstruction "PhaseSpaceReconstruction".
+@ref sapphirepp::VFP::ProbeLocation "ProbeLocation".
 To activate it,
 we just have to give a list of points to the parameter file.
-The points are defined in the `Phase space reconstruction` section
+The points are defined in the `Probe location` section
 as a semicolon separated list,
-called`reconstruction points`.
+called `points`.
+This will output the expansion coefficients at the specified points.
+To also perform the phase space reconstruction,
+we need to the `Perform reconstruction` parameter to `true`.
 Furthermore, we need to set the number of $\theta$ and $\varphi$ values
 used for the reconstruction on the momentum unit-sphere,
 $(n_{p_x}, n_{p_y}, n_{p_z})$.
 
 ```parameter
-subsection Phase space reconstruction
-  set reconstruction points = -6; -3; 0; 3; 6
-  set n_phi                 = 75
-  set n_theta               = 75
+subsection Probe location
+  set points                 = -6; -3; 0; 3; 6
+  set Perform reconstruction = true
+  set n_phi                  = 75
+  set n_theta                = 75
 end
 ```
 
@@ -174,14 +178,22 @@ end
       the reconstruction points are given as a list of the following form,
       e.g. `x1, y1, p1; x2, y2, p2; x3, y3, p3; ...`
 
-The post-processor will now output additional files in the `results` directory,
-named `surface_plot_distribution_function_point_XX_t_XXXX.dat`
-and `spherical_density_map_point_XX_t_XXXX.dat`.
-The files save the values of $f(t,\xi,\theta, \varphi)$, where $\xi$ is one of
-the points in the list given in the parameter file. Moreover,
-$f(t,\xi,n_{p_x},n_{p_y}, n_{p_z})$
-is also stored for each point `XX` and time step `XXXX` respectively.
+The post-processor outputs additional files in the `results` directory,
+named as follows:
 
+- `f_lms_values_at_point_XX.dat`:
+  Contains the values of the expansion coefficients $f_{lms}(t, \xi)$
+  for all time steps at the reduced phase space point $\xi$,
+  identified as point number `XX` in the parameter file.
+- `surface_plot_distribution_function_point_XX_t_XXXX.dat`:
+  Contains the reconstructed phase space function $f(t, \xi, \theta, \varphi)$
+  for each point `XX` and time step `XXXX`.
+- `spherical_density_map_point_XX_t_XXXX.dat`:
+  Contains the reconstructed phase space function $f(t, \xi, n_{p_x}, n_{p_y}, n_{p_z})$
+  for each point `XX` and time step `XXXX`.
+
+Note that the last two files are only generated
+if the `Perform reconstruction` parameter is set to `true`.
 We provide a gnuplot script,
 [`examples/vfp/closure/heatmap.gp`](https://github.com/sapphirepp/sapphirepp/tree/main/examples/vfp/closure/heatmap.gp),
 to create heatmaps from these files:
