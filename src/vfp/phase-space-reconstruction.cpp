@@ -324,7 +324,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_f_lms(
          << reconstruction_points[point_index] << ") to file " << filename
          << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename,
-                          std::ios_base::app);
+                          time_step_number == 0 ? std::ios_base::out :
+                                                  std::ios_base::app);
 
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
   std::stringstream sstream;
@@ -335,17 +336,16 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_f_lms(
       sstream << "# f(t, x, p ) at (x,|p|) = ("
               << reconstruction_points[point_index] << ")"
               << "\n";
-      sstream << "time_step_number cur_time ";
+      sstream << "# time_step_number cur_time ";
       for (auto &lms : lms_indices)
         sstream << "f_" << lms[0] << lms[1] << lms[2] << " ";
       sstream << "\n";
-      data_file << sstream.str();
-      sstream.clear();
     }
   sstream << time_step_number << " " << cur_time << " ";
   for (auto f_lms : expansion_coefficients)
     sstream << f_lms << " ";
   // Write string to  data file
+
   data_file << sstream.str() << "\n";
 }
 
