@@ -63,7 +63,7 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "pde-system.h"
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
@@ -459,8 +459,8 @@ namespace sapphirepp
       /** @} */
 
       /** @{ */
-      /** Postprocessor to reconstruct phase space at predefined points */
-      PhaseSpaceReconstruction<dim_ps> ps_reconstruction;
+      /** Postprocessor to probe points in phase space */
+      ProbeLocation<dim_ps> probe_location;
       /** @} */
 
       /** The exponent \f$ s \f$ of \f$ p^{s}\f$ used to rescale the

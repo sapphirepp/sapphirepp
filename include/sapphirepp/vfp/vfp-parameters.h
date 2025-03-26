@@ -173,13 +173,17 @@ namespace sapphirepp
 
       /** @{ */
       /**
-       * Postprocess to preform phase space reconstruction?
+       * Postprocess to probe points in reduced phase space?
+       */
+      bool perform_probe_location;
+      /**
+       * Points in reduced phase space to to probe and reconstruct
+       */
+      std::vector<dealii::Point<dim>> probe_location_points;
+      /**
+       * Preform phase space reconstruction?
        */
       bool perform_phase_space_reconstruction;
-      /**
-       * Points to perform phase space reconstruction
-       */
-      std::vector<dealii::Point<dim>> reconstruction_points;
       /**
        * Number of theta points for phase space reconstruction
        */

@@ -217,16 +217,19 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 
 
-  prm.enter_subsection("Phase space reconstruction");
+  prm.enter_subsection("Probe location");
   {
     prm.declare_entry(
-      "reconstruction points",
+      "points",
       "",
       Patterns::List(pattern_point, 0, Patterns::List::max_int_value, ";"),
-      "List of points in the reduced phase space "
-      "for reconstructing f(theta, phi). "
+      "List of points in the reduced phase space to probe."
       "The points should be provided as a semicolon-separated list, "
       "e.g., 1,1,1; 2,2,2.");
+    prm.declare_entry("Perform reconstruction",
+                      "false",
+                      Patterns::Bool(),
+                      "Perform phase space reconstruction for f(theta, phi)?");
     prm.declare_entry("n_theta",
                       "75",
                       Patterns::Integer(0),
@@ -235,7 +238,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "75",
                       Patterns::Integer(0),
                       "Number of phi points for phase space reconstruction.");
-  } // Phase space reconstruction
+  } // Probe location
   prm.leave_subsection();
 
 
@@ -386,29 +389,40 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 
 
-  prm.enter_subsection("Phase space reconstruction");
+  prm.enter_subsection("Probe location");
   {
-    reconstruction_points.clear();
+    probe_location_points.clear();
     const auto string_list =
-      Utilities::split_string_list(prm.get("reconstruction points"), ";");
+      Utilities::split_string_list(prm.get("points"), ";");
     for (const auto &s : string_list)
-      reconstruction_points.push_back(
+      probe_location_points.push_back(
         Patterns::Tools::Convert<Point<dim_ps>>::to_value(s));
 
-    //  Don't perform reconstruction if no points are given
-    if (reconstruction_points.size() == 0)
+    // Don't perform reconstruction if no points are given
+    if (probe_location_points.size() == 0)
       {
+        perform_probe_location             = false;
         perform_phase_space_reconstruction = false;
-        n_theta                            = 0;
-        n_phi                              = 0;
       }
     else
       {
-        perform_phase_space_reconstruction = true;
+        perform_probe_location = true;
+        perform_phase_space_reconstruction =
+          prm.get_bool("Perform reconstruction");
+      }
+
+    // Only reconstruct phase space if needed
+    if (perform_phase_space_reconstruction)
+      {
         n_theta = static_cast<unsigned int>(prm.get_integer("n_theta"));
         n_phi   = static_cast<unsigned int>(prm.get_integer("n_phi"));
       }
-  } // Phase space reconstruction
+    else
+      {
+        n_theta = 0;
+        n_phi   = 0;
+      }
+  } // Probe location
   prm.leave_subsection();
 
 

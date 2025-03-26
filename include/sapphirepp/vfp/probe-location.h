@@ -20,14 +20,14 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file phase-space-reconstruction.h
+ * @file probe-location.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref sapphirepp::VFP::PhaseSpaceReconstruction
+ * @brief Define @ref sapphirepp::VFP::ProbeLocation
  */
 
-#ifndef VFP_PHASESPACERECONSTRUCTION_H
-#define VFP_PHASESPACERECONSTRUCTION_H
+#ifndef VFP_PROBELOCATION_H
+#define VFP_PROBELOCATION_H
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/mpi.h>
@@ -62,26 +62,27 @@ namespace sapphirepp
     using namespace dealii;
 
     /**
-     * @brief PostProcessor unit to reconstruct the phase space distribution
+     * @brief PostProcessor unit to probe location in reduced phase space
+     *        and reconstruct the phase space distribution.
      *
      * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
      */
     template <unsigned int dim>
-    class PhaseSpaceReconstruction
+    class ProbeLocation
     {
     public:
       /**
        * @brief Constructor
        *
-       * The points for the phase space reconstruction are defined in
-       * @ref VFPParameters::reconstruction_points.
+       * The points for probe location are defined in
+       * @ref VFPParameters::probe_location_points.
        *
        * @param vfp_parameters Parameters for the VFP equation
        * @param output_parameters Parameters for the output
        * @param lms_indices Map between system index \f$ i \f$
        *                    and spherical harmonic indices \f$ (l,m,s) \f$
        */
-      PhaseSpaceReconstruction(
+      ProbeLocation(
         const VFPParameters<dim>                       &vfp_parameters,
         const Utils::OutputParameters                  &output_parameters,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
@@ -101,8 +102,8 @@ namespace sapphirepp
 
 
       /**
-       * @brief Reconstruct the phase space distribution at all user defined
-       *        points
+       * @brief Probe all user defined point in the reduced phase space
+       *        and perform phase space reconstruction.
        *
        * @param dof_handler @dealref{DoFHandler}
        * @param mapping @dealref{Mapping}
@@ -111,11 +112,11 @@ namespace sapphirepp
        * @param cur_time Current time
        */
       void
-      reconstruct_all_points(const DoFHandler<dim>            &dof_handler,
-                             const Mapping<dim>               &mapping,
-                             const PETScWrappers::MPI::Vector &solution,
-                             const unsigned int time_step_number = 0,
-                             const double       cur_time         = 0.) const;
+      probe_all_points(const DoFHandler<dim>            &dof_handler,
+                       const Mapping<dim>               &mapping,
+                       const PETScWrappers::MPI::Vector &solution,
+                       const unsigned int                time_step_number = 0,
+                       const double                      cur_time = 0.) const;
 
 
 
@@ -149,7 +150,9 @@ namespace sapphirepp
       /** Number of expansion coefficients */
       const unsigned int system_size;
 
-      /** Perform phase space reconstruction? */
+      /** Postprocess to probe points? */
+      const bool perform_probe_location;
+      /** Preform phase space reconstruction? */
       const bool perform_phase_space_reconstruction;
       /** Theta values for phase space reconstruction */
       const std::vector<double> theta_values;
@@ -159,8 +162,8 @@ namespace sapphirepp
       /** Real spherical harmonics `Y[i][theta][phi]` */
       const Table<3, double> real_spherical_harmonics;
 
-      /** Points for phase space reconstruction */
-      std::vector<Point<dim>> reconstruction_points;
+      /**  Points in reduced phase space to to probe and reconstruct */
+      std::vector<Point<dim>> probe_location_points;
 
       /** @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation} */
       Utilities::MPI::RemotePointEvaluation<dim, dim> rpe_cache;
@@ -212,6 +215,22 @@ namespace sapphirepp
         const unsigned int         time_step_number = 0,
         const double               cur_time         = 0.) const;
       /** @} */
+
+
+
+      /**
+       * @brief Output \f$ f_{lms} \f$ at points in location list.
+       *
+       * @param expansion_coefficients Values of the expansion coefficients
+       * @param point_index Index of reconstructed point
+       * @param time_step_number Current time step number
+       * @param cur_time Current time
+       */
+      void
+      output_f_lms(const std::vector<double> &expansion_coefficients,
+                   const unsigned int         point_index,
+                   const unsigned int         time_step_number = 0,
+                   const double               cur_time         = 0.) const;
     };
   } // namespace VFP
 } // namespace sapphirepp
