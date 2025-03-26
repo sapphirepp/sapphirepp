@@ -102,8 +102,8 @@ namespace sapphirepp
 
 
       /**
-       * @brief Reconstruct the phase space distribution at all user defined
-       *        points
+       * @brief Probe all user defined point in the reduced phase space
+       *        and perform phase space reconstruction.
        *
        * @param dof_handler @dealref{DoFHandler}
        * @param mapping @dealref{Mapping}
@@ -112,11 +112,11 @@ namespace sapphirepp
        * @param cur_time Current time
        */
       void
-      reconstruct_all_points(const DoFHandler<dim>            &dof_handler,
-                             const Mapping<dim>               &mapping,
-                             const PETScWrappers::MPI::Vector &solution,
-                             const unsigned int time_step_number = 0,
-                             const double       cur_time         = 0.) const;
+      probe_all_points(const DoFHandler<dim>            &dof_handler,
+                       const Mapping<dim>               &mapping,
+                       const PETScWrappers::MPI::Vector &solution,
+                       const unsigned int                time_step_number = 0,
+                       const double                      cur_time = 0.) const;
 
 
 
@@ -152,6 +152,8 @@ namespace sapphirepp
 
       /** Postprocess to probe points? */
       const bool perform_probe_location;
+      /** Preform phase space reconstruction? */
+      const bool perform_phase_space_reconstruction;
       /** Theta values for phase space reconstruction */
       const std::vector<double> theta_values;
       /** Phi values for phase space reconstruction */
@@ -214,6 +216,8 @@ namespace sapphirepp
         const double               cur_time         = 0.) const;
       /** @} */
 
+
+
       /**
        * @brief Output \f$ f_{lms} \f$ at points in location list.
        *
@@ -227,7 +231,6 @@ namespace sapphirepp
                    const unsigned int         point_index,
                    const unsigned int         time_step_number = 0,
                    const double               cur_time         = 0.) const;
-      /** @} */
     };
   } // namespace VFP
 } // namespace sapphirepp

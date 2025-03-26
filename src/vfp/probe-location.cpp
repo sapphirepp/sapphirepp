@@ -57,6 +57,8 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   , lms_indices{lms_indices}
   , system_size{static_cast<unsigned int>(lms_indices.size())}
   , perform_probe_location{vfp_parameters.perform_probe_location}
+  , perform_phase_space_reconstruction{vfp_parameters
+                                         .perform_phase_space_reconstruction}
   , theta_values{Utils::Tools::create_linear_range(0,
                                                    M_PI,
                                                    vfp_parameters.n_theta)}
@@ -69,7 +71,7 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   , rpe_cache(1e-6, true)
 {
   LogStream::Prefix p0("VFP", saplog);
-  LogStream::Prefix p("PSRec", saplog);
+  LogStream::Prefix p("ProbeLocation", saplog);
   LogStream::Prefix p1("Constructor", saplog);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -77,7 +79,8 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
 
   if (probe_location_points.size() > 0)
     {
-      saplog << "Phase space will be reconstructed at:" << std::endl;
+      saplog << "Probe location will be performed at the following points:"
+             << std::endl;
       for (const auto &point : probe_location_points)
         saplog << "  " << point << std::endl;
     }
@@ -93,8 +96,8 @@ sapphirepp::VFP::ProbeLocation<dim>::reinit(
 {
   if (!perform_probe_location)
     return;
-  LogStream::Prefix p("PSRec", saplog);
-  saplog << "Reconstruction of phase space is set up" << std::endl;
+  LogStream::Prefix p("ProbeLocation", saplog);
+  saplog << "Setting up points for probe location" << std::endl;
 
   rpe_cache.reinit(probe_location_points, triangulation, mapping);
   AssertThrow(rpe_cache.all_points_found(),
@@ -107,7 +110,7 @@ sapphirepp::VFP::ProbeLocation<dim>::reinit(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::ProbeLocation<dim>::reconstruct_all_points(
+sapphirepp::VFP::ProbeLocation<dim>::probe_all_points(
   const DoFHandler<dim>            &dof_handler,
   const Mapping<dim>               &mapping,
   const PETScWrappers::MPI::Vector &solution,
@@ -116,9 +119,9 @@ sapphirepp::VFP::ProbeLocation<dim>::reconstruct_all_points(
 {
   if (!perform_probe_location)
     return;
-  LogStream::Prefix p("PSRec", saplog);
-  saplog << "Perform reconstruction of phase space" << std::endl;
-  LogStream::Prefix p2("Reconstruction", saplog);
+  LogStream::Prefix p("ProbeLocation", saplog);
+  saplog << "Probe points in reduced phase space" << std::endl;
+  LogStream::Prefix p2("Evaluate", saplog);
   Assert(rpe_cache.is_ready(), ExcMessage("rpe_cache is no initialized."));
 
   using CellData =
@@ -180,21 +183,25 @@ sapphirepp::VFP::ProbeLocation<dim>::reconstruct_all_points(
       unsigned int point_counter = 0;
       for (const auto &expansion_coefficients : coefficients_at_all_points)
         {
-          // std::vector<double> f_values =
-          //   compute_phase_space_distribution(expansion_coefficients);
-
-          // output_gnu_splot_data(f_values,
-          //                       point_counter,
-          //                       time_step_number,
-          //                       cur_time);
-          // output_gnu_splot_spherical_density_map(f_values,
-          //                                        point_counter,
-          //                                        time_step_number,
-          //                                        cur_time);
           output_f_lms(expansion_coefficients,
                        point_counter,
                        time_step_number,
                        cur_time);
+
+          if (perform_phase_space_reconstruction)
+            {
+              std::vector<double> f_values =
+                compute_phase_space_distribution(expansion_coefficients);
+
+              output_gnu_splot_data(f_values,
+                                    point_counter,
+                                    time_step_number,
+                                    cur_time);
+              output_gnu_splot_spherical_density_map(f_values,
+                                                     point_counter,
+                                                     time_step_number,
+                                                     cur_time);
+            }
 
           ++point_counter;
         }
