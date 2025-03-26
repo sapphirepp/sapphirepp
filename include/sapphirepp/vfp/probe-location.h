@@ -20,14 +20,14 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file phase-space-reconstruction.h
+ * @file probe-location.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Define @ref sapphirepp::VFP::ProbeLocation
  */
 
-#ifndef VFP_PHASESPACERECONSTRUCTION_H
-#define VFP_PHASESPACERECONSTRUCTION_H
+#ifndef VFP_PROBELOCATION_H
+#define VFP_PROBELOCATION_H
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/mpi.h>

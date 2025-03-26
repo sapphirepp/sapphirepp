@@ -70,7 +70,7 @@
 
 #include "config.h"
 #include "particle-functions.h"
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 #include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
 

@@ -1,7 +1,7 @@
 add_library(VFPLib
   particle-functions.cpp
   pde-system.cpp
-  phase-space-reconstruction.cpp
+  probe-location.cpp
   vfp-parameters.cpp
 )
 deal_ii_setup_target(VFPLib)

@@ -20,13 +20,13 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file phase-space-reconstruction.cpp
+ * @file probe-location.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de),
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement @ref sapphirepp::VFP::ProbeLocation
  */
 
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 
 #include <deal.II/base/array_view.h>
 #include <deal.II/base/mpi_remote_point_evaluation.h>

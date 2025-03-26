@@ -63,7 +63,7 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "pde-system.h"
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
