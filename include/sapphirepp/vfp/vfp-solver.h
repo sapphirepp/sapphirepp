@@ -459,8 +459,8 @@ namespace sapphirepp
       /** @} */
 
       /** @{ */
-      /** Postprocessor to reconstruct phase space at predefined points */
-      PhaseSpaceReconstruction<dim_ps> ps_reconstruction;
+      /** Postprocessor to probe points in phase space */
+      ProbeLocation<dim_ps> probe_location;
       /** @} */
 
       /** The exponent \f$ s \f$ of \f$ p^{s}\f$ used to rescale the

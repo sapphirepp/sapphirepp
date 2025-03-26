@@ -221,7 +221,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , ps_reconstruction(vfp_parameters, output_parameters, pde_system.lms_indices)
+  , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
   , scaling_spectral_index{3.}
   , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
@@ -639,7 +639,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                            dsp,
                            mpi_communicator);
     }
-  ps_reconstruction.reinit(triangulation, mapping);
+  probe_location.reinit(triangulation, mapping);
 }
 
 
@@ -1982,7 +1982,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   data_out.build_patches(vfp_parameters.polynomial_degree);
   output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 
-  ps_reconstruction.reconstruct_all_points(dof_handler,
+  probe_location.reconstruct_all_points(dof_handler,
                                            mapping,
                                            locally_relevant_current_solution,
                                            time_step_number,

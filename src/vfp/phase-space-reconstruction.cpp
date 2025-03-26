@@ -23,7 +23,7 @@
  * @file phase-space-reconstruction.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de),
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement @ref sapphirepp::VFP::PhaseSpaceReconstruction
+ * @brief Implement @ref sapphirepp::VFP::ProbeLocation
  */
 
 #include "phase-space-reconstruction.h"
@@ -49,7 +49,7 @@
 
 
 template <unsigned int dim>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
+sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   const VFPParameters<dim>                       &vfp_parameters,
   const Utils::OutputParameters                  &output_parameters,
   const std::vector<std::array<unsigned int, 3>> &lms_indices)
@@ -88,7 +88,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
+sapphirepp::VFP::ProbeLocation<dim>::reinit(
   const Triangulation<dim> &triangulation,
   const Mapping<dim>       &mapping)
 {
@@ -108,7 +108,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
+sapphirepp::VFP::ProbeLocation<dim>::reconstruct_all_points(
   const DoFHandler<dim>            &dof_handler,
   const Mapping<dim>               &mapping,
   const PETScWrappers::MPI::Vector &solution,
@@ -206,9 +206,8 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
 
 template <unsigned int dim>
 std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction<
-  dim>::compute_phase_space_distribution(const std::vector<double>
-                                           &expansion_coefficients) const
+sapphirepp::VFP::ProbeLocation<dim>::compute_phase_space_distribution(
+  const std::vector<double> &expansion_coefficients) const
 {
   AssertDimension(expansion_coefficients.size(), lms_indices.size());
 
@@ -227,7 +226,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
+sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
   const std::vector<double> &f_values,
   const unsigned int         point_index,
   const unsigned int         time_step_number,
@@ -268,11 +267,11 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  output_gnu_splot_spherical_density_map(const std::vector<double> &f_values,
-                                         const unsigned int         point_index,
-                                         const unsigned int time_step_number,
-                                         const double       cur_time) const
+sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_spherical_density_map(
+  const std::vector<double> &f_values,
+  const unsigned int         point_index,
+  const unsigned int         time_step_number,
+  const double               cur_time) const
 {
   AssertIndexRange(point_index, reconstruction_points.size());
 
@@ -308,7 +307,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_f_lms(
+sapphirepp::VFP::ProbeLocation<dim>::output_f_lms(
   const std::vector<double> &expansion_coefficients,
   const unsigned int         point_index,
   const unsigned int         time_step_number,
@@ -353,11 +352,10 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_f_lms(
 
 template <unsigned int dim>
 dealii::Table<3, double>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  compute_real_spherical_harmonics(
-    const std::vector<double>                      &theta_values,
-    const std::vector<double>                      &phi_values,
-    const std::vector<std::array<unsigned int, 3>> &lms_indices)
+sapphirepp::VFP::ProbeLocation<dim>::compute_real_spherical_harmonics(
+  const std::vector<double>                      &theta_values,
+  const std::vector<double>                      &phi_values,
+  const std::vector<std::array<unsigned int, 3>> &lms_indices)
 {
   dealii::Table<3, double> y_lms(theta_values.size(),
                                  phi_values.size(),
@@ -404,6 +402,6 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
 
 
 // Explicit instantiation
-template class sapphirepp::VFP::PhaseSpaceReconstruction<1>;
-template class sapphirepp::VFP::PhaseSpaceReconstruction<2>;
-template class sapphirepp::VFP::PhaseSpaceReconstruction<3>;
+template class sapphirepp::VFP::ProbeLocation<1>;
+template class sapphirepp::VFP::ProbeLocation<2>;
+template class sapphirepp::VFP::ProbeLocation<3>;

@@ -23,7 +23,7 @@
  * @file phase-space-reconstruction.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref sapphirepp::VFP::PhaseSpaceReconstruction
+ * @brief Define @ref sapphirepp::VFP::ProbeLocation
  */
 
 #ifndef VFP_PHASESPACERECONSTRUCTION_H
@@ -62,18 +62,19 @@ namespace sapphirepp
     using namespace dealii;
 
     /**
-     * @brief PostProcessor unit to reconstruct the phase space distribution
+     * @brief PostProcessor unit to probe location in reduced phase space
+     *        and reconstruct the phase space distribution.
      *
      * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
      */
     template <unsigned int dim>
-    class PhaseSpaceReconstruction
+    class ProbeLocation
     {
     public:
       /**
        * @brief Constructor
        *
-       * The points for the phase space reconstruction are defined in
+       * The points for probe location are defined in
        * @ref VFPParameters::reconstruction_points.
        *
        * @param vfp_parameters Parameters for the VFP equation
@@ -81,7 +82,7 @@ namespace sapphirepp
        * @param lms_indices Map between system index \f$ i \f$
        *                    and spherical harmonic indices \f$ (l,m,s) \f$
        */
-      PhaseSpaceReconstruction(
+      ProbeLocation(
         const VFPParameters<dim>                       &vfp_parameters,
         const Utils::OutputParameters                  &output_parameters,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
