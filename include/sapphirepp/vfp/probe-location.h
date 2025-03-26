@@ -75,7 +75,7 @@ namespace sapphirepp
        * @brief Constructor
        *
        * The points for probe location are defined in
-       * @ref VFPParameters::reconstruction_points.
+       * @ref VFPParameters::probe_location_points.
        *
        * @param vfp_parameters Parameters for the VFP equation
        * @param output_parameters Parameters for the output
@@ -150,8 +150,8 @@ namespace sapphirepp
       /** Number of expansion coefficients */
       const unsigned int system_size;
 
-      /** Perform phase space reconstruction? */
-      const bool perform_phase_space_reconstruction;
+      /** Postprocess to probe points? */
+      const bool perform_probe_location;
       /** Theta values for phase space reconstruction */
       const std::vector<double> theta_values;
       /** Phi values for phase space reconstruction */
@@ -160,8 +160,8 @@ namespace sapphirepp
       /** Real spherical harmonics `Y[i][theta][phi]` */
       const Table<3, double> real_spherical_harmonics;
 
-      /** Points for phase space reconstruction */
-      std::vector<Point<dim>> reconstruction_points;
+      /**  Points in reduced phase space to to probe and reconstruct */
+      std::vector<Point<dim>> probe_location_points;
 
       /** @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation} */
       Utilities::MPI::RemotePointEvaluation<dim, dim> rpe_cache;

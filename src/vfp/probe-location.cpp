@@ -56,8 +56,7 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   : output_parameters{output_parameters}
   , lms_indices{lms_indices}
   , system_size{static_cast<unsigned int>(lms_indices.size())}
-  , perform_phase_space_reconstruction{vfp_parameters
-                                         .perform_phase_space_reconstruction}
+  , perform_probe_location{vfp_parameters.perform_probe_location}
   , theta_values{Utils::Tools::create_linear_range(0,
                                                    M_PI,
                                                    vfp_parameters.n_theta)}
@@ -74,12 +73,12 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   LogStream::Prefix p1("Constructor", saplog);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    reconstruction_points = vfp_parameters.reconstruction_points;
+    probe_location_points = vfp_parameters.probe_location_points;
 
-  if (reconstruction_points.size() > 0)
+  if (probe_location_points.size() > 0)
     {
       saplog << "Phase space will be reconstructed at:" << std::endl;
-      for (const auto &point : reconstruction_points)
+      for (const auto &point : probe_location_points)
         saplog << "  " << point << std::endl;
     }
 }
@@ -92,12 +91,12 @@ sapphirepp::VFP::ProbeLocation<dim>::reinit(
   const Triangulation<dim> &triangulation,
   const Mapping<dim>       &mapping)
 {
-  if (!perform_phase_space_reconstruction)
+  if (!perform_probe_location)
     return;
   LogStream::Prefix p("PSRec", saplog);
   saplog << "Reconstruction of phase space is set up" << std::endl;
 
-  rpe_cache.reinit(reconstruction_points, triangulation, mapping);
+  rpe_cache.reinit(probe_location_points, triangulation, mapping);
   AssertThrow(rpe_cache.all_points_found(),
               ExcMessage("Point for reconstruction is outside domain."));
   Assert(rpe_cache.is_map_unique(),
@@ -115,7 +114,7 @@ sapphirepp::VFP::ProbeLocation<dim>::reconstruct_all_points(
   const unsigned int                time_step_number,
   const double                      cur_time) const
 {
-  if (!perform_phase_space_reconstruction)
+  if (!perform_probe_location)
     return;
   LogStream::Prefix p("PSRec", saplog);
   saplog << "Perform reconstruction of phase space" << std::endl;
@@ -173,7 +172,7 @@ sapphirepp::VFP::ProbeLocation<dim>::reconstruct_all_points(
   const std::vector<std::vector<double>> coefficients_at_all_points =
     rpe_cache.evaluate_and_process(evaluate_function);
   AssertDimension(coefficients_at_all_points.size(),
-                  reconstruction_points.size());
+                  probe_location_points.size());
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
@@ -232,7 +231,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
   const unsigned int         time_step_number,
   const double               cur_time) const
 {
-  AssertIndexRange(point_index, reconstruction_points.size());
+  AssertIndexRange(point_index, probe_location_points.size());
 
   const std::string filename =
     "surface_plot_distribution_function_point_" +
@@ -241,14 +240,14 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
                              output_parameters.n_digits_for_counter) +
     ".dat";
 
-  saplog << "Write reconstruction at (" << reconstruction_points[point_index]
+  saplog << "Write reconstruction at (" << probe_location_points[point_index]
          << ") to file " << filename << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename);
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
   data_file.precision(std::numeric_limits<double>::digits10);
 
   data_file << "# f(t, x, p, theta, mu) at (x,|p|) = ("
-            << reconstruction_points[point_index] << ") for t = " << cur_time
+            << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
   data_file << "# theta phi f(theta, phi) \n";
   for (unsigned int i = 0; i < theta_values.size(); ++i)
@@ -273,7 +272,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_spherical_density_map(
   const unsigned int         time_step_number,
   const double               cur_time) const
 {
-  AssertIndexRange(point_index, reconstruction_points.size());
+  AssertIndexRange(point_index, probe_location_points.size());
 
   const std::string filename =
     "spherical_density_map_point_" + Utilities::int_to_string(point_index, 2) +
@@ -282,13 +281,13 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_spherical_density_map(
                              output_parameters.n_digits_for_counter) +
     ".dat";
 
-  saplog << "Write reconstruction at (" << reconstruction_points[point_index]
+  saplog << "Write reconstruction at (" << probe_location_points[point_index]
          << ") to file " << filename << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename);
   data_file.precision(std::numeric_limits<double>::digits10);
 
   data_file << "# f(t, x, p) at (x,|p|) = ("
-            << reconstruction_points[point_index] << ") for t = " << cur_time
+            << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
   data_file << "# n_{p_x} n_{p_y} n_{p_z} f(p_x, p_z, p_y) \n";
   for (unsigned int i = 0; i < theta_values.size(); ++i)
@@ -313,14 +312,14 @@ sapphirepp::VFP::ProbeLocation<dim>::output_f_lms(
   const unsigned int         time_step_number,
   const double               cur_time) const
 {
-  AssertIndexRange(point_index, reconstruction_points.size());
+  AssertIndexRange(point_index, probe_location_points.size());
 
   const std::string filename = "f_lms_values_at_point_" +
                                Utilities::int_to_string(point_index, 2) +
                                ".dat";
 
   saplog << "Write values of expansion coefficients at point ("
-         << reconstruction_points[point_index] << ") to file " << filename
+         << probe_location_points[point_index] << ") to file " << filename
          << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename,
                           time_step_number == 0 ? std::ios_base::out :
@@ -333,7 +332,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_f_lms(
   if (time_step_number == 0)
     {
       sstream << "# f(t, x, p ) at (x,|p|) = ("
-              << reconstruction_points[point_index] << ")"
+              << probe_location_points[point_index] << ")"
               << "\n";
       sstream << "# time_step_number cur_time ";
       for (auto &lms : lms_indices)
