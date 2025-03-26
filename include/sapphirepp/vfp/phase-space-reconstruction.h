@@ -212,6 +212,21 @@ namespace sapphirepp
         const unsigned int         time_step_number = 0,
         const double               cur_time         = 0.) const;
       /** @} */
+
+      /**
+       * @brief Output \f$ f_{lms} \f$ at points in location list.
+       *
+       * @param expansion_coefficients Values of the expansion coefficients
+       * @param point_index Index of reconstructed point
+       * @param time_step_number Current time step number
+       * @param cur_time Current time
+       */
+      void
+      output_f_lms(const std::vector<double> &expansion_coefficients,
+                   const unsigned int         point_index,
+                   const unsigned int         time_step_number = 0,
+                   const double               cur_time         = 0.) const;
+      /** @} */
     };
   } // namespace VFP
 } // namespace sapphirepp

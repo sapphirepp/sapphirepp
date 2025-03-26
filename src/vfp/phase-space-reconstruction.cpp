@@ -181,17 +181,22 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
       unsigned int point_counter = 0;
       for (const auto &expansion_coefficients : coefficients_at_all_points)
         {
-          std::vector<double> f_values =
-            compute_phase_space_distribution(expansion_coefficients);
+          // std::vector<double> f_values =
+          //   compute_phase_space_distribution(expansion_coefficients);
 
-          output_gnu_splot_data(f_values,
-                                point_counter,
-                                time_step_number,
-                                cur_time);
-          output_gnu_splot_spherical_density_map(f_values,
-                                                 point_counter,
-                                                 time_step_number,
-                                                 cur_time);
+          // output_gnu_splot_data(f_values,
+          //                       point_counter,
+          //                       time_step_number,
+          //                       cur_time);
+          // output_gnu_splot_spherical_density_map(f_values,
+          //                                        point_counter,
+          //                                        time_step_number,
+          //                                        cur_time);
+          output_f_lms(expansion_coefficients,
+                       point_counter,
+                       time_step_number,
+                       cur_time);
+
           ++point_counter;
         }
     }
@@ -299,6 +304,49 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
         }
       data_file << std::endl;
     }
+}
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_f_lms(
+  const std::vector<double> &expansion_coefficients,
+  const unsigned int         point_index,
+  const unsigned int         time_step_number,
+  const double               cur_time) const
+{
+  AssertIndexRange(point_index, reconstruction_points.size());
+
+  const std::string filename = "f_lms_values_at_point_" +
+                               Utilities::int_to_string(point_index, 2) +
+                               ".dat";
+
+  saplog << "Write values of expansion coefficients at point ("
+         << reconstruction_points[point_index] << ") to file " << filename
+         << std::endl;
+  std::ofstream data_file(output_parameters.output_path / filename,
+                          std::ios_base::app);
+
+  // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
+  std::stringstream sstream;
+  sstream.precision(std::numeric_limits<double>::digits10);
+
+  if (time_step_number == 0)
+    {
+      sstream << "# f(t, x, p ) at (x,|p|) = ("
+              << reconstruction_points[point_index] << ")"
+              << "\n";
+      sstream << "time_step_number cur_time ";
+      for (auto &lms : lms_indices)
+        sstream << "f_" << lms[0] << lms[1] << lms[2] << " ";
+      sstream << "\n";
+      data_file << sstream.str();
+      sstream.clear();
+    }
+  sstream << time_step_number << " " << cur_time << " ";
+  for (auto f_lms : expansion_coefficients)
+    sstream << f_lms << " ";
+  // Write string to  data file
+  data_file << sstream.str() << "\n";
 }
 
 
