@@ -33,9 +33,10 @@
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 double
-sapphirepp::MHD::SlopeLimiter<dim>::minmod(const std::vector<double> &values)
+sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod(
+  const std::vector<double> &values)
 {
   auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
   if ((*min_it) * (*max_it) < 0.0)
@@ -48,21 +49,25 @@ sapphirepp::MHD::SlopeLimiter<dim>::minmod(const std::vector<double> &values)
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 double
-sapphirepp::MHD::SlopeLimiter<dim>::minmod_gradients(
-  const typename MHDEquations<dim>::flux_type              &cell_gradient,
-  const std::vector<typename MHDEquations<dim>::flux_type> &neighbor_gradients,
-  typename MHDEquations<dim>::flux_type                    &limited_gradient,
-  const double                                              dx)
+sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
+  const typename MHDEquations<dim, divergence_cleaning>::flux_type
+    &cell_gradient,
+  const std::vector<typename MHDEquations<dim, divergence_cleaning>::flux_type>
+    &neighbor_gradients,
+  typename MHDEquations<dim, divergence_cleaning>::flux_type &limited_gradient,
+  const double                                                dx)
 {
+  constexpr unsigned int n_components =
+    MHDEquations<dim, divergence_cleaning>::n_components;
   const double beta = 2.;
   const double M    = 0.;
 
   double              difference = 0.;
   std::vector<double> values;
   values.reserve(neighbor_gradients.size() + 1);
-  for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+  for (unsigned int c = 0; c < n_components; ++c)
     {
       for (unsigned int d = 0; d < dim; ++d)
         {
@@ -88,28 +93,30 @@ sapphirepp::MHD::SlopeLimiter<dim>::minmod_gradients(
         }
     }
 
-  difference /= static_cast<double>(MHDEquations<dim>::n_components);
+  difference /= static_cast<double>(n_components);
   return difference;
 }
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::SlopeLimiter<dim>::enforce_divergence_free_limited_gradient(
-  typename MHDEquations<dim>::flux_type &limited_gradient)
+sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
+  enforce_divergence_free_limited_gradient(
+    typename MHDEquations<dim, divergence_cleaning>::flux_type
+      &limited_gradient)
 {
+  constexpr unsigned int first_magnetic_component =
+    MHDEquations<dim, divergence_cleaning>::first_magnetic_component;
   double delta_p = 0;
   double delta_m = 0;
 
   for (unsigned int d = 0; d < dim; ++d)
     {
-      delta_p += std::max(
-        limited_gradient[MHDEquations<dim>::first_magnetic_component + d][d],
-        0.);
-      delta_m += std::max(
-        -limited_gradient[MHDEquations<dim>::first_magnetic_component + d][d],
-        0.);
+      delta_p +=
+        std::max(limited_gradient[first_magnetic_component + d][d], 0.);
+      delta_m +=
+        std::max(-limited_gradient[first_magnetic_component + d][d], 0.);
     }
 
   const double delta = delta_p - delta_m;
@@ -117,24 +124,25 @@ sapphirepp::MHD::SlopeLimiter<dim>::enforce_divergence_free_limited_gradient(
   if (delta > 0)
     {
       for (unsigned int d = 0; d < dim; ++d)
-        if (limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
-                            [d] > 0)
-          limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
-                          [d] *= delta_m / delta_p;
+        if (limited_gradient[first_magnetic_component + d][d] > 0)
+          limited_gradient[first_magnetic_component + d][d] *=
+            delta_m / delta_p;
     }
   else
     {
       for (unsigned int d = 0; d < dim; ++d)
-        if (limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
-                            [d] < 0)
-          limited_gradient[MHDEquations<dim>::first_magnetic_component + d]
-                          [d] *= delta_p / delta_m;
+        if (limited_gradient[first_magnetic_component + d][d] < 0)
+          limited_gradient[first_magnetic_component + d][d] *=
+            delta_p / delta_m;
     }
 }
 
 
 
 // Explicit instantiations
-template class sapphirepp::MHD::SlopeLimiter<1>;
-template class sapphirepp::MHD::SlopeLimiter<2>;
-template class sapphirepp::MHD::SlopeLimiter<3>;
+template class sapphirepp::MHD::SlopeLimiter<1, false>;
+template class sapphirepp::MHD::SlopeLimiter<1, true>;
+template class sapphirepp::MHD::SlopeLimiter<2, false>;
+template class sapphirepp::MHD::SlopeLimiter<2, true>;
+template class sapphirepp::MHD::SlopeLimiter<3, false>;
+template class sapphirepp::MHD::SlopeLimiter<3, true>;

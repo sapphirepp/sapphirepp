@@ -54,8 +54,10 @@ namespace sapphirepp
      *
      * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
      *         `dim`
+     * @tparam divergence_cleaning Use Lagrange multiplier \f$ \psi \f$
+     *         for hyperbolic divergence cleaning.
      */
-    template <unsigned int dim>
+    template <unsigned int dim, bool divergence_cleaning>
     class SlopeLimiter
     {
     public:
@@ -105,11 +107,14 @@ namespace sapphirepp
        */
       static double
       minmod_gradients(
-        const typename MHDEquations<dim>::flux_type &cell_gradient,
-        const std::vector<typename MHDEquations<dim>::flux_type>
-                                              &neighbor_gradients,
-        typename MHDEquations<dim>::flux_type &limited_gradient,
-        const double                           dx);
+        const typename MHDEquations<dim, divergence_cleaning>::flux_type
+          &cell_gradient,
+        const std::vector<
+          typename MHDEquations<dim, divergence_cleaning>::flux_type>
+          &neighbor_gradients,
+        typename MHDEquations<dim, divergence_cleaning>::flux_type
+                    &limited_gradient,
+        const double dx);
 
 
 
@@ -146,7 +151,8 @@ namespace sapphirepp
        */
       static void
       enforce_divergence_free_limited_gradient(
-        typename MHDEquations<dim>::flux_type &limited_gradient);
+        typename MHDEquations<dim, divergence_cleaning>::flux_type
+          &limited_gradient);
     };
   } // namespace MHD
 } // namespace sapphirepp
