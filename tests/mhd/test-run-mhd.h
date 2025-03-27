@@ -60,6 +60,12 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
       using namespace sapphirepp;
       using namespace MHD;
 
+      static constexpr bool divergence_cleaning =
+        MHDSolver<dim>::divergence_cleaning;
+      constexpr unsigned int n_components =
+        MHDEquations<dim, divergence_cleaning>::n_components;
+      static_cast<void>(n_components);
+
       saplog << "Start test run mhd" << std::endl;
       LogStream::Prefix p("Test", saplog);
 
@@ -89,8 +95,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
 
 
       /** [Setup analytic solution] */
-      AssertDimension(exact_solution.n_components,
-                      MHDEquations<dim>::n_components);
+      AssertDimension(exact_solution.n_components, n_components);
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
         mhd_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
@@ -125,17 +130,21 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
               // Output numeric solution
               data_out.add_data_vector(
                 mhd_solver.get_current_solution(),
-                MHDEquations<dim>::create_component_name_list("numeric_"),
+                MHDEquations<dim, divergence_cleaning>::
+                  create_component_name_list("numeric_"),
                 dealii::DataOut<dim>::type_dof_data,
-                MHDEquations<dim>::create_component_interpretation_list());
+                MHDEquations<dim, divergence_cleaning>::
+                  create_component_interpretation_list());
 
               // Output projected analytic solution
               mhd_solver.project(exact_solution, analytic_solution_vector);
               data_out.add_data_vector(
                 analytic_solution_vector,
-                MHDEquations<dim>::create_component_name_list("project_"),
+                MHDEquations<dim, divergence_cleaning>::
+                  create_component_name_list("project_"),
                 dealii::DataOut<dim>::type_dof_data,
-                MHDEquations<dim>::create_component_interpretation_list());
+                MHDEquations<dim, divergence_cleaning>::
+                  create_component_interpretation_list());
 
               // Output interpolated analytic solution
               dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
@@ -143,15 +152,18 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                                                analytic_solution_vector);
               data_out.add_data_vector(
                 analytic_solution_vector,
-                MHDEquations<dim>::create_component_name_list("interpol_"),
+                MHDEquations<dim, divergence_cleaning>::
+                  create_component_name_list("interpol_"),
                 dealii::DataOut<dim>::type_dof_data,
-                MHDEquations<dim>::create_component_interpretation_list());
+                MHDEquations<dim, divergence_cleaning>::
+                  create_component_interpretation_list());
 
               // Output cell average and shock indicator
-              data_out.add_data_vector(mhd_solver.get_cell_average_component(
-                                         MHDEquations<dim>::density_component),
-                                       "average_roh",
-                                       DataOut<dim>::type_cell_data);
+              data_out.add_data_vector(
+                mhd_solver.get_cell_average_component(
+                  MHDEquations<dim, divergence_cleaning>::density_component),
+                "average_roh",
+                DataOut<dim>::type_cell_data);
               data_out.add_data_vector(mhd_solver.get_shock_indicator(),
                                        "shock_indicator",
                                        DataOut<dim>::type_cell_data);
@@ -241,17 +253,21 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
         // Output numeric solution
         data_out.add_data_vector(
           mhd_solver.get_current_solution(),
-          MHDEquations<dim>::create_component_name_list("numeric_"),
+          MHDEquations<dim, divergence_cleaning>::create_component_name_list(
+            "numeric_"),
           dealii::DataOut<dim>::type_dof_data,
-          MHDEquations<dim>::create_component_interpretation_list());
+          MHDEquations<dim, divergence_cleaning>::
+            create_component_interpretation_list());
 
         // Output projected analytic solution
         mhd_solver.project(exact_solution, analytic_solution_vector);
         data_out.add_data_vector(
           analytic_solution_vector,
-          MHDEquations<dim>::create_component_name_list("project_"),
+          MHDEquations<dim, divergence_cleaning>::create_component_name_list(
+            "project_"),
           dealii::DataOut<dim>::type_dof_data,
-          MHDEquations<dim>::create_component_interpretation_list());
+          MHDEquations<dim, divergence_cleaning>::
+            create_component_interpretation_list());
 
         // Output interpolated analytic solution
         dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
@@ -259,15 +275,18 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                                          analytic_solution_vector);
         data_out.add_data_vector(
           analytic_solution_vector,
-          MHDEquations<dim>::create_component_name_list("interpol_"),
+          MHDEquations<dim, divergence_cleaning>::create_component_name_list(
+            "interpol_"),
           dealii::DataOut<dim>::type_dof_data,
-          MHDEquations<dim>::create_component_interpretation_list());
+          MHDEquations<dim, divergence_cleaning>::
+            create_component_interpretation_list());
 
         // Output cell average and shock indicator
-        data_out.add_data_vector(mhd_solver.get_cell_average_component(
-                                   MHDEquations<dim>::density_component),
-                                 "average_roh",
-                                 DataOut<dim>::type_cell_data);
+        data_out.add_data_vector(
+          mhd_solver.get_cell_average_component(
+            MHDEquations<dim, divergence_cleaning>::density_component),
+          "average_roh",
+          DataOut<dim>::type_cell_data);
         data_out.add_data_vector(mhd_solver.get_shock_indicator(),
                                  "shock_indicator",
                                  DataOut<dim>::type_cell_data);

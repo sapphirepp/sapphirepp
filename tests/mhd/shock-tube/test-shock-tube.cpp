@@ -89,10 +89,13 @@ main(int argc, char *argv[])
       /** [Main function setup] */
 
       /** [Setup exact solution] */
+      static constexpr bool divergence_cleaning =
+        MHDSolver<dim>::divergence_cleaning;
+
       Utils::GridDataFunction<dim_mhd> exact_solution(
         comparison_path,
         comparison_base_filename,
-        MHDEquations<dim>::n_components,
+        MHDEquations<dim, divergence_cleaning>::n_components,
         0.,
         5);
       /** [Setup exact solution] */

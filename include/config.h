@@ -702,6 +702,14 @@ namespace sapphirepp
     {
     public:
       /**
+       * Use Lagrange multiplier \f$ \psi \f$
+       * for hyperbolic divergence cleaning.
+       */
+      static constexpr bool hdc =
+        (mhd_flags & MHDFlags::hyperbolic_divergence_cleaning) !=
+        MHDFlags::none;
+
+      /**
        * @brief Constructor
        *
        * @param physical_parameters User defined runtime parameters
@@ -709,7 +717,7 @@ namespace sapphirepp
        */
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
                           const double              adiabatic_index)
-        : dealii::Function<dim>(MHDEquations<dim>::n_components)
+        : dealii::Function<dim>(MHDEquations<dim, hdc>::n_components)
         , prm{physical_parameters}
         , mhd_equations(adiabatic_index)
       {}
@@ -754,18 +762,18 @@ namespace sapphirepp
           0.5 * (b_x * b_x + b_y * b_y + b_z * b_z);
 
         // Background state in conserved variables
-        f                                                  = 0;
-        f[MHDEquations<dim>::density_component]            = density;
-        f[MHDEquations<dim>::first_momentum_component + 0] = density * u_x;
-        f[MHDEquations<dim>::first_momentum_component + 1] = density * u_y;
-        f[MHDEquations<dim>::first_momentum_component + 2] = density * u_z;
-        f[MHDEquations<dim>::energy_component]             = energy;
-        f[MHDEquations<dim>::first_magnetic_component + 0] = b_x;
-        f[MHDEquations<dim>::first_magnetic_component + 1] = b_y;
-        f[MHDEquations<dim>::first_magnetic_component + 2] = b_z;
+        f                                                       = 0;
+        f[MHDEquations<dim, hdc>::density_component]            = density;
+        f[MHDEquations<dim, hdc>::first_momentum_component + 0] = density * u_x;
+        f[MHDEquations<dim, hdc>::first_momentum_component + 1] = density * u_y;
+        f[MHDEquations<dim, hdc>::first_momentum_component + 2] = density * u_z;
+        f[MHDEquations<dim, hdc>::energy_component]             = energy;
+        f[MHDEquations<dim, hdc>::first_magnetic_component + 0] = b_x;
+        f[MHDEquations<dim, hdc>::first_magnetic_component + 1] = b_y;
+        f[MHDEquations<dim, hdc>::first_magnetic_component + 2] = b_z;
 
-        typename MHDEquations<dim>::state_type R(
-          MHDEquations<dim>::n_components);
+        typename MHDEquations<dim, hdc>::state_type R(
+          MHDEquations<dim, hdc>::n_components);
 
         // Left going sound wave (a_s = 1.)
         R    = 0;
@@ -805,7 +813,7 @@ namespace sapphirepp
         // R[6] = -4.216370213557841e-01;
         // R[7] = -1.490711984999860e-01;
 
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < MHDEquations<dim, hdc>::n_components; ++c)
           f[c] += amplitude * R[c] * std::sin(2. * M_PI * x / length);
 
         /** [MHD Initial condition] */
@@ -817,7 +825,7 @@ namespace sapphirepp
       /** User defined runtime parameters */
       const PhysicalParameters prm;
       /** @ref MHDEquations */
-      const MHDEquations<dim> mhd_equations;
+      const MHDEquations<dim, hdc> mhd_equations;
     };
 
   } // namespace MHD

@@ -197,29 +197,38 @@ namespace sapphirepp
     class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
+      static constexpr bool hdc =
+        (mhd_flags & MHDFlags::hyperbolic_divergence_cleaning) !=
+        MHDFlags::none;
+
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
                           const double              adiabatic_index)
 
-        : dealii::Function<dim>(MHDEquations<dim>::n_components)
+        : dealii::Function<dim>(MHDEquations<dim, hdc>::n_components)
         , prm{physical_parameters}
         , mhd_equations(adiabatic_index)
-        , primitive_background_state(MHDEquations<dim>::n_components)
-        , conserved_background_state(MHDEquations<dim>::n_components)
-        , eigenvalues(MHDEquations<dim>::n_components)
-        , eigenvectors(MHDEquations<dim>::n_components)
+        , primitive_background_state(MHDEquations<dim, hdc>::n_components)
+        , conserved_background_state(MHDEquations<dim, hdc>::n_components)
+        , eigenvalues(MHDEquations<dim, hdc>::n_components)
+        , eigenvectors(MHDEquations<dim, hdc>::n_components)
       {
+        constexpr unsigned int n_components =
+          MHDEquations<dim, hdc>::n_components;
         dealii::LogStream::Prefix pre1("InitialConditionMHD", saplog);
 
-        primitive_background_state[MHDEquations<dim>::density_component] =
+        primitive_background_state[MHDEquations<dim, hdc>::density_component] =
           prm.rho_0;
-        primitive_background_state[MHDEquations<dim>::pressure_component] =
+        primitive_background_state[MHDEquations<dim, hdc>::pressure_component] =
           prm.P_0;
-        for (unsigned int d = 0; d < MHDEquations<dim>::n_vec_components; ++d)
+        for (unsigned int d = 0; d < MHDEquations<dim, hdc>::n_vec_components;
+             ++d)
           {
             primitive_background_state
-              [MHDEquations<dim>::first_velocity_component + d] = prm.u_0[d];
+              [MHDEquations<dim, hdc>::first_velocity_component + d] =
+                prm.u_0[d];
             primitive_background_state
-              [MHDEquations<dim>::first_magnetic_component + d] = prm.b_0[d];
+              [MHDEquations<dim, hdc>::first_magnetic_component + d] =
+                prm.b_0[d];
           }
 
         saplog << "Primitive background state: " << std::endl;
@@ -267,81 +276,80 @@ namespace sapphirepp
         mhd_equations.compute_right_eigenvector_matrix(
           conserved_background_state, normal_vector, eigenvectors);
 
-        dealii::FullMatrix<double> left_eigenvectors(
-          MHDEquations<dim>::n_components);
+        dealii::FullMatrix<double> left_eigenvectors(n_components);
         mhd_equations.compute_left_eigenvector_matrix(
           conserved_background_state, normal_vector, left_eigenvectors);
 
 
         saplog << "Left going fast magneto-sonic wave, eigenvalue=u-c_f="
                << eigenvalues[0] << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][0] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[0][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Left going Alfven wave, eigenvalue=u-c_a=" << eigenvalues[1]
                << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][1] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[1][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Left going slow magneto-sonic wave, eigenvalue=u-c_s="
                << eigenvalues[2] << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][2] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[2][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Density entropy mode, eigenvalue=u=" << eigenvalues[3]
                << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][3] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[3][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Magnetic entropy mode, eigenvalue=u=" << eigenvalues[4]
                << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][4] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[4][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Right going slow magneto-sonic wave, eigenvalue=u+c_s="
                << eigenvalues[5] << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][5] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[5][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Right going Alfven wave, eigenvalue=u+c_a=" << eigenvalues[6]
                << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][6] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[6][c] << " ";
         saplog << std::endl << std::endl;
 
         saplog << "Right going fast magneto-sonic wave, eigenvalue=u+c_f="
                << eigenvalues[7] << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][7] << " ";
         saplog << std::endl;
-        for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[7][c] << " ";
         saplog << std::endl << std::endl;
 
@@ -352,16 +360,16 @@ namespace sapphirepp
         saplog << "Left eigenvector matrix L:" << std::endl;
         left_eigenvectors.print(saplog, 12, 5);
 
-        dealii::FullMatrix<double> result(MHDEquations<dim>::n_components);
-        dealii::IdentityMatrix     id_matrix(MHDEquations<dim>::n_components);
+        dealii::FullMatrix<double> result(n_components);
+        dealii::IdentityMatrix     id_matrix(n_components);
         dealii::FullMatrix<double> identity(id_matrix);
         const double               epsilon_d = 1e-6;
 
         left_eigenvectors.mmult(result, eigenvectors);
         saplog << "L*R:" << std::endl;
         result.print(saplog, 12, 5);
-        for (unsigned int i = 0; i < MHDEquations<dim>::n_components; ++i)
-          for (unsigned int j = 0; j < MHDEquations<dim>::n_components; ++j)
+        for (unsigned int i = 0; i < n_components; ++i)
+          for (unsigned int j = 0; j < n_components; ++j)
             AssertThrow(std::abs(result[i][j] - identity[i][j]) < epsilon_d,
                         dealii::ExcMessage("Problem with eigenvectors: l_" +
                                            std::to_string(i + 1) + " * r_" +
@@ -371,8 +379,8 @@ namespace sapphirepp
         eigenvectors.mmult(result, left_eigenvectors);
         saplog << "R*L:" << std::endl;
         result.print(saplog, 12, 5);
-        for (unsigned int i = 0; i < MHDEquations<dim>::n_components; ++i)
-          for (unsigned int j = 0; j < MHDEquations<dim>::n_components; ++j)
+        for (unsigned int i = 0; i < n_components; ++i)
+          for (unsigned int j = 0; j < n_components; ++j)
             AssertThrow(std::abs(result[i][j] - identity[i][j]) < epsilon_d,
                         dealii::ExcMessage("Problem with eigenvectors: (R*L)_" +
                                            std::to_string(i + 1) +
@@ -394,8 +402,9 @@ namespace sapphirepp
 
         f = conserved_background_state;
 
-        for (unsigned int i = 0; i < MHDEquations<dim>::n_components; ++i)
-          for (unsigned int c = 0; c < MHDEquations<dim>::n_components; ++c)
+        for (unsigned int i = 0; i < MHDEquations<dim, hdc>::n_components; ++i)
+          for (unsigned int c = 0; c < MHDEquations<dim, hdc>::n_components;
+               ++c)
             f[c] +=
               prm.amplitude * prm.eigenmodes[i] * eigenvectors[c][i] *
               std::sin(wave_vector * point - eigenvalues[i] * wave_number * t);
@@ -405,14 +414,14 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters               prm;
-      const MHDEquations<dim>                mhd_equations;
-      typename MHDEquations<dim>::state_type primitive_background_state;
-      typename MHDEquations<dim>::state_type conserved_background_state;
-      double                                 wave_number;
-      dealii::Tensor<1, dim>                 wave_vector;
-      dealii::Vector<double>                 eigenvalues;
-      dealii::FullMatrix<double>             eigenvectors;
+      const PhysicalParameters                    prm;
+      const MHDEquations<dim, hdc>                mhd_equations;
+      typename MHDEquations<dim, hdc>::state_type primitive_background_state;
+      typename MHDEquations<dim, hdc>::state_type conserved_background_state;
+      double                                      wave_number;
+      dealii::Tensor<1, dim>                      wave_vector;
+      dealii::Vector<double>                      eigenvalues;
+      dealii::FullMatrix<double>                  eigenvectors;
     };
 
   } // namespace MHD
