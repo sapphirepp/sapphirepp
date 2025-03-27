@@ -88,17 +88,38 @@ namespace sapphirepp
     {
     public:
       /**
-       * @brief Number of components `c`.
-       *
-       * @ref MHDEquations::n_components
+       * Use Lagrange multiplier \f$ \psi \f$
+       * for hyperbolic divergence cleaning.
        */
+      static constexpr bool divergence_cleaning =
+        (mhd_flags & MHDFlags::hyperbolic_divergence_cleaning) !=
+        MHDFlags::none;
+
+      /** @ref MHDEquations::n_components */
       static constexpr unsigned int n_components =
-        MHDEquations<dim>::n_components;
+        MHDEquations<dim, divergence_cleaning>::n_components;
+      /** @ref MHDEquations::density_component */
+      static constexpr unsigned int density_component =
+        MHDEquations<dim, divergence_cleaning>::density_component;
+      /** @ref MHDEquations::first_momentum_component */
+      static constexpr unsigned int first_momentum_component =
+        MHDEquations<dim, divergence_cleaning>::first_momentum_component;
+      /** @ref MHDEquations::energy_component */
+      static constexpr unsigned int energy_component =
+        MHDEquations<dim, divergence_cleaning>::energy_component;
+      /** @ref MHDEquations::first_magnetic_component */
+      static constexpr unsigned int first_magnetic_component =
+        MHDEquations<dim, divergence_cleaning>::first_magnetic_component;
+      /** @ref MHDEquations::divergence_cleaning_component */
+      static constexpr unsigned int divergence_cleaning_component =
+        MHDEquations<dim, divergence_cleaning>::divergence_cleaning_component;
 
       /** @ref MHDEquations::state_type */
-      using state_type = typename MHDEquations<dim>::state_type;
+      using state_type =
+        typename MHDEquations<dim, divergence_cleaning>::state_type;
       /** @ref MHDEquations::flux_type */
-      using flux_type = typename MHDEquations<dim>::flux_type;
+      using flux_type =
+        typename MHDEquations<dim, divergence_cleaning>::flux_type;
 
 
       /**
@@ -289,7 +310,7 @@ namespace sapphirepp
        *
        * @return const MHDEquations&
        */
-      const MHDEquations<dim> &
+      const MHDEquations<dim, divergence_cleaning> &
       get_mhd_equations() const;
 
       /**
@@ -391,11 +412,11 @@ namespace sapphirepp
 
       /** @{ */
       /** @ref MHDEquations */
-      MHDEquations<dim> mhd_equations;
+      MHDEquations<dim, divergence_cleaning> mhd_equations;
       /** @ref NumericalFlux */
-      NumericalFlux<dim> numerical_flux;
+      NumericalFlux<dim, divergence_cleaning> numerical_flux;
       /** @ref SlopeLimiter */
-      SlopeLimiter<dim> slope_limiter;
+      SlopeLimiter<dim, divergence_cleaning> slope_limiter;
       /** @} */
 
       /** MPI communicator */
