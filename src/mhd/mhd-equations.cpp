@@ -41,8 +41,9 @@ const double epsilon_d = 1e-6;
 
 
 
-template <unsigned int dim>
-sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
+template <unsigned int dim, bool divergence_cleaning>
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
+  const double adiabatic_index)
   : adiabatic_index{adiabatic_index}
 {
   AssertThrow(adiabatic_index > 1.0,
@@ -53,16 +54,18 @@ sapphirepp::MHD::MHDEquations<dim>::MHDEquations(const double adiabatic_index)
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 std::vector<std::string>
-sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
-  const std::string &prefix)
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  create_component_name_list(const std::string &prefix)
 {
   std::vector<std::string> component_names(n_components);
   const char vec_component_name[n_vec_components] = {'x', 'y', 'z'};
 
   component_names[density_component] = prefix + "rho";
   component_names[energy_component]  = prefix + "E";
+  if constexpr (divergence_cleaning)
+    component_names[divergence_cleaning_component] = prefix + "psi";
   for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       component_names[first_momentum_component + d] =
@@ -76,9 +79,10 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_name_list(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
-sapphirepp::MHD::MHDEquations<dim>::create_component_interpretation_list()
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  create_component_interpretation_list()
 {
   std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
     data_component_interpretation(n_components);
@@ -87,6 +91,9 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_interpretation_list()
     dealii::DataComponentInterpretation::component_is_scalar;
   data_component_interpretation[energy_component] =
     dealii::DataComponentInterpretation::component_is_scalar;
+  if constexpr (divergence_cleaning)
+    data_component_interpretation[divergence_cleaning_component] =
+      dealii::DataComponentInterpretation::component_is_scalar;
   // Interpret components in the plain as vector components
   for (unsigned int d = 0; d < dim; ++d)
     {
@@ -109,9 +116,9 @@ sapphirepp::MHD::MHDEquations<dim>::create_component_interpretation_list()
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::compute_flux_matrix(
   const state_type &state,
   flux_type        &flux_matrix) const
 {
@@ -160,11 +167,11 @@ sapphirepp::MHD::MHDEquations<dim>::compute_flux_matrix(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
-  const state_type             &state,
-  const dealii::Tensor<1, dim> &normal) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_maximum_normal_eigenvalue(const state_type             &state,
+                                    const dealii::Tensor<1, dim> &normal) const
 {
   AssertDimension(state.size(), n_components);
   Assert(std::abs(normal.norm() - 1) < epsilon_d,
@@ -216,10 +223,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximum_normal_eigenvalue(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_maximum_eigenvalue(
-  const state_type &state) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_maximum_eigenvalue(const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
 
@@ -252,10 +259,10 @@ sapphirepp::MHD::MHDEquations<dim>::compute_maximum_eigenvalue(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_pressure_unsafe(
-  const state_type &state) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_pressure_unsafe(const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
 
@@ -279,9 +286,9 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure_unsafe(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 double
-sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::compute_pressure(
   const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
@@ -296,12 +303,12 @@ sapphirepp::MHD::MHDEquations<dim>::compute_pressure(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
-  const state_type             &state,
-  const dealii::Tensor<1, dim> &normal,
-  dealii::Vector<double>       &eigenvalues) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_normale_eigenvalues(const state_type             &state,
+                              const dealii::Tensor<1, dim> &normal,
+                              dealii::Vector<double>       &eigenvalues) const
 {
   AssertDimension(state.size(), n_components);
   AssertDimension(eigenvalues.size(), n_components);
@@ -367,12 +374,13 @@ sapphirepp::MHD::MHDEquations<dim>::compute_normale_eigenvalues(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
-  const state_type             &state,
-  const dealii::Tensor<1, dim> &normal,
-  dealii::FullMatrix<double>   &eigenvectors) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_right_eigenvector_matrix(
+    const state_type             &state,
+    const dealii::Tensor<1, dim> &normal,
+    dealii::FullMatrix<double>   &eigenvectors) const
 
 {
   AssertDimension(state.size(), n_components);
@@ -608,12 +616,13 @@ sapphirepp::MHD::MHDEquations<dim>::compute_right_eigenvector_matrix(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
-  const state_type             &state,
-  const dealii::Tensor<1, dim> &normal,
-  dealii::FullMatrix<double>   &eigenvectors) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_left_eigenvector_matrix(
+    const state_type             &state,
+    const dealii::Tensor<1, dim> &normal,
+    dealii::FullMatrix<double>   &eigenvectors) const
 
 {
   AssertDimension(state.size(), n_components);
@@ -877,12 +886,13 @@ sapphirepp::MHD::MHDEquations<dim>::compute_left_eigenvector_matrix(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::compute_transformation_matrices(
-  const state_type                            &state,
-  std::array<dealii::FullMatrix<double>, dim> &left_matrices,
-  std::array<dealii::FullMatrix<double>, dim> &right_matrices) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_transformation_matrices(
+    const state_type                            &state,
+    std::array<dealii::FullMatrix<double>, dim> &left_matrices,
+    std::array<dealii::FullMatrix<double>, dim> &right_matrices) const
 {
   // TODO
   AssertDimension(state.size(), n_components);
@@ -906,11 +916,11 @@ sapphirepp::MHD::MHDEquations<dim>::compute_transformation_matrices(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
-  const state_type &primitive_state,
-  state_type       &conserved_state) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  convert_primitive_to_conserved(const state_type &primitive_state,
+                                 state_type       &conserved_state) const
 {
   AssertDimension(primitive_state.size(), n_components);
   AssertDimension(conserved_state.size(), n_components);
@@ -952,11 +962,11 @@ sapphirepp::MHD::MHDEquations<dim>::convert_primitive_to_conserved(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
-  const state_type &conserved_state,
-  state_type       &primitive_state) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  convert_conserved_to_primitive(const state_type &conserved_state,
+                                 state_type       &primitive_state) const
 {
   AssertDimension(conserved_state.size(), n_components);
   AssertDimension(primitive_state.size(), n_components);
@@ -975,12 +985,12 @@ sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_primitive(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::convert_characteristic_to_conserved(
-  const state_type             &characteristic_state,
-  const dealii::Tensor<1, dim> &normal,
-  state_type                   &conserved_state) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  convert_characteristic_to_conserved(const state_type &characteristic_state,
+                                      const dealii::Tensor<1, dim> &normal,
+                                      state_type &conserved_state) const
 {
   dealii::FullMatrix<double> right_matrix(n_components);
   compute_right_eigenvector_matrix(conserved_state, normal, right_matrix);
@@ -990,12 +1000,12 @@ sapphirepp::MHD::MHDEquations<dim>::convert_characteristic_to_conserved(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_characteristic(
-  const state_type             &conserved_state,
-  const dealii::Tensor<1, dim> &normal,
-  state_type                   &characteristic_state) const
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  convert_conserved_to_characteristic(const state_type &conserved_state,
+                                      const dealii::Tensor<1, dim> &normal,
+                                      state_type &characteristic_state) const
 {
   dealii::FullMatrix<double> left_matrix(n_components);
   compute_left_eigenvector_matrix(conserved_state, normal, left_matrix);
@@ -1005,9 +1015,9 @@ sapphirepp::MHD::MHDEquations<dim>::convert_conserved_to_characteristic(
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   convert_gradient_characteristic_to_conserved(
     const flux_type                             &characteristic_gradient,
     std::array<dealii::FullMatrix<double>, dim> &right_matrices,
@@ -1032,9 +1042,9 @@ sapphirepp::MHD::MHDEquations<dim>::
 
 
 
-template <unsigned int dim>
+template <unsigned int dim, bool divergence_cleaning>
 void
-sapphirepp::MHD::MHDEquations<dim>::
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   convert_gradient_conserved_to_characteristic(
     const flux_type                             &conserved_gradient,
     std::array<dealii::FullMatrix<double>, dim> &left_matrices,
@@ -1060,6 +1070,9 @@ sapphirepp::MHD::MHDEquations<dim>::
 
 
 // Explicit instantiations
-template class sapphirepp::MHD::MHDEquations<1>;
-template class sapphirepp::MHD::MHDEquations<2>;
-template class sapphirepp::MHD::MHDEquations<3>;
+template class sapphirepp::MHD::MHDEquations<1, false>;
+template class sapphirepp::MHD::MHDEquations<1, true>;
+template class sapphirepp::MHD::MHDEquations<2, false>;
+template class sapphirepp::MHD::MHDEquations<2, true>;
+template class sapphirepp::MHD::MHDEquations<3, false>;
+template class sapphirepp::MHD::MHDEquations<3, true>;

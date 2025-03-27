@@ -117,8 +117,10 @@ namespace sapphirepp
      *
      * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
      *         `dim`
+     * @tparam divergence_cleaning Use Lagrange multiplier \f$ \psi \f$
+     *         for hyperbolic divergence cleaning.
      */
-    template <unsigned int dim>
+    template <unsigned int dim, bool divergence_cleaning>
     class MHDEquations
     {
     public:
@@ -130,7 +132,7 @@ namespace sapphirepp
       static constexpr unsigned int n_vec_components = 3;
       /** Number of components `c`. */
       static constexpr unsigned int n_components =
-        2 + n_vec_components + n_vec_components;
+        2 + n_vec_components + n_vec_components + divergence_cleaning;
       /** Index of the density component \f$ \rho \f$. */
       static constexpr unsigned int density_component = 0;
       /**
@@ -147,6 +149,14 @@ namespace sapphirepp
        */
       static constexpr unsigned int first_magnetic_component =
         n_vec_components + 2;
+      /**
+       * Index of the Lagrange multiplier \f$ \psi \f$
+       * for hyperbolic divergence cleaning.
+       *
+       * @note Only use if `divergence_cleaning` is activated!
+       */
+      static constexpr unsigned int divergence_cleaning_component =
+        2 * n_vec_components + 2;
       /**
        * Only in primitive states: Starting index of the velocity components
        * \f$ \mathbf{u} \f$ (@ref n_vec_components components).
@@ -170,10 +180,13 @@ namespace sapphirepp
        *     \rho        \\
        *     \mathbf{p}  \\
        *     \mathcal{E} \\
-       *     \mathbf{b}
+       *     \mathbf{b}  \\
+       *     \psi
        *   \end{pmatrix} \,,
        * \f]
-       * with \f$ \mathbf{b} = \frac{\mathbf{B}}{\sqrt{4\pi}} \f$.
+       * with \f$ \mathbf{b} = \frac{\mathbf{B}}{\sqrt{4\pi}} \f$
+       * and \f$ \psi \f$ the Lagrange multiplier
+       * only used for hyperbolic divergence cleaning.
        * They are indexed as `state[c]` with the index `c` corresponding to the
        * component.
        */
@@ -204,7 +217,7 @@ namespace sapphirepp
        * @brief Create a list of component names corresponding to the conserved
        *        MHD state.
        *
-       * Returns a list: `rho`, `p`, `E`, `b`.
+       * Returns a list: `rho`, `p`, `E`, `b` (, `psi`).
        *
        * @param prefix Prefix for the component names.
        * @return std::vector<std::string> component_names.
