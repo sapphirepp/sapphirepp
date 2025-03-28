@@ -182,20 +182,22 @@ namespace sapphirepp
        * @brief Calculate one time step with the explicit Euler method
        *
        * @param time Current time
-       * @param time_step Time step size
+       * @param max_time_step Maximum time step
+       * @return double time_step_size used (according to CFL condition)
        */
-      void
-      forward_euler_method(const double time, const double time_step);
+      double
+      forward_euler_method(const double time, const double max_time_step);
 
       /**
        * @brief Calculate one time step with a strong stability-preserving
        *        Runge-Kutta method.
        *
        * @param time Current time
-       * @param time_step Time step size
+       * @param max_time_step Maximum time step
+       * @return double time_step_size used (according to CFL condition)
        */
-      void
-      explicit_runge_kutta(const double time, const double time_step);
+      double
+      explicit_runge_kutta(const double time, const double max_time_step);
       /** @} */
 
 

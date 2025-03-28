@@ -378,14 +378,22 @@ sapphirepp::MHD::MHDSolver<dim>::run()
       switch (mhd_parameters.time_stepping_method)
         {
           case TimeSteppingMethodMHD::forward_euler:
-            forward_euler_method(discrete_time.get_current_time(),
-                                 discrete_time.get_next_step_size());
-            break;
+            {
+              const double time_step_size =
+                forward_euler_method(discrete_time.get_current_time(),
+                                     discrete_time.get_next_step_size());
+              discrete_time.set_next_step_size(time_step_size);
+              break;
+            }
           case TimeSteppingMethodMHD::erk2:
           case TimeSteppingMethodMHD::erk4:
-            explicit_runge_kutta(discrete_time.get_current_time(),
-                                 discrete_time.get_next_step_size());
-            break;
+            {
+              const double time_step_size =
+                explicit_runge_kutta(discrete_time.get_current_time(),
+                                     discrete_time.get_next_step_size());
+              discrete_time.set_next_step_size(time_step_size);
+              break;
+            }
           default:
             AssertThrow(false, ExcNotImplemented());
         }
@@ -1627,24 +1635,32 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
 
 
 template <unsigned int dim>
-void
-sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
-                                                      const double time_step)
+double
+sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(
+  const double time,
+  const double max_time_step)
 {
   TimerOutput::Scope timer_section(timer, "FE method - MHD");
   LogStream::Prefix  p("FE_method", saplog);
-  // Equation: mass_matrix  f(time + time_step) = mass_matrix f(time) +
-  // time_step * rhs(time)
+  // Equation: mass_matrix  f(time + time_step_size) = mass_matrix f(time) +
+  // time_step_size * rhs(time)
+
+
+  // Compute time step
+  compute_cfl_condition();
+  const double time_step_size = std::min(global_dt_cfl, max_time_step);
+  saplog << "Perform FE time step with dt=" << time_step_size << std::endl;
+  if (time_step_size / global_dt_cfl < 0.1)
+    saplog.print_warning(
+      "Used time step, dt=" + Utilities::to_string(time_step_size) +
+      ", is much smaller than CFL condition, dt_cfl=" +
+      Utilities::to_string(global_dt_cfl));
 
   // Assemble the right hand side
   assemble_dg_rhs(time);
-  AssertThrow(time_step <= global_dt_cfl,
-              ExcMessage(
-                "Violated CFL condition: " + std::to_string(time_step) + " > " +
-                std::to_string(global_dt_cfl)));
 
   mass_matrix.vmult(system_rhs, locally_owned_solution);
-  system_rhs.add(time_step, dg_rhs);
+  system_rhs.add(time_step_size, dg_rhs);
 
   SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
@@ -1663,17 +1679,30 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
          << " iterations." << std::endl;
 
   apply_limiter();
+
+  return time_step_size;
 }
 
 
 
 template <unsigned int dim>
-void
-sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
-                                                      const double time_step)
+double
+sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
+  const double time,
+  const double max_time_step)
 {
   TimerOutput::Scope timer_section(timer, "ERK - MHD");
   LogStream::Prefix  p("ERK", saplog);
+
+  // Compute time step
+  compute_cfl_condition();
+  const double time_step_size = std::min(global_dt_cfl, max_time_step);
+  saplog << "Perform ERK time step with dt=" << time_step_size << std::endl;
+  if (time_step_size / global_dt_cfl < 0.1)
+    saplog.print_warning(
+      "Used time step, dt=" + Utilities::to_string(time_step_size) +
+      ", is much smaller than CFL condition, dt_cfl=" +
+      Utilities::to_string(global_dt_cfl));
 
   // Number of stages: erk2 uses 2 stages, erk 4 uses 5 stages
   const unsigned int s =
@@ -1765,11 +1794,7 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
 
   // Stage i=0
   locally_owned_staged_solution[0] = locally_relevant_current_solution;
-  assemble_dg_rhs(time + gamma[0] * time_step);
-  AssertThrow(time_step <= global_dt_cfl,
-              ExcMessage(
-                "Violated CFL condition: " + std::to_string(time_step) + " > " +
-                std::to_string(global_dt_cfl)));
+  assemble_dg_rhs(time + gamma[0] * time_step_size);
   locally_owned_staged_dg_rhs[0] = dg_rhs;
 
   // Stage 0<i<s
@@ -1778,14 +1803,14 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
       temp = locally_owned_staged_solution[0];
       temp *= alpha[i - 1][0];
       mass_matrix.vmult(system_rhs, temp);
-      system_rhs.add(beta[i - 1][0] * time_step,
+      system_rhs.add(beta[i - 1][0] * time_step_size,
                      locally_owned_staged_dg_rhs[0]);
       for (unsigned int j = 1; j < i; ++j)
         {
           temp = locally_owned_staged_solution[j];
           temp *= alpha[i - 1][j];
           mass_matrix.vmult_add(system_rhs, temp);
-          system_rhs.add(beta[i - 1][j] * time_step,
+          system_rhs.add(beta[i - 1][j] * time_step_size,
                          locally_owned_staged_dg_rhs[j]);
         }
 
@@ -1799,11 +1824,7 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
 
       locally_relevant_current_solution = locally_owned_staged_solution[i];
       apply_limiter();
-      assemble_dg_rhs(time + gamma[i] * time_step);
-      AssertThrow(time_step <= global_dt_cfl,
-                  ExcMessage(
-                    "Violated CFL condition: " + std::to_string(time_step) +
-                    " > " + std::to_string(global_dt_cfl)));
+      assemble_dg_rhs(time + gamma[i] * time_step_size);
       locally_owned_staged_dg_rhs[i] = dg_rhs;
     }
 
@@ -1811,13 +1832,14 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
   temp = locally_owned_staged_solution[0];
   temp *= alpha[s - 1][0];
   mass_matrix.vmult(system_rhs, temp);
-  system_rhs.add(beta[s - 1][0] * time_step, locally_owned_staged_dg_rhs[0]);
+  system_rhs.add(beta[s - 1][0] * time_step_size,
+                 locally_owned_staged_dg_rhs[0]);
   for (unsigned int j = 1; j < s; ++j)
     {
       temp = locally_owned_staged_solution[j];
       temp *= alpha[s - 1][j];
       mass_matrix.vmult_add(system_rhs, temp);
-      system_rhs.add(beta[s - 1][j] * time_step,
+      system_rhs.add(beta[s - 1][j] * time_step_size,
                      locally_owned_staged_dg_rhs[j]);
     }
 
@@ -1830,6 +1852,8 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
   locally_relevant_current_solution = locally_owned_solution;
 
   apply_limiter();
+
+  return time_step_size;
 }
 
 
