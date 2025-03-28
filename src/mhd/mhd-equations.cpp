@@ -162,6 +162,16 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::compute_flux_matrix(
         }
 
       flux_matrix[first_momentum_component + j][j] += pressure + 0.5 * b2;
+
+      if constexpr (divergence_cleaning)
+        {
+          flux_matrix[first_magnetic_component + j][j] =
+            state[divergence_cleaning_component];
+
+          flux_matrix[divergence_cleaning_component][j] =
+            divergence_cleaning_speed * divergence_cleaning_speed *
+            state[first_magnetic_component + j];
+        }
     }
 }
 
@@ -219,6 +229,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
                                  std::to_string(c_f2)));
 
   return std::fabs(nu) + std::sqrt(c_f2);
+  /** @todo Do we need to take divergence_cleaning_speed into account? */
 }
 
 
@@ -255,6 +266,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
                                  std::to_string(max_c_f2)));
 
   return max_u + std::sqrt(max_c_f2);
+  /** @todo Do we need to take divergence_cleaning_speed into account? */
 }
 
 
@@ -366,10 +378,15 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   eigenvalues[1] = nu - std::sqrt(c_a2);
   eigenvalues[2] = nu - std::sqrt(c_s2);
   eigenvalues[3] = nu;
-  eigenvalues[4] = nu;
+  if constexpr (divergence_cleaning)
+    eigenvalues[4] = nu - divergence_cleaning_speed;
+  else
+    eigenvalues[4] = nu;
   eigenvalues[5] = nu + std::sqrt(c_s2);
   eigenvalues[6] = nu + std::sqrt(c_a2);
   eigenvalues[7] = nu + std::sqrt(c_f2);
+  if constexpr (divergence_cleaning)
+    eigenvalues[8] = nu + divergence_cleaning_speed;
 }
 
 
@@ -517,6 +534,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_magnetic_component + d][0] =
         alp_s * c_f / std::sqrt(state[density_component]) * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][0] = 0.;
+
 
 
   // Left alfven mode r_2
@@ -529,6 +549,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_magnetic_component + d][1] =
         n_perp_cross_normal[d] / state[density_component];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][1] = 0.;
 
 
   // Left slow magnetosonic mode r_3
@@ -544,6 +566,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_magnetic_component + d][2] =
         -alp_f * a_s2 / (std::sqrt(state[density_component]) * c_f) * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][2] = 0.;
 
 
   // Density entropy mode r_4
@@ -554,13 +578,16 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_momentum_component + d][3] = u[d];
       eigenvectors[first_magnetic_component + d][3] = 0;
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][3] = 0.;
 
 
-  // Magnetic entropy mode r_5
+  // Magnetic divergence mode r_5
   /**
-   * @note The eigenvector \f$ \mathbf{r}_{5} \f$ is not an eigenvector of the
-   * conserved system. Instead it is choosen such that left and right
-   * eigenvectors build an orthonormal system,
+   * @note The eigenvector \f$ \mathbf{r}_{5} \f$
+   * is not an eigenvector of the conserved system.
+   * Instead it is choosen such that left and right eigenvectors
+   * give an orthonormal system,
    * \f$ \mathbf{L} \mathbf{R} = \mathbf{1} \f$.
    */
   eigenvectors[density_component][4] = 0.;
@@ -570,6 +597,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_momentum_component + d][4] = 0;
       eigenvectors[first_magnetic_component + d][4] = normal_3d[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][4] = -divergence_cleaning_speed;
 
 
   // Right slow magnetosonic mode r_6
@@ -585,6 +614,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_magnetic_component + d][5] =
         -alp_f * a_s2 / (std::sqrt(state[density_component]) * c_f) * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][5] = 0.;
 
 
   // Right alfven mode r_7
@@ -597,6 +628,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_magnetic_component + d][6] =
         n_perp_cross_normal[d] / state[density_component];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][6] = 0.;
 
 
   // Right fast magnetosonic mode r_8
@@ -611,6 +644,31 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
         alp_f * (u[d] + c_f * normal_3d[d]) - sgn_nb * alp_s * c_a * n_perp[d];
       eigenvectors[first_magnetic_component + d][7] =
         alp_s * c_f / std::sqrt(state[density_component]) * n_perp[d];
+    }
+  if constexpr (divergence_cleaning)
+    eigenvectors[divergence_cleaning_component][7] = 0.;
+
+
+  if constexpr (divergence_cleaning)
+    {
+      // Magnetic divergence mode r_9
+      /**
+       * @note The eigenvector \f$ \mathbf{r}_{9} \f$
+       * only exists with hyperbolic divergence cleaning.
+       * Furthermore, it is not an eigenvector of the conserved system.
+       * Instead it is choosen such that left and right eigenvectors
+       * give an orthonormal system,
+       * \f$ \mathbf{L} \mathbf{R} = \mathbf{1} \f$.
+       */
+      eigenvectors[density_component][8] = 0.;
+      eigenvectors[energy_component][8]  = 0.;
+      for (unsigned int d = 0; d < n_vec_components; ++d)
+        {
+          eigenvectors[first_momentum_component + d][8] = 0;
+          eigenvectors[first_magnetic_component + d][8] = normal_3d[d];
+        }
+      eigenvectors[divergence_cleaning_component][8] =
+        divergence_cleaning_speed;
     }
 }
 
@@ -778,6 +836,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
         (c_s2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2) /
         (2. * theta_1) * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[0][divergence_cleaning_component] = 0.;
 
 
   // Left alfven mode l_2
@@ -790,6 +850,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[1][first_magnetic_component + d] =
         std::sqrt(state[density_component]) / 2. * n_perp_cross_normal[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[1][divergence_cleaning_component] = 0.;
 
 
   // Left slow magnetosonic mode l_3
@@ -808,6 +870,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
         (c_f2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2) /
         (2. * theta_1) * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[2][divergence_cleaning_component] = 0.;
 
 
   // Density entropy mode l_4
@@ -823,16 +887,24 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
         alp_f * alp_s * c_f * std::sqrt(state[density_component]) *
         (c_f2 - c_s2) / theta_1 * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[3][divergence_cleaning_component] = 0.;
 
 
-  // Magnetic entropy mode l_5
+  // Magnetic divergence mode l_5
   eigenvectors[4][density_component] = 0;
   eigenvectors[4][energy_component]  = 0;
   for (unsigned int d = 0; d < n_vec_components; ++d)
     {
       eigenvectors[4][first_momentum_component + d] = 0;
-      eigenvectors[4][first_magnetic_component + d] = normal_3d[d];
+      if constexpr (divergence_cleaning)
+        eigenvectors[4][first_magnetic_component + d] = 0.5 * normal_3d[d];
+      else
+        eigenvectors[4][first_magnetic_component + d] = normal_3d[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[4][divergence_cleaning_component] =
+      -0.5 / divergence_cleaning_speed;
 
 
   // Right slow magnetosonic mode l_6
@@ -851,6 +923,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
         (c_f2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2) /
         (2. * theta_1) * n_perp[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[5][divergence_cleaning_component] = 0.;
 
 
   // Right alfven mode l_7
@@ -864,6 +938,8 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[6][first_magnetic_component + d] =
         std::sqrt(state[density_component]) / 2. * n_perp_cross_normal[d];
     }
+  if constexpr (divergence_cleaning)
+    eigenvectors[6][divergence_cleaning_component] = 0.;
 
 
   // Right fast magnetosonic mode l_8
@@ -881,6 +957,27 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
         alp_s * c_f * std::sqrt(state[density_component]) *
         (c_s2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2) /
         (2. * theta_1) * n_perp[d];
+    }
+  if constexpr (divergence_cleaning)
+    eigenvectors[7][divergence_cleaning_component] = 0.;
+
+
+  if constexpr (divergence_cleaning)
+    {
+      // Magnetic divergence mode l_9
+      /**
+       * @note The left eigenvector \f$ \mathbf{l}_{9} \f$
+       * only exists with hyperbolic divergence cleaning.
+       */
+      eigenvectors[8][density_component] = 0;
+      eigenvectors[8][energy_component]  = 0;
+      for (unsigned int d = 0; d < n_vec_components; ++d)
+        {
+          eigenvectors[8][first_momentum_component + d] = 0;
+          eigenvectors[8][first_magnetic_component + d] = 0.5 * normal_3d[d];
+        }
+      eigenvectors[8][divergence_cleaning_component] =
+        0.5 / divergence_cleaning_speed;
     }
 }
 
@@ -958,6 +1055,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       conserved_state[first_magnetic_component + d] =
         primitive_state[first_magnetic_component + d];
     }
+  if constexpr (divergence_cleaning)
+    conserved_state[divergence_cleaning_component] =
+      primitive_state[divergence_cleaning_component];
 }
 
 
@@ -981,6 +1081,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       primitive_state[first_magnetic_component + d] =
         conserved_state[first_magnetic_component + d];
     }
+  if constexpr (divergence_cleaning)
+    primitive_state[divergence_cleaning_component] =
+      conserved_state[divergence_cleaning_component];
 }
 
 

@@ -181,7 +181,7 @@ namespace sapphirepp
        *     \mathbf{p}  \\
        *     \mathcal{E} \\
        *     \mathbf{b}  \\
-       *     \psi
+       *     (\psi)
        *   \end{pmatrix} \,,
        * \f]
        * with \f$ \mathbf{b} = \frac{\mathbf{B}}{\sqrt{4\pi}} \f$
@@ -323,18 +323,21 @@ namespace sapphirepp
        * \f[
        *   \lambda_n =
        *   \begin{pmatrix}
-       *     u - c_f \\
-       *     u - c_a \\
-       *     u - c_s \\
-       *     u       \\
-       *     u       \\
-       *     u + c_s \\
-       *     u + c_a \\
-       *     u + c_f
+       *     u - c_f   \\
+       *     u - c_a   \\
+       *     u - c_s   \\
+       *     u         \\
+       *     u (- c_h) \\
+       *     u + c_s   \\
+       *     u + c_a   \\
+       *     u + c_f   \\
+       *     (u + c_h)
        *   \end{pmatrix} \,,
        * \f]
        * where \f$ c_f \f$ and \f$ c_s \f$ are the fast and slow magnetosonic
        * speeds respectively, and \f$ c_a \f$ is the Alfven speed.
+       * The hyperbolic divergence cleaning speed \f$ c_h \f$
+       * and ninth eigenvalue are only used if divergence cleaning is activated.
        *
        * @param state The @ref state_type "MHD state" in conservative form
        *              \f$ \mathbf{w} \f$.
@@ -360,7 +363,8 @@ namespace sapphirepp
        *      \mathbf{r}_{1} \,, &
        *      \mathbf{r}_{2} \,, &
        *      \dots          \,, &
-       *      \mathbf{r}_{8}
+       *      \mathbf{r}_{8} \,, &
+       *      (\mathbf{r}_{9})
        *   \end{pmatrix} \,,
        * \f]
        * where \f$ \mathbf{r}_{n} \f$ is the right eigenvector corresponding to
@@ -374,6 +378,9 @@ namespace sapphirepp
        * - \f$ \mathbf{r}_{4} \f$: Density entropy mode.
        * - \f$ \mathbf{r}_{5} \f$: Unphysical \f$ \nabla \cdot \mathbf{B} \f$
        *   mode.
+       * - \f$ \mathbf{r}_{9} \f$: Unphysical divergence cleaning \f$ \psi \f$
+       *   mode.
+       *   Only exists for hyperbolic divergence cleaning.
        *
        * @param state The @ref state_type "MHD state" in conservative form
        *              \f$ \mathbf{w} \f$.
@@ -401,7 +408,8 @@ namespace sapphirepp
        *      \mathbf{l}_{1} \\
        *      \mathbf{l}_{2} \\
        *      \vdots         \\
-       *      \mathbf{l}_{8}
+       *      \mathbf{l}_{8} \\
+       *      (\mathbf{l}_{9})
        *   \end{pmatrix} \,,
        * \f]
        * where \f$ \mathbf{l}_{n} \f$ is the left eigenvector (row-vector)
@@ -458,10 +466,11 @@ namespace sapphirepp
        *        \f[
        *          \tilde{\mathbf{w}} =
        *          \begin{pmatrix}
-       *            \rho        \\
-       *            \mathbf{u}  \\
-       *            P \\
-       *            \mathbf{b}
+       *            \rho       \\
+       *            \mathbf{u} \\
+       *            P          \\
+       *            \mathbf{b} \\
+       *            (\psi)
        *          \end{pmatrix} \,.
        *        \f]
        * @param conserved_state Returns the conserved state
@@ -471,7 +480,8 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{p}  \\
        *            \mathcal{E} \\
-       *            \mathbf{b}
+       *            \mathbf{b}  \\
+       *            (\psi)
        *          \end{pmatrix} \,.
        *        \f]
        */
@@ -490,17 +500,19 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{p}  \\
        *            \mathcal{E} \\
-       *            \mathbf{b}
+       *            \mathbf{b}  \\
+       *            (\psi)
        *          \end{pmatrix} \,.
        *        \f]
        * @param primitive_state Returns the primitive state
        *        \f[
        *          \tilde{\mathbf{w}} =
        *          \begin{pmatrix}
-       *            \rho        \\
-       *            \mathbf{u}  \\
-       *            P \\
-       *            \mathbf{b}
+       *            \rho       \\
+       *            \mathbf{u} \\
+       *            P          \\
+       *            \mathbf{b} \\
+       *            (\psi)
        *          \end{pmatrix} \,.
        *        \f]
        */
@@ -521,6 +533,7 @@ namespace sapphirepp
        *            \omega_{2, \hat{\mathbf{n}}} \\
        *            \vdots                       \\
        *            \omega_{8, \hat{\mathbf{n}}} \\
+       *            (\omega_{9, \hat{\mathbf{n}}})
        *          \end{pmatrix} \,.
        *        \f]
        * @param normal Normal vector \f$ \hat{\mathbf{n}} \f$
@@ -531,7 +544,8 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{p}  \\
        *            \mathcal{E} \\
-       *            \mathbf{b}
+       *            \mathbf{b} \\
+       *            (\psi)
        *          \end{pmatrix} \,.
        *        \f]
        *       This state is also used as input to calculate the transformation
@@ -556,7 +570,8 @@ namespace sapphirepp
        *            \rho        \\
        *            \mathbf{p}  \\
        *            \mathcal{E} \\
-       *            \mathbf{b}
+       *            \mathbf{b}  \\
+       *            (\psi)
        *          \end{pmatrix} \,.
        *        \f]
        * @param normal Normal vector \f$ \hat{\mathbf{n}} \f$
@@ -568,6 +583,7 @@ namespace sapphirepp
        *            \omega_{2, \hat{\mathbf{n}}} \\
        *            \vdots                       \\
        *            \omega_{8, \hat{\mathbf{n}}} \\
+       *            (\omega_{9, \hat{\mathbf{n}}})
        *          \end{pmatrix} \,.
        *        \f]
        *
@@ -617,6 +633,12 @@ namespace sapphirepp
         std::array<dealii::FullMatrix<double>, dim> &left_matrices,
         flux_type &characteristic_gradient) const;
       /** @} */
+
+
+
+    private:
+      /** Speed for hyperbolic divergence cleaning, \f$ c_h \f$. */
+      double divergence_cleaning_speed = 2.;
     };
   } // namespace MHD
 } // namespace sapphirepp
