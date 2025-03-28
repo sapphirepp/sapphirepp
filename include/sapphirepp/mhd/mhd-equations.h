@@ -258,6 +258,22 @@ namespace sapphirepp
 
 
       /**
+       * @brief Add the source contribution from divergence cleaning.
+       *
+       * @param state The @ref state_type "MHD state" in conservative form
+       *              \f$ \mathbf{w} \f$.
+       * @param source [In/Out] The source \f$ \mathbf{S}(\mathbf{w}) \f$.
+       *               The contribution from divergence cleaning will be
+       *               **added** to existing contributions.
+       */
+      void
+      add_source_divergence_cleaning(const state_type &state,
+                                     state_type       &source) const;
+      /** @} */
+
+
+      /** @{ */
+      /**
        * @brief Computes the absolute value of maximum eigenvalue in normal
        *        direction.
        *
@@ -639,6 +655,11 @@ namespace sapphirepp
     private:
       /** Speed for hyperbolic divergence cleaning, \f$ c_h \f$. */
       double divergence_cleaning_speed = 2.;
+      /**
+       * Inverse damping timescale for hyperbolic divergence cleaning,
+       * \f$ \tau^{-1} = \frac{c_h^2}{c_p} \f$.
+       */
+      double divergence_cleaning_damping = 1.;
     };
   } // namespace MHD
 } // namespace sapphirepp

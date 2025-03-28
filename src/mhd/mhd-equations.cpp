@@ -178,6 +178,28 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::compute_flux_matrix(
 
 
 template <unsigned int dim, bool divergence_cleaning>
+void
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  add_source_divergence_cleaning(const state_type &state,
+                                 state_type       &source) const
+{
+  if constexpr (!divergence_cleaning)
+    {
+      Assert(false,
+             dealii::ExcMessage("You try to add the divergence cleaning source "
+                                "but divergence cleaning is deactivated."));
+      return;
+    }
+  AssertDimension(state.size(), n_components);
+  AssertDimension(source.size(), n_components);
+
+  source[divergence_cleaning_component] +=
+    -divergence_cleaning_damping * state[divergence_cleaning_component];
+}
+
+
+
+template <unsigned int dim, bool divergence_cleaning>
 double
 sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   compute_maximum_normal_eigenvalue(const state_type             &state,
