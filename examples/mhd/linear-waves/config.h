@@ -101,7 +101,7 @@ namespace sapphirepp
                         dealii::Patterns::Double(0),
                         "Amplitude of the perturbation");
       prm.declare_entry("Eigenmodes",
-                        "0, 0, 0, 0, 0, 0, 0, 0",
+                        "0, 0, 0, 0, 0, 0, 0, 0, 0",
                         dealii::Patterns::Anything(),
                         "Select the eigenmodes");
       prm.declare_entry("Direction",
@@ -152,8 +152,8 @@ namespace sapphirepp
       std::stringstream em(s);
       for (std::string tmp; std::getline(em, tmp, ',');)
         eigenmodes.push_back(std::stod(tmp));
-      AssertThrow(eigenmodes.size() == 8,
-                  dealii::ExcMessage("Size of Eigenmodes x must be 8."));
+      AssertThrow(eigenmodes.size() == 9,
+                  dealii::ExcMessage("Size of Eigenmodes x must be 9."));
 
       s = prm.get("Direction");
       std::stringstream direction_string(s);
@@ -318,8 +318,12 @@ namespace sapphirepp
           saplog << left_eigenvectors[3][c] << " ";
         saplog << std::endl << std::endl;
 
-        saplog << "Magnetic entropy mode, eigenvalue=u=" << eigenvalues[4]
-               << std::endl;
+        saplog << "Magnetic divergence mode, eigenvalue=";
+        if constexpr (hdc)
+          saplog << "u-c_h=";
+        else
+          saplog << "u=";
+        saplog << eigenvalues[4] << std::endl;
         for (unsigned int c = 0; c < n_components; ++c)
           saplog << eigenvectors[c][4] << " ";
         saplog << std::endl;
@@ -353,6 +357,18 @@ namespace sapphirepp
         for (unsigned int c = 0; c < n_components; ++c)
           saplog << left_eigenvectors[7][c] << " ";
         saplog << std::endl << std::endl;
+
+        if constexpr (hdc)
+          {
+            saplog << "Magnetic divergence mode 2, eigenvalue=u+ch="
+                   << eigenvalues[8] << std::endl;
+            for (unsigned int c = 0; c < n_components; ++c)
+              saplog << eigenvectors[c][8] << " ";
+            saplog << std::endl;
+            for (unsigned int c = 0; c < n_components; ++c)
+              saplog << left_eigenvectors[8][c] << " ";
+            saplog << std::endl << std::endl;
+          }
 
 
         saplog << "Test left and right eigenvector matrices:" << std::endl;

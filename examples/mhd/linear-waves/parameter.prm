@@ -33,7 +33,7 @@ end
 subsection Physical parameters
   set Amplitude  = 1e-4
   set Direction  = 1, 0, 0
-  set Eigenmodes = 1, 0, 0, 0, 0, 0, 0, 0
+  set Eigenmodes = 1, 0, 0, 0, 0, 0, 0, 0, 0
   set P_0        = 0.6
   set b_0        = 0., 0., 0.
   set rho_0      = 1.
