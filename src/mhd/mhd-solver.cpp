@@ -174,6 +174,7 @@ namespace sapphirepp
       {
         unsigned int                         cell_index;
         double                               min_dt;
+        double                               min_dx;
         Vector<double>                       cell_dg_rhs;
         std::vector<types::global_dof_index> local_dof_indices;
         // std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -185,6 +186,7 @@ namespace sapphirepp
         {
           cell_index = cell->active_cell_index();
           min_dt     = 0;
+          min_dx     = 0;
 
           cell_dg_rhs.reinit(dofs_per_cell);
 
@@ -1288,9 +1290,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   using namespace sapphirepp::sapinternal::MHDSolver;
 
   static_cast<void>(time); // suppress compiler warning
-  dg_rhs    = 0;
-  cell_dt   = 0;
-  global_dt = std::numeric_limits<double>::max();
+  dg_rhs = 0;
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator   &cell,
@@ -1311,7 +1311,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                                        Vector<double>(n_components));
     flux_type                   flux_matrix;
     state_type                  source(n_components);
-    double                      max_eigenvalue = 0.;
 
     fe_v.get_function_values(locally_relevant_current_solution, states);
 
@@ -1321,9 +1320,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
         source = 0;
         if constexpr (divergence_cleaning)
           mhd_equations.add_source_divergence_cleaning(states[q_index], source);
-        max_eigenvalue =
-          std::max(max_eigenvalue,
-                   mhd_equations.compute_maximum_eigenvalue(states[q_index]));
 
         for (unsigned int i : fe_v.dof_indices())
           {
@@ -1344,9 +1340,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
               }
           }
       }
-
-    const double dx  = cell->minimum_vertex_distance();
-    copy_data.min_dt = dx / ((2. * fe.degree + 1.) * max_eigenvalue);
   };
 
 
@@ -1515,8 +1508,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     constraints.distribute_local_to_global(c.cell_dg_rhs,
                                            c.local_dof_indices,
                                            dg_rhs);
-    cell_dt[c.cell_index] = c.min_dt;
-    global_dt             = std::min(global_dt, c.min_dt);
     for (auto &cdf : c.face_data)
       {
         constraints.distribute_local_to_global(cdf.cell_dg_rhs_1,
@@ -1546,10 +1537,91 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                         face_worker);
   dg_rhs.compress(VectorOperation::add);
   saplog << "The DG rhs was assembled." << std::endl;
+}
 
-  global_dt = Utilities::MPI::min(global_dt, mpi_communicator);
-  saplog << "Maximum CFL time step: " << global_dt << std::endl;
-  Assert(global_dt > 0, ExcMessage("The time step must be greater than 0."));
+
+
+template <unsigned int dim>
+void
+sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
+{
+  // If no Courant number is give, use max_time_step instead
+  if (mhd_parameters.courant_number == 0.)
+    {
+      global_dt_cfl = mhd_parameters.max_time_step;
+      /** @todo What to do with global_dx_min in this case? */
+      global_dx_min = 0.;
+      return;
+    }
+
+  TimerOutput::Scope timer_section(timer, "CFL - MHD");
+
+  using Iterator = typename DoFHandler<dim>::active_cell_iterator;
+  using namespace sapphirepp::sapinternal::MHDSolver;
+
+  cell_dt       = 0;
+  global_dt_cfl = std::numeric_limits<double>::max();
+  global_dx_min = std::numeric_limits<double>::max();
+
+  // assemble cell terms
+  const auto cell_worker = [&](const Iterator   &cell,
+                               ScratchData<dim> &scratch_data,
+                               CopyData         &copy_data) {
+    FEValues<dim> &fe_v = scratch_data.fe_values;
+    // reinit cell
+    fe_v.reinit(cell);
+
+    const unsigned int n_dofs = fe_v.get_fe().n_dofs_per_cell();
+    // reinit the cell_matrix
+    copy_data.reinit(cell, n_dofs);
+
+    std::vector<Vector<double>> states(fe_v.n_quadrature_points,
+                                       Vector<double>(n_components));
+    double                      max_eigenvalue = 0.;
+
+    fe_v.get_function_values(locally_relevant_current_solution, states);
+
+    for (const unsigned int q_index : fe_v.quadrature_point_indices())
+      max_eigenvalue =
+        std::max(max_eigenvalue,
+                 mhd_equations.compute_maximum_eigenvalue(states[q_index]));
+
+    const double dx  = cell->minimum_vertex_distance();
+    copy_data.min_dt = mhd_parameters.courant_number * dx /
+                       ((2. * fe.degree + 1.) * max_eigenvalue);
+    copy_data.min_dx = dx;
+  };
+
+
+  // copier for the mesh_loop function
+  const auto copier = [&](const CopyData &c) {
+    cell_dt[c.cell_index] = c.min_dt;
+    global_dt_cfl         = std::min(global_dt_cfl, c.min_dt);
+    global_dx_min         = std::min(global_dx_min, c.min_dx);
+  };
+
+  /** @todo Use custom scratch_data and copy data for CFL. */
+  ScratchData<dim> scratch_data(
+    mapping, fe, quadrature, quadrature_face, update_values);
+  CopyData copy_data;
+  saplog << "Begin compute CFL condition." << std::endl;
+  const auto filtered_iterator_range =
+    dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
+  MeshWorker::mesh_loop(filtered_iterator_range,
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells);
+
+  global_dt_cfl = Utilities::MPI::min(global_dt_cfl, mpi_communicator);
+  global_dx_min = Utilities::MPI::min(global_dx_min, mpi_communicator);
+  saplog << "Maximum CFL time step: " << global_dt_cfl << std::endl;
+  saplog << "Minimum cell size: " << global_dx_min << std::endl;
+  Assert(global_dt_cfl > 0,
+         ExcMessage("The time step must be greater than 0."));
+  Assert(global_dx_min > 0,
+         ExcMessage("The cell size must be greater than 0."));
 }
 
 
@@ -1566,10 +1638,10 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(const double time,
 
   // Assemble the right hand side
   assemble_dg_rhs(time);
-  AssertThrow(time_step <= global_dt,
+  AssertThrow(time_step <= global_dt_cfl,
               ExcMessage(
                 "Violated CFL condition: " + std::to_string(time_step) + " > " +
-                std::to_string(global_dt)));
+                std::to_string(global_dt_cfl)));
 
   mass_matrix.vmult(system_rhs, locally_owned_solution);
   system_rhs.add(time_step, dg_rhs);
@@ -1694,10 +1766,10 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
   // Stage i=0
   locally_owned_staged_solution[0] = locally_relevant_current_solution;
   assemble_dg_rhs(time + gamma[0] * time_step);
-  AssertThrow(time_step <= global_dt,
+  AssertThrow(time_step <= global_dt_cfl,
               ExcMessage(
                 "Violated CFL condition: " + std::to_string(time_step) + " > " +
-                std::to_string(global_dt)));
+                std::to_string(global_dt_cfl)));
   locally_owned_staged_dg_rhs[0] = dg_rhs;
 
   // Stage 0<i<s
@@ -1728,10 +1800,10 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(const double time,
       locally_relevant_current_solution = locally_owned_staged_solution[i];
       apply_limiter();
       assemble_dg_rhs(time + gamma[i] * time_step);
-      AssertThrow(time_step <= global_dt,
+      AssertThrow(time_step <= global_dt_cfl,
                   ExcMessage(
                     "Violated CFL condition: " + std::to_string(time_step) +
-                    " > " + std::to_string(global_dt)));
+                    " > " + std::to_string(global_dt_cfl)));
       locally_owned_staged_dg_rhs[i] = dg_rhs;
     }
 

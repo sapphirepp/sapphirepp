@@ -498,7 +498,9 @@ namespace sapphirepp
       /** Maximum CFL time step on each cell. */
       Vector<double> cell_dt;
       /** Global maximum CLF time step. */
-      double global_dt;
+      double global_dt_cfl;
+      /** Global minimum cell size. */
+      double global_dx_min;
       /** @} */
 
       /** @{ */
@@ -542,14 +544,35 @@ namespace sapphirepp
        *
        * Compute the @ref dg_rhs using the @ref
        * locally_relevant_current_solution.
-       * It also calculates the @ref cell_dt
-       * using the maximum eigenvalue on the interior of each cell,
-       * and updates @ref global_dt accordingly.
        *
        * @param time Time of the current time step
        */
       void
       assemble_dg_rhs(const double time);
+      /** @} */
+
+
+
+      /** @{ */
+      /**
+       * @brief Compute CFL condition for the system at the current time step.
+       *
+       * The CFL condition is given by,
+       * \f[
+       *   \Delta t_{\mathrm{CFL}} =
+       *   \mathcal{C} \, \frac{h}{(2k+1) \lambda_{\mathrm{max}}} \,,
+       * \f]
+       * where \f$ h \f$ is the cell size,
+       * \f$ k \f$ the polynomial degree of the basis functions,
+       * \f$ \lambda_{\mathrm{max}} \f$ the maximum eigenvalue
+       * and \f$ \mathcal{C} \lesssim 1 \f$ the Courant/CFL number.
+       *
+       * This function calculates the CFL condition for each cell, @ref cell_dt,
+       * and updates @ref global_dt_cfl
+       * as well as @ref global_dx_min accordingly.
+       */
+      void
+      compute_cfl_condition();
       /** @} */
 
 
