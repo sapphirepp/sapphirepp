@@ -31,6 +31,7 @@
 #include <deal.II/base/utilities.h>
 
 #include <filesystem>
+#include <limits>
 
 #include "sapphirepp-logstream.h"
 
@@ -127,10 +128,19 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "FE",
                       Patterns::Selection("FE|ERK2|ERK4"),
                       "The time stepping method.");
-    prm.declare_entry("Time step size",
-                      "1.0",
+
+    prm.declare_entry("Courant number",
+                      "0.8",
                       Patterns::Double(0),
-                      "Time step for the simulation in dimensionless units.");
+                      "Courant number/CFL number "
+                      "to infer time step from CFL condition.");
+    /** @todo Rename parameter to Maximum time step */
+    prm.declare_entry("Time step size",
+                      "0.",
+                      Patterns::Double(0),
+                      "Maximum time step for the simulation "
+                      "in dimensionless units. "
+                      "Set to zero to infer time step from CFL condition.");
     prm.declare_entry("Final time",
                       "200",
                       Patterns::Double(0),
@@ -244,7 +254,10 @@ sapphirepp::MHD::MHDParameters<dim>::parse_parameters(ParameterHandler &prm)
     else
       Assert(false, ExcNotImplemented());
 
-    time_step  = prm.get_double("Time step size");
+    courant_number = prm.get_double("Courant number");
+    max_time_step  = prm.get_double("Time step size");
+    if (max_time_step == 0.)
+      max_time_step = std::numeric_limits<double>::max();
     final_time = prm.get_double("Final time");
   } // Time stepping
   prm.leave_subsection();

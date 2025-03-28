@@ -95,8 +95,10 @@ namespace sapphirepp
       /**  @{ */
       /** Time stepping method */
       TimeSteppingMethodMHD time_stepping_method;
-      /** Time step size for the simulation in dimensionless units */
-      double time_step;
+      /** Courant number/CFL number to infer time step from CFL condition */
+      double courant_number;
+      /** Maximum time step size for the simulation in dimensionless units */
+      double max_time_step;
       /** End time for the simulation in dimensionless units */
       double final_time;
       /** @} */

@@ -360,7 +360,7 @@ sapphirepp::MHD::MHDSolver<dim>::run()
 
   DiscreteTime discrete_time(0,
                              mhd_parameters.final_time,
-                             mhd_parameters.time_step);
+                             mhd_parameters.max_time_step);
   for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
     {
       saplog << "Time step " << std::setw(6) << std::right
