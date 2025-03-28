@@ -1310,6 +1310,7 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     std::vector<Vector<double>> states(q_points.size(),
                                        Vector<double>(n_components));
     flux_type                   flux_matrix;
+    state_type                  source(n_components);
     double                      max_eigenvalue = 0.;
 
     fe_v.get_function_values(locally_relevant_current_solution, states);
@@ -1317,6 +1318,9 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         mhd_equations.compute_flux_matrix(states[q_index], flux_matrix);
+        source = 0;
+        if constexpr (divergence_cleaning)
+          mhd_equations.add_source_divergence_cleaning(states[q_index], source);
         max_eigenvalue =
           std::max(max_eigenvalue,
                    mhd_equations.compute_maximum_eigenvalue(states[q_index]));
@@ -1333,7 +1337,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
                   flux_matrix[c] * fe_v.shape_grad_component(i, q_index, c) *
                   JxW[q_index];
 
-                /** @todo Add source term */
+                // S[c] * \phi[c]_i
+                copy_data.cell_dg_rhs(i) +=
+                  source[c] * fe_v.shape_value_component(i, q_index, c) *
+                  JxW[q_index];
               }
           }
       }
