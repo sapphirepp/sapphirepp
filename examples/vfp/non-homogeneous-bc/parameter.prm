@@ -1,0 +1,39 @@
+subsection Physical parameters
+  set f0 = 1.
+  set nu = 0.1
+end
+
+subsection Output
+  set Results folder               = ./results
+  set Simulation identifier        = non-homogeneous-bc
+  set Base file name               = solution
+  set Format                       = vtu
+  set Output frequency             = 1
+end
+
+subsection VFP
+  subsection Expansion
+    set Expansion order = 1
+  end
+
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+
+  subsection Mesh
+    set Grid type = Hypercube
+    set Number of cells = 256
+    set Point 1         = -1
+    set Point 2         = 1
+    subsection Boundary conditions
+      set lower x = non homogeneous
+      set upper x = zero inflow
+    end
+  end
+
+  subsection Time stepping
+    set Final time     = 10
+    set Method         = ERK4
+    set Time step size = 0.005
+  end
+end
