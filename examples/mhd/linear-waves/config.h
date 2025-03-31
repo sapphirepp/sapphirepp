@@ -216,6 +216,8 @@ namespace sapphirepp
         constexpr unsigned int n_components =
           MHDEquations<dim, hdc>::n_components;
         dealii::LogStream::Prefix pre1("InitialConditionMHD", saplog);
+        // Set divergence cleaning speed to arbitrary values
+        mhd_equations.compute_hyperbolic_divergence_cleaning_speed(1., 1., 1);
 
         primitive_background_state[MHDEquations<dim, hdc>::density_component] =
           prm.rho_0;
@@ -432,7 +434,7 @@ namespace sapphirepp
 
     private:
       const PhysicalParameters                    prm;
-      const MHDEquations<dim, hdc>                mhd_equations;
+      MHDEquations<dim, hdc>                      mhd_equations;
       typename MHDEquations<dim, hdc>::state_type primitive_background_state;
       typename MHDEquations<dim, hdc>::state_type conserved_background_state;
       double                                      wave_number;
