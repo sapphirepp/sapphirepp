@@ -572,6 +572,8 @@ namespace sapphirepp
        * This function calculates the CFL condition for each cell, @ref cell_dt,
        * and updates @ref global_dt_cfl
        * as well as @ref global_dx_min accordingly.
+       * It also adjusts the speed for hyperbolic divergence cleaning
+       * according to the CFL condition.
        */
       void
       compute_cfl_condition();

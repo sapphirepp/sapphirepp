@@ -651,15 +651,32 @@ namespace sapphirepp
       /** @} */
 
 
+      /** @{ */
+      /**
+       * @brief Computes the hyperbolic divergence cleaning speed
+       *        and damping rate from the CLF condition.
+       *
+       * @param dt_cfl CFL time step
+       * @param dx_min Minimum cell size
+       * @param fe_degree Polynomial degree of basis functions
+       */
+      void
+      compute_hyperbolic_divergence_cleaning_speed(
+        const double       dt_cfl,
+        const double       dx_min,
+        const unsigned int fe_degree);
+      /** @} */
+
+
 
     private:
       /** Speed for hyperbolic divergence cleaning, \f$ c_h \f$. */
-      double divergence_cleaning_speed = 2.;
+      double divergence_cleaning_speed;
       /**
        * Inverse damping timescale for hyperbolic divergence cleaning,
-       * \f$ \tau^{-1} = \frac{c_h^2}{c_p} \f$.
+       * \f$ \tau^{-1} = \frac{c_h^2}{c_p^2} \f$.
        */
-      double divergence_cleaning_damping = 1.;
+      double divergence_cleaning_damping;
     };
   } // namespace MHD
 } // namespace sapphirepp

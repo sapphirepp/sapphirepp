@@ -1559,6 +1559,9 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
       global_dt_cfl = mhd_parameters.max_time_step;
       /** @todo What to do with global_dx_min in this case? */
       global_dx_min = 0.;
+      if constexpr (divergence_cleaning)
+        mhd_equations.compute_hyperbolic_divergence_cleaning_speed(
+          global_dt_cfl, global_dx_min, fe.degree);
       return;
     }
 
@@ -1630,6 +1633,11 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
          ExcMessage("The time step must be greater than 0."));
   Assert(global_dx_min > 0,
          ExcMessage("The cell size must be greater than 0."));
+
+  if constexpr (divergence_cleaning)
+    mhd_equations.compute_hyperbolic_divergence_cleaning_speed(global_dt_cfl,
+                                                               global_dx_min,
+                                                               fe.degree);
 }
 
 

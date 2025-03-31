@@ -45,6 +45,8 @@ template <unsigned int dim, bool divergence_cleaning>
 sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
   const double adiabatic_index)
   : adiabatic_index{adiabatic_index}
+  , divergence_cleaning_speed{1.}
+  , divergence_cleaning_damping{0.}
 {
   AssertThrow(adiabatic_index > 1.0,
               dealii::ExcMessage("Adiabatic index must be larger than 1."));
@@ -1190,6 +1192,40 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
             }
         }
     }
+}
+
+
+
+template <unsigned int dim, bool divergence_cleaning>
+void
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_hyperbolic_divergence_cleaning_speed(const double       dt_cfl,
+                                               const double       dx_min,
+                                               const unsigned int fe_degree)
+{
+  if constexpr (!divergence_cleaning)
+    return;
+
+  dealii::LogStream::Prefix p("MHDEquations", saplog);
+  Assert(dt_cfl > 0, dealii::ExcMessage("CFL time step must be positive."));
+  Assert(dx_min > 0, dealii::ExcMessage("Cell size must be positive."));
+
+  // c_h = C_h dx / ((2k+1) dt);
+  const double C_h          = 0.8;
+  divergence_cleaning_speed = C_h * dx_min / ((2 * fe_degree + 1) * dt_cfl);
+
+  // c_p = sqrt(C_r * c_h);
+  const double C_r            = 0.18;
+  divergence_cleaning_damping = divergence_cleaning_speed / C_r;
+
+  saplog << "divergence_cleaning_speed=" << divergence_cleaning_speed
+         << ", divergence_cleaning_damping=" << divergence_cleaning_damping
+         << std::endl;
+
+  Assert(divergence_cleaning_speed > 0.,
+         dealii::ExcMessage(
+           "Speed for hyperbolic divergence cleaning must be positive, c_h=" +
+           dealii::Utilities::to_string(divergence_cleaning_speed)));
 }
 
 
