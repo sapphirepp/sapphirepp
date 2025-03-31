@@ -52,7 +52,6 @@ namespace sapphirepp
      * the system.
      *
      * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
-      NumericalFlux(const MHDEquations<dim> &mhd_equations);
      *         `dim`
      */
     template <unsigned int dim, bool divergence_cleaning>
@@ -102,7 +101,7 @@ namespace sapphirepp
 
     private:
       /** @ref MHDEquations */
-      const MHDEquations<dim, divergence_cleaning> mhd_equations;
+      const MHDEquations<dim, divergence_cleaning> &mhd_equations;
     };
   } // namespace MHD
 } // namespace sapphirepp
