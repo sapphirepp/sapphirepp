@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "sapphirepp-logstream.h"
 
@@ -45,7 +46,7 @@ template <unsigned int dim, bool divergence_cleaning>
 sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
   const double adiabatic_index)
   : adiabatic_index{adiabatic_index}
-  , divergence_cleaning_speed{1.}
+  , divergence_cleaning_speed{std::numeric_limits<double>::quiet_NaN()}
   , divergence_cleaning_damping{0.}
 {
   AssertThrow(adiabatic_index > 1.0,
@@ -167,6 +168,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::compute_flux_matrix(
 
       if constexpr (divergence_cleaning)
         {
+          Assert(
+            divergence_cleaning_speed > 0.,
+            dealii::ExcMessage(
+              "Speed for hyperbolic divergence cleaning must be positive."));
+
           flux_matrix[first_magnetic_component + j][j] =
             state[divergence_cleaning_component];
 
@@ -397,6 +403,10 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state,
                                "Negative squared fast speed, c_f^2 = " +
                                  std::to_string(c_f2)));
+  if constexpr (divergence_cleaning)
+    Assert(divergence_cleaning_speed > 0.,
+           dealii::ExcMessage(
+             "Speed for hyperbolic divergence cleaning must be positive."));
 
   eigenvalues[0] = nu - std::sqrt(c_f2);
   eigenvalues[1] = nu - std::sqrt(c_a2);
@@ -512,6 +522,10 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state,
                                "Expect non-negative value for alpha_f = " +
                                  std::to_string(alp_f)));
+  if constexpr (divergence_cleaning)
+    Assert(divergence_cleaning_speed > 0.,
+           dealii::ExcMessage(
+             "Speed for hyperbolic divergence cleaning must be positive."));
 
   // Construct perpendicular normal vector n_perp
   dealii::Tensor<1, n_vec_components> n_perp;
@@ -688,7 +702,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[energy_component][8]  = 0.;
       for (unsigned int d = 0; d < n_vec_components; ++d)
         {
-          eigenvectors[first_momentum_component + d][8] = 0;
+          eigenvectors[first_momentum_component + d][8] = 0.;
           eigenvectors[first_magnetic_component + d][8] = normal_3d[d];
         }
       eigenvectors[divergence_cleaning_component][8] =
@@ -842,6 +856,10 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state,
                                "Expect non-zero value for theta_2 = " +
                                  std::to_string(theta_2)));
+  if constexpr (divergence_cleaning)
+    Assert(divergence_cleaning_speed > 0.,
+           dealii::ExcMessage(
+             "Speed for hyperbolic divergence cleaning must be positive."));
 
 
   // Left fast magnetosonic mode l_1
@@ -993,11 +1011,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
        * @note The left eigenvector \f$ \mathbf{l}_{9} \f$
        * only exists with hyperbolic divergence cleaning.
        */
-      eigenvectors[8][density_component] = 0;
-      eigenvectors[8][energy_component]  = 0;
+      eigenvectors[8][density_component] = 0.;
+      eigenvectors[8][energy_component]  = 0.;
       for (unsigned int d = 0; d < n_vec_components; ++d)
         {
-          eigenvectors[8][first_momentum_component + d] = 0;
+          eigenvectors[8][first_momentum_component + d] = 0.;
           eigenvectors[8][first_magnetic_component + d] = 0.5 * normal_3d[d];
         }
       eigenvectors[8][divergence_cleaning_component] =
