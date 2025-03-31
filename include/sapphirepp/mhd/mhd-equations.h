@@ -293,6 +293,8 @@ namespace sapphirepp
       /**
        * @brief Computes an upper limit for the maximum eigenvalue of the state.
        *
+       * @note Does account for hyperbolic divergence cleaning.
+       *
        * @param state The @ref state_type "MHD state" in conservative form
        *              \f$ \mathbf{w} \f$.
        * @return double Upper limit for the maximum eigenvalue.
@@ -343,11 +345,11 @@ namespace sapphirepp
        *     u - c_a   \\
        *     u - c_s   \\
        *     u         \\
-       *     u (- c_h) \\
+       *     0 (- c_h) \\
        *     u + c_s   \\
        *     u + c_a   \\
        *     u + c_f   \\
-       *     (u + c_h)
+       *     (+ c_h)
        *   \end{pmatrix} \,,
        * \f]
        * where \f$ c_f \f$ and \f$ c_s \f$ are the fast and slow magnetosonic

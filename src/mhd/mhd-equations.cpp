@@ -296,7 +296,6 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
                                  std::to_string(max_c_f2)));
 
   return max_u + std::sqrt(max_c_f2);
-  /** @todo Do we need to take divergence_cleaning_speed into account? */
 }
 
 
@@ -413,14 +412,14 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   eigenvalues[2] = nu - std::sqrt(c_s2);
   eigenvalues[3] = nu;
   if constexpr (divergence_cleaning)
-    eigenvalues[4] = nu - divergence_cleaning_speed;
+    eigenvalues[4] = -divergence_cleaning_speed;
   else
-    eigenvalues[4] = nu;
+    eigenvalues[4] = 0.;
   eigenvalues[5] = nu + std::sqrt(c_s2);
   eigenvalues[6] = nu + std::sqrt(c_a2);
   eigenvalues[7] = nu + std::sqrt(c_f2);
   if constexpr (divergence_cleaning)
-    eigenvalues[8] = nu + divergence_cleaning_speed;
+    eigenvalues[8] = divergence_cleaning_speed;
 }
 
 
