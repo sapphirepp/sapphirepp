@@ -103,7 +103,8 @@ namespace sapphirepp
 
     /** [MHD Flags] */
     /** Specify which MHD flags should be active */
-    static constexpr MHDFlags mhd_flags = MHDFlags::none;
+    static constexpr MHDFlags mhd_flags =
+      MHDFlags::hyperbolic_divergence_cleaning;
     /** [MHD Flags] */
 
 
