@@ -1380,6 +1380,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                       normals,
                                       positive_flux_matrices,
                                       negative_flux_matrices);
+
     std::vector<Vector<double>> bc_values(
       q_points.size(), Vector<double>(pde_system.system_size));
     bc_value_function.vector_value_list(q_points, bc_values);
@@ -1447,12 +1448,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           positive_flux_matrices[q_index](component_i,
                                                           component_j) *
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
-
-                        copy_data.cell_rhs(i) -=
-                          fe_face_v.shape_value(i, q_index) *
-                          negative_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          bc_values[q_index][component_j] * JxW[q_index];
                         break;
                       }
                     case BoundaryConditions::periodic:
@@ -1460,6 +1455,15 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                     default:
                       Assert(false, ExcNotImplemented());
                   }
+              }
+            // Non-homogeneous boundary conditions result in a right-hand side
+            if (boundary_condition == BoundaryConditions::non_homogeneous)
+              {
+                for (unsigned int k = 0; k < pde_system.system_size; ++k)
+                  copy_data.cell_rhs(i) -=
+                    fe_face_v.shape_value(i, q_index) *
+                    negative_flux_matrices[q_index](component_i, k) *
+                    bc_values[q_index][k] * JxW[q_index];
               }
           }
       }
@@ -1660,7 +1664,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     system_rhs.add(1., locally_owned_current_source);
   // TODO: add check if non-homogeneous bc is set
-  system_rhs.add(1.,locally_owned_current_bc);
+  system_rhs.add(1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
   solver.solve(dg_matrix,
                locally_owned_previous_solution,
