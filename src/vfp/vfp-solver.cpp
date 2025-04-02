@@ -1721,6 +1721,10 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
           system_rhs.add(time_step, locally_owned_current_source);
         }
     }
+  // Boundary term at current time step
+  system_rhs.add((1 - theta) * time_step, locally_owned_current_bc);
+
+  // Update DG matrix
   // Since the the dg_matrix depends on the velocity field (and/or the
   // magnetic field) and the velocity field may depend on time, it needs to
   // reassembled every time step. This is not true for the mass matrix ( but
@@ -1728,9 +1732,14 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      // the non-homogeneous boundary term is updated and, thus, must be nulled
+      locally_owned_current_bc = 0;
+      dg_matrix                = 0;
       assemble_dg_matrix(time + time_step);
     }
+
+  // Boundary term at next time step
+  system_rhs.add(theta * time_step, locally_owned_current_bc);
 
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
