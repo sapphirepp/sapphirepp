@@ -205,7 +205,10 @@ namespace sapphirepp
 
       /**
        * @brief Calculate one time step with the low-storage explicit
-       *        Runge-Kutta method
+       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
+       *	for details.
+       *
+       * @todo Do not reassemble the DG matrix in the first stage of the ERK
        *
        * @param time Current time
        * @param time_step Time step size
