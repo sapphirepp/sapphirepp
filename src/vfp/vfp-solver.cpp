@@ -1965,8 +1965,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
                     1720146321549. / 2090206949498,
                     3134564353537. / 4481467310338,
                     2277821191437. / 14882151754819});
-  // NOTE: I only need c if the velocity field and the magnetic field are
-  // time dependent
+  // NOTE: I only need c if the velocity field, the magnetic field or the
+  // non-homogeneous boundary are time dependent
   Vector<double> c({0.,
                     1432997174477. / 9575080441755,
                     2526269341429. / 6820363962896,
@@ -2000,9 +2000,15 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
         assemble_dg_matrix(time + c[s] * time_step);
 
       dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
+      // non-homogeneous boundary
+      system_rhs.add(-1., locally_owned_current_bc);
+
       if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                     VFPFlags::none) // time dependent fields
-        dg_matrix = 0;
+        {
+          dg_matrix                = 0;
+          locally_owned_current_bc = 0;
+        }
 
       if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
         {
