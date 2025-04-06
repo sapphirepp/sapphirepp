@@ -1,6 +1,6 @@
 subsection Output
   set Results folder               = ./results
-  set Simulation identifier        = reflective-bc
+  set Simulation identifier        = reflective-bc-2d
   # set Simulation identifier        = reflective-bc-periodic
   set Number of digits for counter = 5
   set Output frequency             = 20
@@ -20,16 +20,16 @@ subsection VFP
   end
   subsection Mesh
     set Grid type             = Hypercube
-    set Number of cells       = 64
-    set Point 1               = -10.
-    set Point 2               = 10.
+    set Number of cells       = 32,32
+    set Point 1               = -4., -4
+    set Point 2               = 4., 4
     subsection Boundary conditions
       # set lower x = periodic
       # set upper x = periodic
       set lower x = reflectiv
       set upper x = zero inflow
-      # set lower y = periodic
-      # set upper y = periodic
+      set lower y = reflectiv
+      set upper y = zero inflow
     end
   end
   subsection Particle properties
@@ -37,7 +37,7 @@ subsection VFP
     set Mass   = 1.
   end
   subsection Time stepping
-    set Final time     = 75.
+    set Final time     = 10
     set Method         = ERK4
     set Time step size = 0.02
   end

@@ -112,7 +112,7 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    constexpr unsigned int dimension = 1;
+    constexpr unsigned int dimension = 2;
     /** [Dimension] */
 
 
