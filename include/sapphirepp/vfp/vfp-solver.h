@@ -468,7 +468,7 @@ namespace sapphirepp
       const double scaling_spectral_index;
 
       /** Sign changes used for relfective boundary conditions (y-z-plane, i.e. lower/upper x) */
-      std::vector<double> reflective_bc_signature_x;
+      std::array<std::vector<double>,3> reflective_bc_signature;
       
       /** @{ */
       /**
