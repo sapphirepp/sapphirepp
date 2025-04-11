@@ -24,6 +24,53 @@ abstract = {We present Sapphire++, an open-source code designed to numerically s
 }
 ```
 
+Sapphire++ builds on top of the [deal.II](https://www.dealii.org) library.
+We therefore encourage you to [cite the deal.II library](https://www.dealii.org/community/publications/) as well:
+
+> Pasquale Claudio Africa, Daniel Arndt, Wolfgang Bangerth, Bruno Blais, Marc Fehling, Rene Gassmöller, Timo Heister, Luca Heltai, Martin Kronbichler, Matthias Maier, Peter Munch, Magdalena Schreter-Fleischhacker, Jan Philipp Thiele, Bruno Turcksin, David Wells, Vladimir Yushutin  
+> The deal.II Library, Version 9.6  
+> Journal of Numerical Mathematics, vol. 32, pp. 369-380, 2024.  
+> DOI: 10.1515/jnma-2024-0137; preprint; bibtex
+
+```bibtex
+@Article{2024:africa.arndt.ea:deal,
+  author  = {Pasquale C. Africa and Daniel Arndt and Wolfgang Bangerth and Bruno Blais and
+             Marc Fehling and Rene Gassm{\"o}ller and Timo Heister and Luca Heltai and
+             Sebastian Kinnewig and Martin Kronbichler and Matthias Maier and Peter Munch and
+             Magdalena Schreter-Fleischhacker and Jan P. Thiele and Bruno Turcksin and
+             David Wells and Vladimir Yushutin},
+  title   = {The deal.II library, Version 9.6},
+  journal = {Journal of Numerical Mathematics},
+  year    = 2024,
+  volume  = 32,
+  number  = 4,
+  pages   = {369--380},
+  doi     = {10.1515/jnma-2024-0137}
+}
+```
+
+> D. Arndt, W. Bangerth, D. Davydov, T. Heister, L. Heltai, M. Kronbichler, M. Maier, J.-P. Pelteret, B. Turcksin, D. Wells  
+> The deal.II finite element library: design, features, and insights  
+> Computers & Mathematics with Applications, vol. 81, pages 407-422, 2021.  
+> DOI: 10.1016/j.camwa.2020.02.022; preprint
+
+```bibtex
+@Article{dealii2019design,
+  title   = {The {deal.II} finite element library: Design, features, and insights},
+  author  = {Daniel Arndt and Wolfgang Bangerth and Denis Davydov and
+             Timo Heister and Luca Heltai and Martin Kronbichler and
+             Matthias Maier and Jean-Paul Pelteret and Bruno Turcksin and
+             David Wells},
+  journal = {Computers \& Mathematics with Applications},
+  year    = {2021},
+  DOI     = {10.1016/j.camwa.2020.02.022},
+  pages   = {407-422},
+  volume  = {81},
+  issn    = {0898-1221},
+  url     = {https://arxiv.org/abs/1910.13247}
+}
+```
+
 <div class="section_buttons">
 
 | Previous                              |
