@@ -477,6 +477,20 @@ namespace sapphirepp
       std::array<std::vector<double>, 3> reflective_bc_signature;
 
       /** @{ */
+      /** Scattering frequency \f$ \nu \f$  */
+      ScatteringFrequency<dim_ps> scattering_frequency;
+      /** Source term \f$ S \f$ */
+      Source<dim_ps> source_function;
+      /** Magnetic field \f$ \mathbf{B} \f$ */
+      MagneticField<dim_ps> magnetic_field;
+      /** Background velocity field \f$ \mathbf{u} \f$ */
+      BackgroundVelocityField<dim_ps> background_velocity_field;
+
+      /** Boundary values for inflow boundaries */
+      BoundaryValueFunction<dim_ps> bc_value_function;
+      /** @} */
+
+      /** @{ */
       /**
        * Output stream for timer output
        *
