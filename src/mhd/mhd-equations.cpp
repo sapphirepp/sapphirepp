@@ -69,7 +69,12 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   component_names[energy_component]  = prefix + "E";
   if constexpr (divergence_cleaning)
     component_names[divergence_cleaning_component] = prefix + "psi";
-  for (unsigned int d = 0; d < n_vec_components; ++d)
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      component_names[first_momentum_component + d] = prefix + "p";
+      component_names[first_magnetic_component + d] = prefix + "b";
+    }
+  for (unsigned int d = dim; d < n_vec_components; ++d)
     {
       component_names[first_momentum_component + d] =
         prefix + "p_" + vec_component_name[d];
