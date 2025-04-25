@@ -309,7 +309,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
 
   if ((mhd_flags & MHDFlags::conserved_limiting) != MHDFlags::none)
     {
-      AssertThrow((mhd_flags & MHDFlags::no_limiting) != MHDFlags::none,
+      AssertThrow((mhd_flags & MHDFlags::no_limiting) == MHDFlags::none,
                   ExcMessage("Limiting must be activated to use limiting "
                              "on conserved variables."));
     }
