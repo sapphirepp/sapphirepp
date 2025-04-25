@@ -28,6 +28,7 @@
 
 #include "vfp-parameters.h"
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/patterns.h>
 #include <deal.II/base/utilities.h>
 
@@ -308,6 +309,12 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             Assert(false, ExcNotImplemented());
 
           s = prm.get(entry);
+
+          AssertThrow(
+            !(s == "reflective" && (entry == "lower p" || entry == "upper p")),
+            ExcMessage(
+              "Reflective boundary conditions in the p-direction are not implemented."));
+
           if (s == "continuous")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::continuous;
