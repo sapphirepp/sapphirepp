@@ -71,7 +71,8 @@ namespace sapphirepp
       prm.declare_entry("Test case",
                         "0",
                         dealii::Patterns::Integer(0, 1),
-                        "Test case to run: 0 - Sod Shock Tube, "
+                        "Test case to run: "
+                        "0 - Sod Shock Tube, "
                         "1 - Brio & Wu Shock Tube");
       /** [Declare runtime parameter] */
 
@@ -129,33 +130,52 @@ namespace sapphirepp
         : dealii::Function<dim>(MHDEquations<dim, hdc>::n_components)
         , prm{physical_parameters}
         , mhd_equations(adiabatic_index)
-        , primitive_left_state(MHDEquations<dim, hdc>::n_components)
-        , primitive_right_state(MHDEquations<dim, hdc>::n_components)
+        , state_l(MHDEquations<dim, hdc>::n_components)
+        , state_r(MHDEquations<dim, hdc>::n_components)
       {
-        const double rho_l = 1.0;
-        const double u_l   = 0.0;
-        const double P_l   = 1.0;
-        const double rho_r = 0.125;
-        const double u_r   = 0.0;
-        const double P_r   = 0.1;
+        const unsigned int i_rho = MHDEquations<dim, hdc>::density_component;
+        const unsigned int i_P   = MHDEquations<dim, hdc>::pressure_component;
+        const unsigned int i_ux =
+          MHDEquations<dim, hdc>::first_velocity_component;
+        const unsigned int i_Bx =
+          MHDEquations<dim, hdc>::first_magnetic_component;
+        const unsigned int i_By =
+          MHDEquations<dim, hdc>::first_magnetic_component + 1;
 
-        primitive_left_state                                            = 0.;
-        primitive_left_state[MHDEquations<dim, hdc>::density_component] = rho_l;
-        primitive_left_state[MHDEquations<dim, hdc>::first_velocity_component] =
-          u_l;
-        primitive_left_state[MHDEquations<dim, hdc>::pressure_component] = P_l;
+        state_l = 0.;
+        state_r = 0.;
+
+        switch (prm.test_case)
+          {
+            case 1:
+              // Brio Wu
+              state_l[i_Bx] = 0.75;
+              state_l[i_By] = 1.0;
+
+              state_r[i_Bx] = 0.75;
+              state_r[i_By] = -1.0;
+              [[fallthrough]]; // HD part is same as for Sod
+
+            case 0:
+              // Sod
+              state_l[i_rho] = 1.0;
+              state_l[i_ux]  = 0.0;
+              state_l[i_P]   = 1.0;
+
+              state_r[i_rho] = 0.125;
+              state_r[i_ux]  = 0.0;
+              state_r[i_P]   = 0.1;
+              break;
+
+            default:
+              Assert(false, dealii::ExcNotImplemented());
+              break;
+          }
+
         saplog << "Primitive left state: " << std::endl;
-        saplog << primitive_left_state << std::endl;
-
-        primitive_right_state = 0.;
-        primitive_right_state[MHDEquations<dim, hdc>::density_component] =
-          rho_r;
-        primitive_right_state[MHDEquations<dim,
-                                           hdc>::first_velocity_component] =
-          u_r;
-        primitive_right_state[MHDEquations<dim, hdc>::pressure_component] = P_r;
+        saplog << state_l << std::endl;
         saplog << "Primitive right state: " << std::endl;
-        saplog << primitive_right_state << std::endl;
+        saplog << state_r << std::endl;
       }
 
 
@@ -169,10 +189,9 @@ namespace sapphirepp
 
         /** [MHD Initial condition] */
         if (point[0] < 0.)
-          mhd_equations.convert_primitive_to_conserved(primitive_left_state, f);
+          mhd_equations.convert_primitive_to_conserved(state_l, f);
         else
-          mhd_equations.convert_primitive_to_conserved(primitive_right_state,
-                                                       f);
+          mhd_equations.convert_primitive_to_conserved(state_r, f);
         /** [MHD Initial condition] */
       }
 
@@ -181,8 +200,8 @@ namespace sapphirepp
     private:
       const PhysicalParameters                    prm;
       const MHDEquations<dim, hdc>                mhd_equations;
-      typename MHDEquations<dim, hdc>::state_type primitive_left_state;
-      typename MHDEquations<dim, hdc>::state_type primitive_right_state;
+      typename MHDEquations<dim, hdc>::state_type state_l;
+      typename MHDEquations<dim, hdc>::state_type state_r;
     };
 
   } // namespace MHD

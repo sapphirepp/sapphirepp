@@ -97,7 +97,7 @@ main(int argc, char *argv[])
         comparison_base_filename,
         MHDEquations<dim, divergence_cleaning>::n_components,
         0.,
-        5);
+        8);
       /** [Setup exact solution] */
 
       return test_run_mhd<dim_mhd>(mhd_parameters,
