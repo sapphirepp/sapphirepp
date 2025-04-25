@@ -1416,7 +1416,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
-                    case BoundaryConditions::reflectiv:
+                    case BoundaryConditions::reflective:
                       {
                         copy_data.cell_matrix(i, j) +=
                           fe_face_v.shape_value(i, q_index) *
