@@ -49,9 +49,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
   , divergence_cleaning_speed{std::numeric_limits<double>::quiet_NaN()}
   , divergence_cleaning_damping{0.}
 {
-  AssertThrow(adiabatic_index > 1.0,
+  AssertThrow(adiabatic_index >= 1.0,
               dealii::ExcMessage("Adiabatic index must be larger than 1."));
-  AssertThrow(adiabatic_index < 2.0,
+  AssertThrow(adiabatic_index <= 2.0,
               dealii::ExcMessage("Adiabatic index must be smaller than 2."));
 }
 
