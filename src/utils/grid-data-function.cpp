@@ -526,6 +526,28 @@ sapphirepp::Utils::GridDataFunction<dim>::load_data_from_file(
                                        std::move(n_subintervals),
                                        std::move(data_values[2 + d]));
     }
+  if (n_components_data == 8)
+    {
+      // Density
+      grid_functions[0].set_data(std::move(interval_endpoints),
+                                 std::move(n_subintervals),
+                                 std::move(data_values[0]));
+      // Energy
+      grid_functions[4].set_data(std::move(interval_endpoints),
+                                 std::move(n_subintervals),
+                                 std::move(data_values[1]));
+      for (unsigned int d = 0; d < 3; ++d)
+        {
+          // Momentum
+          grid_functions[1 + d].set_data(std::move(interval_endpoints),
+                                         std::move(n_subintervals),
+                                         std::move(data_values[2 + d]));
+          // Magnetic field
+          grid_functions[5 + d].set_data(std::move(interval_endpoints),
+                                         std::move(n_subintervals),
+                                         std::move(data_values[5 + d]));
+        }
+    }
   else
     {
       for (unsigned int c = 0; c < n_components_data; c++)
