@@ -187,7 +187,7 @@ namespace sapphirepp
       /**
        * Number of theta points for phase space reconstruction
        */
-      unsigned int n_theta;
+      unsigned int n_cos_theta;
       /**
        * Number of phi points for phase space reconstruction
        */

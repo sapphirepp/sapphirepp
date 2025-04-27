@@ -124,19 +124,17 @@ namespace sapphirepp
        * @brief Compute the real spherical harmonics
        *        \f$ Y_{lms}(\theta, \varphi) \f$
        *
-       * @param theta_values Vector of theta values
-       * @param phi_values Vector of phi values
+       * @param cos_theta_values Vector of \f$ \cos(\theta) \f$ values
+       * @param phi_values Vector of \f$ \phi \f$ values
        * @param lms_indices Map between system index \f$ i \f$
        *                    and spherical harmonic indices \f$ (l,m,s) \f$
        * @return Table<3, double> Real spherical harmonics `Y[i][theta][phi]`
        */
       static Table<3, double>
       compute_real_spherical_harmonics(
-        const std::vector<double>                      &theta_values,
+        const std::vector<double>                      &cos_theta_values,
         const std::vector<double>                      &phi_values,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
-
-
 
     private:
       /** Output parameter */
@@ -152,17 +150,17 @@ namespace sapphirepp
 
       /** Postprocess to probe points? */
       const bool perform_probe_location;
-      /** Preform phase space reconstruction? */
+      /** Perform phase space reconstruction? */
       const bool perform_phase_space_reconstruction;
-      /** Theta values for phase space reconstruction */
-      const std::vector<double> theta_values;
+      /** Cos theta values for phase space reconstruction */
+      const std::vector<double> cos_theta_values;
       /** Phi values for phase space reconstruction */
       const std::vector<double> phi_values;
 
       /** Real spherical harmonics `Y[i][theta][phi]` */
       const Table<3, double> real_spherical_harmonics;
 
-      /**  Points in reduced phase space to to probe and reconstruct */
+      /**  Points in reduced phase space to probe and reconstruct */
       std::vector<Point<dim>> probe_location_points;
 
       /** @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation} */
@@ -185,7 +183,7 @@ namespace sapphirepp
         const std::vector<double> &expansion_coefficients) const;
 
       /**
-       * @brief Output \f$ f(\theta, \varphi) \f$ in GNU splot format.
+       * @brief Output \f$ f(\cos\theta, \varphi) \f$ in GNU splot format.
        *
        * @param f_values Phase space distribution
        * @param point_index Index of reconstructed point

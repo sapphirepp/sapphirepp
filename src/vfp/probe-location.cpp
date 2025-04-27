@@ -59,13 +59,14 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   , perform_probe_location{vfp_parameters.perform_probe_location}
   , perform_phase_space_reconstruction{vfp_parameters
                                          .perform_phase_space_reconstruction}
-  , theta_values{Utils::Tools::create_linear_range(0,
-                                                   M_PI,
-                                                   vfp_parameters.n_theta)}
+  , cos_theta_values{Utils::Tools::create_linear_range(
+      -1.,
+      1.,
+      vfp_parameters.n_cos_theta)}
   , phi_values{Utils::Tools::create_linear_range(0,
                                                  2 * M_PI,
                                                  vfp_parameters.n_phi)}
-  , real_spherical_harmonics{compute_real_spherical_harmonics(theta_values,
+  , real_spherical_harmonics{compute_real_spherical_harmonics(cos_theta_values,
                                                               phi_values,
                                                               lms_indices)}
   , rpe_cache(1e-6, true)
@@ -217,10 +218,10 @@ sapphirepp::VFP::ProbeLocation<dim>::compute_phase_space_distribution(
 {
   AssertDimension(expansion_coefficients.size(), lms_indices.size());
 
-  std::vector<double> f(theta_values.size() * phi_values.size());
+  std::vector<double> f(cos_theta_values.size() * phi_values.size());
 
   for (unsigned int i = 0; i < lms_indices.size(); ++i)
-    for (unsigned int j = 0; j < theta_values.size(); ++j)
+    for (unsigned int j = 0; j < cos_theta_values.size(); ++j)
       for (unsigned int k = 0; k < phi_values.size(); ++k)
         f[j * phi_values.size() + k] +=
           expansion_coefficients[i] * real_spherical_harmonics(j, k, i);
@@ -256,12 +257,12 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
   data_file << "# f(t, x, p, theta, mu) at (x,|p|) = ("
             << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
-  data_file << "# theta phi f(theta, phi) \n";
-  for (unsigned int i = 0; i < theta_values.size(); ++i)
+  data_file << "# cos(theta) phi f(cos(theta), phi) \n";
+  for (unsigned int i = 0; i < cos_theta_values.size(); ++i)
     {
       for (unsigned int j = 0; j < phi_values.size(); ++j)
-        data_file << theta_values[i] << " " << phi_values[j] << " "
-                  << f_values[i * theta_values.size() + j] << "\n";
+        data_file << cos_theta_values[i] << " " << phi_values[j] << " "
+                  << f_values[i * cos_theta_values.size() + j] << "\n";
       // Gnu plot data format requires the addition of an extra new line when
       // the x-coordinate changes. See
       // https://stackoverflow.com/questions/62729982/how-to-plot-a-3d-gnuplot-splot-surface-graph-with-data-from-a-file
@@ -297,13 +298,17 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_spherical_density_map(
             << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
   data_file << "# n_{p_x} n_{p_y} n_{p_z} f(p_x, p_z, p_y) \n";
-  for (unsigned int i = 0; i < theta_values.size(); ++i)
+  for (unsigned int i = 0; i < cos_theta_values.size(); ++i)
     {
       for (unsigned int j = 0; j < phi_values.size(); ++j)
         {
-          const double x = std::cos(theta_values[i]);
-          const double y = std::sin(theta_values[i]) * std::cos(phi_values[j]);
-          const double z = std::sin(theta_values[i]) * std::sin(phi_values[j]);
+          const double x = cos_theta_values[i];
+          const double y =
+            std::sqrt(1 - cos_theta_values[i] * cos_theta_values[i]) *
+            std::cos(phi_values[j]);
+          const double z =
+            std::sqrt(1 - cos_theta_values[i] * cos_theta_values[i]) *
+            std::sin(phi_values[j]);
           data_file << x << " " << y << " " << z << " "
                     << f_values[i * phi_values.size() + j] << "\n";
         }
@@ -359,13 +364,20 @@ sapphirepp::VFP::ProbeLocation<dim>::output_f_lms(
 template <unsigned int dim>
 dealii::Table<3, double>
 sapphirepp::VFP::ProbeLocation<dim>::compute_real_spherical_harmonics(
-  const std::vector<double>                      &theta_values,
+  const std::vector<double>                      &cos_theta_values,
   const std::vector<double>                      &phi_values,
   const std::vector<std::array<unsigned int, 3>> &lms_indices)
 {
-  dealii::Table<3, double> y_lms(theta_values.size(),
+  dealii::Table<3, double> y_lms(cos_theta_values.size(),
                                  phi_values.size(),
                                  lms_indices.size());
+
+  std::vector<double> theta_values(cos_theta_values.size());
+  std::transform(cos_theta_values.begin(),
+                 cos_theta_values.end(),
+                 theta_values.begin(),
+                 static_cast<double (*)(double)>(std::acos));
+  // [](double cos_theta) { return std::acos(cos_theta); });
 
   for (unsigned int i = 0; i < lms_indices.size(); ++i)
     {
