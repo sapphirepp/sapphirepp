@@ -312,8 +312,12 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 
           AssertThrow(
             !(s == "reflective" && (entry == "lower p" || entry == "upper p")),
-            ExcMessage(
-              "Reflective boundary conditions in the p-direction are not implemented."));
+            ExcMessage("Reflective boundary conditions in the p-direction "
+                       "are not implemented."));
+          AssertThrow(
+            !(s == "periodic" && (entry == "lower p" || entry == "upper p")),
+            ExcMessage("Periodic boundary conditions in the p-direction "
+                       "are not permitted."));
 
           if (s == "continuous")
             boundary_conditions[boundary_id] =

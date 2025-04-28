@@ -464,11 +464,11 @@ namespace sapphirepp
       /** @} */
 
       /** The exponent \f$ s \f$ of \f$ p^{s}\f$ used to rescale the
-          distribution function as \f$ p^{s} f\f$ **/
+          distribution function as \f$ p^{s} f\f$ */
       const double scaling_spectral_index;
 
-      /** Sign changes used for relfective boundary conditions (y-z-plane, i.e.
-       * lower/upper x) */
+      /** Sign changes used for reflective boundary conditions
+          (y-z-plane, i.e. lower/upper x) */
       std::array<std::vector<double>, 3> reflective_bc_signature;
 
       /** @{ */
