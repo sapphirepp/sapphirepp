@@ -32,16 +32,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install clang-tidy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-tidy
+      # - name: Install clang-tidy
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y --no-install-recommends clang-tidy
 
       - name: Compile
+        # Removed clang-tidy flag:
+        # -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
         run: |
           cmake -S . -B build -DSAPPHIREPP=ON -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
                 -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
-                -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
                 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           make --directory=build -j${{ env.COMPILE_JOBS }}
        
