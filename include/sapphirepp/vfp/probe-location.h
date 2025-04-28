@@ -47,7 +47,6 @@
 #include <mpi.h>
 
 #include <array>
-#include <filesystem>
 #include <vector>
 
 #include "output-parameters.h"
@@ -135,6 +134,22 @@ namespace sapphirepp
         const std::vector<double>                      &cos_theta_values,
         const std::vector<double>                      &phi_values,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
+
+      /**
+       * @brief Test the phase space reconstruction.
+       *
+       * Call this function, for example, in the constructor of the
+       * VFPSolver. It will output all spherical harmonics up to \f$
+       * l_{\mathrm{max}} \f$. Results can be compared with Appendix A in
+       * @cite Schween2025 .
+       *
+       * @note The execution of Sapphire++ will be aborted after the test is
+       * executed. Moreover, the test only runs successfully, if the parameter
+       * files contains the section "Probe Location" with at least one point
+       * specified.
+       */
+      void
+      test_phase_space_reconstruction();
 
     private:
       /** Output parameter */

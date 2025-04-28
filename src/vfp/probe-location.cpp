@@ -254,7 +254,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
   data_file.precision(std::numeric_limits<double>::digits10);
 
-  data_file << "# f(t, x, p, theta, mu) at (x,|p|) = ("
+  data_file << "# f(t, x, p, cos theta, phi) at (x,|p|) = ("
             << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
   data_file << "# cos(theta) phi f(cos(theta), phi) \n";
@@ -417,7 +417,40 @@ sapphirepp::VFP::ProbeLocation<dim>::compute_real_spherical_harmonics(
   return y_lms;
 }
 
+template <unsigned int dim>
+void
+sapphirepp::VFP::ProbeLocation<dim>::test_phase_space_reconstruction()
+{
+  // Each spherical harmonic can be represented with expansion coefficients of
+  // the form (0., ..., 1., ...). For example, (1., 0, 0, ...) belongs to Y_000
+  std::vector<std::vector<double>> spherical_harmonics(
+    system_size, std::vector<double>(system_size));
 
+  // Resizing probe_location_points is necessary to avoid the AssertThrow at the
+  // beginning of output_gnu_splot_data
+  probe_location_points.resize(system_size);
+
+  unsigned int spherical_harmonic_counter = 0;
+  for (auto &spherical_harmonic : spherical_harmonics)
+    {
+      spherical_harmonic[spherical_harmonic_counter] = 1.;
+
+      std::vector<double> f_values =
+        compute_phase_space_distribution(spherical_harmonic);
+
+      output_gnu_splot_data(f_values, spherical_harmonic_counter, 0, 0);
+      output_gnu_splot_spherical_density_map(f_values,
+                                             spherical_harmonic_counter,
+                                             0,
+                                             0);
+
+      ++spherical_harmonic_counter;
+    }
+  // Interrupt the execution of the program after the test has been performed to
+  // avoid overwriting the output files.
+  throw std::runtime_error(
+    "Sapphire++ has been interrupted, after the phase space reconstruction test has been performed.");
+}
 
 // Explicit instantiation
 template class sapphirepp::VFP::ProbeLocation<1>;
