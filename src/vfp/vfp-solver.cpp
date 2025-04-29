@@ -1430,9 +1430,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
-
-                    case BoundaryConditions::periodic:
-                      break;
                     case BoundaryConditions::non_homogeneous:
                       {
                         copy_data.cell_matrix(i, j) +=
@@ -1446,7 +1443,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           negative_flux_matrices[q_index](component_i,
                                                           component_j) *
                           1. * JxW[q_index];
+                        break;
                       }
+                    case BoundaryConditions::periodic:
+                      break;
                     default:
                       Assert(false, ExcNotImplemented());
                   }

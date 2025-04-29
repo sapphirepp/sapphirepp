@@ -331,6 +331,9 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
           else if (s == "reflective")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::reflective;
+          else if (s == "non homogeneous")
+            boundary_conditions[boundary_id] =
+              VFP::BoundaryConditions::non_homogeneous;
           else if (s == "periodic")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::periodic;
