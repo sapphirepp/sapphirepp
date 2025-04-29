@@ -338,25 +338,23 @@ sapphirepp::VFP::ProbeLocation<dim>::output_f_lms(
                                                   std::ios_base::app);
 
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
-  std::stringstream sstream;
-  sstream.precision(std::numeric_limits<double>::digits10);
+  data_file.precision(std::numeric_limits<double>::digits10);
 
   if (time_step_number == 0)
     {
-      sstream << "# f(t, x, p ) at (x,|p|) = ("
-              << probe_location_points[point_index] << ")"
-              << "\n";
-      sstream << "# time_step_number cur_time ";
+      data_file << "# f(t, x, p ) at (x,|p|) = ("
+                << probe_location_points[point_index] << ")"
+                << "\n";
+      data_file << "# time_step_number cur_time ";
       for (auto &lms : lms_indices)
-        sstream << "f_" << lms[0] << lms[1] << lms[2] << " ";
-      sstream << "\n";
+        data_file << "f_" << lms[0] << lms[1] << lms[2] << " ";
+      data_file << "\n";
     }
-  sstream << time_step_number << " " << cur_time << " ";
+  data_file << time_step_number << " " << cur_time << " ";
   for (auto f_lms : expansion_coefficients)
-    sstream << f_lms << " ";
-  // Write string to  data file
+    data_file << f_lms << " ";
 
-  data_file << sstream.str() << "\n";
+  data_file << std::endl;
 }
 
 
