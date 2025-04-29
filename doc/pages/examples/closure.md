@@ -161,7 +161,7 @@ called `points`.
 This will output the expansion coefficients at the specified points.
 To also perform the phase space reconstruction,
 we need to the `Perform reconstruction` parameter to `true`.
-Furthermore, we need to set the number of $\theta$ and $\varphi$ values
+Furthermore, we need to set the number of $cos\theta$ and $\varphi$ values
 used for the reconstruction on the momentum unit-sphere,
 $(n_{p_x}, n_{p_y}, n_{p_z})$.
 
@@ -170,7 +170,7 @@ subsection Probe location
   set points                 = -6; -3; 0; 3; 6
   set Perform reconstruction = true
   set n_phi                  = 75
-  set n_theta                = 75
+  set n_cos_theta                = 75
 end
 ```
 
@@ -186,7 +186,7 @@ named as follows:
   for all time steps at the reduced phase space point $\xi$,
   identified as point number `XX` in the parameter file.
 - `surface_plot_distribution_function_point_XX_t_XXXX.dat`:
-  Contains the reconstructed phase space function $f(t, \xi, \theta, \varphi)$
+  Contains the reconstructed phase space function $f(t, \xi, \cos\theta, \varphi)$
   for each point `XX` and time step `XXXX`.
 - `spherical_density_map_point_XX_t_XXXX.dat`:
   Contains the reconstructed phase space function $f(t, \xi, n_{p_x}, n_{p_y}, n_{p_z})$
