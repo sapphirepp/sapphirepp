@@ -227,14 +227,16 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
       "List of points in the reduced phase space to probe."
       "The points should be provided as a semicolon-separated list, "
       "e.g., 1,1,1; 2,2,2.");
-    prm.declare_entry("Perform reconstruction",
-                      "false",
-                      Patterns::Bool(),
-                      "Perform phase space reconstruction for f(theta, phi)?");
-    prm.declare_entry("n_theta",
-                      "75",
-                      Patterns::Integer(0),
-                      "Number of theta points for phase space reconstruction.");
+    prm.declare_entry(
+      "Perform reconstruction",
+      "false",
+      Patterns::Bool(),
+      "Perform phase space reconstruction for f(cos theta, phi)?");
+    prm.declare_entry(
+      "n_cos_theta",
+      "75",
+      Patterns::Integer(0),
+      "Number of cos theta points for phase space reconstruction.");
     prm.declare_entry("n_phi",
                       "75",
                       Patterns::Integer(0),
@@ -428,13 +430,13 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     // Only reconstruct phase space if needed
     if (perform_phase_space_reconstruction)
       {
-        n_theta = static_cast<unsigned int>(prm.get_integer("n_theta"));
-        n_phi   = static_cast<unsigned int>(prm.get_integer("n_phi"));
+        n_cos_theta = static_cast<unsigned int>(prm.get_integer("n_cos_theta"));
+        n_phi       = static_cast<unsigned int>(prm.get_integer("n_phi"));
       }
     else
       {
-        n_theta = 0;
-        n_phi   = 0;
+        n_cos_theta = 0;
+        n_phi       = 0;
       }
   } // Probe location
   prm.leave_subsection();

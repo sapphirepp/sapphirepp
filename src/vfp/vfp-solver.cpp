@@ -2019,11 +2019,15 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   data_out.build_patches(vfp_parameters.polynomial_degree);
   output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 
-  probe_location.probe_all_points(dof_handler,
-                                  mapping,
-                                  locally_relevant_current_solution,
-                                  time_step_number,
-                                  cur_time);
+  probe_location.probe_all_points(
+    dof_handler,
+    mapping,
+    locally_relevant_current_solution,
+    time_step_number,
+    cur_time,
+    ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
+      "g" :
+      "f");
 }
 
 

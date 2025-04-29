@@ -121,17 +121,19 @@ subsection VFP
     set Gamma = 3.
   end
 
-  subsection Phase space reconstruction
-    # List of points in the reduced phase space for reconstructing f(theta,
-    # phi). The points should be provided as a semicolon-separated list, e.g.,
-    # 1,1,1; 2,2,2.
-    set reconstruction points = 
+  subsection Probe location
+    # List of points in the reduced phase space to probe.The points should be
+    # provided as a semicolon-separated list, e.g., 1,1,1; 2,2,2.
+    set points                 = 
 
-    # Number of theta points for phase space reconstruction.
-    set n_theta               = 75
+    # Perform phase space reconstruction for f(cos theta, phi)?
+    set Perform reconstruction = false
+
+    # Number of cos theta points for phase space reconstruction.
+    set n_cos_theta            = 75
 
     # Number of phi points for phase space reconstruction.
-    set n_phi                 = 75
+    set n_phi                  = 75
   end
 
 end
