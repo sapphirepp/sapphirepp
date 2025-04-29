@@ -1356,10 +1356,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     const unsigned int       boundary_id = cell->face(face_no)->boundary_id();
     const BoundaryConditions boundary_condition =
       vfp_parameters.boundary_conditions[boundary_id];
-    const unsigned int boundary_coordinate =
-      (boundary_id == 0 || boundary_id == 1 ?
-         0 :
-         (boundary_id == 2 || boundary_id == 3 ? 1 : 2));
+    const unsigned int boundary_coordinate = boundary_id / 2;
+
     const std::vector<Point<dim_ps>> &q_points =
       fe_face_v.get_quadrature_points();
     const std::vector<double>            &JxW = fe_face_v.get_JxW_values();
