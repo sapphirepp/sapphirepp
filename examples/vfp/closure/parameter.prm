@@ -32,8 +32,8 @@ subsection VFP
   subsection Probe location
     set points                 = -6; -3; 0; 3; 6
     set Perform reconstruction = true
+    set n_cos_theta            = 75
     set n_phi                  = 75
-    set n_theta                = 75
   end
   subsection Time stepping
     set Final time     = 6.9282032303 # = 12/sqrt(3)

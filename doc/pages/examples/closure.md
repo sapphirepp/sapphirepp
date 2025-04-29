@@ -169,8 +169,8 @@ $(n_{p_x}, n_{p_y}, n_{p_z})$.
 subsection Probe location
   set points                 = -6; -3; 0; 3; 6
   set Perform reconstruction = true
+  set n_cos_theta            = 75
   set n_phi                  = 75
-  set n_cos_theta                = 75
 end
 ```
 
