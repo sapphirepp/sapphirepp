@@ -109,13 +109,17 @@ namespace sapphirepp
        * @param solution Current solution vector
        * @param time_step_number Current time step number
        * @param cur_time Current time
+       * @param function_symbol The symbol used for the distribution function.
+       * Default, is \f$ f \f$ for an unscaled distribution function
+       * and \f$ g \f$ for \f$p^3 f \f$.
        */
       void
       probe_all_points(const DoFHandler<dim>            &dof_handler,
                        const Mapping<dim>               &mapping,
                        const PETScWrappers::MPI::Vector &solution,
                        const unsigned int                time_step_number = 0,
-                       const double                      cur_time = 0.) const;
+                       const double                      cur_time         = 0.,
+                       const std::string &function_symbol = "f") const;
 
 
 
@@ -198,41 +202,52 @@ namespace sapphirepp
         const std::vector<double> &expansion_coefficients) const;
 
       /**
-       * @brief Output \f$ f(\cos\theta, \varphi) \f$ in GNU splot format.
+       * @brief Output \f$ f(\cos\theta, \varphi) \f$ or $\f$ g = p^3
+       * f(\cos\theta, \varphi) \f$ in GNU splot format.
        *
-       * @param f_values Phase space distribution
+       * @param distribution_func_values Phase space distribution
        * @param point_index Index of reconstructed point
        * @param time_step_number Current time step number
        * @param cur_time Current time
+       * @param function_symbol The symbol used for the distribution function.
+       * Default, is \f$ f \f$ for an unscaled distribution function
+       * and \f$ g \f$ for \f$p^3 f \f$.
        */
       void
-      output_gnu_splot_data(const std::vector<double> &f_values,
+      output_gnu_splot_data(const std::vector<double> &distribution_func_values,
                             const unsigned int         point_index,
                             const unsigned int         time_step_number = 0,
-                            const double               cur_time = 0.) const;
+                            const double               cur_time         = 0.,
+                            const std::string &function_symbol = "f") const;
 
 
 
       /**
-       * @brief Output \f$ f(p_x, p_y, p_z) \f$ in GNU splot format.
+       * @brief Output \f$ f(p_x, p_y, p_z) \f$ or \f$ g = p^3 f(p_x, p_y, p_z)
+       * \f$ in GNU splot format.
        *
-       * @param f_values Phase space distribution
+       * @param distribution_func_values Phase space distribution
        * @param point_index Index of reconstructed point
        * @param time_step_number Current time step number
        * @param cur_time Current time
+       * @param function_symbol The symbol used for the distribution function.
+       * Default, is \f$ f \f$ for an unscaled distribution function
+       * and \f$ g \f$ for \f$p^3 f \f$.
        */
       void
       output_gnu_splot_spherical_density_map(
-        const std::vector<double> &f_values,
+        const std::vector<double> &distribution_func_values,
         const unsigned int         point_index,
         const unsigned int         time_step_number = 0,
-        const double               cur_time         = 0.) const;
+        const double               cur_time         = 0.,
+        const std::string         &function_symbol  = "f") const;
       /** @} */
 
 
 
       /**
-       * @brief Output \f$ f_{lms} \f$ at points in location list.
+       * @brief Outputs the values of the expansion coefficients at points in
+       * location list.
        *
        * @param expansion_coefficients Values of the expansion coefficients
        * @param point_index Index of reconstructed point
@@ -240,10 +255,12 @@ namespace sapphirepp
        * @param cur_time Current time
        */
       void
-      output_f_lms(const std::vector<double> &expansion_coefficients,
-                   const unsigned int         point_index,
-                   const unsigned int         time_step_number = 0,
-                   const double               cur_time         = 0.) const;
+      output_expansion_coefficients(
+        const std::vector<double> &expansion_coefficients,
+        const unsigned int         point_index,
+        const unsigned int         time_step_number = 0,
+        const double               cur_time         = 0.,
+        const std::string         &function_symbol  = "f") const;
     };
   } // namespace VFP
 } // namespace sapphirepp
