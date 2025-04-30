@@ -1,5 +1,6 @@
 # add_subdirectory(athena-linear-waves)
 add_subdirectory(linear-waves)
 add_subdirectory(shock-tube)
+add_subdirectory(shock-tube-2d)
 add_subdirectory(blast-wave)
 add_subdirectory(orszag-tang)
