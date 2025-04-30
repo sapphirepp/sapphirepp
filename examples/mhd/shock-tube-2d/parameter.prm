@@ -32,6 +32,7 @@ subsection MHD
   end
 end
 subsection Physical parameters
-  set Test case = 0
-  set Theta     = 45
+  set Test case   = 0
+  set Theta       = 45
+  set Shock width = 0.1
 end

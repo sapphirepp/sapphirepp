@@ -54,6 +54,7 @@ namespace sapphirepp
     /** [Define runtime parameter] */
     unsigned int test_case;
     double       theta;
+    double       shock_width;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -77,8 +78,12 @@ namespace sapphirepp
                         "1 - Brio & Wu Shock Tube");
       prm.declare_entry("Theta",
                         "0.",
-                        dealii::Patterns::Double(0, 90),
+                        dealii::Patterns::Double(-90., 90.),
                         "Rotation around z-axis in degrees.");
+      prm.declare_entry("Shock width",
+                        "0.1",
+                        dealii::Patterns::Double(0.),
+                        "The width of the shock.");
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -96,8 +101,9 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
-      test_case = static_cast<unsigned int>(prm.get_integer("Test case"));
-      theta     = prm.get_double("Theta") / 180. * M_PI;
+      test_case   = static_cast<unsigned int>(prm.get_integer("Test case"));
+      theta       = prm.get_double("Theta") / 180. * M_PI;
+      shock_width = prm.get_double("Shock width");
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();
@@ -212,6 +218,13 @@ namespace sapphirepp
         saplog << state_l << std::endl;
         saplog << "Primitive right state: " << std::endl;
         saplog << state_r << std::endl;
+
+        mhd_equations.convert_primitive_to_conserved(state_l, state_l);
+        mhd_equations.convert_primitive_to_conserved(state_r, state_r);
+        saplog << "Conserved left state: " << std::endl;
+        saplog << state_l << std::endl;
+        saplog << "Conserved right state: " << std::endl;
+        saplog << state_r << std::endl;
       }
 
 
@@ -226,10 +239,11 @@ namespace sapphirepp
         /** [MHD Initial condition] */
         const double x =
           point[0] * std::cos(prm.theta) + point[1] * std::sin(prm.theta);
-        if (x < 0.)
-          mhd_equations.convert_primitive_to_conserved(state_l, f);
-        else
-          mhd_equations.convert_primitive_to_conserved(state_r, f);
+
+        for (unsigned int c = 0; c < MHDEquations<dim, hdc>::n_components; ++c)
+          f[c] =
+            (state_r[c] + state_l[c]) / 2. +
+            (state_r[c] - state_l[c]) / 2. * std::tanh(x / prm.shock_width);
         /** [MHD Initial condition] */
       }
 
