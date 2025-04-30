@@ -1021,6 +1021,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
         // Only limit if average gradient was changed
         limit_cell = (diff > 1e-10);
+        if (!limit_cell)
+          shock_indicator[cell_index] = 0.;
+        else if constexpr ((mhd_flags & MHDFlags::no_shock_indicator) !=
+                           MHDFlags::none)
+          shock_indicator[cell_index] = 1.;
 
         // Enforce divergence free limited B-field
         if (limit_cell)
