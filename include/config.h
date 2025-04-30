@@ -129,35 +129,6 @@ namespace sapphirepp
       VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
-    template <unsigned int dim>
-    class BoundaryValueFunction : public dealii::Function<dim>
-    {
-    public:
-      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
-                            const unsigned int        system_size)
-        : dealii::Function<dim>(system_size)
-        , prm{physical_parameters}
-        , lms_indices{PDESystem::create_lms_indices(system_size)}
-      {}
-
-
-
-      void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &bc) const override
-      {
-        AssertDimension(bc.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
-
-        // constant isotropic part only
-        bc[0] = 1.;
-      }
-
-
-    private:
-      const PhysicalParameters                       prm;
-      const std::vector<std::array<unsigned int, 3>> lms_indices;
-    };
 
 
     /**
@@ -182,7 +153,6 @@ namespace sapphirepp
         , prm{physical_parameters}
         , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
-
 
 
       /**
@@ -211,7 +181,7 @@ namespace sapphirepp
        * ```cpp
        *  const double x     = point[0];
        *  const double y     = point[1];
-       *  ...
+       *  // ...
        *  const double log_p = point[dim-1];
        * ```
        *
@@ -247,6 +217,114 @@ namespace sapphirepp
       const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
 
+
+    /**
+     * @brief Inflow boundary condition
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x},p) \f$
+     */
+    template <unsigned int dim>
+    class BoundaryValueFunction : public dealii::Function<dim>
+    {
+    public:
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       * @param system_size Number of expansion coefficients, normally
+       *        \f$ (l_{\mathrm{max}} + 1)^2 \f$
+       */
+
+      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
+                            const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
+      {}
+
+      /**
+       * @brief Values of the distribution function \f$ f \f$ at the boundary
+       * specified by `boundary_id`
+       *
+       * Return a vector containing the values of the expansion coefficients \f$
+       * f_{i(l,m,s)}(t, \mathbf{x}, p) \f$ representing the distribution
+       * function \f$ f \f$ at `points` on the boundary with `boundary_id`.
+       *
+       * The zeroth component of the vector corresponds to \f$ f_{000} \f$, the
+       * first component to \f$ f_{110} \f$ etc. The mapping between the
+       * system index \f$ i \f$ and the spherical harmonic indices \f$
+       * (l,m,s) \f$ is given by `lms_indices`:
+       *
+       * ```cpp
+       *  const unsigned int l = lms_indices[i][0];
+       *  const unsigned int m = lms_indices[i][1];
+       *  const unsigned int s = lms_indices[i][2];
+       * ```
+       *
+       * The points in reduced phase space are handed over using the vector
+       * `points`. Each of its elements has `dim` components. The first `dim_cs`
+       * components correspond to the spatial coordinates \f$ \mathbf{x} \f$ and
+       * if the momentum term is activated the last component to the momentum
+       * coordinate \f$ \ln p \f$:
+       *
+       * ```cpp
+       *  const double x     = points[0][0];
+       *  const double y     = points[0][1];
+       *  // ...
+       *  const double log_p = points[0][dim-1];
+       * ```
+       *
+       * where `points[0]` picks out the first point in `points`.
+       *
+       * The `boundary_id` is used to specify the values \f$ f \f$ at a specific
+       * boundary of the computational domain. The relation between the possible
+       * boundaries and the boundary ids is
+       *
+       * | Boundary | ID |
+       * |----------|----|
+       * | lower x  | 0  |
+       * | upper x  | 1  |
+       * | lower y  | 2  |
+       * | upper y  | 3  |
+       * | lower z  | 4  |
+       * | upper z  | 5  |
+       *
+       *
+       * Only if in the parameter file the corresponding boundary is set to
+       *  `inflow`, the function `bc_vector_value` will be called.
+       *
+       * @param points Points in reduced phase space on the boundary
+       * @param boundary_id ID of the boundary of the computational domain
+       * @param bc Return vector \f$ f_{i(l,m,s)}(t, \mathbf{x}, p) \f$
+       */
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+
+        /** [Boundary value] */
+        for (unsigned int i = 0; i < points.size(); ++i)
+          {
+            // !!!EDIT HERE!!!
+            if (boundary_id == 0)
+              bc_values[i][0] = std::sqrt(4 * M_PI);
+          }
+        /** [Boundary value] */
+      }
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
+      /**
+       * Map between system index \f$ i \f$ and spherical harmonic indices
+       * \f$ (l,m,n) \f$
+       */
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
 
 
     /**
