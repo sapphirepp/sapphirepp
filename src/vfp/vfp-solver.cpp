@@ -1441,7 +1441,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
-                    case BoundaryConditions::non_homogeneous:
+                    case BoundaryConditions::inflow:
                       {
                         copy_data.cell_matrix(i, j) +=
                           fe_face_v.shape_value(i, q_index) *
@@ -1456,8 +1456,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       Assert(false, ExcNotImplemented());
                   }
               }
-            // Non-homogeneous boundary conditions result in a right-hand side
-            if (boundary_condition == BoundaryConditions::non_homogeneous)
+            // Inflow boundary conditions result in a right-hand side
+            if (boundary_condition == BoundaryConditions::inflow)
               {
                 for (unsigned int k = 0; k < pde_system.system_size; ++k)
                   copy_data.cell_rhs(i) -=

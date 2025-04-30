@@ -236,9 +236,10 @@ namespace sapphirepp
        */
       reflective,
 
-      /** Non_homogenous. Inflow at the boundary is determined by a function.
+      /** Inflow. Inflow plus outflow. Inflow at specified boundary is
+       *  determined by a boundary value function.
        */
-      non_homogeneous,
+      inflow,
 
       /**
        * Periodic boundary conditions. Has to be set on both sides of the
