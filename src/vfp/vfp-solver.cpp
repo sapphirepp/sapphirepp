@@ -1383,7 +1383,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
     std::vector<Vector<double>> bc_values(
       q_points.size(), Vector<double>(pde_system.system_size));
-    bc_value_function.vector_value_list(q_points, bc_values);
+    bc_value_function.bc_vector_value_list(q_points, boundary_id, bc_values);
 
     for (unsigned int q_index : fe_face_v.quadrature_point_indices())
       {
