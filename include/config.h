@@ -276,9 +276,9 @@ namespace sapphirepp
        *
        * where `points[0]` picks out the first point in `points`.
        *
-       * The `boundary_id` is used to specify the values \f$ f \f$ at a specific
-       * boundary of the computational domain. The relation between the possible
-       * boundaries and the boundary ids is
+       * The `boundary_id` is used to specify the values of \f$ f \f$ at a
+       * specific boundary of the computational domain. The relation between the
+       * possible boundaries and the boundary ids is, for example,
        *
        * | Boundary | ID |
        * |----------|----|
@@ -286,16 +286,18 @@ namespace sapphirepp
        * | upper x  | 1  |
        * | lower y  | 2  |
        * | upper y  | 3  |
-       * | lower z  | 4  |
-       * | upper z  | 5  |
+       * | lower p  | 4  |
+       * | upper p  | 5  |
        *
+       * If the momentum term is deactivated, `lower/upper p` needs to be
+       * replaced with `lower/upper z`.
        *
        * Only if in the parameter file the corresponding boundary is set to
        *  `inflow`, the function `bc_vector_value` will be called.
        *
        * @param points Points in reduced phase space on the boundary
        * @param boundary_id ID of the boundary of the computational domain
-       * @param bc Return vector \f$ f_{i(l,m,s)}(t, \mathbf{x}, p) \f$
+       * @param bc_values Return vector \f$ f_{i(l,m,s)}(t, \mathbf{x}, p) \f$
        */
       void
       bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
