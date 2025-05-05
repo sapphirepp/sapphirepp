@@ -6,57 +6,64 @@ It applies the discontinuous Galerkin method. This means that it computes a weak
 Consequently, the prescribed boundary conditions also only hold weakly,
 i.e. almost everywhere on the boundary of the computational domain.
 
-For example, the weak formulation of an advection-reaction equations, i.e.
+For example, the weak formulation of a steady-state advection-reaction equation, i.e.
 
 $$
 \begin{split}
-	\frac{\partial f}{\partial t} + \boldsymbol{\beta}(\mathbf{x}) \cdot \nabla f  + r(\mathbf{x}) f &= s(\mathbf{x}) \, ,\\
-	f & = h \text{ on } \partial D^{-}
+	\boldsymbol{\beta}(\mathbf{x}) \cdot \nabla f  + r(\mathbf{x}) f &= s(\mathbf{x}) \, ,\\
+	f & = h \text{ on } \partial D^{-} \, ,
 \end{split}
 $$
 
-where $D^{-} \equiv \{x \in D \mid \boldsymbol{\beta} \cdot \nabla \mathbf{n} < 0 \}$ is the inflow boundary,
+where $D^{-} \equiv \{x \in D \mid \boldsymbol{\beta} \cdot \nabla \mathbf{n} < 0 \}$ is the inflow boundary, is
 
 $$
-	\text{Find f} \in V \text{ subject to } a(f,w) = \int_D s w \, \mathrm{d}^3 x + \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w
-	\text{ for all } w \in V
+	\text{Find f} \in V \text{ subject to } a(f,w) = \int_D s w \, \mathrm{d}^3 x + \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w \, \mathrm{d}A
+	\quad \text{ for all } w \in V
 $$
 
 with
 
 $$
-a(f,w) \equiv \int_D \left( \boldsymbol{\beta} \cdot \nabla f \right) w \, \mathrm{d}^3 x + \int_D r \nabla f w \, \mathrm{d}^3 x + \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) f w \, \mathrm{d}A \,.
+	a(f,w) \equiv \int_D \left( \boldsymbol{\beta} \cdot \nabla f \right) w \, \mathrm{d}^3 x + \int_D r \nabla f w \, \mathrm{d}^3 x + \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) f w \, \mathrm{d}A \,.
 $$
 
 Note the boundary condition enters the weak formulation, i.e. it enters as an integral,
 which implies that it holds almost everywhere,
 see equations (2.13) -- (2.16) and eq. (2.21) in @cite Pietro_MathematicalAspectsDG .
 Moreover, the boundary condition prescribe the inflow,
-i.e. $(\boldsymbol{\beta} \cdot \mathbf{n} f)$, only.
+namely $(\boldsymbol{\beta} \cdot \mathbf{n} )f$, only.
 The outflow is a consequence of the problem itself, e.g. of the flow field $\boldsymbol{\beta}$,
 and cannot be prescribed.
 
-@sapphire solves a __system__ of advection-reaction equations, see equations (14) and (15) in
-@cite Schween2025 .
+@sapphire solves a __system__ of advection-reaction equations
+resulting from a spherical harmonic expansion of the distribution function $f$, s
+ee equations (14) and (15) in @cite Schween2025 .
 However, the inclusion of the boundary conditions into the (discrete) weak formulation
-can be generalised to the system of partial differential equations (PDE)s.
+can be generalised to the case of a system of partial differential equations (PDE)s.
+In that case, the flux (or the flow) through the boundary of the domain is not a scalar but a vector.The corresponding term in the weak formulation of the system of equations is
+$$
+	\int_{\partial D} \mathbf{J}_{B}(\mathbf{f}, \mathbf{h}) \, \mathrm{d}A \, ,
+$$
+where $\mathbf{f} = \left(f_{000}, f_{110}, f_{100}, f_{111}, \dots\right)$ is a vector
+whose components are the expansion coefficients $f_{lms}$,
+and $\mathbf{h}$ are their __user-defined__ values on the boundary.
 
-In the case of the system, the flux (or the flow) through the boundary of the
-domain is not a scalar but a vector.  There will be Additionally, @sapphire computes an
-approximation to the solution of the advection-reaction equations.  Hence, the
-flux is a numerical flux $\mathbf{J}_{B}$. At boundary cell interfaces the numerical approximation to the solution
-has two different values on each side of the interface, say $\mathbf{f}_{h,1}$
-and $\mathbf{f}_{h,2}$. The numerical flux is a function of both of them,
-i.e. $\mathbf{J}_{F}(\mathbf{f}_{h,1}, \mathbf{f}_{h,2})$.
-
-At the boundary faces of our computational domain, the value for the approximate solution outside the domain is unknown. Choosing it determines the kind of boundary condition. For example, setting it to zero constitutes the "zero inflow" (or "outflow") boundary condition. In formulas
+In the _discrete_ weak formulation, the explicit form of $\mathbf{J}_{B}$ depends on the choice of the numerical flux used. An intuitive choice is the upwind flux, i.e.
 
 $$
-  \mathbf{J}_{B}(\mathbf{f}_{h,1}, \mathbf{g}) \equiv \mathbf{J}_{F}(\mathbf{f}_{h,1}, \mathbf{g})
+	\mathbf{J}_{B}(\mathbf{f}, \mathbf{h}) = \mathbf{W}\left(\boldsymbol{\Lambda}_{+}\mathbf{W}^{T} \mathbf{f} + \boldsymbol{\Lambda}_{-} \mathbf{W}^{T} \mathbf{h}\right) \quad \text{with } (\mathbf{n} \cdot \boldsymbol{\beta}) \mathbf{W} = \mathbf{W} \boldsymbol{\Lambda} \text{ and } \boldsymbol{\Lambda} = \boldsymbol{\Lambda}_{+} + \boldsymbol{\Lambda}_{-} \,,
 $$
-with $\mathbf{g} = 0$.
+see eq. (29) in @cite Schween2025 for details.
+The salient point is that in the case of a system of equations, there will be inflowing ($\boldsymbol{\Lambda}_{-}$)
+_and_ outflowing ($\boldsymbol{\Lambda}_{+}$) components,
+depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary condition.
 
-## Inflow and zero inflow boundary conditions
+In next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
+
+## Inflow and zero inflow (outflow) boundary conditions
+
+
 
 ## Reflecting boundary conditions
 
