@@ -1,6 +1,6 @@
 # Implementation {#implementation}
 
- 1. @subpage boundary-conditions
+ 1. @subpage boundary-conditions  
  The possible choices for boundary conditions in @sapphire are explained
  and illustrated with examples.
 
