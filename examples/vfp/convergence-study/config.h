@@ -200,6 +200,8 @@ namespace sapphirepp
         , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
 
+
+
       void
       bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
                            const unsigned int                     boundary_id,
@@ -207,15 +209,18 @@ namespace sapphirepp
       {
         AssertDimension(points.size(), bc_values.size());
         AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
 
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
+            /** [Boundary value] */
             // !!!EDIT HERE!!!
-            if (boundary_id == 0)
-              bc_values[i][0] =
-                std::sqrt(4 * M_PI) * std::exp(-points[i][0] * points[i][0]);
+            /** [Boundary value] */
           }
       }
+
 
 
     private:

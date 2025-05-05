@@ -311,28 +311,28 @@ namespace sapphirepp
         AssertDimension(points.size(), bc_values.size());
         AssertDimension(bc_values[0].size(), this->n_components);
         static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Boundary value] */
             // !!!EDIT HERE!!!
-            switch (boundary_id)
+            if (boundary_id == 0)
               {
-                case 0:
-                  // lower x
-                  break;
-                case 1:
-                  // upper x
-                  break;
-                case 2:
-                  // lower p
-                  bc_values[q_index][0] = std::sqrt(4 * M_PI);
-                  break;
-                case 3:
-                  // upper p
-                  break;
-                default:
-                  Assert(false, dealii::ExcNotImplemented());
+                // lower x
+              }
+            else if (boundary_id == 1)
+              {
+                // upper x
+              }
+            else if (boundary_id == 2)
+              {
+                // lower p
+              }
+            else if (boundary_id == 3)
+              {
+                // upper p
               }
             /** [Boundary value] */
           }
