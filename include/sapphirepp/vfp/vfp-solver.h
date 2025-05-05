@@ -205,7 +205,10 @@ namespace sapphirepp
 
       /**
        * @brief Calculate one time step with the low-storage explicit
-       *        Runge-Kutta method
+       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
+       *	for details.
+       *
+       * @todo Do not reassemble the DG matrix in the first stage of the ERK
        *
        * @param time Current time
        * @param time_step Time step size
@@ -447,6 +450,8 @@ namespace sapphirepp
       PETScWrappers::MPI::SparseMatrix system_matrix;
       /** Source */
       PETScWrappers::MPI::Vector locally_owned_current_source;
+      /** Non-homogeneous boundary conditions */
+      PETScWrappers::MPI::Vector locally_owned_current_bc;
       /** System right hand side, depends on time stepping method */
       PETScWrappers::MPI::Vector system_rhs;
       /** @} */

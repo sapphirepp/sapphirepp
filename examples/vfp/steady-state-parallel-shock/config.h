@@ -217,6 +217,47 @@ namespace sapphirepp
 
 
     template <unsigned int dim>
+    class BoundaryValueFunction : public dealii::Function<dim>
+    {
+    public:
+      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
+                            const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
+      {}
+
+
+
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
+
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+          {
+            /** [Boundary value] */
+            // !!!EDIT HERE!!!
+            /** [Boundary value] */
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
+    template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:

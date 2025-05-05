@@ -236,6 +236,11 @@ namespace sapphirepp
        */
       reflective,
 
+      /** Inflow. Inflow plus outflow. Inflow at specified boundary is
+       *  determined by a boundary value function.
+       */
+      inflow,
+
       /**
        * Periodic boundary conditions. Has to be set on both sides of the
        * boundary.

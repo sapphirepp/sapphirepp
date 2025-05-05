@@ -182,7 +182,7 @@ namespace sapphirepp
        * ```cpp
        *  const double x     = point[0];
        *  const double y     = point[1];
-       *  ...
+       *  // ...
        *  const double log_p = point[dim-1];
        * ```
        *
@@ -203,6 +203,138 @@ namespace sapphirepp
             // !!!EDIT HERE!!!
             f[i] = 0.;
             /** [Initial value] */
+          }
+      }
+
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
+      /**
+       * Map between system index \f$ i \f$ and spherical harmonic indices
+       * \f$ (l,m,n) \f$
+       */
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
+    /**
+     * @brief Inflow boundary condition
+     *
+     * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x},p) \f$
+     */
+    template <unsigned int dim>
+    class BoundaryValueFunction : public dealii::Function<dim>
+    {
+    public:
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       * @param system_size Number of expansion coefficients, normally
+       *        \f$ (l_{\mathrm{max}} + 1)^2 \f$
+       */
+
+      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
+                            const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
+      {}
+
+
+
+      /**
+       * @brief Values of the distribution function \f$ f \f$ at the boundary
+       * specified by `boundary_id`.
+       *
+       * Return a vector containing the values of the expansion coefficients \f$
+       * f_{i(l,m,s)}(t, \mathbf{x}, p) \f$ representing the distribution
+       * function \f$ f \f$ at `points` on the boundary with `boundary_id`.
+       *
+       * The zeroth component of the vector corresponds to \f$ f_{000} \f$, the
+       * first component to \f$ f_{110} \f$ etc. The mapping between the
+       * system index \f$ i \f$ and the spherical harmonic indices \f$
+       * (l,m,s) \f$ is given by `lms_indices`:
+       *
+       * ```cpp
+       *  const unsigned int l = lms_indices[i][0];
+       *  const unsigned int m = lms_indices[i][1];
+       *  const unsigned int s = lms_indices[i][2];
+       * ```
+       *
+       * The points in reduced phase space are handed over using the vector
+       * `points`. Each of its elements has `dim` components. The first `dim_cs`
+       * components correspond to the spatial coordinates \f$ \mathbf{x} \f$ and
+       * if the momentum term is activated the last component to the momentum
+       * coordinate \f$ \ln p \f$:
+       *
+       * ```cpp
+       *  const double x     = points[0][0];
+       *  const double y     = points[0][1];
+       *  // ...
+       *  const double log_p = points[0][dim-1];
+       * ```
+       *
+       * where `points[0]` picks out the first point in `points`.
+       *
+       * The `boundary_id` is used to specify the values of \f$ f \f$ at a
+       * specific boundary of the computational domain.The relation between the
+       * possible boundaries and the boundary ids
+       * depends on the dimension `dim`.
+       * For a 1D spatial problem with momentum the dependence,
+       * the boundary ids are,
+       *
+       * | Boundary | ID |
+       * |----------|----|
+       * | lower x  | 0  |
+       * | upper x  | 1  |
+       * | lower p  | 2  |
+       * | upper p  | 3  |
+       *
+       * Only if in the parameter file the corresponding boundary is set to
+       *  `inflow`, the function `bc_vector_value` will be called.
+       *
+       * @param points Points in reduced phase space on the boundary
+       * @param boundary_id ID of the boundary of the computational domain
+       * @param bc_values Return vector \f$ f_{i(l,m,s)}(t, \mathbf{x}, p) \f$
+       * @see @dealref{dealii::BoundaryIndicator,DEALGlossary,GlossBoundaryIndicator},
+       *      @dealref{dealii::hyper_rectangle(),namespaceGridGenerator,a56019d263ae45708302d5d7599f0d458}
+       */
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
+
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+          {
+            /** [Boundary value] */
+            // !!!EDIT HERE!!!
+            if (boundary_id == 0)
+              {
+                // lower x
+              }
+            else if (boundary_id == 1)
+              {
+                // upper x
+              }
+            else if (boundary_id == 2)
+              {
+                // lower p
+              }
+            else if (boundary_id == 3)
+              {
+                // upper p
+              }
+            /** [Boundary value] */
           }
       }
 
@@ -253,7 +385,7 @@ namespace sapphirepp
        *  {
        *    const double x     = points[q_index][0];
        *    const double y     = points[q_index][1];
-       *    ...
+       *    // ...
        *    const double log_p = points[q_index][dim-1];
        *  }
        * ```

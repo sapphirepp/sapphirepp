@@ -624,6 +624,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
 
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
+  // TODO: add if to check if there are non-homogeneous bc
+  locally_owned_current_bc.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -730,6 +732,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   magnetic_field.set_time(time);
   ScatteringFrequency<dim_ps> scattering_frequency(physical_parameters);
   scattering_frequency.set_time(time);
+
+  BoundaryValueFunction<dim_ps> bc_value_function(physical_parameters,
+                                                  pde_system.system_size);
+  bc_value_function.set_time(time);
 
   ParticleVelocity<dim_ps, logarithmic_p> particle_velocity(
     vfp_parameters.mass);
@@ -1374,6 +1380,11 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                       normals,
                                       positive_flux_matrices,
                                       negative_flux_matrices);
+
+    std::vector<Vector<double>> bc_values(
+      q_points.size(), Vector<double>(pde_system.system_size));
+    bc_value_function.bc_vector_value_list(q_points, boundary_id, bc_values);
+
     for (unsigned int q_index : fe_face_v.quadrature_point_indices())
       {
         for (unsigned int i = 0; i < n_facet_dofs; ++i)
@@ -1430,12 +1441,29 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
-
+                    case BoundaryConditions::inflow:
+                      {
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          positive_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        break;
+                      }
                     case BoundaryConditions::periodic:
                       break;
                     default:
                       Assert(false, ExcNotImplemented());
                   }
+              }
+            // Inflow boundary conditions result in a right-hand side
+            if (boundary_condition == BoundaryConditions::inflow)
+              {
+                for (unsigned int k = 0; k < pde_system.system_size; ++k)
+                  copy_data.cell_rhs(i) -=
+                    fe_face_v.shape_value(i, q_index) *
+                    negative_flux_matrices[q_index](component_i, k) *
+                    bc_values[q_index][k] * JxW[q_index];
               }
           }
       }
@@ -1571,8 +1599,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
     constraints.distribute_local_to_global(c.cell_matrix,
+                                           c.cell_rhs,
                                            c.local_dof_indices,
-                                           dg_matrix);
+                                           dg_matrix,
+                                           locally_owned_current_bc);
     for (auto &cdf : c.face_data)
       {
         for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
@@ -1611,6 +1641,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                         boundary_worker,
                         face_worker);
   dg_matrix.compress(VectorOperation::add);
+  locally_owned_current_bc.compress(VectorOperation::add);
   saplog << "The DG matrix was assembled." << std::endl;
 }
 
@@ -1626,15 +1657,18 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   SolverControl              solver_control(5000);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
-  solver_control.set_tolerance(1e-6 * locally_owned_current_source.l2_norm());
-  // dg_matrix == system_matrix
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(dg_matrix);
-
+  // Right-hand side is determined by the source and the non-homogeneous
+  // boundary condition
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    system_rhs.add(1., locally_owned_current_source);
+  // TODO: add check if non-homogeneous bc is set
+  system_rhs.add(1., locally_owned_current_bc);
+  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
   solver.solve(dg_matrix,
                locally_owned_previous_solution,
-               locally_owned_current_source, // right-hand side is determined by
-                                             // the source term
+               system_rhs,
                preconditioner);
 
   locally_relevant_current_solution = locally_owned_previous_solution;
@@ -1687,6 +1721,10 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
           system_rhs.add(time_step, locally_owned_current_source);
         }
     }
+  // Boundary term at current time step
+  system_rhs.add((1 - theta) * time_step, locally_owned_current_bc);
+
+  // Update DG matrix
   // Since the the dg_matrix depends on the velocity field (and/or the
   // magnetic field) and the velocity field may depend on time, it needs to
   // reassembled every time step. This is not true for the mass matrix ( but
@@ -1694,9 +1732,14 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      // the non-homogeneous boundary term is updated and, thus, must be nulled
+      locally_owned_current_bc = 0;
+      dg_matrix                = 0;
       assemble_dg_matrix(time + time_step);
     }
+
+  // Boundary term at next time step
+  system_rhs.add(theta * time_step, locally_owned_current_bc);
 
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
@@ -1770,6 +1813,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
   saplog << "Stage s: " << 0 << "	Solver converged in "
@@ -1784,7 +1828,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      dg_matrix                = 0;
+      locally_owned_current_bc = 0;
       assemble_dg_matrix(time + c[1] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
@@ -1809,6 +1854,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
   saplog << "	Stage s: " << 1 << "	Solver converged in "
@@ -1843,6 +1889,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
   saplog << "	Stage s: " << 2 << "	Solver converged in "
@@ -1858,7 +1905,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      dg_matrix                = 0;
+      locally_owned_current_bc = 0;
       assemble_dg_matrix(time + c[3] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
@@ -1883,6 +1931,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
+  system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
   saplog << "	Stage s: " << 3 << "	Solver converged in "
@@ -1916,8 +1965,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
                     1720146321549. / 2090206949498,
                     3134564353537. / 4481467310338,
                     2277821191437. / 14882151754819});
-  // NOTE: I only need c if the velocity field and the magnetic field are
-  // time dependent
+  // NOTE: I only need c if the velocity field, the magnetic field or the
+  // non-homogeneous boundary are time dependent
   Vector<double> c({0.,
                     1432997174477. / 9575080441755,
                     2526269341429. / 6820363962896,
@@ -1951,9 +2000,15 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
         assemble_dg_matrix(time + c[s] * time_step);
 
       dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
+      // non-homogeneous boundary
+      system_rhs.add(-1., locally_owned_current_bc);
+
       if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                     VFPFlags::none) // time dependent fields
-        dg_matrix = 0;
+        {
+          dg_matrix                = 0;
+          locally_owned_current_bc = 0;
+        }
 
       if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
         {
