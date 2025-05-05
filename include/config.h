@@ -155,6 +155,7 @@ namespace sapphirepp
       {}
 
 
+
       /**
        * @brief Evaluate the initial condition at point `p`
        *
@@ -218,6 +219,7 @@ namespace sapphirepp
     };
 
 
+
     /**
      * @brief Inflow boundary condition
      *
@@ -242,9 +244,11 @@ namespace sapphirepp
         , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
 
+
+
       /**
        * @brief Values of the distribution function \f$ f \f$ at the boundary
-       * specified by `boundary_id`
+       * specified by `boundary_id`.
        *
        * Return a vector containing the values of the expansion coefficients \f$
        * f_{i(l,m,s)}(t, \mathbf{x}, p) \f$ representing the distribution
@@ -277,20 +281,18 @@ namespace sapphirepp
        * where `points[0]` picks out the first point in `points`.
        *
        * The `boundary_id` is used to specify the values of \f$ f \f$ at a
-       * specific boundary of the computational domain. The relation between the
-       * possible boundaries and the boundary ids is, for example,
+       * specific boundary of the computational domain.The relation between the
+       * possible boundaries and the boundary ids
+       * depends on the dimension `dim`.
+       * For a 1D spatial problem with momentum the dependence,
+       * the boundary ids are,
        *
        * | Boundary | ID |
        * |----------|----|
        * | lower x  | 0  |
        * | upper x  | 1  |
-       * | lower y  | 2  |
-       * | upper y  | 3  |
-       * | lower p  | 4  |
-       * | upper p  | 5  |
-       *
-       * If the momentum term is deactivated, `lower/upper p` needs to be
-       * replaced with `lower/upper z`.
+       * | lower p  | 2  |
+       * | upper p  | 3  |
        *
        * Only if in the parameter file the corresponding boundary is set to
        *  `inflow`, the function `bc_vector_value` will be called.
@@ -298,6 +300,8 @@ namespace sapphirepp
        * @param points Points in reduced phase space on the boundary
        * @param boundary_id ID of the boundary of the computational domain
        * @param bc_values Return vector \f$ f_{i(l,m,s)}(t, \mathbf{x}, p) \f$
+       * @see @dealref{dealii::BoundaryIndicator,DEALGlossary,GlossBoundaryIndicator},
+       *      @dealref{dealii::hyper_rectangle(),namespaceGridGenerator,a56019d263ae45708302d5d7599f0d458}
        */
       void
       bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
@@ -306,16 +310,34 @@ namespace sapphirepp
       {
         AssertDimension(points.size(), bc_values.size());
         AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
 
-        /** [Boundary value] */
-        for (unsigned int i = 0; i < points.size(); ++i)
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
+            /** [Boundary value] */
             // !!!EDIT HERE!!!
-            if (boundary_id == 0)
-              bc_values[i][0] = std::sqrt(4 * M_PI);
+            switch (boundary_id)
+              {
+                case 0:
+                  // lower x
+                  break;
+                case 1:
+                  // upper x
+                  break;
+                case 2:
+                  // lower p
+                  bc_values[q_index][0] = std::sqrt(4 * M_PI);
+                  break;
+                case 3:
+                  // upper p
+                  break;
+                default:
+                  Assert(false, dealii::ExcNotImplemented());
+              }
+            /** [Boundary value] */
           }
-        /** [Boundary value] */
       }
+
 
 
     private:
@@ -327,6 +349,7 @@ namespace sapphirepp
        */
       const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
+
 
 
     /**
@@ -362,7 +385,7 @@ namespace sapphirepp
        *  {
        *    const double x     = points[q_index][0];
        *    const double y     = points[q_index][1];
-       *    ...
+       *    // ...
        *    const double log_p = points[q_index][dim-1];
        *  }
        * ```
