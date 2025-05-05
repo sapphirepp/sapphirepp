@@ -57,13 +57,22 @@ $$
 see eq. (29) in @cite Schween2025 for details.
 The salient point is that in the case of a system of equations, there will be inflowing ($\boldsymbol{\Lambda}_{-}$)
 _and_ outflowing ($\boldsymbol{\Lambda}_{+}$) components,
-depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary condition.
+depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by the values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary conditions.
 
 In next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
 
 ## Inflow and zero inflow (outflow) boundary conditions
 
+Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$. For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant; setting $h_0 = \sqrt{4 \pi}$ at $x = -L$, enforces an isotropic distribution of value $1$ at the left $x$ boundary located at $-L$. If we use the @ref sapphirepp::VFP::VFPFlags "VFPFlags" to only include the temporal evolution and the advection term, this boundary condition results in the following Riemann problem
 
+$$
+	\frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \partial_x \mathbf{f} = 0
+	\quad \text{with } f_{0} =
+	\begin{cases}
+		\sqrt{4 \pi} &\text{for } x \leq -L \\
+		 0 &\text{for } x > -L
+	\end{cases}
+$$
 
 ## Reflecting boundary conditions
 
