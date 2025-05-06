@@ -63,16 +63,46 @@ In next sections, we go through possible choices for $\mathbf{h}$ and illustrate
 
 ## Inflow and zero inflow (outflow) boundary conditions
 
-Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$. For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant; setting $h_0 = \sqrt{4 \pi}$ at $x = -L$, enforces an isotropic distribution of value $1$ at the left $x$ boundary located at $-L$. If we use the @ref sapphirepp::VFP::VFPFlags "VFPFlags" to only include the temporal evolution and the advection term, this boundary condition results in the following Riemann problem
+Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$.
+For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant in space and time;
+setting $h_0 = \sqrt{4 \pi}$ at $x = -L$, enforces an isotropic distribution $f$
+of value $1$ at the left $x$ boundary located at $-L$.
+If we use the @ref sapphirepp::VFP::VFPFlags "VFPFlags" to only include the temporal evolution
+and the advection term, this boundary condition results in the following set of equations
 
 $$
-	\frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \partial_x \mathbf{f} = 0
-	\quad \text{with } f_{0} =
-	\begin{cases}
-		\sqrt{4 \pi} &\text{for } x \leq -L \\
-		 0 &\text{for } x > -L
-	\end{cases}
+	\frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \partial_x \mathbf{f} = \mathbf{0}
+	\quad \text{with } f_{0}(t, x = -L) =\sqrt{4 \pi}
 $$
+
+Since the distribution function $f$ is isotropic at the boundary,
+we expect that half of the particles,
+namely all particles with $\theta < \pi/2$, enter the computational domain.
+As a side remark, we note that representing such a phase-space distribution of particles
+requires the inclusion of many spherical harmonics in the expansion of $f$.
+At this point, it may become clear how to think about the inflow boundary condition:
+Prescribing values of the distribution function $f$ on the boundary
+leads to flow through the boundary that depends on the momentum space distribution of the particles.
+For example, if the momentum space distribution was such
+that all particles moved into the negative $x$--direction, no particles would enter the domain.
+
+The above partial differential equations can be solved analytically. Diagonalizing $\mathbf{A}_x$, yields
+
+$$
+	\frac{\partial \tilde{\mathbf{f}}}{\partial t}
+	+ v \boldsymbol{\Lambda}_x \frac{\partial \tilde{\mathbf{f}}}{\partial x} = \mathbf{0} \,,
+ $$
+
+where $\tilde{\mathbf{f}} \equiv \mathbf{V}^{T}_{x} \mathbf{f}$ are the _characteristic variables_. $\boldsymbol{\Lambda}_x$ are the eigenvalues and
+$\mathbf{V}_{x}$ are the eigenvectors of $\mathbf{A}_x$.
+Note that $\mathbf{V}^{-1} = \mathbf{V}^{T}$, because $\mathbf{A}^{T}_{x} = \mathbf{A}_x$.
+Taking the boundary conditions into account, the solution is
+
+$$
+\alpha
+$$
+
+In words, a subset of constant expansion coefficients $f_{lms}$ is advected into the computational domain. The following animation shows the solution that @sapphire computes
 
 ## Reflecting boundary conditions
 
