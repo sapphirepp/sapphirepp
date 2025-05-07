@@ -166,6 +166,7 @@ namespace sapphirepp
 
 
 
+    /** [BoundaryValueFunction constructor] */
     template <unsigned int dim>
     class BoundaryValueFunction : public dealii::Function<dim>
     {
@@ -176,9 +177,11 @@ namespace sapphirepp
         , prm{physical_parameters}
         , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
+      /** [BoundaryValueFunction constructor] */
 
 
 
+      /** [BoundaryValueFunction value] */
       void
       bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
                            const unsigned int                     boundary_id,
@@ -192,9 +195,31 @@ namespace sapphirepp
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            /** [Boundary value] */
             // !!!EDIT HERE!!!
-            /** [Boundary value] */
+            if (boundary_id == 0)
+              {
+                // lower x
+              }
+            else if (boundary_id == 1)
+              {
+                // upper x
+              }
+            else if (boundary_id == 2)
+              {
+                // lower y
+              }
+            else if (boundary_id == 3)
+              {
+                // upper y
+              }
+            else if (boundary_id == 4)
+              {
+                // lower z
+              }
+            else if (boundary_id == 5)
+              {
+                // upper z
+              }
           }
       }
 
@@ -204,6 +229,7 @@ namespace sapphirepp
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
+    /** [BoundaryValueFunction value] */
 
 
 

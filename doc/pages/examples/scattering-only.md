@@ -188,6 +188,32 @@ Finally, we close the function definition, after defining the private variable
 
 @snippet{lineno} examples/vfp/scattering-only/config.h InitialValueFunction value
 
+#### Inflow boundary value {#boundary-value-scattering-only}
+
+This class is not used in this example as we have no
+@ref sapphirepp::VFP::BoundaryConditions::inflow "inflow" boundary.
+Nevertheless, it needs to be defined in the `config.h` file as it is expected by @sapphire.
+
+The constructor of the
+@ref sapphirepp::VFP::BoundaryValueFunction "BoundaryValueFunction"
+is similar to the initial condition.
+
+@snippet{lineno} examples/vfp/scattering-only/config.h BoundaryValueFunction constructor
+
+However, the definition of the value function differs.
+We use a custom
+@ref sapphirepp::VFP::BoundaryValueFunction::bc_vector_value_list "bc_vector_value_list()"
+function,
+that is similar to the
+@dealref{vector_value_list(),classFunction,a68a1b24fd0bc21d10e609672a78578d2}
+function
+but takes on additional argument for the
+@dealref{boundary indicator,DEALGlossary,GlossBoundaryIndicator}.
+This boundary indicator depends on the dimension of the problem,
+the code below shows the corresponding boundaries for a problem without momentum dependence.
+
+@snippet{lineno} examples/vfp/scattering-only/config.h BoundaryValueFunction value
+
 #### Scattering frequency {#scattering-frequency-scattering-only}
 
 The scattering frequency is defined similarly to the initial condition. However,
