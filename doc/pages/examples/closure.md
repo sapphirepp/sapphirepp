@@ -105,25 +105,19 @@ Our setup is characterized by only two parameters,
 the standard deviation $\sigma$ of the initial distribution,
 and the scattering frequency $\nu$.
 As demonstrated in the [parallel shock](#parallel-shock) example,
-we will these as runtime parameters.
+we will define these as runtime parameters.
 
-1. **Define**
+1. **Define the parameters**
 
-   We start by declaring our runtime parameters:
+   We start by declaring our runtime parameters with default values:
 
    @snippet{lineno} examples/vfp/closure/config.h Define runtime parameter
 
-2. **Declare**
+2. **Add the parameters to the parameter file**
   
-   Next, we inform the @dealref{ParameterHandler} that the declared parameters exist:
+   Next, we add the parameters to the @dealref{ParameterHandler}:
 
    @snippet{lineno} examples/vfp/closure/config.h Declare runtime parameter
-
-3. **Parse**
-
-   Finally, we parse them:
-
-   @snippet{lineno} examples/vfp/closure/config.h Parse runtime parameter
 
 ### Initial Condition {#initial-condition-closure}
 

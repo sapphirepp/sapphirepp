@@ -92,35 +92,32 @@ everything related to @sapphire within the @ref sapphirepp namespace:
 
 #### Custom Runtime Parameters {#parameter-scattering-only}
 
-In this example, we define two custom runtime parameters using the @ref
-sapphirepp::PhysicalParameters "PhysicalParameters" class, as introduced in the
-[parallel shock](#parallel-shock) example. These parameters are the scattering
-frequency $\nu$ and the initial value of the expansion coefficients $f_0$
+In this example, we define two custom runtime parameters
+using the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class,
+as introduced in the [gyro motion with advection](#gyro-advection) example.
+These parameters are the scattering frequency $\nu$
+and the initial value of the expansion coefficients $f_0$
 (assuming the same initial value for all coefficients).
 
-These parameters are defined as **public** variables at the start of the @ref
-sapphirepp::PhysicalParameters "PhysicalParameters" class:
+These parameters are defined as **public** variables
+at the start of the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class:
 
 @snippet{lineno} examples/vfp/scattering-only/config.h PhysicalParameters
 
-@note The `// !!!EDIT HERE!!!` comments are left as a reference where the user
-  modifies the code as presented in the [parallel shock](#parallel-shock)
-  example.
+@note The `// !!!EDIT HERE!!!` comments are left as a reference where the user modifies the code
+  as presented in the [gyro motion with advection](#gyro-advection) example.
 
-Next, we **declare** the parameters in a @dealref{ParameterHandler} object in
-the @ref sapphirepp::PhysicalParameters::declare_parameters()
-"declare_parameters()" function. We enter the subsection `Physical parameters`
-at the start and leave it at the end. Notice the use of the @ref
-sapphirepp::saplog "saplog" stream to output debug information, with
-@dealref{LogStream::Prefix,classLogStream_1_1Prefix} controlling the verbosity
-of the output.
+Next, we **declare** the parameters in a @dealref{ParameterHandler} object
+in the @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" function.
+We enter the subsection `Physical parameters` at the start and leave it at the end.
+Notice the use of the @ref sapphirepp::saplog "saplog" stream to output debug information,
+with @dealref{LogStream::Prefix,classLogStream_1_1Prefix} controlling the verbosity of the output.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Declare parameters
 
-Finally, **parsing** the parameters is straightforward in the @ref
-sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()"
-function. Again, we use the @ref sapphirepp::saplog "saplog" stream to output
-debug information.
+Finally, **parsing** the parameters is straightforward
+in the @ref sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()" function.
+Again, we use the @ref sapphirepp::saplog "saplog" stream to output debug information.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Parse parameters
 

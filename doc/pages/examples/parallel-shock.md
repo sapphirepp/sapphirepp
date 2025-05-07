@@ -248,40 +248,36 @@ Additionally, there are several numerical parameters that are not part of the ph
 | Injection width in $x$ | $\sigma_x$    | `sig_x`       | Width of the injection in configuration space. |
 | Injection position     | $x_{\rm inj}$ | `x_inj`       | Position of the injection.                     |
 
-Implementing these parameters in @sapphire involves a three-step process:
+Implementing these parameters in @sapphire involves a two-step process:
 
-1. **Define** the parameters within the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class in the `config.h` file.
-   This step informs the compiler about their existence.
+1. **Define the parameters**
+   within the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class
+   in the `config.h` file.
+   This step informs the compiler about their existence
+   and sets default values to be used
+   if the parameter is not specified in the parameter file.
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Define runtime parameter
 
-2. **Declare** the parameters in the parameter file.
-   This step ensures that the parameter parser expects these parameters.
-   The @dealii class @dealref{ParameterHandler} `prm`
-   and its @dealref{declare_entry,classParameterHandler,a6d65f458be69e23a348221cb67fc411d} method
-   are used for this purpose:
+2. **Add the parameters to the parameter file**
+  to ensure that the parameter parser expects them
+  and automatically sets their values.
+  The @dealii class @dealref{ParameterHandler} `prm`
+  and its @dealref{add_parameter,classParameterHandler,a04b75c02037d19fd7fd781785fcefc79} method
+  are used for this purpose:
 
    ```cpp
-   prm.declare_entry("name", "default value",    dealii::Patterns::Type(),
-                     "Description of the parameter");
+   prm.add_parameter("entry", parameter, "Description of the parameter");
    ```
 
-   All parameters related to the source are collected in a subsection.
-   This is achieved by entering the subsection before declaring the parameters
-   and leaving it afterwards.
    The @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" method
    is edited to include the following code:
 
    @snippet{lineno} examples/vfp/parallel-shock/config.h Declare runtime parameter
 
-3. **Parse** the values defined in the parameter file.
-   This step sets the values of the parameters according to the parameter file.
-   The @dealref{ParameterHandler} getter method
-   @dealref{get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}
-   is utilised inside the @ref sapphirepp::PhysicalParameters::parse_parameters()
-   "parse_parameters()" method and the following code is included:
-
-   @snippet{lineno} examples/vfp/parallel-shock/config.h Parse runtime parameter
+@note An alternative approach for defining parameters,
+      offering more fine-grained control over parsing,
+      is introduced in the [gyro motion with advection](#parameter-gyro-advection) example.
 
 ### Scattering frequency {#scattering-frequency-parallel-shock}
 
