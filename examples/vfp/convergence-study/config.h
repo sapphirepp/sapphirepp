@@ -92,10 +92,9 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      /** Parse runtime parameter */
+      /** [Parse runtime parameter] */
       B0 = prm.get_double("B0/2pi") * 2. * M_PI;
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }
@@ -216,7 +215,7 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Boundary value] */
-            // !!!EDIT HERE!!!
+            // No inflow boundary
             /** [Boundary value] */
           }
       }

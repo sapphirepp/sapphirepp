@@ -194,7 +194,7 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Boundary value] */
-            // !!!EDIT HERE!!!
+            // No inflow boundary
             /** [Boundary value] */
           }
       }
