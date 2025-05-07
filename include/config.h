@@ -78,6 +78,14 @@ namespace sapphirepp
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
+      /**
+       * Runtime parameters can be either added using the
+       * @dealref{prm.add_parameter(),classParameterHandler,a04b75c02037d19fd7fd781785fcefc79}
+       * function, or declared using
+       * @dealref{prm.declare_entry(),classParameterHandler,a6d65f458be69e23a348221cb67fc411d}.
+       * If the parameters are only declared instead of added,
+       * they have to be parsed in the @ref parse_parameters() function below.
+       */
       /** [Declare runtime parameter] */
       // !!!EDIT HERE!!!
       /** [Declare runtime parameter] */

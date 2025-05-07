@@ -52,8 +52,8 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double standard_deviation;
-    double scattering_frequency;
+    double standard_deviation   = 1.;
+    double scattering_frequency = 0.;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -69,14 +69,12 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("Standard deviation",
-                        "1.",
-                        dealii::Patterns::Double(),
+      prm.add_parameter("Standard deviation",
+                        standard_deviation,
                         "The standard deviation of the isotropic "
                         "and normal particle distribution at t = 0.");
-      prm.declare_entry("Scattering frequency",
-                        "0.",
-                        dealii::Patterns::Double(),
+      prm.add_parameter("Scattering frequency",
+                        scattering_frequency,
                         "The scattering frequency.");
       /** [Declare runtime parameter] */
 
@@ -93,10 +91,9 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      standard_deviation   = prm.get_double("Standard deviation");
-      scattering_frequency = prm.get_double("Scattering frequency");
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
+      // Parameters are automatically parsed by add_parameter()
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }

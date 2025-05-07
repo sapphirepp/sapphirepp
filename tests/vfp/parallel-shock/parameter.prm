@@ -41,11 +41,9 @@ subsection Physical parameters
   set compression ratio = 4.
   set shock width       = 0.5
   set u_sh              = 0.03
-  subsection Source
-    set Q     = 0.1
-    set p_inj = 1.
-    set x_inj = 0.0
-    set sig_p = 0.1
-    set sig_x = 0.1
-  end
+  set Q                 = 0.1
+  set p_inj             = 1.
+  set x_inj             = 0.0
+  set sig_p             = 0.1
+  set sig_x             = 0.1
 end

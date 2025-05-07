@@ -52,18 +52,18 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double u_sh;
-    double B0;
-    double compression_ratio;
-    double shock_width;
-    double nu0;
+    double u_sh              = 0.1;
+    double B0                = 1.;
+    double compression_ratio = 4.;
+    double shock_width       = 0.04;
+    double nu0               = 0.1;
 
     // Source
-    double Q;
-    double p_inj;
-    double x_inj;
-    double sig_p;
-    double sig_x;
+    double Q     = 0.1;
+    double p_inj = 2.;
+    double x_inj = 0.;
+    double sig_p = 0.125;
+    double sig_x = 0.125;
     /** [Define runtime parameter] */
 
 
@@ -81,49 +81,24 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("u_sh",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "The shock velocity.");
-      prm.declare_entry("B0",
-                        "1.",
-                        dealii::Patterns::Double(),
-                        "The magnetic field strength upstream.");
-      prm.declare_entry("compression ratio",
-                        "4.",
-                        dealii::Patterns::Double(),
+      prm.add_parameter("u_sh", u_sh, "The shock velocity.");
+      prm.add_parameter("B0", B0, "The magnetic field strength upstream.");
+      prm.add_parameter("compression ratio",
+                        compression_ratio,
                         "The compression ratio of the shock.");
-      prm.declare_entry("shock width",
-                        "0.04",
-                        dealii::Patterns::Double(),
-                        "The width of the shock.");
-      prm.declare_entry("nu0",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "The scattering frequency.");
+      prm.add_parameter("shock width", shock_width, "The width of the shock.");
+      prm.add_parameter("nu0", nu0, "The scattering frequency.");
 
-      prm.enter_subsection("Source");
-      prm.declare_entry("Q",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "The injection rate.");
-      prm.declare_entry("p_inj",
-                        "2.",
-                        dealii::Patterns::Double(),
-                        "The injection momentum.");
-      prm.declare_entry("x_inj",
-                        "0.0",
-                        dealii::Patterns::Double(),
-                        "The injection position.");
-      prm.declare_entry("sig_p",
-                        "0.125",
-                        dealii::Patterns::Double(),
+      // Source
+      prm.add_parameter("Q", Q, "The injection rate.");
+      prm.add_parameter("p_inj", p_inj, "The injection momentum.");
+      prm.add_parameter("x_inj", x_inj, "The injection position.");
+      prm.add_parameter("sig_p",
+                        sig_p,
                         "The width of the source in momentum space.");
-      prm.declare_entry("sig_x",
-                        "0.125",
-                        dealii::Patterns::Double(),
+      prm.add_parameter("sig_x",
+                        sig_x,
                         "The width of the source in configuration space.");
-      prm.leave_subsection();
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -140,19 +115,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      u_sh              = prm.get_double("u_sh");
-      B0                = prm.get_double("B0");
-      compression_ratio = prm.get_double("compression ratio");
-      shock_width       = prm.get_double("shock width");
-      nu0               = prm.get_double("nu0");
-
-      prm.enter_subsection("Source");
-      p_inj = prm.get_double("p_inj");
-      x_inj = prm.get_double("x_inj");
-      sig_x = prm.get_double("sig_x");
-      sig_p = prm.get_double("sig_p");
-      Q     = prm.get_double("Q");
-      prm.leave_subsection();
+      // Parameters are automatically parsed by add_parameter()
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
