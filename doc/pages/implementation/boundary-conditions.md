@@ -135,12 +135,24 @@ $$
 where $\boldsymbol{\mathbb{1}}^{-}$ is a matrix with ones on the diagonal
 where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero. 
 
-We wrap up and state that the inflow that stems from an isotropic distribution $f$ 
-expressed in terms of the expansion coefficients $f_{lms}$ is given by 
+We wrap up and apply the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$. This yields 
+
 $$
-	f^{-}_{i}(t,x) =(\mathbf{V}_x)_{ij} \mathbf{a}
+	\mathbf{f}^{-}(t, x = -L) 
+	= \mathbf{V}_x \boldsymbol{\mathbb{1}^{-}} \mathbf{V}^{T}_{x} \mathbf{h} \,,
 $$
 
+and implies for the solution of the system of PDEs that 
+
+$$
+	f_{i}(t, x) = 
+	\begin{cases}
+	f^{-}_{i} &\text{for } -L < x < -L + |\lambda_i| t ?  \\
+	\mathbf{0} &\text{for } x > |\lambda_i| t 
+	\end{cases}
+$$
+
+that stems from an isotropic distribution $f$ 
 <!-- At this point, it may become clear how to think about the inflow boundary condition: -->
 <!-- Prescribing values of the distribution function $f$ on the boundary -->
 <!-- leads to flow through the boundary that depends on the momentum space distribution of the particles. -->
