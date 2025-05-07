@@ -37,11 +37,11 @@ The outflow is a consequence of the problem itself, e.g. of the flow field $\bol
 and cannot be prescribed.
 
 @sapphire solves a __system__ of advection-reaction equations
-resulting from a spherical harmonic expansion of the distribution function $f$, s
-ee equations (14) and (15) in @cite Schween2025 .
+resulting from a spherical harmonic expansion of the distribution function $f$, 
+see equations (14) and (15) in @cite Schween2025 .
 However, the inclusion of the boundary conditions into the (discrete) weak formulation
 can be generalised to the case of a system of partial differential equations (PDE)s.
-In that case, the flux (or the flow) through the boundary of the domain is not a scalar but a vector.The corresponding term in the weak formulation of the system of equations is
+In that case, the flux (or the flow) through the boundary of the domain is not a scalar but a vector. The corresponding term in the weak formulation of the system of equations is
 $$
 	\int_{\partial D} \mathbf{J}_{B}(\mathbf{f}, \mathbf{h}) \, \mathrm{d}A \, ,
 $$
@@ -52,55 +52,101 @@ and $\mathbf{h}$ are their __user-defined__ values on the boundary.
 In the _discrete_ weak formulation, the explicit form of $\mathbf{J}_{B}$ depends on the choice of the numerical flux used. An intuitive choice is the upwind flux, i.e.
 
 $$
-	\mathbf{J}_{B}(\mathbf{f}, \mathbf{h}) = \mathbf{W}\left(\boldsymbol{\Lambda}_{+}\mathbf{W}^{T} \mathbf{f} + \boldsymbol{\Lambda}_{-} \mathbf{W}^{T} \mathbf{h}\right) \quad \text{with } (\mathbf{n} \cdot \boldsymbol{\beta}) \mathbf{W} = \mathbf{W} \boldsymbol{\Lambda} \text{ and } \boldsymbol{\Lambda} = \boldsymbol{\Lambda}_{+} + \boldsymbol{\Lambda}_{-} \,,
+	\mathbf{J}_{B}(\mathbf{f}, \mathbf{h}) = \mathbf{W}\left(\boldsymbol{\Lambda}_{+}\mathbf{W}^{T} \mathbf{f} + \boldsymbol{\Lambda}_{-} \mathbf{W}^{T} \mathbf{h}\right) \quad \text{with } (\mathbf{n} \cdot \boldsymbol{\beta}) \mathbf{W} = \mathbf{W} \boldsymbol{\Lambda} \text{ and } \boldsymbol{\Lambda} = \boldsymbol{\Lambda}^{+} + \boldsymbol{\Lambda}^{-} \,,
 $$
 see eq. (29) in @cite Schween2025 for details.
-The salient point is that in the case of a system of equations, there will be inflowing ($\boldsymbol{\Lambda}_{-}$)
-_and_ outflowing ($\boldsymbol{\Lambda}_{+}$) components,
-depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by the values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary conditions.
+The salient point is that in the case of a system of equations, there will be inflowing ($\boldsymbol{\Lambda}^{-}$)
+_and_ outflowing ($\boldsymbol{\Lambda}^{+}$) components,
+depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by the values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface and cannot be prescribed. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface and can be user defined. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary conditions.
 
-In next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
+In the next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
 
 ## Inflow and zero inflow (outflow) boundary conditions
 
 Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$.
 For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant in space and time;
-setting $h_0 = \sqrt{4 \pi}$ at $x = -L$, enforces an isotropic distribution $f$
-of value $1$ at the left $x$ boundary located at $-L$.
-If we use the @ref sapphirepp::VFP::VFPFlags "VFPFlags" to only include the temporal evolution
-and the advection term, this boundary condition results in the following set of equations
+setting $h_0 = \sqrt{4 \pi}$ at $x = -L$, 
+enforces an inflow that stems from an isotropic distribution $f$ of value $1$ 
+at the left $x$ boundary located at $-L$. 
+Since the distribution function $f$ is isotropic at the boundary,
+we expect that half of the particles, namely all particles with $\theta < \pi/2$, 
+enter the computational domain.
+As a side remark, we note that representing such a phase-space distribution of particles
+requires the inclusion of many spherical harmonics in the expansion of $f$.
+
+To illustrate the inflow produced by an isotropic distribution $f$, 
+we use the @ref sapphirepp::VFP::VFPFlags "VFPFlags" to only include the temporal evolution
+and the advection term. As stated above, we also set $h_0 = \sqrt{4\pi}$ at $x = -L$ for all $t$.
+This results in the following set of equations
 
 $$
 	\frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \partial_x \mathbf{f} = \mathbf{0}
-	\quad \text{with } f_{0}(t, x = -L) =\sqrt{4 \pi}
+	\quad \text{with } \mathbf{f}^{-}(t, x = -L) = \mathbf{h}^{-} \text{ and } \mathbf{f}_{0}(x) \equiv \mathbf{f}(t = 0, x ) = 0
+$$
+where $\mathbf{f}^{-}$ denotes the inflowing components of the expansion coefficients. 
+
+To determine the inflow , namely the flux through the boundary at $x = -L$, we integrate
+over a small control volume, e.g. $[-L, -L + \epsilon]$, close to the boundary:
+
+$$
+	\frac{\partial }{\partial t} \int^{-L + \epsilon}_{-L} \mathbf{f} \, \mathrm{d} x
+	+ v \mathbf{A}_x \mathbf{f} \Big |^{-L + \epsilon}_{-L} \,.
 $$
 
-Since the distribution function $f$ is isotropic at the boundary,
-we expect that half of the particles,
-namely all particles with $\theta < \pi/2$, enter the computational domain.
-As a side remark, we note that representing such a phase-space distribution of particles
-requires the inclusion of many spherical harmonics in the expansion of $f$.
-At this point, it may become clear how to think about the inflow boundary condition:
-Prescribing values of the distribution function $f$ on the boundary
-leads to flow through the boundary that depends on the momentum space distribution of the particles.
-For example, if the momentum space distribution was such
-that all particles moved into the negative $x$--direction, no particles would enter the domain.
+At $x = -L$ , we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
+We emphasise that, in the case of a multidimensional problem, 
+the minus is consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
+If we diagonalize $- v \mathbf{A}_x$, i.e. 
 
-The above partial differential equations can be solved analytically. Diagonalizing $\mathbf{A}_x$, yields
+$$
+	-v \mathbf{A}_x = \mathbf{V}_x \boldsymbol{\Lambda}_x \mathbf{V}^{T}_{x} 
+	= \mathbf{V}_x \left(\boldsymbol{\Lambda}^{+}_{x} + \boldsymbol{\Lambda}^{-}_x \right) \mathbf{V}^{T}_x \,,
+$$
+we can distinguish between inflowing components, 
+i.e. the flow is in the opposite direction of $\mathbf{n}$ 
+and they correspond to the negative eigenvalues $\boldsymbol{\Lambda}^{-}_{x}$,
+and the outflowing component belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$. 
+This distinction may become clearer 
+when looking at the following transformation of the above system of PDEs
 
 $$
 	\frac{\partial \tilde{\mathbf{f}}}{\partial t}
-	+ v \boldsymbol{\Lambda}_x \frac{\partial \tilde{\mathbf{f}}}{\partial x} = \mathbf{0} \,,
- $$
+	- \boldsymbol{\Lambda}_x \frac{\partial \tilde{\mathbf{f}}}{\partial x} = \mathbf{0} \,,
+$$
 
-where $\tilde{\mathbf{f}} \equiv \mathbf{V}^{T}_{x} \mathbf{f}$ are the _characteristic variables_. $\boldsymbol{\Lambda}_x$ are the eigenvalues and
-$\mathbf{V}_{x}$ are the eigenvectors of $\mathbf{A}_x$.
-Note that $\mathbf{V}^{-1} = \mathbf{V}^{T}$, because $\mathbf{A}^{T}_{x} = \mathbf{A}_x$.
-Taking the boundary conditions into account, the solution is
+where $\tilde{\mathbf{f}} \equiv \mathbf{V}^{T}_{x} \mathbf{f}$ are the _characteristic variables_. Note that $\mathbf{V}^{-1} = \mathbf{V}^{T}$, because $\mathbf{A}^{T}_{x} = \mathbf{A}_x$.
+The analytical solution the above equations is 
 
 $$
-\alpha
+	\tilde{f}_i(x,t) = \tilde{f}_{0,i}(x + \lambda_{i} t) \, .
 $$
+
+$\mathbf{f}_{0}(x)$ are the initial conditions of the expansion coefficients.
+This solution implies that negative eigenvalues, $\lambda_{i} < 0$, 
+move the transformed initial conditions, $\tilde{f}_{0,i}$, into the positive $x$-direction, 
+i.e. into the opposite direction of the outward normal of the boundary surface at $x = -L$.
+
+We now formalise the concept of inflowing components $\mathbf{f}^{-}$ with the following definition
+
+$$
+	\mathbf{f}^{-} = \mathbf{V}_{x}\boldsymbol{\mathbb{1}}^{-} \mathbf{V}^{T}_x \mathbf{f} \, ,
+$$
+
+where $\boldsymbol{\mathbb{1}}^{-}$ is a matrix with ones on the diagonal
+where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero. 
+
+We wrap up and state that the inflow that stems from an isotropic distribution $f$ 
+expressed in terms of the expansion coefficients $f_{lms}$ is given by 
+$$
+	f^{-}_{i}(t,x) =(\mathbf{V}_x)_{ij} \mathbf{a}
+$$
+
+<!-- At this point, it may become clear how to think about the inflow boundary condition: -->
+<!-- Prescribing values of the distribution function $f$ on the boundary -->
+<!-- leads to flow through the boundary that depends on the momentum space distribution of the particles. -->
+<!-- For example, if the momentum space distribution was such -->
+<!-- that all particles moved into the negative $x$--direction, no particles would enter the domain. -->
+
 
 In words, a subset of constant expansion coefficients $f_{lms}$ is advected into the computational domain. The following animation shows the solution that @sapphire computes
 
