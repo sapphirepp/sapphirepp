@@ -115,15 +115,17 @@ $$
 $$
 
 where $\tilde{\mathbf{f}} \equiv \mathbf{V}^{T}_{x} \mathbf{f}$ are the _characteristic variables_. Note that $\mathbf{V}^{-1} = \mathbf{V}^{T}$, because $\mathbf{A}^{T}_{x} = \mathbf{A}_x$.
-The analytical solution the above equations is 
+The analytical solution of the above equations is 
 
 $$
 	\tilde{f}_i(x,t) = \tilde{f}_{0,i}(x + \lambda_{i} t) \, .
 $$
 
-$\mathbf{f}_{0}(x)$ are the initial conditions of the expansion coefficients.
+$\mathbf{f}_{0}(x)$ are the initial conditions (or the boundary conditions) 
+of the expansion coefficients.
 This solution implies that negative eigenvalues, $\lambda_{i} < 0$, 
-move the transformed initial conditions, $\tilde{f}_{0,i}$, into the positive $x$-direction, 
+move the transformed initial (or boundary) conditions, $\tilde{f}_{0,i}$, 
+into the positive $x$-direction, 
 i.e. into the opposite direction of the outward normal of the boundary surface at $x = -L$.
 
 We now formalise the concept of inflowing components $\mathbf{f}^{-}$ with the following definition
@@ -135,32 +137,149 @@ $$
 where $\boldsymbol{\mathbb{1}}^{-}$ is a matrix with ones on the diagonal
 where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero. 
 
-We wrap up and apply the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$. This yields 
+We wrap up and use the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$ in @sapphire 
+and compare it to the analytical solution. 
+We use an expansion order $l_{\mathrm{max}} = 9$ and set the velocity $v = \sqrt{8}/3$.
+The result is shown in the following animation:
+
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc.gif" alt="drawing" width="90%"/>
+
+The dashed lines show the derived analytical solution. 
+Because we chose $f$ to be isotropic at the boundary, 
+particles with velocity component $v_x = v \cos\theta \in [0, v]$ enter the computational domain.
+The ones with velocities close to $v$ cross the domain fastest.
+This can be seen during the first time steps.
+Though, the steady inflow of particles will eventually lead to a state
+in which particles cover the complete velocity range $[0, v]$.
+This state is steady and reached at the end of the animation.
+
+During the animation's first moments, the plotted expansion coefficients are step functions. 
+This is an effect of a finite expansion order.
+If we solved the equation for $f$ directly, i.e. 
 
 $$
-	\mathbf{f}^{-}(t, x = -L) 
-	= \mathbf{V}_x \boldsymbol{\mathbb{1}^{-}} \mathbf{V}^{T}_{x} \mathbf{h} \,,
+	\frac{\partial f}{\partial t} + v \cos\theta \frac{\partial f}{\partial x} \quad 
+	\text{with } f(0,x) = 0 \text{ and } f(t,-L) = 1 \,,
 $$
 
-and implies for the solution of the system of PDEs that 
+we would get 
 
 $$
-	f_{i}(t, x) = 
+	f(t,x,\theta) =
 	\begin{cases}
-	f^{-}_{i} &\text{for } -L < x < -L + |\lambda_i| t ?  \\
-	\mathbf{0} &\text{for } x > |\lambda_i| t 
-	\end{cases}
+		1 &\text{for } x < -L + v \cos\theta t \\
+		0 &\text{for } x \geq -L + v \cos\theta t
+	\end{cases}\; .
 $$
 
-that stems from an isotropic distribution $f$ 
-<!-- At this point, it may become clear how to think about the inflow boundary condition: -->
-<!-- Prescribing values of the distribution function $f$ on the boundary -->
-<!-- leads to flow through the boundary that depends on the momentum space distribution of the particles. -->
-<!-- For example, if the momentum space distribution was such -->
-<!-- that all particles moved into the negative $x$--direction, no particles would enter the domain. -->
+This implies that $f_{000}$ of an infinite order expansion is 
 
+$$
+	f_{000}(t,x) = \int Y_{000} f(t,x,\theta) \mathrm{d}\Omega
+	= 
+	\begin{cases}
+	\sqrt{\pi}\left(1 - \frac{x + L}{vt}\right) &\text{for } x < -L + vt \\
+	0 &\text{for } x \geq -L + vt
+	\end{cases}	\; ,
+$$
+where we used that $f = 1$ when $\cos\theta > (x + L)/vt$.
+We also plotted this function; it's label is `f_000_no_expansion`.
+It is a linear function; that is approximated by a step function and the higher the expansion order,
+the better the approximation. 
+This means that we would need an infinite angular resolution to capture it exactly. 
 
-In words, a subset of constant expansion coefficients $f_{lms}$ is advected into the computational domain. The following animation shows the solution that @sapphire computes
+In applications, the last statement is crucial.
+If there is no scattering, the expansion order must be very high.
+A fact that becomes clear when we reconstruct phase space at some point $x$ 
+after steady state has been reached:
+
+The plot compares the phase space reconstruction for $l_{\mathrm{max}} = 9$ 
+and $l_{\mathrm{max}} = 63$. 
+
+<p float="left">
+  <img src="https://sapphirepp.org/img/implementation/boundary-conditions/l_max9.png" width="48%" />
+  <img src="https://sapphirepp.org/img/implementation/boundary-conditions/l_max63.png" width="48%" />
+</p>
+
+A low expansion order leads to a distribution function with negative values. 
+Moreover, if there is no scattering 
+a difference between odd and even $l_{\mathrm{max}}$ can be observed,
+for details see Sec. 2 in  @cite Garret2016.
+
+To conclude we look at the same example, 
+but we include scattering, we directly compute the steady-state solution and use the zero inflow boundary condition. 
+We solve
+
+$$
+	 v \mathbf{A}_x \partial_x \mathbf{f} = \nu \mathbf{C} \quad \text{with } \mathbf{f}^{-}(x = -L) = \mathbf{h}^{-} \text{ and } \mathbf{f}^{-}(x = L) = \mathbf{0}  \,.
+$$
+
+For $l_{\mathrm{max}} = 1$, the explicit system of equations is 
+
+$$
+	\frac{v}{\sqrt{3}} 
+	\begin{pmatrix}
+	0 & 0 & 1 & 0 \\
+	0 & 0 & 0 & 0 \\ 
+	1 & 0 & 0 & 0 \\
+	0 & 0 & 0 & 0 
+	\end{pmatrix} \partial_{x} \mathbf{f}
+	= -\nu 
+\begin{pmatrix}
+	0 & 0 & 0 & 0 \\
+	0 & 1 & 0 & 0 \\ 
+	0 & 0 & 1 & 0 \\
+	0 & 0 & 0 & 1 
+   	\end{pmatrix} \mathbf{f} \, .
+$$
+Hence, 
+
+$$
+\begin{split}
+f_{000} &= -\frac{\sqrt{3}\nu}{v} f_{100} x + \text{const.} \\
+f_{110} &= \text{const.} \\ 
+f_{100} &=\text{const.} \\
+f_{111}  &= \text{const.} \\ 
+\end{split}
+$$
+
+For the boundary conditions, we again set $h_{0} = \sqrt{4 \pi}$ and use the eigenvectors $\mathbf{V}_{x}$ to see that
+
+$$
+\mathbf{f}^{-}(x = -L) = \frac{1}{2}
+\begin{pmatrix}
+	f_{000} + f_{100}\\
+	0 \\
+	f_{000} + f_{100} \\
+	0 
+\end{pmatrix}
+= \sqrt{\pi}
+\begin{pmatrix}
+1 \\
+0 \\
+1 \\
+0 \\
+\end{pmatrix}
+\quad
+\text{and}
+\quad
+\mathbf{f}^{-}(x = L) = \frac{1}{2}
+\begin{pmatrix}
+	f_{000} - f_{100}\\
+	0 \\
+	-f_{000} + f_{100} \\
+	0 
+\end{pmatrix}
+= 
+\begin{pmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+\end{pmatrix}
+$$
+
+This can be condensed in the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$. 
 
 ## Reflecting boundary conditions
 
