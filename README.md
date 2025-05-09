@@ -60,7 +60,7 @@ Afterwards you can compile Sapphire++, with `cmake` and `make`:
 cd sapphirepp
 export DEAL_II_DIR="path/to/deal.II"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
-cd build && make
+make --directory=build
 ```
 
 A detailed description of the installation process can be found in the
@@ -68,16 +68,16 @@ A detailed description of the installation process can be found in the
 
 ## Getting started
 
-To run Sapphire++ you need to provide a configuration file:
+To run Sapphire++ you need to provide a parameter file:
   
 ```shell
-./sapphirepp parameter.prm
+./build/sapphirepp parameter-template.prm
 ```
 
 You enable parallel execution by using `mpirun`:
 
 ```shell
-mpirun -np N ./sapphirepp parameter.prm
+mpirun -np N ./build/sapphirepp parameter-template.prm
 ```
 
 where `N` is the number of processors to use.
@@ -88,13 +88,18 @@ guide](https://sapphirepp.org/latest/quick-start.html) and various
 [tutorials](https://sapphirepp.org/latest/examples.html). The source code for
 the examples is located in the [examples](examples) folder.
 
+If you have any questions,
+feel free to reach out to us
+via the [GitHub Discussions page](https://github.com/sapphirepp/sapphirepp/discussions)
+for support and community interaction.
+
 ## Licence
 
 Sapphire++ is distributed under the [LGPL 3.0 license](LICENSE).
 
 If you use this software in your research, please cite the following paper:
 
-> Schween, N. W. and Schulze, F. and Reville, B., Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous Galerkin Method, 2024, DOI: http://dx.doi.org/10.2139/ssrn.4808843
+> Schween, N. W. and Schulze, F. and Reville, B., Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous Galerkin Method, 2025, DOI: https://doi.org/10.1016/j.jcp.2024.113690
 
 Here's the BibTeX entry for the paper:
 

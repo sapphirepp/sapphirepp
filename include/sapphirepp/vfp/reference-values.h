@@ -65,6 +65,22 @@ namespace sapphirepp
 
       /** \f$ q_{0} \f$ in Columb (elementary charge) */
       const double charge = 1.602176634e-19;
+
+      /** \f$ r_{g,0} \f$ in m (gyro-radius) */
+      const double length =
+        mass * velocity / (charge * magnetic_field_strength);
+
+      /** \f$ \omega_{g,0} \f$ in 1/s (gyro-frequency) */
+      const double frequency = charge * magnetic_field_strength / mass;
+
+      /** Reference time in s */
+      const double time = 1. / frequency;
+
+      /** \f$ p_{0} \f$ in kg m/s */
+      const double momentum = mass * velocity;
+
+      /** Conversion of parsec to m */
+      const double parsec_to_m = 3.0857e16;
     };
 
 
@@ -85,8 +101,16 @@ namespace sapphirepp
          << "	Mass: " << reference_values.mass << " kg \n"
          << "	Velocity: " << reference_values.velocity << " m/s \n"
          << "	Magnetic field strength: "
-         << reference_values.magnetic_field_strength << "T \n"
-         << "	Charge: " << reference_values.charge << "C \n";
+         << reference_values.magnetic_field_strength << " T \n"
+         << "	Charge: " << reference_values.charge << " C \n"
+         << "	Length: " << reference_values.length
+         << " m = " << reference_values.length / reference_values.parsec_to_m
+         << " pc \n"
+         << "	Time: " << reference_values.time << " s \n"
+         << "	Frequency: " << reference_values.frequency << " 1/s \n"
+         << "	Momentum: " << reference_values.momentum
+         << " kg m/s = " << reference_values.momentum / reference_values.charge
+         << " eV/c \n";
       return os;
     }
   } // namespace VFP

@@ -20,48 +20,58 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/parallel-shock/config.h
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for parallel-shock example
+ * @file examples/vfp/steady-state-parallel-shock/scaled/config.h
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @brief Implement the physical setup for a steady-state parallel shock
+ * and use a scaled distribution function.
  */
 
-/** [Includes] */
 #ifndef CONFIG_H
-#  define CONFIG_H
+#define CONFIG_H
 
-#  include <deal.II/base/exceptions.h>
-#  include <deal.II/base/function.h>
-#  include <deal.II/base/parameter_handler.h>
-#  include <deal.II/base/point.h>
+#include <deal.II/base/exceptions.h>
+#include <deal.II/base/function.h>
+#include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/point.h>
 
-#  include <deal.II/lac/full_matrix.h>
-#  include <deal.II/lac/vector.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/vector.h>
 
-#  include <cmath>
-#  include <vector>
+#include <cmath>
+#include <vector>
 
-#  include "pde-system.h"
-#  include "sapphirepp-logstream.h"
-#  include "vfp-flags.h"
-/** [Includes] */
-
+#include "pde-system.h"
+#include "sapphirepp-logstream.h"
+#include "vfp-flags.h"
 
 
-/** [Namespace sapphirepp] */
+
 namespace sapphirepp
 {
-  /** [Namespace sapphirepp] */
-  /** [PhysicalParameters] */
   class PhysicalParameters
   {
   public:
-    // !!!EDIT HERE!!!
-    double nu;
-    double f0;
+    /** [Define runtime parameter] */
+    double u_sh              = 0.1;
+    double B0                = 1.;
+    double compression_ratio = 4.;
+    double shock_width       = 0.04;
+    double nu0               = 0.1;
+
+    // Source
+    double Q     = 0.1;
+    double p_inj = 2.;
+    double x_inj = 0.;
+    double sig_p = 0.125;
+    double sig_x = 0.125;
+    /** [Define runtime parameter] */
+
+
 
     PhysicalParameters() = default;
-    /** [PhysicalParameters] */
-    /** [Declare parameters] */
+
+
+
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
@@ -70,21 +80,32 @@ namespace sapphirepp
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      // !!!EDIT HERE!!!
-      prm.declare_entry("nu",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "Scattering frequency");
-      prm.declare_entry("f0",
-                        "1.",
-                        dealii::Patterns::Double(),
-                        "Initial value of the expansion coefficients");
+      /** [Declare runtime parameter] */
+      prm.add_parameter("u_sh", u_sh, "The shock velocity.");
+      prm.add_parameter("B0", B0, "The magnetic field strength upstream.");
+      prm.add_parameter("compression ratio",
+                        compression_ratio,
+                        "The compression ratio of the shock.");
+      prm.add_parameter("shock width", shock_width, "The width of the shock.");
+      prm.add_parameter("nu0", nu0, "The scattering frequency.");
+
+      // Source
+      prm.add_parameter("Q", Q, "The injection rate.");
+      prm.add_parameter("p_inj", p_inj, "The injection momentum.");
+      prm.add_parameter("x_inj", x_inj, "The injection position.");
+      prm.add_parameter("sig_p",
+                        sig_p,
+                        "The width of the source in momentum space.");
+      prm.add_parameter("sig_x",
+                        sig_x,
+                        "The width of the source in configuration space.");
+      /** [Declare runtime parameter] */
 
       prm.leave_subsection();
     }
-    /** [Declare parameters] */
 
-    /** [Parse parameters] */
+
+
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
@@ -93,40 +114,35 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      // !!!EDIT HERE!!!
-      nu = prm.get_double("nu");
-      f0 = prm.get_double("f0");
+      /** [Parse runtime parameter] */
+      // Parameters are automatically parsed by add_parameter()
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }
   };
-  /** [Parse parameters] */
 
 
 
-  /** [Namespace VFP] */
   namespace VFP
   {
-    /** [Namespace VFP] */
-
     /** [Dimension] */
-    // !!!EDIT HERE!!!
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    constexpr unsigned int dimension = 1;
+    constexpr unsigned int dimension = 2;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
-    // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution | VFPFlags::collision;
+    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
+                                   VFPFlags::momentum | VFPFlags::collision |
+                                   VFPFlags::rotation | VFPFlags::source |
+                                   VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
 
 
-    /** [InitialValueFunction constructor] */
     template <unsigned int dim>
     class InitialValueFunction : public dealii::Function<dim>
     {
@@ -137,11 +153,9 @@ namespace sapphirepp
         , prm{physical_parameters}
         , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
-      /** [InitialValueFunction constructor] */
 
 
 
-      /** [InitialValueFunction value] */
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &f) const override
@@ -151,8 +165,10 @@ namespace sapphirepp
 
         for (unsigned int i = 0; i < f.size(); ++i)
           {
-            // !!!EDIT HERE!!!
-            f[i] = prm.f0;
+            /** [Initial value] */
+            // No initial value
+            f[i] = 0.;
+            /** [Initial value] */
           }
       }
 
@@ -162,11 +178,9 @@ namespace sapphirepp
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
-    /** [InitialValueFunction value] */
 
 
 
-    /** [BoundaryValueFunction constructor] */
     template <unsigned int dim>
     class BoundaryValueFunction : public dealii::Function<dim>
     {
@@ -177,11 +191,9 @@ namespace sapphirepp
         , prm{physical_parameters}
         , lms_indices{PDESystem::create_lms_indices(system_size)}
       {}
-      /** [BoundaryValueFunction constructor] */
 
 
 
-      /** [BoundaryValueFunction value] */
       void
       bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
                            const unsigned int                     boundary_id,
@@ -195,31 +207,9 @@ namespace sapphirepp
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            // !!!EDIT HERE!!!
-            if (boundary_id == 0)
-              {
-                // lower x
-              }
-            else if (boundary_id == 1)
-              {
-                // upper x
-              }
-            else if (boundary_id == 2)
-              {
-                // lower y
-              }
-            else if (boundary_id == 3)
-              {
-                // upper y
-              }
-            else if (boundary_id == 4)
-              {
-                // lower z
-              }
-            else if (boundary_id == 5)
-              {
-                // upper z
-              }
+            /** [Boundary value] */
+            // No inflow boundary
+            /** [Boundary value] */
           }
       }
 
@@ -229,11 +219,9 @@ namespace sapphirepp
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
-    /** [BoundaryValueFunction value] */
 
 
 
-    /** [ScatteringFrequency constructor] */
     template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
@@ -242,11 +230,9 @@ namespace sapphirepp
         : dealii::Function<dim>(1)
         , prm{physical_parameters}
       {}
-      /** [ScatteringFrequency constructor] */
 
 
 
-      /** [ScatteringFrequency value] */
       void
       value_list(const std::vector<dealii::Point<dim>> &points,
                  std::vector<double>                   &scattering_frequencies,
@@ -257,8 +243,11 @@ namespace sapphirepp
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            // !!!EDIT HERE!!!
-            scattering_frequencies[q_index] = prm.nu;
+            /** [Scattering frequency] */
+            // Bohm limit
+            scattering_frequencies[q_index] =
+              prm.nu0 * prm.B0 * std::exp(-points[q_index][1]);
+            /** [Scattering frequency] */
           }
       }
 
@@ -267,11 +256,9 @@ namespace sapphirepp
     private:
       const PhysicalParameters prm;
     };
-    /** [ScatteringFrequency value] */
 
 
 
-    /** [Source] */
     template <unsigned int dim>
     class Source : public dealii::Function<dim>
     {
@@ -294,8 +281,24 @@ namespace sapphirepp
 
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
-            // !!!EDIT HERE!!!
-            source_values[i] = 0.;
+            /** [Source] */
+            if (i == 0)
+              {
+                const double p = std::exp(point[1]);
+                const double x = point[0];
+
+                // S_000 = sqrt(4 pi) * S
+                source_values[0] =
+                  std::pow(p, 3) * prm.Q /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
+                  std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
+                           (2. * prm.sig_p * prm.sig_p)) *
+                  std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
+                           (2. * prm.sig_x * prm.sig_x));
+              }
+            else
+              source_values[i] = 0.;
+            /** [Source] */
           }
       }
 
@@ -305,11 +308,9 @@ namespace sapphirepp
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
     };
-    /** [Source] */
 
 
 
-    /** [MagneticField] */
     template <unsigned int dim>
     class MagneticField : public dealii::Function<dim>
     {
@@ -328,10 +329,11 @@ namespace sapphirepp
         AssertDimension(magnetic_field.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
-        // !!!EDIT HERE!!!
-        magnetic_field[0] = 0.; // B_x
-        magnetic_field[1] = 0.; // B_y
-        magnetic_field[2] = 0.; // B_z
+        /** [Magnetic field] */
+        magnetic_field[0] = prm.B0; // B_x
+        magnetic_field[1] = 0.;     // B_y
+        magnetic_field[2] = 0.;     // B_z
+        /** [Magnetic field] */
       }
 
 
@@ -339,11 +341,9 @@ namespace sapphirepp
     private:
       const PhysicalParameters prm;
     };
-    /** [MagneticField] */
 
 
 
-    /** [BackgroundVelocityField] */
     template <unsigned int dim>
     class BackgroundVelocityField : public dealii::Function<dim>
     {
@@ -352,11 +352,9 @@ namespace sapphirepp
         : dealii::Function<dim>(3)
         , prm{physical_parameters}
       {}
-      /** [BackgroundVelocityField] */
 
 
 
-      /** [BackgroundVelocityField value] */
       void
       vector_value(const dealii::Point<dim> &point,
                    dealii::Vector<double>   &velocity) const override
@@ -364,16 +362,21 @@ namespace sapphirepp
         AssertDimension(velocity.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
 
-        // !!!EDIT HERE!!!
-        velocity[0] = 0.; // u_x
+        /** [Background velocity value] */
+        // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+
+        // u_x
+        velocity[0] =
+          prm.u_sh / (2 * prm.compression_ratio) *
+          ((1 - prm.compression_ratio) * std::tanh(point[0] / prm.shock_width) +
+           (1 + prm.compression_ratio));
         velocity[1] = 0.; // u_y
         velocity[2] = 0.; // u_z
+        /** [Background velocity value] */
       }
-      /** [BackgroundVelocityField value] */
 
 
 
-      /** [BackgroundVelocityField divergence] */
       void
       divergence_list(const std::vector<dealii::Point<dim>> &points,
                       std::vector<double>                   &divergence)
@@ -383,15 +386,22 @@ namespace sapphirepp
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            // !!!EDIT HERE!!!
-            divergence[q_index] = 0.; // div u
+            /** [Background velocity divergence] */
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => d/dx u(x) = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+
+            // div u
+            divergence[q_index] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
+            /** [Background velocity divergence] */
           }
       }
-      /** [BackgroundVelocityField divergence] */
 
 
 
-      /** [BackgroundVelocityField material derivative] */
       void
       material_derivative_list(
         const std::vector<dealii::Point<dim>> &points,
@@ -402,17 +412,30 @@ namespace sapphirepp
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            // !!!EDIT HERE!!!
-            material_derivatives[q_index][0] = 0.; // D/Dt u_x
+            /** [Background velocity material derivative] */
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => D/Dt u(x) = d/dt u(x) + u d/dx u(x)
+            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/x_s) + (1+r)) *
+            //        1/x_s (1-r) (1-tanh(x/x_s)^2)
+
+            // D/Dt u_x
+            material_derivatives[q_index][0] =
+              prm.u_sh * prm.u_sh /
+              (4 * prm.compression_ratio * prm.compression_ratio) /
+              prm.shock_width * (1 - prm.compression_ratio) *
+              ((1 - prm.compression_ratio) *
+                 std::tanh(points[q_index][0] / prm.shock_width) +
+               (1 + prm.compression_ratio)) *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             material_derivatives[q_index][1] = 0.; // D/Dt u_y
             material_derivatives[q_index][2] = 0.; // D/Dt u_z
+            /** [Background velocity material derivative] */
           }
       }
-      /** [BackgroundVelocityField material derivative] */
 
 
 
-      /** [BackgroundVelocityField Jacobian] */
       void
       jacobian_list(const std::vector<dealii::Point<dim>>   &points,
                     std::vector<dealii::FullMatrix<double>> &jacobians) const
@@ -423,8 +446,16 @@ namespace sapphirepp
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            // !!!EDIT HERE!!!
-            jacobians[q_index][0][0] = 0.; // \partial u_x / \partial x
+            /** [Background velocity Jacobian] */
+            //  u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            //  => u_00 = du/dx = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+
+            // \partial u_x / \partial x
+            jacobians[q_index][0][0] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
             jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
@@ -435,6 +466,7 @@ namespace sapphirepp
             jacobians[q_index][2][0] = 0.; // \partial u_z / \partial x
             jacobians[q_index][2][1] = 0.; // \partial u_z / \partial y
             jacobians[q_index][2][2] = 0.; // \partial u_z / \partial z
+            /** [Background velocity Jacobian] */
           }
       }
 
@@ -443,9 +475,6 @@ namespace sapphirepp
     private:
       const PhysicalParameters prm;
     };
-    /** [BackgroundVelocityField Jacobian] */
-    /** [Close namespaces] */
   } // namespace VFP
 } // namespace sapphirepp
 #endif
-/** [Close namespaces] */

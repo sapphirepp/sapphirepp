@@ -63,7 +63,7 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "pde-system.h"
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 #include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
@@ -170,6 +170,15 @@ namespace sapphirepp
       /** @} */
 
 
+      /**
+       * @brief Steady state solver for the VFP equation
+       *
+       * Solve the the linear system resulting from the weak formulation
+       * if not time derivative of the distribution function is present.
+       */
+      void
+      steady_state_solve();
+
 
       /**
        * @name Time stepping methods
@@ -196,12 +205,13 @@ namespace sapphirepp
 
       /**
        * @brief Calculate one time step with the low-storage explicit
-       *        Runge-Kutta method
+       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
+       *	for details.
+       *
+       * @todo Do not reassemble the DG matrix in the first stage of the ERK
        *
        * @param time Current time
        * @param time_step Time step size
-       *
-       * @todo The method is not forth order yet
        */
       void
       low_storage_explicit_runge_kutta(const double time,
@@ -440,6 +450,8 @@ namespace sapphirepp
       PETScWrappers::MPI::SparseMatrix system_matrix;
       /** Source */
       PETScWrappers::MPI::Vector locally_owned_current_source;
+      /** Non-homogeneous boundary conditions */
+      PETScWrappers::MPI::Vector locally_owned_current_bc;
       /** System right hand side, depends on time stepping method */
       PETScWrappers::MPI::Vector system_rhs;
       /** @} */
@@ -452,9 +464,17 @@ namespace sapphirepp
       /** @} */
 
       /** @{ */
-      /** Postprocessor to reconstruct phase space at predefined points */
-      PhaseSpaceReconstruction<dim_ps> ps_reconstruction;
+      /** Postprocessor to probe points in phase space */
+      ProbeLocation<dim_ps> probe_location;
       /** @} */
+
+      /** The exponent \f$ s \f$ of \f$ p^{s}\f$ used to rescale the
+          distribution function as \f$ p^{s} f\f$ */
+      const double scaling_spectral_index;
+
+      /** Sign changes used for reflective boundary conditions
+          (y-z-plane, i.e. lower/upper x) */
+      std::array<std::vector<double>, 3> reflective_bc_signature;
 
       /** @{ */
       /**

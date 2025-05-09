@@ -1,10 +1,10 @@
 subsection Output
-  set Base file name               = solution
+  set Base file name               = g
   set Format                       = pvtu
-  set Number of digits for counter = 4
+  set Number of digits for counter = 0
   set Output frequency             = 1
   set Results folder               = ./results
-  set Simulation identifier        = parallel-shock
+  set Simulation identifier        = steady-state-parallel-shock/scaled
 end
 subsection VFP
   subsection Expansion
@@ -15,10 +15,10 @@ subsection VFP
   end
   subsection Mesh
     set Grid type             = Shock grid
-    set Point 1               = -100, -2.3
+    set Point 1               = -15000, -2.3
     set Point 2               = 100, 4.6
-    set Number of cells       = 64, 64
-    set Shock width           = 0.5
+    set Number of cells       = 226, 256
+    set Shock width           = 0.04
     set Number of shock cells = 10
     set Scaling factor shock  = 1.1
     subsection Boundary conditions
@@ -28,22 +28,17 @@ subsection VFP
       set upper p = continuous
     end
   end
-  subsection Time stepping
-    set Final time     = 5e4
-    set Method         = CN
-    set Time step size = 100
-  end
 end
 
 subsection Physical parameters
   set B0                = 1.
   set nu0               = 1.
   set compression ratio = 4.
-  set shock width       = 0.5
-  set u_sh              = 0.03
-  set Q                 = 0.1
-  set p_inj             = 1.
+  set shock width       = 0.04
+  set u_sh              = 0.0167
+  set Q                 = 1.
+  set p_inj             = 2.
   set x_inj             = 0.0
-  set sig_p             = 0.1
-  set sig_x             = 0.1
+  set sig_p             = 0.05
+  set sig_x             = 0.05
 end

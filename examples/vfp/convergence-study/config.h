@@ -33,6 +33,7 @@
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/point.h>
 
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
@@ -91,10 +92,9 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      /** Parse runtime parameter */
+      /** [Parse runtime parameter] */
       B0 = prm.get_double("B0/2pi") * 2. * M_PI;
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }
@@ -106,16 +106,16 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 1;
+    constexpr unsigned int dimension = 1;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    static constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |
-                                          VFPFlags::rotation |
-                                          VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags =
+      VFPFlags::time_evolution | VFPFlags::spatial_advection |
+      VFPFlags::rotation | VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -177,6 +177,47 @@ namespace sapphirepp
             f[3] += 0.;
           }
         /** [Initial value] */
+      }
+
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
+    template <unsigned int dim>
+    class BoundaryValueFunction : public dealii::Function<dim>
+    {
+    public:
+      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
+                            const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
+      {}
+
+
+
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
+
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+          {
+            /** [Boundary value] */
+            // No inflow boundary
+            /** [Boundary value] */
+          }
       }
 
 
@@ -363,13 +404,12 @@ namespace sapphirepp
 
 
       void
-      jacobian_list(
-        const std::vector<dealii::Point<dim>>            &points,
-        std::vector<std::vector<dealii::Vector<double>>> &jacobians) const
+      jacobian_list(const std::vector<dealii::Point<dim>>   &points,
+                    std::vector<dealii::FullMatrix<double>> &jacobians) const
       {
         AssertDimension(jacobians.size(), points.size());
-        AssertDimension(jacobians[0].size(), this->n_components);
-        AssertDimension(jacobians[0][0].size(), this->n_components);
+        AssertDimension(jacobians[0].m(), this->n_components);
+        AssertDimension(jacobians[0].n(), this->n_components);
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {

@@ -4,11 +4,11 @@ subsection Physical parameters
 end
 
 subsection Output
+  set Results folder               = ./results
+  set Simulation identifier        = scattering-only
   set Base file name               = solution
   set Format                       = vtu
   set Output frequency             = 1
-  set Results folder               = ./results
-  set Simulation identifier        = scattering-only
 end
 
 subsection VFP

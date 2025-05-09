@@ -101,7 +101,9 @@ $$
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,,
 $$
 
-we have the time derivative and two additional terms. The first term represents
+we have the time derivative, included via the @ref
+sapphirepp::VFP::VFPFlags::time_evolution "time_evolution" flag,
+and two additional terms. The first term represents
 @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
 $(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, while the second term denotes
 @ref sapphirepp::VFP::VFPFlags::rotation "rotation" due to magnetic
@@ -115,22 +117,37 @@ Consequently, we activate these three @ref sapphirepp::VFP::VFPFlags
 
 ### Runtime Parameters {#parameter-gyro-advection}
 
-Our setup is characterized by three parameters: the magnetic field strength
-$B_0$, the background plasma flow $u_0$, and the initial spread of the
-distribution function $\sigma$. The additional parameters $m$, $q$, and $\gamma$
-are already implemented in @sapphire. We will employ the
-@ref sapphirepp::PhysicalParameters "PhysicalParameters" class to define,
-declare, and parse our custom runtime parameters, as demonstrated in the
-[parallel shock](#parallel-shock) example.
+Our setup is characterized by three parameters:
+the magnetic field strength $B_0$,
+the background plasma flow $u_0$,
+and the initial spread of the distribution function $\sigma$.
+The additional parameters $m$, $q$, and $\gamma$ are already implemented in @sapphire.
+Here we will demonstrate an advanced usage of the
+@ref sapphirepp::PhysicalParameters "PhysicalParameters" class
+involving a three-step process of defining, declaring, and parsing parameters.
 
 1. **Define**
 
-   We start by defining our runtime parameters:
+   We start by defining our runtime parameters,
+   but do not set them to default values:
 
    @snippet{lineno} examples/vfp/gyro-advection/config.h Define runtime parameter
 
 2. **Declare**
   
+   This step ensures that the parameter parser expects these parameters
+   and assigns them a default value.
+   The @dealii class @dealref{ParameterHandler} `prm`
+   and its @dealref{declare_entry,classParameterHandler,a6d65f458be69e23a348221cb67fc411d} method
+   are used for this purpose:
+
+   ```cpp
+   prm.declare_entry("entry", 
+                     "default value",
+                     dealii::Patterns::Type(),
+                     "Description of the parameter");
+   ```
+
    Note that we use $\frac{B_0}{2 \pi}$ instead of $B_0$ as an input parameter.
    This ensures that $T_{\rm final} = n \times \gamma$ corresponds to exactly
    $n$ full gyroperiods $T_g$ (assuming $m = q = c =1$).
@@ -139,7 +156,15 @@ declare, and parse our custom runtime parameters, as demonstrated in the
 
 3. **Parse**
 
-   Finally, we parse the runtime parameters:
+   Finally, we parse the parameters to set their values according to the parameter file.
+   This step allows further processing of the parameters after parsing.
+   For example, we convert `B0/2pi` to $B_0$.
+
+   We modify the
+   @ref sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()" method
+   to implement parsing,
+   utilising the @dealref{ParameterHandler} getter method
+   @dealref{get_double(),classParameterHandler,aeaf3c7846747695b1f327677e3716ec5}.
 
    @snippet{lineno} examples/vfp/gyro-advection/config.h Parse runtime parameter
 

@@ -1,71 +1,160 @@
-@article{Schween2024a,
-  journal = {Monthly Notices of the Royal Astronomical Society},
-  year = {2024},
-  month = {02},
-  author = {Schween, Nils Walter and Reville, Brian},
-  title = {Using spherical harmonics to solve the {Boltzmann} equation: an operator-based approach},
-  doi = {10.1093/mnras/stae596},
-  url = {https://academic.oup.com/mnras/article/529/3/1970/7615456},
-  publisher = {Oxford University Press (OUP)},
+@article{Achterberg2011,
+  year =	 2011,
+  month =	 03,
+  journal =	 {Monthly Notices of the Royal Astronomical Society},
+  author =	 {Achterberg, A. and Schure, K. M.},
+  title =	 {A more accurate numerical scheme for diffusive shock
+                  acceleration},
+  keywords =	 {acceleration of particles, diffusion, shock waves, methods:
+                  numerical, Astrophysics - High Energy Astrophysical Phenomena},
+  volume =	 411,
+  number =	 4,
+  pages =	 {2628-2636},
+  doi =		 {10.1111/j.1365-2966.2010.17868.x},
+  adsurl =	 {https://ui.adsabs.harvard.edu/abs/2011MNRAS.411.2628A},
+  adsnote =	 {Provided by the SAO/NASA Astrophysics Data System}
 }
 
-@article{Schween2025,
-title = {Sapphire++: A particle transport code combining a spherical harmonic expansion and the discontinuous Galerkin method},
-journal = {Journal of Computational Physics},
-volume = {523},
-pages = {113690},
-year = {2025},
-issn = {0021-9991},
-doi = {https://doi.org/10.1016/j.jcp.2024.113690},
-url = {https://www.sciencedirect.com/science/article/pii/S0021999124009380},
-author = {Nils W. Schween and Florian Schulze and Brian Reville},
-keywords = {Numerical methods, Vlasov-Fokker-Planck, Cosmic rays, Discontinuous Galerkin method, Spherical harmonics, Particle acceleration},
-abstract = {We present Sapphire++, an open-source code designed to numerically solve the Vlasov–Fokker–Planck equation for astrophysical applications. Sapphire++ employs a numerical algorithm based on a spherical harmonic expansion of the distribution function, expressing the Vlasov–Fokker–Planck equation as a system of partial differential equations governing the evolution of the expansion coefficients. The code utilises the discontinuous Galerkin method in conjunction with implicit and explicit time stepping methods to compute these coefficients, providing significant flexibility in its choice of spatial and temporal accuracy. We showcase the code's validity using examples. In particular, we simulate the acceleration of test particles at a parallel shock and compare the results to analytical predictions. The Sapphire++ code Image 1 is available as a free and open-source tool for the community.}
+@MastersThesis{Dann2025,
+  author =	 {Dann, F. J. B.},
+  title =	 {Investigating the time-dependence of astrophysical diffusive
+                  shock acceleration using the particle transport code
+                  {Sapphire++} },
+  school =	 {Ruprecht-Karls-Universit\"at},
+  year =	 2025,
+  type =	 {Bachelor's Thesis},
+  url =		 {https://hdl.handle.net/21.11116/0000-0010-91C7-9}
 }
 
 @article{Drury1983,
-  journal   = {Reports on Progress in Physics},
-  month     = {08},
-  year      = {1983},
-  author    = {Drury, L. O’C},
-  title     = {An introduction to the theory of diffusive shock acceleration of 
-               energetic particles in tenuous plasmas},
-  volume    = 46,
-  number    = 8,
-  pages     = {973--1027},
-  issn      = {1361-6633},
-  doi       = {10.1088/0034-4885/46/8/002},
-  publisher = {IOP Publishing}
+  journal =	 {Reports on Progress in Physics},
+  month =	 08,
+  year =	 1983,
+  author =	 {Drury, L. O’C},
+  title =	 {An introduction to the theory of diffusive shock acceleration
+                  of energetic particles in tenuous plasmas},
+  volume =	 46,
+  number =	 8,
+  pages =	 {973--1027},
+  issn =	 {1361-6633},
+  doi =		 {10.1088/0034-4885/46/8/002},
+  publisher =	 {IOP Publishing}
+}
+
+@article{Drury1991,
+  year =	 1991,
+  month =	 07,
+  journal =	 {Monthly Notices of the Royal Astronomical Society},
+  author =	 {Drury, L. O.},
+  title =	 {Time-dependent diffusive acceleration of test particles at
+                  shocks},
+  volume =	 251,
+  number =	 2,
+  pages =	 {340–350},
+  issn =	 {1365-2966},
+  doi =		 {10.1093/mnras/251.2.340},
+  url =		 {http://dx.doi.org/10.1093/mnras/251.2.340},
+  publisher =	 {Oxford University Press (OUP)}
+}
+
+@inproceedings{Forman1983,
+  pages =	 {267--270},
+  volume =	 2,
+  booktitle =	 {Proceedings from the 18th International Cosmic Ray Conference},
+  date =	 {1983-08},
+  title =	 {Time-Dependent Shock Acceleration: Approximations and Exact
+                  Solutions},
+  author =	 {Forman, M. A. and Drury, L. O.}
+}
+
+@book{Hesthaven_NodalDG,
+  address =	 {New York},
+  edition =	 1,
+  issn =	 {0939-2475},
+  isbn =	 {978-0-387-72065-4},
+  doi =		 {10.1007/978-0-387-72067-8},
+  publisher =	 {Springer},
+  year =	 2008,
+  series =	 {Texts in Applied Mathematics},
+  volume =	 54,
+  subtitle =	 {Algorithms, Analysis, and Applications},
+  title =	 {Nodal Discontinuous {Galerkin} Methods},
+  author =	 {Hesthaven, Jan S. and Warburton, Tim}
 }
 
 @incollection{Kirk1994,
-  year      = {1994},
-  file      = {KirkMelrosePriest_PlasmaAstrophysics-Fee.djvu},
-  author    = {Kirk, John G.},
-  title     = {Particle Acceleration},
-  booktitle = {Plasma Astrophysics},
-  publisher = {Springer-Verlag},
-  editor    = {Benz, A. O. and Courvoisier, T. J.-L.},
-  series    = {Saas-Fee Advanced Course},
-  issn      = {1861-7980},
-  volume    = {24},
-  chapter   = {3},
-  pages     = {225--314},
-  address   = {Berlin, Heidelberg},
-  edition   = {1},
-  doi       = {10.1007/3-540-31627-2_3}
+  year =	 1994,
+  file =	 {KirkMelrosePriest_PlasmaAstrophysics-Fee.djvu},
+  author =	 {Kirk, John G.},
+  title =	 {Particle Acceleration},
+  booktitle =	 {Plasma Astrophysics},
+  publisher =	 {Springer-Verlag},
+  editor =	 {Benz, A. O. and Courvoisier, T. J.-L.},
+  series =	 {Saas-Fee Advanced Course},
+  issn =	 {1861-7980},
+  volume =	 24,
+  chapter =	 3,
+  pages =	 {225--314},
+  address =	 {Berlin, Heidelberg},
+  edition =	 1,
+  doi =		 {10.1007/3-540-31627-2_3}
 }
 
 @book{Pietro_MathematicalAspectsDG,
-  address   = {Berlin Heidelberg},
-  year      = {2012},
-  issn      = {1154-483X},
-  isbn      = {978-3-642-22979-4},
-  author    = {Di Pietro, Daniele Antonio and Ern, Alexandre},
-  title     = {Mathematical Aspects of Discontinuous Galerkin Methods},
-  volume    = {69},
-  series    = {Mathématiques et Applications},
-  publisher = {Springer-Verlag},
-  doi       = {10.1007/978-3-642-22980-0},
-  url       = {https://hal.archives-ouvertes.fr/hal-01820185}
+  address =	 {Berlin Heidelberg},
+  year =	 2012,
+  issn =	 {1154-483X},
+  isbn =	 {978-3-642-22979-4},
+  author =	 {Di Pietro, Daniele Antonio and Ern, Alexandre},
+  title =	 {Mathematical Aspects of Discontinuous Galerkin Methods},
+  volume =	 69,
+  series =	 {Mathématiques et Applications},
+  publisher =	 {Springer-Verlag},
+  doi =		 {10.1007/978-3-642-22980-0},
+  url =		 {https://hal.archives-ouvertes.fr/hal-01820185}
+}
+
+@article{Schween2024a,
+  journal =	 {Monthly Notices of the Royal Astronomical Society},
+  year =	 2024,
+  month =	 02,
+  author =	 {Schween, Nils Walter and Reville, Brian},
+  title =	 {Using spherical harmonics to solve the {Boltzmann} equation:
+                  an operator-based approach},
+  doi =		 {10.1093/mnras/stae596},
+  url =		 {https://academic.oup.com/mnras/article/529/3/1970/7615456},
+  publisher =	 {Oxford University Press (OUP)},
+}
+
+@article{Schween2025,
+  title =	 {Sapphire++: A particle transport code combining a spherical
+                  harmonic expansion and the discontinuous Galerkin method},
+  journal =	 {Journal of Computational Physics},
+  volume =	 523,
+  pages =	 113690,
+  year =	 2025,
+  issn =	 {0021-9991},
+  doi =		 {https://doi.org/10.1016/j.jcp.2024.113690},
+  url =
+                  {https://www.sciencedirect.com/science/article/pii/S0021999124009380},
+  author =	 {Nils W. Schween and Florian Schulze and Brian Reville},
+  keywords =	 {Numerical methods, Vlasov-Fokker-Planck, Cosmic rays,
+                  Discontinuous Galerkin method, Spherical harmonics, Particle
+                  acceleration},
+  abstract =	 {We present Sapphire++, an open-source code designed to
+                  numerically solve the Vlasov–Fokker–Planck equation for
+                  astrophysical applications. Sapphire++ employs a numerical
+                  algorithm based on a spherical harmonic expansion of the
+                  distribution function, expressing the Vlasov–Fokker–Planck
+                  equation as a system of partial differential equations
+                  governing the evolution of the expansion coefficients. The
+                  code utilises the discontinuous Galerkin method in conjunction
+                  with implicit and explicit time stepping methods to compute
+                  these coefficients, providing significant flexibility in its
+                  choice of spatial and temporal accuracy. We showcase the
+                  code's validity using examples. In particular, we simulate the
+                  acceleration of test particles at a parallel shock and compare
+                  the results to analytical predictions. The Sapphire++ code
+                  Image 1 is available as a free and open-source tool for the
+                  community.}
 }

@@ -92,35 +92,32 @@ everything related to @sapphire within the @ref sapphirepp namespace:
 
 #### Custom Runtime Parameters {#parameter-scattering-only}
 
-In this example, we define two custom runtime parameters using the @ref
-sapphirepp::PhysicalParameters "PhysicalParameters" class, as introduced in the
-[parallel shock](#parallel-shock) example. These parameters are the scattering
-frequency $\nu$ and the initial value of the expansion coefficients $f_0$
+In this example, we define two custom runtime parameters
+using the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class,
+as introduced in the [gyro motion with advection](#gyro-advection) example.
+These parameters are the scattering frequency $\nu$
+and the initial value of the expansion coefficients $f_0$
 (assuming the same initial value for all coefficients).
 
-These parameters are defined as **public** variables at the start of the @ref
-sapphirepp::PhysicalParameters "PhysicalParameters" class:
+These parameters are defined as **public** variables
+at the start of the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class:
 
 @snippet{lineno} examples/vfp/scattering-only/config.h PhysicalParameters
 
-@note The `// !!!EDIT HERE!!!` comments are left as a reference where the user
-  modifies the code as presented in the [parallel shock](#parallel-shock)
-  example.
+@note The `// !!!EDIT HERE!!!` comments are left as a reference where the user modifies the code
+  as presented in the [gyro motion with advection](#gyro-advection) example.
 
-Next, we **declare** the parameters in a @dealref{ParameterHandler} object in
-the @ref sapphirepp::PhysicalParameters::declare_parameters()
-"declare_parameters()" function. We enter the subsection `Physical parameters`
-at the start and leave it at the end. Notice the use of the @ref
-sapphirepp::saplog "saplog" stream to output debug information, with
-@dealref{LogStream::Prefix,classLogStream_1_1Prefix} controlling the verbosity
-of the output.
+Next, we **declare** the parameters in a @dealref{ParameterHandler} object
+in the @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" function.
+We enter the subsection `Physical parameters` at the start and leave it at the end.
+Notice the use of the @ref sapphirepp::saplog "saplog" stream to output debug information,
+with @dealref{LogStream::Prefix,classLogStream_1_1Prefix} controlling the verbosity of the output.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Declare parameters
 
-Finally, **parsing** the parameters is straightforward in the @ref
-sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()"
-function. Again, we use the @ref sapphirepp::saplog "saplog" stream to output
-debug information.
+Finally, **parsing** the parameters is straightforward
+in the @ref sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()" function.
+Again, we use the @ref sapphirepp::saplog "saplog" stream to output debug information.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Parse parameters
 
@@ -190,6 +187,32 @@ Finally, we close the function definition, after defining the private variable
 `prm` and the mapping `lms_indices`.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h InitialValueFunction value
+
+#### Inflow boundary value {#boundary-value-scattering-only}
+
+This class is not used in this example as we have no
+@ref sapphirepp::VFP::BoundaryConditions::inflow "inflow" boundary.
+Nevertheless, it needs to be defined in the `config.h` file as it is expected by @sapphire.
+
+The constructor of the
+@ref sapphirepp::VFP::BoundaryValueFunction "BoundaryValueFunction"
+is similar to the initial condition.
+
+@snippet{lineno} examples/vfp/scattering-only/config.h BoundaryValueFunction constructor
+
+However, the definition of the value function differs.
+We use a custom
+@ref sapphirepp::VFP::BoundaryValueFunction::bc_vector_value_list "bc_vector_value_list()"
+function,
+that is similar to the
+@dealref{vector_value_list(),classFunction,a68a1b24fd0bc21d10e609672a78578d2}
+function
+but takes on additional argument for the
+@dealref{boundary indicator,DEALGlossary,GlossBoundaryIndicator}.
+This boundary indicator depends on the dimension of the problem,
+the code below shows the corresponding boundaries for a problem without momentum dependence.
+
+@snippet{lineno} examples/vfp/scattering-only/config.h BoundaryValueFunction value
 
 #### Scattering frequency {#scattering-frequency-scattering-only}
 
@@ -496,27 +519,28 @@ there are only two steps to follow:
 After these steps, re-run `cmake` to update the build system:
 
 ```shell
-cd sapphirepp
-rm -rf build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
 ```
 
-@note For development, we recommend using the Debug mode. You can switch between
-  Debug and Release mode by changing the `CMAKE_BUILD_TYPE` variable.
+@note For development, we recommend using the Debug mode.
+  You can switch between Debug and Release mode
+  by changing the `CMAKE_BUILD_TYPE` variable.
 
 This process will create a
 `sapphirepp/build/examples/vfp/scattering-only` folder.
-To build the executable for the example, execute `make` in this folder:
+To build the executable for the example,
+execute `make` with the target `scattering-only`:
 
 ```shell
-cd sapphirepp/build/examples/scattering-only
-make
+make --directory=build scattering-only
 ```
 
-This will create the executable `scattering-only`, which can be run with:
+This will create the executable `scattering-only`
+in the `build/examples/vfp/scattering-only` folder,
+which can be run with:
 
 ```shell
-./scattering-only parameter.prm
+./build/examples/vfp/scattering-only/scattering-only parameter-file.prm
 ```
 
 ### parameter.prm {#example-parameter-scattering-only}
@@ -542,12 +566,13 @@ precision for this simulation.
 
 ## Executing the example {#execute-scattering-only}
 
-Once the example program is compiled, it can be executed with the following
-command:
+Once the example program is compiled,
+and the parameter file is defined,
+e.g. `examples/vfp/scattering-only/parameter.prm`,
+it can be executed with the following command:
 
 ```shell
-cd sapphirepp/build/examples/vfp/scattering-only
-./scattering-only parameter.prm
+./build/examples/vfp/scattering-only/scattering-only examples/vfp/scattering-only/parameter.prm
 ```
 
 The console output should resemble the following:
@@ -579,9 +604,10 @@ solution in 10 time steps. The relative error is approximately $5 \times
 10^{-5}$, which is expected for a 4th order Runge-Kutta scheme with a time step
 size of $0.1$.
 
-The program creates a `results` folder in the current directory, with a
-`scattering-only` subdirectory. This folder contains a log file of the
-parameters (`log.prm`), the analytic solution (`analytic_solution_0000.vtu`),
+Inside the `results` folder
+the program creates a subdirectory `scattering-only`.
+This folder contains a log file of the parameters (`log.prm`),
+the analytic solution (`analytic_solution_0000.vtu`),
 and the numerical solution at each time step (`solution_*.vtu`).
 
 The `*.vtu` files can be opened in visualization software like @paraview or

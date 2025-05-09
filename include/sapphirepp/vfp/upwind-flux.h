@@ -130,21 +130,21 @@ namespace sapphirepp
         dealii::FullMatrix<double> &negative_flux_matrix);
 
       void
-      compute_matrix_sum(const double                  n_p,
-                         const double                  momentum,
-                         const double                  gamma,
-                         const dealii::Vector<double> &material_derivative,
-                         const std::vector<dealii::Vector<double>> &jacobian);
+      compute_matrix_sum(const double                      n_p,
+                         const double                      momentum,
+                         const double                      gamma,
+                         const dealii::Vector<double>     &material_derivative,
+                         const dealii::FullMatrix<double> &jacobian);
 
       void
       compute_flux_in_p_direction(
-        const double                               n_p,
-        const double                               momentum,
-        const double                               gamma,
-        const dealii::Vector<double>              &material_derivative,
-        const std::vector<dealii::Vector<double>> &jacobian,
-        dealii::FullMatrix<double>                &positive_flux_matrix,
-        dealii::FullMatrix<double>                &negative_flux_matrix);
+        const double                      n_p,
+        const double                      momentum,
+        const double                      gamma,
+        const dealii::Vector<double>     &material_derivative,
+        const dealii::FullMatrix<double> &jacobian,
+        dealii::FullMatrix<double>       &positive_flux_matrix,
+        dealii::FullMatrix<double>       &negative_flux_matrix);
 
 
 

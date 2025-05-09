@@ -28,6 +28,7 @@
 
 #include "vfp-parameters.h"
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/patterns.h>
 #include <deal.II/base/utilities.h>
 
@@ -82,9 +83,9 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "Two diagonally opposite corner points, "
                       "Point 1 and  Point 2");
     prm.declare_entry("Number of cells",
-                      (dim == 1) ? "32" :
-                      (dim == 2) ? "32, 32" :
-                                   "32, 32, 32",
+                      (dim == 1) ? "40" :
+                      (dim == 2) ? "40, 40" :
+                                   "40, 40, 40",
                       Patterns::List(Patterns::Integer(1), dim, dim, ","),
                       "Number of cells in each coordinate direction");
 
@@ -111,8 +112,9 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 
     prm.enter_subsection("Boundary conditions");
     {
-      const auto boundary_pattern =
-        Patterns::Selection("continuous|zero inflow|periodic");
+      const auto boundary_pattern = Patterns::Selection(
+        "continuous|zero inflow|reflective|inflow|periodic");
+
       prm.declare_entry("lower x",
                         "continuous",
                         boundary_pattern,
@@ -155,9 +157,7 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   {
     prm.declare_entry("Method",
                       "CN",
-                      /** @todo "LSERK" is not working, so we exclude it */
-                      // Patterns::Selection("FE|BE|CN|ERK4|LSERK"),
-                      Patterns::Selection("FE|BE|CN|ERK4"),
+                      Patterns::Selection("FE|BE|CN|ERK4|LSERK4"),
                       "The time stepping method.");
     prm.declare_entry("Time step size",
                       "1.0",
@@ -219,25 +219,30 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 
 
-  prm.enter_subsection("Phase space reconstruction");
+  prm.enter_subsection("Probe location");
   {
     prm.declare_entry(
-      "reconstruction points",
+      "points",
       "",
       Patterns::List(pattern_point, 0, Patterns::List::max_int_value, ";"),
-      "List of points in the reduced phase space "
-      "for reconstructing f(theta, phi). "
+      "List of points in the reduced phase space to probe."
       "The points should be provided as a semicolon-separated list, "
       "e.g., 1,1,1; 2,2,2.");
-    prm.declare_entry("n_theta",
-                      "75",
-                      Patterns::Integer(0),
-                      "Number of theta points for phase space reconstruction.");
+    prm.declare_entry(
+      "Perform reconstruction",
+      "false",
+      Patterns::Bool(),
+      "Perform phase space reconstruction for f(cos theta, phi)?");
+    prm.declare_entry(
+      "n_cos_theta",
+      "75",
+      Patterns::Integer(0),
+      "Number of cos theta points for phase space reconstruction.");
     prm.declare_entry("n_phi",
                       "75",
                       Patterns::Integer(0),
                       "Number of phi points for phase space reconstruction.");
-  } // Phase space reconstruction
+  } // Probe location
   prm.leave_subsection();
 
 
@@ -307,12 +312,27 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
             Assert(false, ExcNotImplemented());
 
           s = prm.get(entry);
+
+          AssertThrow(
+            !(s == "reflective" && (entry == "lower p" || entry == "upper p")),
+            ExcMessage("Reflective boundary conditions in the p-direction "
+                       "are not implemented."));
+          AssertThrow(
+            !(s == "periodic" && (entry == "lower p" || entry == "upper p")),
+            ExcMessage("Periodic boundary conditions in the p-direction "
+                       "are not permitted."));
+
           if (s == "continuous")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::continuous;
           else if (s == "zero inflow")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::zero_inflow;
+          else if (s == "reflective")
+            boundary_conditions[boundary_id] =
+              VFP::BoundaryConditions::reflective;
+          else if (s == "inflow")
+            boundary_conditions[boundary_id] = VFP::BoundaryConditions::inflow;
           else if (s == "periodic")
             boundary_conditions[boundary_id] =
               VFP::BoundaryConditions::periodic;
@@ -345,8 +365,8 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
       }
     else if (s == "ERK4")
       time_stepping_method = TimeSteppingMethod::erk4;
-    else if (s == "LSERK")
-      time_stepping_method = TimeSteppingMethod::lserk;
+    else if (s == "LSERK4")
+      time_stepping_method = TimeSteppingMethod::lserk4;
     else
       Assert(false, ExcNotImplemented());
 
@@ -388,29 +408,40 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 
 
-  prm.enter_subsection("Phase space reconstruction");
+  prm.enter_subsection("Probe location");
   {
-    reconstruction_points.clear();
+    probe_location_points.clear();
     const auto string_list =
-      Utilities::split_string_list(prm.get("reconstruction points"), ";");
+      Utilities::split_string_list(prm.get("points"), ";");
     for (const auto &s : string_list)
-      reconstruction_points.push_back(
+      probe_location_points.push_back(
         Patterns::Tools::Convert<Point<dim_ps>>::to_value(s));
 
-    //  Don't perform reconstruction if no points are given
-    if (reconstruction_points.size() == 0)
+    // Don't perform reconstruction if no points are given
+    if (probe_location_points.size() == 0)
       {
+        perform_probe_location             = false;
         perform_phase_space_reconstruction = false;
-        n_theta                            = 0;
-        n_phi                              = 0;
       }
     else
       {
-        perform_phase_space_reconstruction = true;
-        n_theta = static_cast<unsigned int>(prm.get_integer("n_theta"));
-        n_phi   = static_cast<unsigned int>(prm.get_integer("n_phi"));
+        perform_probe_location = true;
+        perform_phase_space_reconstruction =
+          prm.get_bool("Perform reconstruction");
       }
-  } // Phase space reconstruction
+
+    // Only reconstruct phase space if needed
+    if (perform_phase_space_reconstruction)
+      {
+        n_cos_theta = static_cast<unsigned int>(prm.get_integer("n_cos_theta"));
+        n_phi       = static_cast<unsigned int>(prm.get_integer("n_phi"));
+      }
+    else
+      {
+        n_cos_theta = 0;
+        n_phi       = 0;
+      }
+  } // Probe location
   prm.leave_subsection();
 
 

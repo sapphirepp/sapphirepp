@@ -1,4 +1,4 @@
-file(COPY parameter-1d-CN.prm parameter-1d-ERK4.prm parameter-1d-LSERK.prm
+file(COPY parameter-1d-CN.prm parameter-1d-ERK4.prm parameter-1d-LSERK4.prm
   parameter-1d-FE.prm parameter-1d-BE.prm
   parameter-2d-ERK4.prm
   parameter-3d-ERK4.prm
@@ -32,15 +32,15 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
-# add_test(NAME scattering-only-1d-LSERK COMMAND
-#   ./test-scattering-only-1d parameter-1d-LSERK.prm test_run 1e-4
-# )
-# set_property(TEST scattering-only-1d-LSERK PROPERTY LABELS
-#   "scattering-only"
-#   "1d" "scattering"
-#   "LSERK" "periodic BC"
-#   "full-suite-Debug" "full-suite-Release"
-# )
+add_test(NAME scattering-only-1d-LSERK4 COMMAND
+  ./test-scattering-only-1d parameter-1d-LSERK4.prm test_run 3e-3
+)
+set_property(TEST scattering-only-1d-LSERK4 PROPERTY LABELS
+  "scattering-only"
+  "1d" "scattering"
+  "LSERK4" "periodic BC"
+  "full-suite-Debug" "full-suite-Release"
+)
 
 add_test(NAME scattering-only-1d-FE COMMAND
   ./test-scattering-only-1d parameter-1d-FE.prm test_run 1e-1

@@ -1,10 +1,8 @@
 subsection Output
-  set Base file name               = solution
-  set Format                       = pvtu
-  set Number of digits for counter = 4
-  set Output frequency             = 100
-  set Results folder               = results
+  set Results folder               = ./results
   set Simulation identifier        = closure
+  set Format                       = pvtu
+  set Output frequency             = 100
 end
 subsection Physical parameters
   set Standard deviation   = 1.
@@ -31,10 +29,11 @@ subsection VFP
     set Charge = 1.
     set Mass   = 1.
   end
-  subsection Phase space reconstruction
-    set reconstruction points = -6; -3; 0; 3; 6
-    set n_phi                 = 75
-    set n_theta               = 75
+  subsection Probe location
+    set points                 = -6; -3; 0; 3; 6
+    set Perform reconstruction = true
+    set n_cos_theta            = 75
+    set n_phi                  = 75
   end
   subsection Time stepping
     set Final time     = 6.9282032303 # = 12/sqrt(3)

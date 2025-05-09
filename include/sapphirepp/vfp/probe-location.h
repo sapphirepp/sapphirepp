@@ -20,14 +20,14 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file phase-space-reconstruction.h
+ * @file probe-location.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref sapphirepp::VFP::PhaseSpaceReconstruction
+ * @brief Define @ref sapphirepp::VFP::ProbeLocation
  */
 
-#ifndef VFP_PHASESPACERECONSTRUCTION_H
-#define VFP_PHASESPACERECONSTRUCTION_H
+#ifndef VFP_PROBELOCATION_H
+#define VFP_PROBELOCATION_H
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/mpi.h>
@@ -47,7 +47,6 @@
 #include <mpi.h>
 
 #include <array>
-#include <filesystem>
 #include <vector>
 
 #include "output-parameters.h"
@@ -62,26 +61,27 @@ namespace sapphirepp
     using namespace dealii;
 
     /**
-     * @brief PostProcessor unit to reconstruct the phase space distribution
+     * @brief PostProcessor unit to probe location in reduced phase space
+     *        and reconstruct the phase space distribution.
      *
      * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
      */
     template <unsigned int dim>
-    class PhaseSpaceReconstruction
+    class ProbeLocation
     {
     public:
       /**
        * @brief Constructor
        *
-       * The points for the phase space reconstruction are defined in
-       * @ref VFPParameters::reconstruction_points.
+       * The points for probe location are defined in
+       * @ref VFPParameters::probe_location_points.
        *
        * @param vfp_parameters Parameters for the VFP equation
        * @param output_parameters Parameters for the output
        * @param lms_indices Map between system index \f$ i \f$
        *                    and spherical harmonic indices \f$ (l,m,s) \f$
        */
-      PhaseSpaceReconstruction(
+      ProbeLocation(
         const VFPParameters<dim>                       &vfp_parameters,
         const Utils::OutputParameters                  &output_parameters,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
@@ -101,21 +101,25 @@ namespace sapphirepp
 
 
       /**
-       * @brief Reconstruct the phase space distribution at all user defined
-       *        points
+       * @brief Probe all user defined point in the reduced phase space
+       *        and perform phase space reconstruction.
        *
        * @param dof_handler @dealref{DoFHandler}
        * @param mapping @dealref{Mapping}
        * @param solution Current solution vector
        * @param time_step_number Current time step number
        * @param cur_time Current time
+       * @param function_symbol The symbol used for the distribution function.
+       * Default, is \f$ f \f$ for an unscaled distribution function
+       * and \f$ g \f$ for \f$p^3 f \f$.
        */
       void
-      reconstruct_all_points(const DoFHandler<dim>            &dof_handler,
-                             const Mapping<dim>               &mapping,
-                             const PETScWrappers::MPI::Vector &solution,
-                             const unsigned int time_step_number = 0,
-                             const double       cur_time         = 0.) const;
+      probe_all_points(const DoFHandler<dim>            &dof_handler,
+                       const Mapping<dim>               &mapping,
+                       const PETScWrappers::MPI::Vector &solution,
+                       const unsigned int                time_step_number = 0,
+                       const double                      cur_time         = 0.,
+                       const std::string &function_symbol = "f") const;
 
 
 
@@ -123,19 +127,33 @@ namespace sapphirepp
        * @brief Compute the real spherical harmonics
        *        \f$ Y_{lms}(\theta, \varphi) \f$
        *
-       * @param theta_values Vector of theta values
-       * @param phi_values Vector of phi values
+       * @param cos_theta_values Vector of \f$ \cos(\theta) \f$ values
+       * @param phi_values Vector of \f$ \phi \f$ values
        * @param lms_indices Map between system index \f$ i \f$
        *                    and spherical harmonic indices \f$ (l,m,s) \f$
        * @return Table<3, double> Real spherical harmonics `Y[i][theta][phi]`
        */
       static Table<3, double>
       compute_real_spherical_harmonics(
-        const std::vector<double>                      &theta_values,
+        const std::vector<double>                      &cos_theta_values,
         const std::vector<double>                      &phi_values,
         const std::vector<std::array<unsigned int, 3>> &lms_indices);
 
-
+      /**
+       * @brief Test the phase space reconstruction.
+       *
+       * Call this function, for example, in the constructor of the
+       * VFPSolver. It will output all spherical harmonics up to \f$
+       * l_{\mathrm{max}} \f$. Results can be compared with Appendix A in
+       * @cite Schween2025 .
+       *
+       * @note The execution of Sapphire++ will be aborted after the test is
+       * executed. Moreover, the test only runs successfully, if the parameter
+       * files contains the section "Probe Location" with at least one point
+       * specified.
+       */
+      void
+      test_phase_space_reconstruction();
 
     private:
       /** Output parameter */
@@ -149,18 +167,20 @@ namespace sapphirepp
       /** Number of expansion coefficients */
       const unsigned int system_size;
 
+      /** Postprocess to probe points? */
+      const bool perform_probe_location;
       /** Perform phase space reconstruction? */
       const bool perform_phase_space_reconstruction;
-      /** Theta values for phase space reconstruction */
-      const std::vector<double> theta_values;
+      /** Cos theta values for phase space reconstruction */
+      const std::vector<double> cos_theta_values;
       /** Phi values for phase space reconstruction */
       const std::vector<double> phi_values;
 
       /** Real spherical harmonics `Y[i][theta][phi]` */
       const Table<3, double> real_spherical_harmonics;
 
-      /** Points for phase space reconstruction */
-      std::vector<Point<dim>> reconstruction_points;
+      /**  Points in reduced phase space to probe and reconstruct */
+      std::vector<Point<dim>> probe_location_points;
 
       /** @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation} */
       Utilities::MPI::RemotePointEvaluation<dim, dim> rpe_cache;
@@ -182,36 +202,65 @@ namespace sapphirepp
         const std::vector<double> &expansion_coefficients) const;
 
       /**
-       * @brief Output \f$ f(\theta, \varphi) \f$ in GNU splot format.
+       * @brief Output \f$ f(\cos\theta, \varphi) \f$ or $\f$ g = p^3
+       * f(\cos\theta, \varphi) \f$ in GNU splot format.
        *
-       * @param f_values Phase space distribution
+       * @param distribution_func_values Phase space distribution
        * @param point_index Index of reconstructed point
        * @param time_step_number Current time step number
        * @param cur_time Current time
+       * @param function_symbol The symbol used for the distribution function.
+       * Default, is \f$ f \f$ for an unscaled distribution function
+       * and \f$ g \f$ for \f$p^3 f \f$.
        */
       void
-      output_gnu_splot_data(const std::vector<double> &f_values,
+      output_gnu_splot_data(const std::vector<double> &distribution_func_values,
                             const unsigned int         point_index,
                             const unsigned int         time_step_number = 0,
-                            const double               cur_time = 0.) const;
+                            const double               cur_time         = 0.,
+                            const std::string &function_symbol = "f") const;
 
 
 
       /**
-       * @brief Output \f$ f(p_x, p_y, p_z) \f$ in GNU splot format.
+       * @brief Output \f$ f(p_x, p_y, p_z) \f$ or \f$ g = p^3 f(p_x, p_y, p_z)
+       * \f$ in GNU splot format.
        *
-       * @param f_values Phase space distribution
+       * @param distribution_func_values Phase space distribution
+       * @param point_index Index of reconstructed point
+       * @param time_step_number Current time step number
+       * @param cur_time Current time
+       * @param function_symbol The symbol used for the distribution function.
+       * Default, is \f$ f \f$ for an unscaled distribution function
+       * and \f$ g \f$ for \f$p^3 f \f$.
+       */
+      void
+      output_gnu_splot_spherical_density_map(
+        const std::vector<double> &distribution_func_values,
+        const unsigned int         point_index,
+        const unsigned int         time_step_number = 0,
+        const double               cur_time         = 0.,
+        const std::string         &function_symbol  = "f") const;
+      /** @} */
+
+
+
+      /**
+       * @brief Outputs the values of the expansion coefficients at points in
+       * location list.
+       *
+       * @param expansion_coefficients Values of the expansion coefficients
        * @param point_index Index of reconstructed point
        * @param time_step_number Current time step number
        * @param cur_time Current time
        */
       void
-      output_gnu_splot_spherical_density_map(
-        const std::vector<double> &f_values,
+      output_expansion_coefficients(
+        const std::vector<double> &expansion_coefficients,
         const unsigned int         point_index,
         const unsigned int         time_step_number = 0,
-        const double               cur_time         = 0.) const;
-      /** @} */
+        const double               cur_time         = 0.,
+        const std::string         &function_symbol  = "f") const;
     };
   } // namespace VFP
 } // namespace sapphirepp

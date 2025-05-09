@@ -33,6 +33,7 @@
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/point.h>
 
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
@@ -50,18 +51,18 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double u_sh;
-    double B0;
-    double compression_ratio;
-    double shock_width;
-    double nu0;
+    double u_sh              = 0.1;
+    double B0                = 1.;
+    double compression_ratio = 4.;
+    double shock_width       = 0.04;
+    double nu0               = 0.1;
 
     // Source
-    double Q;
-    double p_inj;
-    double x_inj;
-    double sig_p;
-    double sig_x;
+    double Q     = 0.1;
+    double p_inj = 2.;
+    double x_inj = 0.;
+    double sig_p = 0.125;
+    double sig_x = 0.125;
     /** [Define runtime parameter] */
 
 
@@ -79,49 +80,24 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("u_sh",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "The shock velocity.");
-      prm.declare_entry("B0",
-                        "1.",
-                        dealii::Patterns::Double(),
-                        "The magnetic field strength upstream.");
-      prm.declare_entry("compression ratio",
-                        "4.",
-                        dealii::Patterns::Double(),
+      prm.add_parameter("u_sh", u_sh, "The shock velocity.");
+      prm.add_parameter("B0", B0, "The magnetic field strength upstream.");
+      prm.add_parameter("compression ratio",
+                        compression_ratio,
                         "The compression ratio of the shock.");
-      prm.declare_entry("shock width",
-                        "0.04",
-                        dealii::Patterns::Double(),
-                        "The width of the shock.");
-      prm.declare_entry("nu0",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "The scattering frequency.");
+      prm.add_parameter("shock width", shock_width, "The width of the shock.");
+      prm.add_parameter("nu0", nu0, "The scattering frequency.");
 
-      prm.enter_subsection("Source");
-      prm.declare_entry("Q",
-                        "0.1",
-                        dealii::Patterns::Double(),
-                        "The injection rate.");
-      prm.declare_entry("p_inj",
-                        "2.",
-                        dealii::Patterns::Double(),
-                        "The injection momentum.");
-      prm.declare_entry("x_inj",
-                        "0.0",
-                        dealii::Patterns::Double(),
-                        "The injection position.");
-      prm.declare_entry("sig_p",
-                        "0.125",
-                        dealii::Patterns::Double(),
+      // Source
+      prm.add_parameter("Q", Q, "The injection rate.");
+      prm.add_parameter("p_inj", p_inj, "The injection momentum.");
+      prm.add_parameter("x_inj", x_inj, "The injection position.");
+      prm.add_parameter("sig_p",
+                        sig_p,
                         "The width of the source in momentum space.");
-      prm.declare_entry("sig_x",
-                        "0.125",
-                        dealii::Patterns::Double(),
+      prm.add_parameter("sig_x",
+                        sig_x,
                         "The width of the source in configuration space.");
-      prm.leave_subsection();
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -138,19 +114,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      u_sh              = prm.get_double("u_sh");
-      B0                = prm.get_double("B0");
-      compression_ratio = prm.get_double("compression ratio");
-      shock_width       = prm.get_double("shock width");
-      nu0               = prm.get_double("nu0");
-
-      prm.enter_subsection("Source");
-      p_inj = prm.get_double("p_inj");
-      x_inj = prm.get_double("x_inj");
-      sig_x = prm.get_double("sig_x");
-      sig_p = prm.get_double("sig_p");
-      Q     = prm.get_double("Q");
-      prm.leave_subsection();
+      // Parameters are automatically parsed by add_parameter()
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -163,17 +127,18 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    static constexpr unsigned int dimension = 2;
+    constexpr unsigned int dimension = 2;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    static constexpr VFPFlags vfp_flags =
-      VFPFlags::spatial_advection | VFPFlags::momentum | VFPFlags::collision |
-      VFPFlags::rotation | VFPFlags::source |
-      VFPFlags::time_independent_fields | VFPFlags::time_independent_source;
+    constexpr VFPFlags vfp_flags =
+      VFPFlags::time_evolution | VFPFlags::spatial_advection |
+      VFPFlags::momentum | VFPFlags::collision | VFPFlags::rotation |
+      VFPFlags::source | VFPFlags::time_independent_fields |
+      VFPFlags::time_independent_source;
     /** [VFP Flags] */
 
 
@@ -217,6 +182,47 @@ namespace sapphirepp
 
 
     template <unsigned int dim>
+    class BoundaryValueFunction : public dealii::Function<dim>
+    {
+    public:
+      BoundaryValueFunction(const PhysicalParameters &physical_parameters,
+                            const unsigned int        system_size)
+        : dealii::Function<dim>(system_size)
+        , prm{physical_parameters}
+        , lms_indices{PDESystem::create_lms_indices(system_size)}
+      {}
+
+
+
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
+
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+          {
+            /** [Boundary value] */
+            // No inflow boundary
+            /** [Boundary value] */
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters                       prm;
+      const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
+    template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
@@ -234,15 +240,13 @@ namespace sapphirepp
       {
         AssertDimension(scattering_frequencies.size(), points.size());
         static_cast<void>(component); // suppress compiler warning
-
+        /** [Scattering frequency] */
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
-            /** [Scattering frequency] */
             // Constant scattering frequency
-            scattering_frequencies[q_index] =
-              prm.nu0 * std::exp(1. / 3. * points[q_index][1]);
-            /** [Scattering frequency] */
+            scattering_frequencies[q_index] = prm.nu0;
           }
+        /** [Scattering frequency] */
       }
 
 
@@ -429,13 +433,12 @@ namespace sapphirepp
 
 
       void
-      jacobian_list(
-        const std::vector<dealii::Point<dim>>            &points,
-        std::vector<std::vector<dealii::Vector<double>>> &jacobians) const
+      jacobian_list(const std::vector<dealii::Point<dim>>   &points,
+                    std::vector<dealii::FullMatrix<double>> &jacobians) const
       {
         AssertDimension(jacobians.size(), points.size());
-        AssertDimension(jacobians[0].size(), this->n_components);
-        AssertDimension(jacobians[0][0].size(), this->n_components);
+        AssertDimension(jacobians[0].m(), this->n_components);
+        AssertDimension(jacobians[0].n(), this->n_components);
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {

@@ -68,9 +68,11 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 #include "particle-functions.h"
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 #include "sapphirepp-logstream.h"
+#include "vfp-flags.h"
 
 
 
@@ -197,8 +199,9 @@ namespace sapphirepp
       };
     } // namespace VFPSolver
   } // namespace sapinternal
+  /** @endcond */
 } // namespace sapphirepp
-/** @endcond */
+
 
 
 template <unsigned int dim>
@@ -218,7 +221,11 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
-  , ps_reconstruction(vfp_parameters, output_parameters, pde_system.lms_indices)
+  , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
+  , scaling_spectral_index{3.}
+  , reflective_bc_signature{{std::vector<double>(pde_system.system_size),
+                             std::vector<double>(pde_system.system_size),
+                             std::vector<double>(pde_system.system_size)}}
   , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
@@ -226,6 +233,26 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   LogStream::Prefix p2("Constructor", saplog);
   saplog << vfp_flags << std::endl;
   saplog << "dim_ps=" << dim_ps << ", dim_cs=" << dim_cs << std::endl;
+  if constexpr ((vfp_flags & VFPFlags::scaled_distribution_function) !=
+                VFPFlags::none)
+    saplog << "Scaling spectral index s: " << scaling_spectral_index
+           << std::endl;
+
+  // Compute sign changes of expansion coefficients for reflecting boundaries
+  std::vector<std::array<unsigned int, 3>> lms_indices =
+    pde_system.create_lms_indices(pde_system.system_size);
+
+  for (unsigned int i = 0; i < pde_system.system_size; ++i)
+    {
+      // lower/upper x (y-z plane)
+      reflective_bc_signature[0][i] =
+        ((lms_indices[i][0] - lms_indices[i][1]) % 2 == 0 ? 1 : -1);
+      // lower/upper y (x-z plane)
+      reflective_bc_signature[1][i] =
+        ((lms_indices[i][1] + lms_indices[i][2]) % 2 == 0 ? 1 : -1);
+      // lower/upper z (x-y plane)
+      reflective_bc_signature[2][i] = lms_indices[i][2] % 2 == 0 ? 1 : -1;
+    }
 
   // Consistency checks for vfp_flags:
   AssertThrow(
@@ -275,24 +302,30 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   setup_system();
 
   {
-    TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
-    saplog << "Assemble mass matrix." << std::endl;
-    MatrixCreator::create_mass_matrix(mapping,
-                                      dof_handler,
-                                      quadrature,
-                                      mass_matrix);
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
+        saplog << "Assemble mass matrix." << std::endl;
+        MatrixCreator::create_mass_matrix(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          mass_matrix);
+      }
   }
 
   {
-    TimerOutput::Scope timer_section(timer, "Project initial condition");
-    InitialValueFunction<dim_ps> initial_value_function(physical_parameters,
-                                                        pde_system.system_size);
-    PETScWrappers::MPI::Vector   initial_condition(locally_owned_dofs,
-                                                 mpi_communicator);
-    project(initial_value_function, initial_condition);
-    // Here a non ghosted vector, is copied into a ghosted vector. I think
-    // that is the moment where the ghost cells are filled.
-    locally_relevant_current_solution = initial_condition;
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "Project initial condition");
+        InitialValueFunction<dim_ps> initial_value_function(
+          physical_parameters, pde_system.system_size);
+        PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
+                                                     mpi_communicator);
+        project(initial_value_function, initial_condition);
+        // Here a non ghosted vector, is copied into a ghosted vector. I think
+        // that is the moment where the ghost cells are filled.
+        locally_relevant_current_solution = initial_condition;
+      }
   }
 
   // Assemble the dg matrix for t = 0
@@ -319,51 +352,58 @@ sapphirepp::VFP::VFPSolver<dim>::run()
 {
   setup();
   LogStream::Prefix p("VFP", saplog);
-
-  DiscreteTime discrete_time(0,
-                             vfp_parameters.final_time,
-                             vfp_parameters.time_step);
-  for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+  if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
-      saplog << "Time step " << std::setw(6) << std::right
-             << discrete_time.get_step_number()
-             << " at t = " << discrete_time.get_current_time() << " \t["
+      steady_state_solve();
+      output_results(0, 0);
+      saplog << "Simulation ended. " << " \t\t["
              << Utilities::System::get_time() << "]" << std::endl;
-
-      if ((discrete_time.get_step_number() %
-           output_parameters.output_frequency) == 0)
-        output_results(discrete_time.get_step_number(),
-                       discrete_time.get_current_time());
-
-      switch (vfp_parameters.time_stepping_method)
-        {
-          case TimeSteppingMethod::forward_euler:
-          case TimeSteppingMethod::backward_euler:
-          case TimeSteppingMethod::crank_nicolson:
-            theta_method(discrete_time.get_current_time(),
-                         discrete_time.get_next_step_size());
-            break;
-          case TimeSteppingMethod::erk4:
-            explicit_runge_kutta(discrete_time.get_current_time(),
-                                 discrete_time.get_next_step_size());
-            break;
-          case TimeSteppingMethod::lserk:
-            low_storage_explicit_runge_kutta(
-              discrete_time.get_current_time(),
-              discrete_time.get_next_step_size());
-            break;
-          default:
-            AssertThrow(false, ExcNotImplemented());
-        }
     }
+  else
+    {
+      DiscreteTime discrete_time(0,
+                                 vfp_parameters.final_time,
+                                 vfp_parameters.time_step);
+      for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+        {
+          saplog << "Time step " << std::setw(6) << std::right
+                 << discrete_time.get_step_number()
+                 << " at t = " << discrete_time.get_current_time() << " \t["
+                 << Utilities::System::get_time() << "]" << std::endl;
 
-  // Output at the final result
-  output_results(discrete_time.get_step_number(),
-                 discrete_time.get_current_time());
+          if ((discrete_time.get_step_number() %
+               output_parameters.output_frequency) == 0)
+            output_results(discrete_time.get_step_number(),
+                           discrete_time.get_current_time());
 
-  saplog << "Simulation ended at t = " << discrete_time.get_current_time()
-         << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+          switch (vfp_parameters.time_stepping_method)
+            {
+              case TimeSteppingMethod::forward_euler:
+              case TimeSteppingMethod::backward_euler:
+              case TimeSteppingMethod::crank_nicolson:
+                theta_method(discrete_time.get_current_time(),
+                             discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::erk4:
+                explicit_runge_kutta(discrete_time.get_current_time(),
+                                     discrete_time.get_next_step_size());
+                break;
+              case TimeSteppingMethod::lserk4:
+                low_storage_explicit_runge_kutta(
+                  discrete_time.get_current_time(),
+                  discrete_time.get_next_step_size());
+                break;
+              default:
+                AssertThrow(false, ExcNotImplemented());
+            }
+        }
+      // Output at the final result
+      output_results(discrete_time.get_step_number(),
+                     discrete_time.get_current_time());
 
+      saplog << "Simulation ended at t = " << discrete_time.get_current_time()
+             << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+    }
   timer.print_wall_time_statistics(mpi_communicator);
 }
 
@@ -584,6 +624,8 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
 
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     locally_owned_current_source.reinit(locally_owned_dofs, mpi_communicator);
+  // TODO: add if to check if there are non-homogeneous bc
+  locally_owned_current_bc.reinit(locally_owned_dofs, mpi_communicator);
 
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   // NON-PERIODIC
@@ -604,16 +646,21 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
   // NOTE: DealII does not allow to use different sparsity patterns for
   // matrices, which you would like to add. Even though the the mass matrix
   // differs from the dg matrix.
-  mass_matrix.reinit(locally_owned_dofs,
-                     locally_owned_dofs,
-                     dsp,
-                     mpi_communicator);
-  system_matrix.reinit(locally_owned_dofs,
-                       locally_owned_dofs,
-                       dsp,
-                       mpi_communicator);
 
-  ps_reconstruction.reinit(triangulation, mapping);
+  // For the steady state solver it is not necessary to allocate memory for the
+  // mass_matrix and the system_matrix.
+  if constexpr ((vfp_flags & VFPFlags::time_evolution) != VFPFlags::none)
+    {
+      mass_matrix.reinit(locally_owned_dofs,
+                         locally_owned_dofs,
+                         dsp,
+                         mpi_communicator);
+      system_matrix.reinit(locally_owned_dofs,
+                           locally_owned_dofs,
+                           dsp,
+                           mpi_communicator);
+    }
+  probe_location.reinit(triangulation, mapping);
 }
 
 
@@ -686,6 +733,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   ScatteringFrequency<dim_ps> scattering_frequency(physical_parameters);
   scattering_frequency.set_time(time);
 
+  BoundaryValueFunction<dim_ps> bc_value_function(physical_parameters,
+                                                  pde_system.system_size);
+  bc_value_function.set_time(time);
+
   ParticleVelocity<dim_ps, logarithmic_p> particle_velocity(
     vfp_parameters.mass);
   ParticleGamma<dim_ps, logarithmic_p> particle_gamma(vfp_parameters.mass);
@@ -715,8 +766,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                         Vector<double>(3));
     background_velocity_field.material_derivative_list(q_points,
                                                        material_derivative_vel);
-    std::vector<std::vector<Vector<double>>> jacobians_vel(
-      q_points.size(), std::vector<Vector<double>>(3, Vector<double>(3)));
+
+    std::vector<FullMatrix<double>> jacobians_vel(q_points.size(),
+                                                  FullMatrix<double>(3));
     background_velocity_field.jacobian_list(q_points, jacobians_vel);
 
     // Magnetic field
@@ -878,6 +930,23 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               adv_x_gen_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                // \phi scaling_spectral_index 1/v * du^k/dt *
+                                // A_k * \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  scaling_spectral_index *
+                                  fe_v.shape_value(i, q_index) /
+                                  particle_velocities[q_index] *
+                                  material_derivative_vel[q_index][coordinate] *
+                                  advection_matrices[coordinate](component_i,
+                                                                 component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                              ++coordinate_1)
@@ -902,6 +971,29 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                                 else
                                   {
@@ -937,6 +1029,49 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // component_1, component_2
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        // component_2, component_1
+                                        // \phi * scaling_spectral_index
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_2]
+                                                       [coordinate_1] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                               }
                           }
@@ -991,6 +1126,23 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               adv_x_gen_matrices[coordinate](component_i,
                                                              component_j) *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                // \phi scaling_spectral_index 1/v * du^k/dt *
+                                // A_k * \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  scaling_spectral_index *
+                                  fe_v.shape_value(i, q_index) /
+                                  particle_velocities[q_index] *
+                                  material_derivative_vel[q_index][coordinate] *
+                                  advection_matrices[coordinate](component_i,
+                                                                 component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
                              ++coordinate_1)
@@ -1031,6 +1183,30 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                                 else
                                   {
@@ -1100,6 +1276,48 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                        component_j) *
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // component_1, component_2
+                                        // \phi * scaling_spectral_index *
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_1]
+                                                       [coordinate_2] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        // component_2, component_1
+                                        // \phi * scaling_spectral_index
+                                        // \jacobian[coordinate_1][coordinate_2]
+                                        // Ap_coordinate_1,coordinate_2 * \phi
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          scaling_spectral_index *
+                                          jacobians_vel[q_index][coordinate_2]
+                                                       [coordinate_1] *
+                                          adv_mat_products
+                                            [3 * coordinate_1 -
+                                             coordinate_1 * (coordinate_1 + 1) /
+                                               2 +
+                                             coordinate_2](component_i,
+                                                           component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
                                   }
                               }
                           }
@@ -1144,6 +1362,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     const unsigned int       boundary_id = cell->face(face_no)->boundary_id();
     const BoundaryConditions boundary_condition =
       vfp_parameters.boundary_conditions[boundary_id];
+    const unsigned int boundary_coordinate = boundary_id / 2;
 
     const std::vector<Point<dim_ps>> &q_points =
       fe_face_v.get_quadrature_points();
@@ -1161,6 +1380,11 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                       normals,
                                       positive_flux_matrices,
                                       negative_flux_matrices);
+
+    std::vector<Vector<double>> bc_values(
+      q_points.size(), Vector<double>(pde_system.system_size));
+    bc_value_function.bc_vector_value_list(q_points, boundary_id, bc_values);
+
     for (unsigned int q_index : fe_face_v.quadrature_point_indices())
       {
         for (unsigned int i = 0; i < n_facet_dofs; ++i)
@@ -1201,11 +1425,45 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           fe_face_v.shape_value(j, q_index) * JxW[q_index];
                         break;
                       }
+                    case BoundaryConditions::reflective:
+                      {
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          positive_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          negative_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          reflective_bc_signature[boundary_coordinate]
+                                                 [component_j] *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        break;
+                      }
+                    case BoundaryConditions::inflow:
+                      {
+                        copy_data.cell_matrix(i, j) +=
+                          fe_face_v.shape_value(i, q_index) *
+                          positive_flux_matrices[q_index](component_i,
+                                                          component_j) *
+                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        break;
+                      }
                     case BoundaryConditions::periodic:
                       break;
                     default:
                       Assert(false, ExcNotImplemented());
                   }
+              }
+            // Inflow boundary conditions result in a right-hand side
+            if (boundary_condition == BoundaryConditions::inflow)
+              {
+                for (unsigned int k = 0; k < pde_system.system_size; ++k)
+                  copy_data.cell_rhs(i) -=
+                    fe_face_v.shape_value(i, q_index) *
+                    negative_flux_matrices[q_index](component_i, k) *
+                    bc_values[q_index][k] * JxW[q_index];
               }
           }
       }
@@ -1341,8 +1599,10 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   // copier for the mesh_loop function
   const auto copier = [&](const CopyData &c) {
     constraints.distribute_local_to_global(c.cell_matrix,
+                                           c.cell_rhs,
                                            c.local_dof_indices,
-                                           dg_matrix);
+                                           dg_matrix,
+                                           locally_owned_current_bc);
     for (auto &cdf : c.face_data)
       {
         for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
@@ -1381,7 +1641,40 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                         boundary_worker,
                         face_worker);
   dg_matrix.compress(VectorOperation::add);
+  locally_owned_current_bc.compress(VectorOperation::add);
   saplog << "The DG matrix was assembled." << std::endl;
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
+{
+  TimerOutput::Scope timer_section(timer, "Steady state solve");
+  LogStream::Prefix  p("steady_state", saplog);
+
+  SolverControl              solver_control(5000);
+  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+
+  PETScWrappers::PreconditionBlockJacobi preconditioner;
+  preconditioner.initialize(dg_matrix);
+  // Right-hand side is determined by the source and the non-homogeneous
+  // boundary condition
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    system_rhs.add(1., locally_owned_current_source);
+  // TODO: add check if non-homogeneous bc is set
+  system_rhs.add(1., locally_owned_current_bc);
+  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver.solve(dg_matrix,
+               locally_owned_previous_solution,
+               system_rhs,
+               preconditioner);
+
+  locally_relevant_current_solution = locally_owned_previous_solution;
+
+  saplog << "Solver converged in " << solver_control.last_step()
+         << " iterations." << std::endl;
 }
 
 
@@ -1428,6 +1721,10 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
           system_rhs.add(time_step, locally_owned_current_source);
         }
     }
+  // Boundary term at current time step
+  system_rhs.add((1 - theta) * time_step, locally_owned_current_bc);
+
+  // Update DG matrix
   // Since the the dg_matrix depends on the velocity field (and/or the
   // magnetic field) and the velocity field may depend on time, it needs to
   // reassembled every time step. This is not true for the mass matrix ( but
@@ -1435,14 +1732,19 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      // the non-homogeneous boundary term is updated and, thus, must be nulled
+      locally_owned_current_bc = 0;
+      dg_matrix                = 0;
       assemble_dg_matrix(time + time_step);
     }
+
+  // Boundary term at next time step
+  system_rhs.add(theta * time_step, locally_owned_current_bc);
 
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
 
-  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  SolverControl              solver_control(1000, 1e-8 * system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
@@ -1511,7 +1813,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
     {
       system_rhs.add(-1., locally_owned_current_source);
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  system_rhs.add(-1., locally_owned_current_bc);
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
   saplog << "Stage s: " << 0 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1525,7 +1828,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      dg_matrix                = 0;
+      locally_owned_current_bc = 0;
       assemble_dg_matrix(time + c[1] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[0] * time_step, k_0);
@@ -1550,7 +1854,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  system_rhs.add(-1., locally_owned_current_bc);
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
   saplog << "	Stage s: " << 1 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1584,7 +1889,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  system_rhs.add(-1., locally_owned_current_bc);
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
   saplog << "	Stage s: " << 2 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1599,7 +1905,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                 VFPFlags::none) // time dependent fields
     {
-      dg_matrix = 0;
+      dg_matrix                = 0;
+      locally_owned_current_bc = 0;
       assemble_dg_matrix(time + c[3] * time_step);
     }
   temp.add(1., locally_owned_previous_solution, a[2] * time_step, k_2);
@@ -1624,7 +1931,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
           system_rhs.add(-1., locally_owned_current_source);
         }
     }
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  system_rhs.add(-1., locally_owned_current_bc);
+  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
   saplog << "	Stage s: " << 3 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1643,8 +1951,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "LSERK");
-  LogStream::Prefix  p("LSERK", saplog);
+  TimerOutput::Scope timer_section(timer, "LSERK4");
+  LogStream::Prefix  p("LSERK4", saplog);
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
   Vector<double> a({0.,
@@ -1657,8 +1965,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
                     1720146321549. / 2090206949498,
                     3134564353537. / 4481467310338,
                     2277821191437. / 14882151754819});
-  // NOTE: I only need c if the velocity field and the magnetic field are
-  // time dependent
+  // NOTE: I only need c if the velocity field, the magnetic field or the
+  // non-homogeneous boundary are time dependent
   Vector<double> c({0.,
                     1432997174477. / 9575080441755,
                     2526269341429. / 6820363962896,
@@ -1692,9 +2000,15 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
         assemble_dg_matrix(time + c[s] * time_step);
 
       dg_matrix.vmult(system_rhs, locally_owned_previous_solution);
+      // non-homogeneous boundary
+      system_rhs.add(-1., locally_owned_current_bc);
+
       if constexpr ((vfp_flags & VFPFlags::time_independent_fields) ==
                     VFPFlags::none) // time dependent fields
-        dg_matrix = 0;
+        {
+          dg_matrix                = 0;
+          locally_owned_current_bc = 0;
+        }
 
       if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
         {
@@ -1717,7 +2031,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
             }
         }
 
-      solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+      solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
       cg.solve(mass_matrix, temp, system_rhs, preconditioner);
       saplog << "	Stage s: " << s << "	Solver converged in "
              << solver_control.last_step() << " iterations." << std::endl;
@@ -1742,9 +2056,13 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   TimerOutput::Scope timer_section(timer, "Output");
   DataOut<dim_ps>    data_out;
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(locally_relevant_current_solution,
-                           PDESystem::create_component_name_list(
-                             pde_system.system_size));
+  data_out.add_data_vector(
+    locally_relevant_current_solution,
+    PDESystem::create_component_name_list(
+      pde_system.system_size,
+      ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
+        "g_" :
+        "f_"));
 
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());
@@ -1756,11 +2074,15 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   data_out.build_patches(vfp_parameters.polynomial_degree);
   output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
 
-  ps_reconstruction.reconstruct_all_points(dof_handler,
-                                           mapping,
-                                           locally_relevant_current_solution,
-                                           time_step_number,
-                                           cur_time);
+  probe_location.probe_all_points(
+    dof_handler,
+    mapping,
+    locally_relevant_current_solution,
+    time_step_number,
+    cur_time,
+    ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
+      "g" :
+      "f");
 }
 
 

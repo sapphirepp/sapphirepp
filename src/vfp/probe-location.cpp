@@ -20,13 +20,13 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file phase-space-reconstruction.cpp
+ * @file probe-location.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de),
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement @ref sapphirepp::VFP::PhaseSpaceReconstruction
+ * @brief Implement @ref sapphirepp::VFP::ProbeLocation
  */
 
-#include "phase-space-reconstruction.h"
+#include "probe-location.h"
 
 #include <deal.II/base/array_view.h>
 #include <deal.II/base/mpi_remote_point_evaluation.h>
@@ -49,37 +49,40 @@
 
 
 template <unsigned int dim>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
+sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   const VFPParameters<dim>                       &vfp_parameters,
   const Utils::OutputParameters                  &output_parameters,
   const std::vector<std::array<unsigned int, 3>> &lms_indices)
   : output_parameters{output_parameters}
   , lms_indices{lms_indices}
   , system_size{static_cast<unsigned int>(lms_indices.size())}
+  , perform_probe_location{vfp_parameters.perform_probe_location}
   , perform_phase_space_reconstruction{vfp_parameters
                                          .perform_phase_space_reconstruction}
-  , theta_values{Utils::Tools::create_linear_range(0,
-                                                   M_PI,
-                                                   vfp_parameters.n_theta)}
+  , cos_theta_values{Utils::Tools::create_linear_range(
+      -1.,
+      1.,
+      vfp_parameters.n_cos_theta)}
   , phi_values{Utils::Tools::create_linear_range(0,
                                                  2 * M_PI,
                                                  vfp_parameters.n_phi)}
-  , real_spherical_harmonics{compute_real_spherical_harmonics(theta_values,
+  , real_spherical_harmonics{compute_real_spherical_harmonics(cos_theta_values,
                                                               phi_values,
                                                               lms_indices)}
   , rpe_cache(1e-6, true)
 {
   LogStream::Prefix p0("VFP", saplog);
-  LogStream::Prefix p("PSRec", saplog);
+  LogStream::Prefix p("ProbeLocation", saplog);
   LogStream::Prefix p1("Constructor", saplog);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    reconstruction_points = vfp_parameters.reconstruction_points;
+    probe_location_points = vfp_parameters.probe_location_points;
 
-  if (reconstruction_points.size() > 0)
+  if (probe_location_points.size() > 0)
     {
-      saplog << "Phase space will be reconstructed at:" << std::endl;
-      for (const auto &point : reconstruction_points)
+      saplog << "Probe location will be performed at the following points:"
+             << std::endl;
+      for (const auto &point : probe_location_points)
         saplog << "  " << point << std::endl;
     }
 }
@@ -88,16 +91,16 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::PhaseSpaceReconstruction(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
+sapphirepp::VFP::ProbeLocation<dim>::reinit(
   const Triangulation<dim> &triangulation,
   const Mapping<dim>       &mapping)
 {
-  if (!perform_phase_space_reconstruction)
+  if (!perform_probe_location)
     return;
-  LogStream::Prefix p("PSRec", saplog);
-  saplog << "Reconstruction of phase space is set up" << std::endl;
+  LogStream::Prefix p("ProbeLocation", saplog);
+  saplog << "Setting up points for probe location" << std::endl;
 
-  rpe_cache.reinit(reconstruction_points, triangulation, mapping);
+  rpe_cache.reinit(probe_location_points, triangulation, mapping);
   AssertThrow(rpe_cache.all_points_found(),
               ExcMessage("Point for reconstruction is outside domain."));
   Assert(rpe_cache.is_map_unique(),
@@ -108,18 +111,19 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reinit(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
+sapphirepp::VFP::ProbeLocation<dim>::probe_all_points(
   const DoFHandler<dim>            &dof_handler,
   const Mapping<dim>               &mapping,
   const PETScWrappers::MPI::Vector &solution,
   const unsigned int                time_step_number,
-  const double                      cur_time) const
+  const double                      cur_time,
+  const std::string                &function_symbol) const
 {
-  if (!perform_phase_space_reconstruction)
+  if (!perform_probe_location)
     return;
-  LogStream::Prefix p("PSRec", saplog);
-  saplog << "Perform reconstruction of phase space" << std::endl;
-  LogStream::Prefix p2("Reconstruction", saplog);
+  LogStream::Prefix p("ProbeLocation", saplog);
+  saplog << "Probe points in reduced phase space" << std::endl;
+  LogStream::Prefix p2("Evaluate", saplog);
   Assert(rpe_cache.is_ready(), ExcMessage("rpe_cache is no initialized."));
 
   using CellData =
@@ -173,7 +177,7 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
   const std::vector<std::vector<double>> coefficients_at_all_points =
     rpe_cache.evaluate_and_process(evaluate_function);
   AssertDimension(coefficients_at_all_points.size(),
-                  reconstruction_points.size());
+                  probe_location_points.size());
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
@@ -181,17 +185,29 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
       unsigned int point_counter = 0;
       for (const auto &expansion_coefficients : coefficients_at_all_points)
         {
-          std::vector<double> f_values =
-            compute_phase_space_distribution(expansion_coefficients);
+          output_expansion_coefficients(expansion_coefficients,
+                                        point_counter,
+                                        time_step_number,
+                                        cur_time,
+                                        function_symbol);
 
-          output_gnu_splot_data(f_values,
-                                point_counter,
-                                time_step_number,
-                                cur_time);
-          output_gnu_splot_spherical_density_map(f_values,
-                                                 point_counter,
-                                                 time_step_number,
-                                                 cur_time);
+          if (perform_phase_space_reconstruction)
+            {
+              std::vector<double> f_values =
+                compute_phase_space_distribution(expansion_coefficients);
+
+              output_gnu_splot_data(f_values,
+                                    point_counter,
+                                    time_step_number,
+                                    cur_time,
+                                    function_symbol);
+              output_gnu_splot_spherical_density_map(f_values,
+                                                     point_counter,
+                                                     time_step_number,
+                                                     cur_time,
+                                                     function_symbol);
+            }
+
           ++point_counter;
         }
     }
@@ -201,16 +217,15 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::reconstruct_all_points(
 
 template <unsigned int dim>
 std::vector<double>
-sapphirepp::VFP::PhaseSpaceReconstruction<
-  dim>::compute_phase_space_distribution(const std::vector<double>
-                                           &expansion_coefficients) const
+sapphirepp::VFP::ProbeLocation<dim>::compute_phase_space_distribution(
+  const std::vector<double> &expansion_coefficients) const
 {
   AssertDimension(expansion_coefficients.size(), lms_indices.size());
 
-  std::vector<double> f(theta_values.size() * phi_values.size());
+  std::vector<double> f(cos_theta_values.size() * phi_values.size());
 
   for (unsigned int i = 0; i < lms_indices.size(); ++i)
-    for (unsigned int j = 0; j < theta_values.size(); ++j)
+    for (unsigned int j = 0; j < cos_theta_values.size(); ++j)
       for (unsigned int k = 0; k < phi_values.size(); ++k)
         f[j * phi_values.size() + k] +=
           expansion_coefficients[i] * real_spherical_harmonics(j, k, i);
@@ -222,13 +237,14 @@ sapphirepp::VFP::PhaseSpaceReconstruction<
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
-  const std::vector<double> &f_values,
+sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
+  const std::vector<double> &distribution_func_values,
   const unsigned int         point_index,
   const unsigned int         time_step_number,
-  const double               cur_time) const
+  const double               cur_time,
+  const std::string         &function_symbol) const
 {
-  AssertIndexRange(point_index, reconstruction_points.size());
+  AssertIndexRange(point_index, probe_location_points.size());
 
   const std::string filename =
     "surface_plot_distribution_function_point_" +
@@ -237,21 +253,23 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
                              output_parameters.n_digits_for_counter) +
     ".dat";
 
-  saplog << "Write reconstruction at (" << reconstruction_points[point_index]
+  saplog << "Write reconstruction at (" << probe_location_points[point_index]
          << ") to file " << filename << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename);
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
   data_file.precision(std::numeric_limits<double>::digits10);
 
-  data_file << "# f(t, x, p, theta, mu) at (x,|p|) = ("
-            << reconstruction_points[point_index] << ") for t = " << cur_time
+  data_file << "# " + function_symbol +
+                 "(t, x, p, cos theta, phi) at (x,|p|) = ("
+            << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
-  data_file << "# theta phi f(theta, phi) \n";
-  for (unsigned int i = 0; i < theta_values.size(); ++i)
+  data_file << "# cos(theta) phi " + function_symbol + "(cos(theta), phi) \n";
+  for (unsigned int i = 0; i < cos_theta_values.size(); ++i)
     {
       for (unsigned int j = 0; j < phi_values.size(); ++j)
-        data_file << theta_values[i] << " " << phi_values[j] << " "
-                  << f_values[i * theta_values.size() + j] << "\n";
+        data_file << cos_theta_values[i] << " " << phi_values[j] << " "
+                  << distribution_func_values[i * cos_theta_values.size() + j]
+                  << "\n";
       // Gnu plot data format requires the addition of an extra new line when
       // the x-coordinate changes. See
       // https://stackoverflow.com/questions/62729982/how-to-plot-a-3d-gnuplot-splot-surface-graph-with-data-from-a-file
@@ -263,13 +281,14 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::output_gnu_splot_data(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  output_gnu_splot_spherical_density_map(const std::vector<double> &f_values,
-                                         const unsigned int         point_index,
-                                         const unsigned int time_step_number,
-                                         const double       cur_time) const
+sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_spherical_density_map(
+  const std::vector<double> &distribution_func_values,
+  const unsigned int         point_index,
+  const unsigned int         time_step_number,
+  const double               cur_time,
+  const std::string         &function_symbol) const
 {
-  AssertIndexRange(point_index, reconstruction_points.size());
+  AssertIndexRange(point_index, probe_location_points.size());
 
   const std::string filename =
     "spherical_density_map_point_" + Utilities::int_to_string(point_index, 2) +
@@ -278,42 +297,97 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
                              output_parameters.n_digits_for_counter) +
     ".dat";
 
-  saplog << "Write reconstruction at (" << reconstruction_points[point_index]
+  saplog << "Write reconstruction at (" << probe_location_points[point_index]
          << ") to file " << filename << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename);
   data_file.precision(std::numeric_limits<double>::digits10);
 
-  data_file << "# f(t, x, p) at (x,|p|) = ("
-            << reconstruction_points[point_index] << ") for t = " << cur_time
+  data_file << "# " + function_symbol + "(t, x, p) at (x,|p|) = ("
+            << probe_location_points[point_index] << ") for t = " << cur_time
             << "\n";
-  data_file << "# n_{p_x} n_{p_y} n_{p_z} f(p_x, p_z, p_y) \n";
-  for (unsigned int i = 0; i < theta_values.size(); ++i)
+  data_file << "# n_{p_x} n_{p_y} n_{p_z} " + function_symbol +
+                 "(p_x, p_z, p_y) \n";
+  for (unsigned int i = 0; i < cos_theta_values.size(); ++i)
     {
       for (unsigned int j = 0; j < phi_values.size(); ++j)
         {
-          const double x = std::cos(theta_values[i]);
-          const double y = std::sin(theta_values[i]) * std::cos(phi_values[j]);
-          const double z = std::sin(theta_values[i]) * std::sin(phi_values[j]);
+          const double x = cos_theta_values[i];
+          const double y =
+            std::sqrt(1 - cos_theta_values[i] * cos_theta_values[i]) *
+            std::cos(phi_values[j]);
+          const double z =
+            std::sqrt(1 - cos_theta_values[i] * cos_theta_values[i]) *
+            std::sin(phi_values[j]);
           data_file << x << " " << y << " " << z << " "
-                    << f_values[i * phi_values.size() + j] << "\n";
+                    << distribution_func_values[i * phi_values.size() + j]
+                    << "\n";
         }
       data_file << std::endl;
     }
+}
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::ProbeLocation<dim>::output_expansion_coefficients(
+  const std::vector<double> &expansion_coefficients,
+  const unsigned int         point_index,
+  const unsigned int         time_step_number,
+  const double               cur_time,
+  const std::string         &function_symbol) const
+{
+  AssertIndexRange(point_index, probe_location_points.size());
+
+  const std::string filename = function_symbol + "_lms_values_at_point_" +
+                               Utilities::int_to_string(point_index, 2) +
+                               ".dat";
+
+  saplog << "Write values of expansion coefficients at point ("
+         << probe_location_points[point_index] << ") to file " << filename
+         << std::endl;
+  std::ofstream data_file(output_parameters.output_path / filename,
+                          time_step_number == 0 ? std::ios_base::out :
+                                                  std::ios_base::app);
+
+  // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
+  data_file.precision(std::numeric_limits<double>::digits10);
+
+  if (time_step_number == 0)
+    {
+      data_file << "# " + function_symbol + "_lms (t, x, p ) at (x,|p|) = ("
+                << probe_location_points[point_index] << ")"
+                << "\n";
+      data_file << "# time_step_number cur_time ";
+      for (auto &lms : lms_indices)
+        data_file << function_symbol << "_" << lms[0] << lms[1] << lms[2]
+                  << " ";
+      data_file << "\n";
+    }
+  data_file << time_step_number << " " << cur_time << " ";
+  for (auto coefficient : expansion_coefficients)
+    data_file << coefficient << " ";
+
+  data_file << std::endl;
 }
 
 
 
 template <unsigned int dim>
 dealii::Table<3, double>
-sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
-  compute_real_spherical_harmonics(
-    const std::vector<double>                      &theta_values,
-    const std::vector<double>                      &phi_values,
-    const std::vector<std::array<unsigned int, 3>> &lms_indices)
+sapphirepp::VFP::ProbeLocation<dim>::compute_real_spherical_harmonics(
+  const std::vector<double>                      &cos_theta_values,
+  const std::vector<double>                      &phi_values,
+  const std::vector<std::array<unsigned int, 3>> &lms_indices)
 {
-  dealii::Table<3, double> y_lms(theta_values.size(),
+  dealii::Table<3, double> y_lms(cos_theta_values.size(),
                                  phi_values.size(),
                                  lms_indices.size());
+
+  std::vector<double> theta_values(cos_theta_values.size());
+  std::transform(cos_theta_values.begin(),
+                 cos_theta_values.end(),
+                 theta_values.begin(),
+                 static_cast<double (*)(double)>(std::acos));
+  // [](double cos_theta) { return std::acos(cos_theta); });
 
   for (unsigned int i = 0; i < lms_indices.size(); ++i)
     {
@@ -353,9 +427,42 @@ sapphirepp::VFP::PhaseSpaceReconstruction<dim>::
   return y_lms;
 }
 
+template <unsigned int dim>
+void
+sapphirepp::VFP::ProbeLocation<dim>::test_phase_space_reconstruction()
+{
+  // Each spherical harmonic can be represented with expansion coefficients of
+  // the form (0., ..., 1., ...). For example, (1., 0, 0, ...) belongs to Y_000
+  std::vector<std::vector<double>> spherical_harmonics(
+    system_size, std::vector<double>(system_size));
 
+  // Resizing probe_location_points is necessary to avoid the AssertThrow at the
+  // beginning of output_gnu_splot_data
+  probe_location_points.resize(system_size);
+
+  unsigned int spherical_harmonic_counter = 0;
+  for (auto &spherical_harmonic : spherical_harmonics)
+    {
+      spherical_harmonic[spherical_harmonic_counter] = 1.;
+
+      std::vector<double> f_values =
+        compute_phase_space_distribution(spherical_harmonic);
+
+      output_gnu_splot_data(f_values, spherical_harmonic_counter, 0, 0);
+      output_gnu_splot_spherical_density_map(f_values,
+                                             spherical_harmonic_counter,
+                                             0,
+                                             0);
+
+      ++spherical_harmonic_counter;
+    }
+  // Interrupt the execution of the program after the test has been performed to
+  // avoid overwriting the output files.
+  throw std::runtime_error(
+    "Sapphire++ has been interrupted, after the phase space reconstruction test has been performed.");
+}
 
 // Explicit instantiation
-template class sapphirepp::VFP::PhaseSpaceReconstruction<1>;
-template class sapphirepp::VFP::PhaseSpaceReconstruction<2>;
-template class sapphirepp::VFP::PhaseSpaceReconstruction<3>;
+template class sapphirepp::VFP::ProbeLocation<1>;
+template class sapphirepp::VFP::ProbeLocation<2>;
+template class sapphirepp::VFP::ProbeLocation<3>;
