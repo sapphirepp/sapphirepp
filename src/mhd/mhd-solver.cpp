@@ -670,83 +670,67 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     const unsigned int cell_index           = cell->active_cell_index();
     double             cell_shock_indicator = 0.;
 
-    // saplog << "Indicator in cell " << cell_index << " on face " << face_no
-    //        << std::endl;
 
-
-    // Only integrate over inflow cell boundaries.
-    // We use face by face discrimination using the cell_average flow and an
-    // abitany face normal
+    // Only integrate over inflow faces - return for outflow faces
+    // We use the cell average momentum to discriminate between in/outflow
     /**
      * @todo Should we use the MHD flux instead of momentum to discriminate
      *       outflow faces? For the energy component, there is an additional
      *       contribution pointing in direction of the B-field.
+     *
+     * @todo The definition of a inflow face is not clear to me
+     *       in case of a derived quantity (like pressure).
      */
     Tensor<1, dim> momentum;
     for (unsigned int d = 0; d < dim; ++d)
       momentum[d] = cell_average[cell_index][first_momentum_component + d];
-    // Return in case of outflow face
     if (momentum * fe_v_face.normal_vector(0) >= 0)
-      {
-        // saplog << "Outflow face" << std::endl;
-        return;
-      }
-    // Continue on inflow faces
-    // saplog << "Inflow face" << std::endl;
+      return; // outflow face
 
 
     FEFaceValues<dim> &fe_v_face_neighbor =
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
-    // Use Extractor for indicator variable y, e.g.energy or density
-    const FEValuesExtractors::Scalar variable(energy_component);
-    const unsigned int               n_q_points = fe_v_face.n_quadrature_points;
-    const std::vector<double>       &JxW        = fe_v_face.get_JxW_values();
-    double                           face_norm  = 0.;
-    std::vector<double>              face_values(n_q_points);
-    std::vector<double>              face_values_neighbor(n_q_points);
+    // Initialise state
+    const unsigned int          n_q_points = fe_v_face.n_quadrature_points;
+    const std::vector<double>  &JxW        = fe_v_face.get_JxW_values();
+    double                      face_norm  = 0.;
+    std::vector<Vector<double>> states(n_q_points,
+                                       Vector<double>(n_components));
+    std::vector<Vector<double>> states_neighbor(n_q_points,
+                                                Vector<double>(n_components));
 
 
-    fe_v_face[variable].get_function_values(locally_relevant_current_solution,
-                                            face_values);
-    fe_v_face_neighbor[variable].get_function_values(
-      locally_relevant_current_solution, face_values_neighbor);
-
-    // saplog << "Values face:";
-    // for (const auto &tmp : face_values)
-    //   saplog << " " << tmp;
-    // saplog << std::endl;
-    // saplog << "Values neighbor:";
-    // for (const auto &tmp : face_values_neighbor)
-    //   saplog << " " << tmp;
-    // saplog << std::endl;
-
+    // Compute states
+    fe_v_face.get_function_values(locally_relevant_current_solution, states);
+    fe_v_face_neighbor.get_function_values(locally_relevant_current_solution,
+                                           states_neighbor);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
+        // Use pressure as indicator variable y
+        const double indicator =
+          mhd_equations.compute_pressure(states[q_index]);
+        const double indicator_neighbor =
+          mhd_equations.compute_pressure(states_neighbor[q_index]);
+
         // (y_j - y_nb)
-        cell_shock_indicator +=
-          (face_values[q_index] - face_values_neighbor[q_index]) * JxW[q_index];
+        cell_shock_indicator += (indicator - indicator_neighbor) * JxW[q_index];
         face_norm += JxW[q_index];
       }
-    // saplog << "indicator value: " << cell_shock_indicator << std::endl;
 
 
     // Normalize the indicator variable
     const double dx     = cell->minimum_vertex_distance();
     const double degree = fe_v_face.get_fe().tensor_degree();
-    // saplog << "degree=" << degree << ", dx=" << dx << std::endl;
     const double cell_norm =
-      std::fabs(cell_average[cell_index][energy_component]);
+      std::fabs(mhd_equations.compute_pressure(cell_average[cell_index]));
     const double normalization =
       std::pow(dx, 0.5 * (degree + 1)) * face_norm * cell_norm;
 
     cell_shock_indicator = std::fabs(cell_shock_indicator) / normalization;
-    // saplog << "indicator value: " << cell_shock_indicator << std::endl;
     shock_indicator[cell_index] += cell_shock_indicator;
-    // saplog << "shock indicator: " << shock_indicator[cell_index] <<
-    // std::endl;
   };
 
   /** @todo Use valid or empty copier? */
