@@ -41,6 +41,7 @@
 #include <iostream>
 
 #include "mhd-parameters.h"
+#include "mhd-postprocessor.h"
 #include "mhd-solver.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
@@ -102,6 +103,16 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
       /** [Setup analytic solution] */
 
 
+      /** [Setup postprocessor] */
+      MHDPostprocessor<dim, divergence_cleaning> mhd_postprocessor_numeric(
+        mhd_solver.get_mhd_equations(), "numeric_");
+      MHDPostprocessor<dim, divergence_cleaning> mhd_postprocessor_project(
+        mhd_solver.get_mhd_equations(), "project_");
+      MHDPostprocessor<dim, divergence_cleaning> mhd_postprocessor_interpol(
+        mhd_solver.get_mhd_equations(), "interpol_");
+      /** [Setup postprocessor] */
+
+
       /** [Time loop] */
       DiscreteTime discrete_time(0,
                                  mhd_parameters.final_time,
@@ -135,6 +146,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                 dealii::DataOut<dim>::type_dof_data,
                 MHDEquations<dim, divergence_cleaning>::
                   create_component_interpretation_list());
+              data_out.add_data_vector(mhd_solver.get_current_solution(),
+                                       mhd_postprocessor_numeric);
 
               // Output projected analytic solution
               mhd_solver.project(exact_solution, analytic_solution_vector);
@@ -145,6 +158,9 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                 dealii::DataOut<dim>::type_dof_data,
                 MHDEquations<dim, divergence_cleaning>::
                   create_component_interpretation_list());
+              data_out.add_data_vector(analytic_solution_vector,
+                                       mhd_postprocessor_project);
+
 
               // Output interpolated analytic solution
               dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
@@ -157,6 +173,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
                 dealii::DataOut<dim>::type_dof_data,
                 MHDEquations<dim, divergence_cleaning>::
                   create_component_interpretation_list());
+              data_out.add_data_vector(analytic_solution_vector,
+                                       mhd_postprocessor_interpol);
 
               // Output cell average and shock indicator
               data_out.add_data_vector(
@@ -264,6 +282,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
           dealii::DataOut<dim>::type_dof_data,
           MHDEquations<dim, divergence_cleaning>::
             create_component_interpretation_list());
+        data_out.add_data_vector(mhd_solver.get_current_solution(),
+                                 mhd_postprocessor_numeric);
 
         // Output projected analytic solution
         mhd_solver.project(exact_solution, analytic_solution_vector);
@@ -274,6 +294,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
           dealii::DataOut<dim>::type_dof_data,
           MHDEquations<dim, divergence_cleaning>::
             create_component_interpretation_list());
+        data_out.add_data_vector(analytic_solution_vector,
+                                 mhd_postprocessor_project);
 
         // Output interpolated analytic solution
         dealii::VectorTools::interpolate(mhd_solver.get_dof_handler(),
@@ -286,6 +308,8 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
           dealii::DataOut<dim>::type_dof_data,
           MHDEquations<dim, divergence_cleaning>::
             create_component_interpretation_list());
+        data_out.add_data_vector(analytic_solution_vector,
+                                 mhd_postprocessor_interpol);
 
         // Output cell average and shock indicator
         data_out.add_data_vector(

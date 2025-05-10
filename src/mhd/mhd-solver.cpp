@@ -287,6 +287,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , mhd_equations(mhd_parameters.adiabatic_index)
   , numerical_flux(mhd_equations)
   , slope_limiter()
+  , mhd_postprocessor(mhd_equations)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
@@ -1886,6 +1887,9 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
     DataOut<dim>::type_dof_data,
     MHDEquations<dim,
                  divergence_cleaning>::create_component_interpretation_list());
+
+  data_out.add_data_vector(locally_relevant_current_solution,
+                           mhd_postprocessor);
 
   /** @todo [Remove Debug] */
   data_out.add_data_vector(get_cell_average_component(density_component),

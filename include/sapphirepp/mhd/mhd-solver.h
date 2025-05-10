@@ -63,6 +63,7 @@
 #include "mhd-equations.h"
 #include "mhd-flags.h"
 #include "mhd-parameters.h"
+#include "mhd-postprocessor.h"
 #include "numerical-flux.h"
 #include "output-parameters.h"
 #include "slope-limiter.h"
@@ -419,6 +420,8 @@ namespace sapphirepp
       NumericalFlux<dim, divergence_cleaning> numerical_flux;
       /** @ref SlopeLimiter */
       SlopeLimiter<dim, divergence_cleaning> slope_limiter;
+      /** @ref MHDPostprocessor */
+      MHDPostprocessor<dim, divergence_cleaning> mhd_postprocessor;
       /** @} */
 
       /** MPI communicator */
