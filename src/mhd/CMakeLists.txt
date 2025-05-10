@@ -1,6 +1,7 @@
 add_library(MHDLib
   mhd-equations.cpp
   mhd-parameters.cpp
+  mhd-postprocessor.cpp
   numerical-flux.cpp
   slope-limiter.cpp
 )
