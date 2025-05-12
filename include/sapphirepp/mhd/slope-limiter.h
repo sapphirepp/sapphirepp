@@ -33,6 +33,8 @@
 
 #include <deal.II/dofs/dof_handler.h>
 
+#include <deal.II/fe/fe_system.h>
+
 #include <deal.II/lac/vector.h>
 
 #include <array>
@@ -158,6 +160,33 @@ namespace sapphirepp
       enforce_divergence_free_limited_gradient(
         typename MHDEquations<dim, divergence_cleaning>::flux_type
           &limited_gradient);
+
+
+
+      /**
+       * @brief Project limited solution on cell DoFs
+       *        using generalized support points for primitive basis functions.
+       *
+       * This function is adopted from
+       * @dealref{FESystem.convert_generalized_support_point_values_to_dof_values(),classFESystem,aba8b17ed5f02545b31eed23b325ef3e3}.
+       *
+       * @param cell_dof_values DoF values on the cell
+       * @param cell_avg cell average
+       * @param limited_gradient limited gradient
+       * @param cell_center cell center
+       * @param primitive_support_points support points of primitive basis
+       * @param fe @dealref{FESystem}
+       */
+      void
+      to_dof_values_using_primitive_support_points(
+        std::vector<double> &cell_dof_values,
+        const typename MHDEquations<dim, divergence_cleaning>::state_type
+          &cell_avg,
+        const typename MHDEquations<dim, divergence_cleaning>::flux_type
+                                      &limited_gradient,
+        const Point<dim>              &cell_center,
+        const std::vector<Point<dim>> &primitive_support_points,
+        const FESystem<dim>           &fe) const;
 
 
 

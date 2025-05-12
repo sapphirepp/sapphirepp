@@ -142,6 +142,93 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
 
 
 
+template <unsigned int dim, bool divergence_cleaning>
+void
+sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
+  to_dof_values_using_primitive_support_points(
+    std::vector<double> &cell_dof_values,
+    const typename MHDEquations<dim, divergence_cleaning>::state_type &cell_avg,
+    const typename MHDEquations<dim, divergence_cleaning>::flux_type
+                                  &limited_gradient,
+    const Point<dim>              &cell_center,
+    const std::vector<Point<dim>> &support_points,
+    const FESystem<dim>           &fe) const
+{
+  AssertDimension(cell_dof_values.size(), fe.n_dofs_per_cell());
+
+  std::vector<double>         base_dof_values;
+  std::vector<Vector<double>> base_point_values;
+
+  // loop over all base elements (respecting multiplicity) and let
+  // them do the work on their share of the input argument
+
+  unsigned int current_vector_component = 0;
+  for (unsigned int base = 0; base < fe.n_base_elements(); ++base)
+    {
+      // We need access to the base_element, its multiplicity, the
+      // number of generalized support points (n_base_points) and
+      // the number of components we're dealing with.
+      const FiniteElement<dim> &base_element = fe.base_element(base);
+      const unsigned int        multiplicity = fe.element_multiplicity(base);
+      const unsigned int        n_base_dofs  = base_element.n_dofs_per_cell();
+      const unsigned int        n_base_components = base_element.n_components();
+
+      // If the number of base degrees of freedom is zero, there is
+      // nothing to do, skip the rest of the body in this case and
+      // continue with the next element
+      if (n_base_dofs == 0)
+        {
+          current_vector_component += multiplicity * n_base_components;
+          continue;
+        }
+
+      Assert(base_element.is_primitive() &&
+               base_element.has_generalized_support_points(),
+             ExcMessage("Expect primitive FESystem with "
+                        "generalized support points."));
+
+      const size_t n_base_points =
+        base_element.get_generalized_support_points().size();
+      AssertDimension(support_points.size(), n_base_points);
+
+      base_dof_values.resize(n_base_dofs);
+      base_point_values.resize(n_base_points);
+
+      for (unsigned int m = 0; m < multiplicity;
+           ++m, current_vector_component += n_base_components)
+        {
+          for (unsigned int q_index = 0; q_index < n_base_points; ++q_index)
+            {
+              base_point_values[q_index].reinit(n_base_components, false);
+
+              // Compute limited solution values at support points
+              base_point_values[q_index] =
+                cell_avg[current_vector_component] +
+                limited_gradient[current_vector_component] *
+                  (support_points[q_index] - cell_center);
+            }
+
+          base_element.convert_generalized_support_point_values_to_dof_values(
+            base_point_values, base_dof_values);
+
+          // Finally put these dof values back into cell dof
+          // values vector.
+
+          // To do this, we could really use a
+          // base_to_system_index() function, but that doesn't
+          // exist -- just do it by using the reverse table -- the
+          // amount of work done here is not worth trying to
+          // optimizing this.
+          for (unsigned int i = 0; i < fe.n_dofs_per_cell(); ++i)
+            if (fe.system_to_base_index(i).first == std::make_pair(base, m))
+              cell_dof_values[i] =
+                base_dof_values[fe.system_to_base_index(i).second];
+        }
+    }
+}
+
+
+
 // Explicit instantiations
 template class sapphirepp::MHD::SlopeLimiter<1, false>;
 template class sapphirepp::MHD::SlopeLimiter<1, true>;
