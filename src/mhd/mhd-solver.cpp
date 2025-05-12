@@ -680,11 +680,12 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
      *
      * @todo The definition of a inflow face is not clear to me
      *       in case of a derived quantity (like pressure).
+     *
+     * @todo This needs optimization!
      */
-    Tensor<1, dim> momentum;
-    for (unsigned int d = 0; d < dim; ++d)
-      momentum[d] = cell_average[cell_index][first_momentum_component + d];
-    if (momentum * fe_v_face.normal_vector(0) >= 0)
+    flux_type flux;
+    mhd_equations.compute_flux_matrix(cell_average[cell_index], flux);
+    if (flux[energy_component] * fe_v_face.normal_vector(0) >= 0)
       return; // outflow face
 
 
