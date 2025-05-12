@@ -839,28 +839,9 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
    *      We do this by testing if the current/limited solution results in
    *      non-admissible states on any point of some quadrature
    *      (e.g. generalized support points).
-   *   4. Update DoFs on each cell using generalized support points
-   *      @dealref{convert_generalized_support_point_values_to_dof_values(),classFiniteElement,a8f2b9817bcf98ebd43239c6da46de809}.
-   *      This only works for basis functions that have support points,
-   *      i.e. for LagrangePolynomials, but not for Legendre polynomials.
+   *   4. Update DoFs on each cell using
+   *      @ref SlopeLimiter::limited_solution_to_dof_values().
    *   5. Distribute to the @ref locally_relevant_current_solution.
-   *
-   * There are some competing alternative ways to perform step 4:
-   *
-   *   - Compute the projection of the limited solution onto the DoFs:
-   *     1. Compute the RHS for the projection by folding with the basis
-   *        functions solution in @ref cell_worker.
-   *     2. Distribute the RHS to the global @ref system_rhs in @ref copier.
-   *     3. Project the limited solution on the @ref locally_owned_solution
-   *        \f$ f \f$ using the @ref mass_matrix \f$ M \f$ and the
-   *        @ref system_rhs \f$ b \f$, \f$ M f = b \f$.
-   *   - Locally invert the mass matrix. Disadvantage is, that we need to
-   * solve a (small) linear system on each cell.
-   *   - If one has basis functions with a diagonal mass matrix, the inversion
-   *     is trivial.
-   *
-   * One general advantage of doing this cell wise is, that we only have to
-   * update the solution in cells that are actually limited.
    */
 
   /** Step 1: Precompute cell averages and shock_indicator. */
@@ -872,19 +853,16 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   AssertDimension(shock_indicator.size(), triangulation.n_active_cells());
   AssertDimension(positivity_limiter_indicator.size(),
                   triangulation.n_active_cells());
-  Assert(fe.has_generalized_support_points(),
-         ExcMessage("The slope limiter uses generalized support points "
-                    "to compute the limited DoFs."));
 
-  locally_owned_solution       = 0;
+  locally_owned_solution       = 0; // DoFs are copied if not limited
   positivity_limiter_indicator = 0.;
+
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator               &cell,
                                ScratchDataSlopeLimiter<dim> &scratch_data,
                                CopyDataSlopeLimiter         &copy_data) {
-    FEValues<dim>     &fe_v_support = scratch_data.fe_values_support;
-    const unsigned int cell_index   = cell->active_cell_index();
+    const unsigned int cell_index = cell->active_cell_index();
 
     // Check if cell avg is valid state
     const state_type &cell_avg = get_cell_average(cell);
@@ -912,14 +890,15 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     bool                        limit_cell = false;
     flux_type                   limited_gradient;
     std::vector<Vector<double>> support_point_values(
-      fe_v_support.n_quadrature_points, Vector<double>(n_components));
+      scratch_data.fe_support_points.n_quadrature_points,
+      Vector<double>(n_components));
 
 
     /**
      * Step 2: Compute limited gradient.
      * If limiting is needed, this results in:
      *   @ref limit_cell = true
-     *   @ref limited_cell_gradient = limited gradient
+     *   @ref limited_gradient = limited gradient
      * Otherwise this block has no effect.
      */
     // Only limit shock indicated cells
@@ -1047,44 +1026,58 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
 
     /**
-     * Step 3: Test if positivity limiting is needed
+     * Step 3.0: Compute support point values.
+     * If limiting or positivity limiting is done, this results in:
+     *   @ref support_point_values = current/limited values
+     */
+
+    if (limit_cell)
+      {
+        FEValues<dim> &fe_sup_points = scratch_data.fe_support_points;
+        // Convert DoFCellAccessor to CellAccessor
+        // because underlying FiniteElement of DoFHandler differs.
+        // This is ok, since we only need the quadrature points.
+        fe_sup_points.reinit(
+          static_cast<typename Triangulation::active_cell_iterator>(cell));
+
+        const std::vector<Point<dim>> &support_points =
+          fe_sup_points.get_quadrature_points();
+
+        // Compute limited solution values at support points
+        for (const unsigned int q_index :
+             fe_sup_points.quadrature_point_indices())
+          for (unsigned int c = 0; c < n_components; ++c)
+            support_point_values[q_index][c] +=
+              cell_avg[c] +
+              limited_gradient[c] * (support_points[q_index] - cell->center());
+      }
+    else if constexpr ((mhd_flags & MHDFlags::no_positivity_limiting) ==
+                       MHDFlags::none)
+      {
+        FEValues<dim> &fe_sup_val = scratch_data.fe_support_values;
+        fe_sup_val.reinit(cell);
+
+        /** @todo Use local version of `get_function_values` */
+        // fe_sup_val.get_function_gradients(copy_data.cell_dof_values,
+        //                                     copy_data.cell_indices,
+        //                                     support_point_values);
+        fe_sup_val.get_function_values(locally_relevant_current_solution,
+                                       support_point_values);
+      }
+
+
+    /**
+     * Step 3.1: Test if positivity limiting is needed.
      * If positivity limiting is needed, this results in:
      *   @ref limit_cell = true
-     *   ? @ref limited_cell_gradient = 0
      *   @ref positivity_limiter_indicator[cell_index] = 1
-     * Otherwise this block has always these effects:
-     *   @ref fe_v_support.reinit(cell)
-     *   ? @ref support_point_values = current/limited values
+     *   @ref limited_gradient = 0
+     *   @ref support_point_values = cell average
+     * Otherwise this block has no effect.
      */
     if constexpr ((mhd_flags & MHDFlags::no_positivity_limiting) ==
                   MHDFlags::none)
       {
-        fe_v_support.reinit(cell);
-
-        // Calculate values at quadrature points or use limited values
-        if (limit_cell)
-          {
-            const std::vector<Point<dim>> &support_points =
-              fe_v_support.get_quadrature_points();
-
-            // Compute limited solution values at support points
-            for (const unsigned int q_index :
-                 fe_v_support.quadrature_point_indices())
-              for (unsigned int c = 0; c < n_components; ++c)
-                support_point_values[q_index][c] +=
-                  cell_avg[c] + limited_gradient[c] *
-                                  (support_points[q_index] - cell->center());
-          }
-        else
-          {
-            /** @todo Use local version of `get_function_values` */
-            // fe_v_support.get_function_gradients(copy_data.cell_dof_values,
-            //                                     copy_data.cell_indices,
-            //                                     support_point_values);
-            fe_v_support.get_function_values(locally_relevant_current_solution,
-                                             support_point_values);
-          }
-
         const bool limit_positivity =
           indicate_positivity_limiting(support_point_values);
 
@@ -1111,13 +1104,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
      */
     if (limit_cell)
       {
-        /**
-         * @todo This assumes the FE has generalized support points,
-         *       and that @ref support_point_value is already set.
-         *       Furthermore, we don't use @ref limited_gradient.
-         */
-        fe.convert_generalized_support_point_values_to_dof_values(
-          support_point_values, copy_data.cell_dof_values);
+        slope_limiter.limited_solution_to_dof_values(cell_avg,
+                                                     limited_gradient,
+                                                     support_point_values,
+                                                     fe,
+                                                     copy_data.cell_dof_values);
       }
   };
 
