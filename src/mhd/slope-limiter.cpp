@@ -145,6 +145,26 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
 template <unsigned int dim, bool divergence_cleaning>
 void
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
+  limited_solution_to_dof_values(
+    const typename MHDEquations<dim, divergence_cleaning>::state_type &cell_avg,
+    const typename MHDEquations<dim, divergence_cleaning>::flux_type
+                                      &limited_gradient,
+    const std::vector<Vector<double>> &support_point_values,
+    const FESystem<dim>               &fe,
+    std::vector<double>               &cell_dof_values) const
+{
+  static_cast<void>(cell_avg);
+  static_cast<void>(limited_gradient);
+
+  fe.convert_generalized_support_point_values_to_dof_values(
+    support_point_values, cell_dof_values);
+}
+
+
+
+template <unsigned int dim, bool divergence_cleaning>
+void
+sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
   to_dof_values_using_primitive_support_points(
     std::vector<double> &cell_dof_values,
     const typename MHDEquations<dim, divergence_cleaning>::state_type &cell_avg,

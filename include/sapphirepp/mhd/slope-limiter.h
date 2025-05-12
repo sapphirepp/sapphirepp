@@ -164,6 +164,27 @@ namespace sapphirepp
 
 
       /**
+       * @brief Project limited solution on cell DoFs.
+       *
+       * @param cell_avg cell average state
+       * @param limited_gradient limited gradient
+       * @param support_point_values limited solution at support points
+       * @param fe @dealref{FESystem}
+       * @param cell_dof_values DoF values on the cell
+       */
+      void
+      limited_solution_to_dof_values(
+        const typename MHDEquations<dim, divergence_cleaning>::state_type
+          &cell_avg,
+        const typename MHDEquations<dim, divergence_cleaning>::flux_type
+                                          &limited_gradient,
+        const std::vector<Vector<double>> &support_point_values,
+        const FESystem<dim>               &fe,
+        std::vector<double>               &cell_dof_values) const;
+
+
+
+      /**
        * @brief Project limited solution on cell DoFs
        *        using generalized support points for primitive basis functions.
        *
