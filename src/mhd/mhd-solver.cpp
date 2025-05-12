@@ -709,10 +709,10 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
-        // Use density as indicator variable y
-        const double indicator = states[q_index][density_component];
+        // Use energy as indicator variable y
+        const double indicator = states[q_index][energy_component];
         const double indicator_neighbor =
-          states_neighbor[q_index][density_component];
+          states_neighbor[q_index][energy_component];
 
         // (y_j - y_nb)
         cell_shock_indicator += (indicator - indicator_neighbor) * JxW[q_index];
@@ -724,7 +724,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
     const double dx     = cell->minimum_vertex_distance();
     const double degree = fe_v_face.get_fe().tensor_degree();
     const double cell_norm =
-      std::fabs(cell_average[cell_index][density_component]);
+      std::fabs(cell_average[cell_index][energy_component]);
     const double normalization =
       std::pow(dx, 0.5 * (degree + 1)) * face_norm * cell_norm;
 
