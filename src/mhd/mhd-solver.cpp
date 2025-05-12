@@ -286,7 +286,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   , output_parameters{output_parameters}
   , mhd_equations(mhd_parameters.adiabatic_index)
   , numerical_flux(mhd_equations)
-  , slope_limiter()
+  , slope_limiter(mhd_parameters)
   , mhd_postprocessor(mhd_equations)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
@@ -1007,11 +1007,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                 char_neighbor_gradients[i]);
 
             // Computed limited gradient
-            diff = SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
-              char_cell_avg_gradient,
-              char_neighbor_gradients,
-              char_limited_gradient,
-              cell->minimum_vertex_distance());
+            diff =
+              slope_limiter.minmod_gradients(char_cell_avg_gradient,
+                                             char_neighbor_gradients,
+                                             char_limited_gradient,
+                                             cell->minimum_vertex_distance());
 
             // Convert back to conserved variables
             mhd_equations.convert_gradient_characteristic_to_conserved(
@@ -1029,8 +1029,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         // Enforce divergence free limited B-field
         if (limit_cell)
           {
-            SlopeLimiter<dim, divergence_cleaning>::
-              enforce_divergence_free_limited_gradient(limited_gradient);
+            slope_limiter.enforce_divergence_free_limited_gradient(
+              limited_gradient);
           }
       }
 

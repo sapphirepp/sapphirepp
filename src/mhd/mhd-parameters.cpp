@@ -179,6 +179,15 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
       "!DO NOT CHANGE unless you are aware what the parameters do! \n\n"
       "Threshold for KXRCF shock indicator.",
       Patterns::Double(0.));
+
+    prm.add_parameter("minmod_threshold",
+                      minmod_threshold,
+                      "minmod threshold parameter $M$ for slope limiter",
+                      Patterns::Double(0.));
+    prm.add_parameter("minmod_beta",
+                      minmod_beta,
+                      "minmod limiter parameter $\\beta$ for slope limiter",
+                      Patterns::Double(0.));
   } // Numerical parameters
   prm.leave_subsection();
 

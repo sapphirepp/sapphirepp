@@ -34,6 +34,15 @@
 
 
 template <unsigned int dim, bool divergence_cleaning>
+sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::SlopeLimiter(
+  const MHDParameters<dim> &mhd_parameters)
+  : minmod_threshold{mhd_parameters.minmod_threshold}
+  , minmod_beta{mhd_parameters.minmod_beta}
+{}
+
+
+
+template <unsigned int dim, bool divergence_cleaning>
 double
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod(
   const std::vector<double> &values)
@@ -59,11 +68,6 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
   typename MHDEquations<dim, divergence_cleaning>::flux_type &limited_gradient,
   const double                                                dx)
 {
-  constexpr unsigned int n_components =
-    MHDEquations<dim, divergence_cleaning>::n_components;
-  const double beta = 2.;
-  const double M    = 0.;
-
   double              difference = 0.;
   std::vector<double> values;
   values.reserve(neighbor_gradients.size() + 1);
@@ -72,7 +76,8 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
       for (unsigned int d = 0; d < dim; ++d)
         {
           AssertIsFinite(cell_gradient[c][d]);
-          if (std::abs(cell_gradient[c][d]) < M * dx * dx)
+          // if (std::abs(cell_gradient[c][d]) < minmod_threshold * dx * dx)
+          if (std::abs(cell_gradient[c][d]) < minmod_threshold * dx)
             {
               limited_gradient[c][d] = cell_gradient[c][d];
               continue;
@@ -82,7 +87,7 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
 
           for (const auto &tmp : neighbor_gradients)
             if (std::isfinite(tmp[c][d]))
-              values.push_back(beta * tmp[c][d]);
+              values.push_back(minmod_beta * tmp[c][d]);
 
           limited_gradient[c][d] = minmod(values);
           AssertIsFinite(limited_gradient[c][d]);
@@ -106,8 +111,6 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
     typename MHDEquations<dim, divergence_cleaning>::flux_type
       &limited_gradient)
 {
-  constexpr unsigned int first_magnetic_component =
-    MHDEquations<dim, divergence_cleaning>::first_magnetic_component;
   double delta_p = 0;
   double delta_m = 0;
 

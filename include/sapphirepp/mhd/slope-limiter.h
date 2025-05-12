@@ -40,6 +40,7 @@
 
 #include "mhd-equations.h"
 #include "mhd-flags.h"
+#include "mhd-parameters.h"
 
 namespace sapphirepp
 {
@@ -61,8 +62,12 @@ namespace sapphirepp
     class SlopeLimiter
     {
     public:
-      /** Constructor */
-      SlopeLimiter() = default;
+      /**
+       * @brief Constructor
+       *
+       * @param mhd_parameters (Numerical) parameters for the MHD equation
+       */
+      SlopeLimiter(const MHDParameters<dim> &mhd_parameters);
 
 
 
@@ -105,7 +110,7 @@ namespace sapphirepp
        * @return double Average difference between cell_gradient and limited_gradient
        *                per component and direction.
        */
-      static double
+      double
       minmod_gradients(
         const typename MHDEquations<dim, divergence_cleaning>::flux_type
           &cell_gradient,
@@ -149,10 +154,25 @@ namespace sapphirepp
        *
        * @param limited_gradient limited gradient
        */
-      static void
+      void
       enforce_divergence_free_limited_gradient(
         typename MHDEquations<dim, divergence_cleaning>::flux_type
           &limited_gradient);
+
+
+
+    private:
+      /** @ref MHDEquations::n_components */
+      static constexpr unsigned int n_components =
+        MHDEquations<dim, divergence_cleaning>::n_components;
+      /** @ref MHDEquations::first_magnetic_component */
+      static constexpr unsigned int first_magnetic_component =
+        MHDEquations<dim, divergence_cleaning>::first_magnetic_component;
+
+      /** minmod threshold parameter \f$ M \f$ */
+      const double minmod_threshold;
+      /** minmod limiter parameter \f$ \beta \f$ */
+      const double minmod_beta;
     };
   } // namespace MHD
 } // namespace sapphirepp
