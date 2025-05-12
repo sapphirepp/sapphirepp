@@ -212,7 +212,7 @@ namespace sapphirepp
                                quadrature,
                                update_gradients | update_JxW_values)
           , fe_support_points(mapping,
-                              fe_primitive,
+                              fe,
                               Quadrature<dim>(
                                 fe_primitive.get_generalized_support_points()),
                               update_quadrature_points)
@@ -1034,11 +1034,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     if (limit_cell)
       {
         FEValues<dim> &fe_sup_points = scratch_data.fe_support_points;
-        // Convert DoFCellAccessor to CellAccessor
-        // because underlying FiniteElement of DoFHandler differs.
-        // This is ok, since we only need the quadrature points.
-        fe_sup_points.reinit(
-          static_cast<typename Triangulation::active_cell_iterator>(cell));
+        fe_sup_points.reinit(cell);
 
         const std::vector<Point<dim>> &support_points =
           fe_sup_points.get_quadrature_points();
