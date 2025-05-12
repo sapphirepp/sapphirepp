@@ -61,12 +61,10 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod(
 template <unsigned int dim, bool divergence_cleaning>
 double
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
-  const typename MHDEquations<dim, divergence_cleaning>::flux_type
-    &cell_gradient,
-  const std::vector<typename MHDEquations<dim, divergence_cleaning>::flux_type>
-    &neighbor_gradients,
-  typename MHDEquations<dim, divergence_cleaning>::flux_type &limited_gradient,
-  const double                                                dx)
+  const flux_type              &cell_gradient,
+  const std::vector<flux_type> &neighbor_gradients,
+  flux_type                    &limited_gradient,
+  const double                  dx)
 {
   double              difference = 0.;
   std::vector<double> values;
@@ -107,9 +105,7 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
 template <unsigned int dim, bool divergence_cleaning>
 void
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
-  enforce_divergence_free_limited_gradient(
-    typename MHDEquations<dim, divergence_cleaning>::flux_type
-      &limited_gradient)
+  enforce_divergence_free_limited_gradient(flux_type &limited_gradient)
 {
   double delta_p = 0;
   double delta_m = 0;
@@ -146,9 +142,8 @@ template <unsigned int dim, bool divergence_cleaning>
 void
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
   limited_solution_to_dof_values(
-    const typename MHDEquations<dim, divergence_cleaning>::state_type &cell_avg,
-    const typename MHDEquations<dim, divergence_cleaning>::flux_type
-                                      &limited_gradient,
+    const state_type                  &cell_avg,
+    const flux_type                   &limited_gradient,
     const std::vector<Vector<double>> &support_point_values,
     const FESystem<dim>               &fe,
     std::vector<double>               &cell_dof_values) const
@@ -166,13 +161,12 @@ template <unsigned int dim, bool divergence_cleaning>
 void
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
   to_dof_values_using_primitive_support_points(
-    std::vector<double> &cell_dof_values,
-    const typename MHDEquations<dim, divergence_cleaning>::state_type &cell_avg,
-    const typename MHDEquations<dim, divergence_cleaning>::flux_type
-                                  &limited_gradient,
+    const state_type              &cell_avg,
+    const flux_type               &limited_gradient,
     const Point<dim>              &cell_center,
     const std::vector<Point<dim>> &support_points,
-    const FESystem<dim>           &fe) const
+    const FESystem<dim>           &fe,
+    std::vector<double>           &cell_dof_values) const
 {
   AssertDimension(cell_dof_values.size(), fe.n_dofs_per_cell());
 

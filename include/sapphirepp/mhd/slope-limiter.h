@@ -64,6 +64,15 @@ namespace sapphirepp
     class SlopeLimiter
     {
     public:
+      /** @ref MHDEquations::state_type */
+      using state_type =
+        typename MHDEquations<dim, divergence_cleaning>::state_type;
+      /** @ref MHDEquations::flux_type */
+      using flux_type =
+        typename MHDEquations<dim, divergence_cleaning>::flux_type;
+
+
+
       /**
        * @brief Constructor
        *
@@ -113,15 +122,10 @@ namespace sapphirepp
        *                per component and direction.
        */
       double
-      minmod_gradients(
-        const typename MHDEquations<dim, divergence_cleaning>::flux_type
-          &cell_gradient,
-        const std::vector<
-          typename MHDEquations<dim, divergence_cleaning>::flux_type>
-          &neighbor_gradients,
-        typename MHDEquations<dim, divergence_cleaning>::flux_type
-                    &limited_gradient,
-        const double dx);
+      minmod_gradients(const flux_type              &cell_gradient,
+                       const std::vector<flux_type> &neighbor_gradients,
+                       flux_type                    &limited_gradient,
+                       const double                  dx);
 
 
 
@@ -157,14 +161,38 @@ namespace sapphirepp
        * @param limited_gradient limited gradient
        */
       void
-      enforce_divergence_free_limited_gradient(
-        typename MHDEquations<dim, divergence_cleaning>::flux_type
-          &limited_gradient);
+      enforce_divergence_free_limited_gradient(flux_type &limited_gradient);
 
 
 
       /**
        * @brief Project limited solution on cell DoFs.
+       *
+       * This method serves as a generalized interface
+       * to project the solution onto the DoFs.
+       * Depending on which basis function are used,
+       * there are different approaches:
+       *
+       * - For a basis with support points (e.g. Lagrange) we use
+       *   @dealref{FESystem.convert_generalized_support_point_values_to_dof_values(),classFESystem,aba8b17ed5f02545b31eed23b325ef3e3}..
+       *
+       * @todo For Legendre and LDF basis, there are these alternatives:
+       *   - Compute the projection of the limited solution onto the DoFs:
+       *     1. Compute the RHS for the projection by folding with the basis
+       *        functions solution in cell_worker.
+       *     2. Distribute the RHS to the global system_rhs in copier.
+       *     3. Project the limited solution on the locally_owned_solution
+       *        \f$ f \f$ using the mass_matrix \f$ M \f$ and the
+       *        system_rhs \f$ b \f$, \f$ M f = b \f$.
+       *   - Locally invert the mass matrix. Disadvantage is, that we need to
+       * solve a (small) linear system on each cell.
+       * One general advantage of doing this cell wise is, that we only have to
+       * update the solution in cells that are actually limited.
+       *   - If one has basis functions with a diagonal mass matrix, the
+       * inversion is trivial.
+       *   - Cell average and gradient are given by specific DoFs.
+       *     We can identify these and set the values accordingly
+       *
        *
        * @param cell_avg cell average state
        * @param limited_gradient limited gradient
@@ -174,40 +202,11 @@ namespace sapphirepp
        */
       void
       limited_solution_to_dof_values(
-        const typename MHDEquations<dim, divergence_cleaning>::state_type
-          &cell_avg,
-        const typename MHDEquations<dim, divergence_cleaning>::flux_type
-                                          &limited_gradient,
+        const state_type                  &cell_avg,
+        const flux_type                   &limited_gradient,
         const std::vector<Vector<double>> &support_point_values,
         const FESystem<dim>               &fe,
         std::vector<double>               &cell_dof_values) const;
-
-
-
-      /**
-       * @brief Project limited solution on cell DoFs
-       *        using generalized support points for primitive basis functions.
-       *
-       * This function is adopted from
-       * @dealref{FESystem.convert_generalized_support_point_values_to_dof_values(),classFESystem,aba8b17ed5f02545b31eed23b325ef3e3}.
-       *
-       * @param cell_dof_values DoF values on the cell
-       * @param cell_avg cell average
-       * @param limited_gradient limited gradient
-       * @param cell_center cell center
-       * @param primitive_support_points support points of primitive basis
-       * @param fe @dealref{FESystem}
-       */
-      void
-      to_dof_values_using_primitive_support_points(
-        std::vector<double> &cell_dof_values,
-        const typename MHDEquations<dim, divergence_cleaning>::state_type
-          &cell_avg,
-        const typename MHDEquations<dim, divergence_cleaning>::flux_type
-                                      &limited_gradient,
-        const Point<dim>              &cell_center,
-        const std::vector<Point<dim>> &primitive_support_points,
-        const FESystem<dim>           &fe) const;
 
 
 
@@ -223,6 +222,31 @@ namespace sapphirepp
       const double minmod_threshold;
       /** minmod limiter parameter \f$ \beta \f$ */
       const double minmod_beta;
+
+
+
+      /**
+       * @brief Project limited solution on cell DoFs
+       *        using generalized support points for primitive basis functions.
+       *
+       * This function is adopted from
+       * @dealref{FESystem.convert_generalized_support_point_values_to_dof_values(),classFESystem,aba8b17ed5f02545b31eed23b325ef3e3}.
+       *
+       * @param cell_avg cell average
+       * @param limited_gradient limited gradient
+       * @param cell_center cell center
+       * @param primitive_support_points support points of primitive basis
+       * @param fe @dealref{FESystem}
+       * @param cell_dof_values DoF values on the cell
+       */
+      void
+      to_dof_values_using_primitive_support_points(
+        const state_type              &cell_avg,
+        const flux_type               &limited_gradient,
+        const Point<dim>              &cell_center,
+        const std::vector<Point<dim>> &primitive_support_points,
+        const FESystem<dim>           &fe,
+        std::vector<double>           &cell_dof_values) const;
     };
   } // namespace MHD
 } // namespace sapphirepp
