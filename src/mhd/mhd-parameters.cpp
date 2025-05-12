@@ -170,6 +170,19 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.leave_subsection();
 
 
+  prm.enter_subsection("Numerical parameters");
+  {
+    prm.add_parameter(
+      "indicator_threshold",
+      indicator_threshold,
+      "This section collects numerical parameters for the MHD solver. \n"
+      "!DO NOT CHANGE unless you are aware what the parameters do! \n\n"
+      "Threshold for KXRCF shock indicator.",
+      Patterns::Double(0.));
+  } // Numerical parameters
+  prm.leave_subsection();
+
+
   prm.leave_subsection();
 }
 

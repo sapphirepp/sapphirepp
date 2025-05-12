@@ -53,7 +53,7 @@ namespace sapphirepp
     class MHDParameters
     {
     public:
-      /**  @{ */
+      /** @{ */
       /** The @ref GridTypeMHD for the grid generation */
       GridTypeMHD grid_type;
 
@@ -92,7 +92,7 @@ namespace sapphirepp
 
 
 
-      /**  @{ */
+      /** @{ */
       /** Time stepping method */
       TimeSteppingMethodMHD time_stepping_method;
       /** Courant number/CFL number to infer time step from CFL condition */
@@ -115,6 +115,18 @@ namespace sapphirepp
       /** @{ */
       /** Adiabatic index \f$ \gamma \f$ */
       double adiabatic_index;
+      /** @} */
+
+
+
+      /**
+       * @addtogroup numerical-parameters Numerical parameters
+       * Parameters for the numerical algorithms.
+       * @note !DO NOT CHANGE unless you are aware what the parameters do!
+       * @{
+       */
+      /** Threshold for KXRCF shock indicator. */
+      double indicator_threshold = 1.;
       /** @} */
 
 

@@ -349,6 +349,7 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
     locally_relevant_current_solution = locally_owned_solution;
   }
 
+  compute_cfl_condition();
   apply_limiter();
 }
 
@@ -631,10 +632,7 @@ void
 sapphirepp::MHD::MHDSolver<dim>::compute_shock_indicator()
 {
   if constexpr ((mhd_flags & MHDFlags::no_shock_indicator) != MHDFlags::none)
-    {
-      shock_indicator = 2.;
-      return;
-    }
+    return;
   TimerOutput::Scope timer_section(timer, "Shock indicator - MHD");
   saplog << "Compute shock indicator" << std::endl;
   LogStream::Prefix p("ShockIndicator", saplog);
@@ -914,7 +912,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
      * Otherwise this block has no effect.
      */
     // Only limit shock indicated cells
-    if ((shock_indicator[cell_index] > 1.) ||
+    if ((shock_indicator[cell_index] >= mhd_parameters.indicator_threshold) ||
         ((mhd_flags & MHDFlags::no_shock_indicator) != MHDFlags::none))
       {
         // reinit cell
