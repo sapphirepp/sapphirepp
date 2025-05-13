@@ -142,7 +142,7 @@ and compare it to the analytical solution.
 We use an expansion order $l_{\mathrm{max}} = 9$ and set the velocity $v = \sqrt{8}/3$.
 The result is shown in the following animation:
 
-<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc.gif" alt="drawing" width="90%"/>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc.gif" alt="Time-depnedent solution with an inflow boundary condition." width="75%"/>
 
 The dashed lines show the derived analytical solution. 
 Because we chose $f$ to be isotropic at the boundary, 
@@ -207,7 +207,8 @@ a difference between odd and even $l_{\mathrm{max}}$ can be observed,
 for details see Sec. 2 in  @cite Garret2016.
 
 To conclude we look at the same example, 
-but we include scattering, we directly compute the steady-state solution and use the zero inflow boundary condition. 
+but we include scattering, we directly compute the steady-state solution 
+and use the zero inflow boundary condition. 
 We solve
 
 $$
@@ -236,10 +237,10 @@ Hence,
 
 $$
 \begin{split}
-f_{000} &= -\frac{\sqrt{3}\nu}{v} f_{100} x + \text{const.} \\
-f_{110} &= \text{const.} \\ 
-f_{100} &=\text{const.} \\
-f_{111}  &= \text{const.} \\ 
+f_{000} &= -\frac{\sqrt{3}\nu}{v} f_{100} x + c_{0} \\
+f_{110} &= 0 \\ 
+f_{100} &=c_{1} \\
+f_{111}  &= 0 \\ 
 \end{split}
 $$
 
@@ -279,7 +280,27 @@ $$
 \end{pmatrix}
 $$
 
-This can be condensed in the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$. 
+This can be condensed into the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$, which determine the two constants $c_{0}$ and $c_{1}$. 
+The solution is 
+
+$$
+\begin{split}
+	f_{000}(x) &= -\frac{\sqrt{3} \nu}{v} f_{100} x  + \sqrt{\pi} \quad\text{and}\\
+	f_{100}(x) &= \sqrt{\pi} \left( \frac{\sqrt{3} \nu}{v} L + 1\right)^{-1}\,.
+\end{split}
+$$
+
+The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt{8}/3$) and the analytical solution match, i.e.
+
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc-steady-state-l1.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to one expansion" width="75%"/>
+
+
+However, reconstructing $f$ at $x = L$, i.e. computing 
+$f(x = L, \cos\theta) = f_{000}(x = L) Y_{000} + f_{100}(x=L) Y_{100}(\cos\theta)$, 
+results in a negative distribution function. Hence, $l_{\mathrm{max}}$ is too low for the level of scattering $\nu = 0.1$. 
+
+
+
 
 ## Reflecting boundary conditions
 
