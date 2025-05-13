@@ -118,7 +118,7 @@ sapphirepp::MHD::MHDPostprocessor<dim, divergence_cleaning>::
       AssertDimension(state.size(), n_components);
 
       computed_quantities[q_index][pressure_component_out] =
-        mhd_equations.compute_pressure(state);
+        mhd_equations.compute_pressure_unsafe(state); // No warnings for saving
 
       for (unsigned int d = 0; d < n_vec_components; ++d)
         {
