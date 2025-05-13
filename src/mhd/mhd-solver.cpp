@@ -1012,8 +1012,9 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         limit_cell = (diff > 1e-10);
         if (!limit_cell)
           shock_indicator[cell_index] = 0.;
-        else if constexpr ((mhd_flags & MHDFlags::no_shock_indicator) !=
-                           MHDFlags::none)
+        else if (((mhd_flags & MHDFlags::no_shock_indicator) !=
+                  MHDFlags::none) ||
+                 mhd_parameters.indicator_threshold == 0)
           shock_indicator[cell_index] = 1.;
 
         // Enforce divergence free limited B-field

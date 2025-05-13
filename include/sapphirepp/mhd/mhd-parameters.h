@@ -126,7 +126,7 @@ namespace sapphirepp
        * @{
        */
       /** Threshold for KXRCF shock indicator. */
-      double indicator_threshold = 1.;
+      double indicator_threshold = 0.1;
 
       /** minmod threshold parameter \f$ M \f$ for slope limiter */
       double minmod_threshold = 0.;
