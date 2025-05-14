@@ -29,6 +29,7 @@
 
 #include <cmath>
 #include <limits>
+#include <random>
 
 #include "mhd-equations.h"
 #include "sapphirepp-logstream.h"
@@ -39,6 +40,57 @@ using namespace MHD;
 
 
 const double epsilon_d = 1e-6;
+
+
+
+class RandomNumber
+{
+public:
+  RandomNumber(double mean = 0., double stddev = 1.)
+    : dist_normal{mean, stddev}
+    , dist_uniform{0., 1.}
+  {
+    seed = std::random_device{}();
+    saplog << "RandomNumber(" << mean << ", " << stddev << ")"
+           << " with seed: \n"
+           << seed << std::endl;
+    rng.seed(seed);
+  }
+
+
+
+  double
+  operator()()
+  {
+    return dist_normal(rng);
+  }
+
+
+
+  double
+  rand_uniform(double low = 0., double high = 1.)
+  {
+    return low + (high - low) * dist_uniform(rng);
+  }
+
+
+
+  void
+  set_seed(unsigned int s)
+  {
+    seed = s;
+    rng.seed(seed);
+    saplog << "Random seed set to: " << seed << std::endl;
+  }
+
+
+
+private:
+  std::default_random_engine             rng;
+  std::normal_distribution<double>       dist_normal;
+  std::uniform_real_distribution<double> dist_uniform;
+  unsigned int                           seed;
+};
 
 
 
