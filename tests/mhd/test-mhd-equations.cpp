@@ -96,11 +96,14 @@ private:
 
 template <unsigned int dim>
 dealii::Tensor<1, dim>
-random_normal()
+random_normal(RandomNumber &rnd)
 {
-  dealii::Tensor<1, dim> normal;
+  dealii::LogStream::Prefix p("random_normal", saplog);
+  dealii::Tensor<1, dim>    normal;
 
-  normal[0] = 1.;
+  for (unsigned int d = 0; d < dim; ++d)
+    normal[d] = rnd();
+  normal /= normal.norm();
 
   saplog << "Generated normal: " << normal << ", norm = " << normal.norm()
          << std::endl;
@@ -115,37 +118,59 @@ random_normal()
 template <unsigned int dim, bool hdc>
 void
 random_state(const MHDEquations<dim, hdc>                &mhd_equations,
+             RandomNumber                                &rnd,
+             const bool                                   magnetic_field,
              typename MHDEquations<dim, hdc>::state_type &state)
 {
   constexpr unsigned int n_components = MHDEquations<dim, hdc>::n_components;
+  constexpr unsigned int n_vec_components =
+    MHDEquations<dim, hdc>::n_vec_components;
   constexpr unsigned int density_component =
     MHDEquations<dim, hdc>::density_component;
   constexpr unsigned int energy_component =
     MHDEquations<dim, hdc>::energy_component;
+  constexpr unsigned int first_magnetic_component =
+    MHDEquations<dim, hdc>::first_magnetic_component;
+  constexpr unsigned int divergence_cleaning_component =
+    MHDEquations<dim, hdc>::divergence_cleaning_component;
   using state_type = typename MHDEquations<dim, hdc>::state_type;
+
+  dealii::LogStream::Prefix p("random_state", saplog);
 
   AssertDimension(state.size(), n_components);
 
-  //  0.25472 0.220437 0.0386911 0 0.815913 3.87308e-09 -1.89152e-11 0
-  state[0] = 0.25472;
-  state[1] = 0.220437;
-  state[2] = 0.0386911;
-  state[3] = 0.;
-  state[4] = 0.815913;
-  state[5] = 3.87308e-09;
-  state[6] = -1.89152e-11;
-  state[7] = 0.;
+  for (unsigned int c = 0; c < n_components; ++c)
+    state[c] = rnd();
+  state[density_component] = std::abs(state[density_component]);
+  state[energy_component]  = std::abs(state[energy_component]);
+  if (!magnetic_field)
+    {
+      for (unsigned int d = 0; d < n_vec_components; ++d)
+        state[first_magnetic_component + d] = 0.;
+      if (hdc)
+        state[divergence_cleaning_component] = 0.;
+    }
 
-  // state[0] = 1.;
-  // state[1] = 0.;
-  // state[2] = 0.;
+  // Test specific state
+  // state = 0;
+  // state[0] = 0.25472;
+  // state[1] = 0.220437;
+  // state[2] = 0.0386911;
   // state[3] = 0.;
-  // state[4] = 0.6;
-  // state[5] = 0.;
-  // state[6] = 0.;
+  // state[4] = 0.815913;
+  // state[5] = 3.87308e-09;
+  // state[6] = -1.89152e-11;
   // state[7] = 0.;
 
-  const double pressure = mhd_equations.compute_pressure_unsafe(state);
+  double pressure = mhd_equations.compute_pressure_unsafe(state);
+  if (pressure < 0)
+    {
+      // Ensure positive pressure by setting: E' = 2E - P/(gamma-1)
+      state[energy_component] = 2 * state[energy_component] -
+                                pressure / (mhd_equations.adiabatic_index - 1.);
+      pressure = mhd_equations.compute_pressure_unsafe(state);
+    }
+
   saplog << "Generated state: " << state << ", P = " << pressure << std::endl;
   AssertThrow(state[density_component] > 0., ExcNonAdmissibleState<dim>(state));
   AssertThrow(state[energy_component] > 0., ExcNonAdmissibleState<dim>(state));
@@ -156,7 +181,9 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
 
 template <unsigned int dim, bool hdc>
 void
-test_mhd_equation()
+test_mhd_equation(RandomNumber      &rnd,
+                  const unsigned int num            = 1,
+                  const bool         magnetic_field = hdc)
 {
   constexpr unsigned int n_components = MHDEquations<dim, hdc>::n_components;
   using state_type = typename MHDEquations<dim, hdc>::state_type;
@@ -166,7 +193,7 @@ test_mhd_equation()
                                 std::to_string(hdc) + ">",
                               saplog);
 
-  const double adiabatic_index = 1.4;
+  const double adiabatic_index = rnd.rand_uniform(1., 2.);
   saplog << "Test MHDEquations with dim=" << dim
          << ", divergence_cleaning=" << hdc
          << ", adiabatic_index=" << adiabatic_index << std::endl;
@@ -189,105 +216,114 @@ test_mhd_equation()
     }
 
 
-
   // Setup MHD equations
   MHDEquations<dim, hdc> mhd_equations(adiabatic_index);
 
 
-  // Generate a state and normal
-  random_state(mhd_equations, state);
-  saplog << "state: " << state << std::endl;
-  normal = random_normal<dim>();
-  saplog << "normal: " << normal << std::endl;
-
-  // Test conversion to primitive state
-  mhd_equations.convert_conserved_to_primitive(state, tmp_1);
-  saplog << "primitive: " << tmp_1 << std::endl;
-  mhd_equations.convert_primitive_to_conserved(tmp_1, tmp_2);
-  saplog << "conserved: " << tmp_2 << std::endl;
-  for (unsigned int c = 0; c < n_components; ++c)
-    AssertThrow(std::abs(state[c] - tmp_2[c]) < epsilon_d,
-                dealii::ExcMessage("Problem with conversion to "
-                                   "primitive state"));
-
-  // Setup hyperbolic divergence cleaning
-  const double       dx        = 1.;
-  const unsigned int fe_degree = 1;
-  const double max_eigenvalue = mhd_equations.compute_maximum_eigenvalue(state);
-  const double dt             = dx / ((2. * fe_degree + 1.) * max_eigenvalue);
-  saplog << "dx=" << dx << ", fe_degree=" << fe_degree
-         << ", max_eigenvalue=" << max_eigenvalue << ", dt=" << dt << std::endl;
-  mhd_equations.compute_hyperbolic_divergence_cleaning_speed(dt, dx, fe_degree);
-
-  // Test flux and sources
-  mhd_equations.compute_flux_matrix(state, flux_matrix);
-  saplog << "Flux matrix: ";
-  for (unsigned int c = 0; c < n_components; ++c)
-    saplog << "\n " << flux_matrix[c];
-  saplog << std::endl;
-  if constexpr (hdc)
+  for (unsigned int n = 0; n < num; ++n)
     {
-      mhd_equations.add_source_divergence_cleaning(state, tmp_1);
-      saplog << "HDC source: " << tmp_1 << std::endl;
+      // Generate a state and normal
+      random_state(mhd_equations, rnd, magnetic_field, state);
+      normal = random_normal<dim>(rnd);
+      saplog << "state[" << n << "]:\t" << state << std::endl;
+      saplog << "normal: \t" << normal << std::endl;
+      dealii::LogStream::Prefix p("state[" + std::to_string(n) + "]", saplog);
+
+      // Test conversion to primitive state
+      mhd_equations.convert_conserved_to_primitive(state, tmp_1);
+      saplog << "primitive: " << tmp_1 << std::endl;
+      mhd_equations.convert_primitive_to_conserved(tmp_1, tmp_2);
+      saplog << "conserved: " << tmp_2 << std::endl;
+      for (unsigned int c = 0; c < n_components; ++c)
+        AssertThrow(std::abs(state[c] - tmp_2[c]) < epsilon_d,
+                    dealii::ExcMessage("Problem with conversion to "
+                                       "primitive state"));
+
+      // Setup hyperbolic divergence cleaning
+      const double       dx        = 1.;
+      const unsigned int fe_degree = 1;
+      const double       max_eigenvalue =
+        mhd_equations.compute_maximum_eigenvalue(state);
+      const double dt = dx / ((2. * fe_degree + 1.) * max_eigenvalue);
+      saplog << "dx=" << dx << ", fe_degree=" << fe_degree
+             << ", max_eigenvalue=" << max_eigenvalue << ", dt=" << dt
+             << std::endl;
+      mhd_equations.compute_hyperbolic_divergence_cleaning_speed(dt,
+                                                                 dx,
+                                                                 fe_degree);
+
+      // Test flux and sources
+      mhd_equations.compute_flux_matrix(state, flux_matrix);
+      saplog << "Flux matrix: ";
+      for (unsigned int c = 0; c < n_components; ++c)
+        saplog << "\n " << flux_matrix[c];
+      saplog << std::endl;
+      if constexpr (hdc)
+        {
+          mhd_equations.add_source_divergence_cleaning(state, tmp_1);
+          saplog << "HDC source: " << tmp_1 << std::endl;
+        }
+
+      // Test eigenvalue
+      const double maximum_normal_eigenvalue =
+        mhd_equations.compute_maximum_normal_eigenvalue(state, normal);
+      saplog << "maximum_normal_eigenvalue=" << maximum_normal_eigenvalue
+             << std::endl;
+      mhd_equations.compute_normale_eigenvalues(state, normal, eigenvalues);
+      saplog << "Eigenvalues: " << eigenvalues << std::endl;
+
+
+      // Test eigensystem
+      saplog << "Test left and right eigenvector matrices:" << std::endl;
+      saplog << "Right eigenvector matrix R:" << std::endl;
+      mhd_equations.compute_right_eigenvector_matrix(state,
+                                                     normal,
+                                                     right_eigenvectors);
+      right_eigenvectors.print(saplog, 12, 5);
+      saplog << "Left eigenvector matrix L:" << std::endl;
+      mhd_equations.compute_left_eigenvector_matrix(state,
+                                                    normal,
+                                                    left_eigenvectors);
+      left_eigenvectors.print(saplog, 12, 5);
+
+      left_eigenvectors.mmult(tmp_matrix, right_eigenvectors);
+      saplog << "L*R:" << std::endl;
+      tmp_matrix.print(saplog, 12, 5);
+      for (unsigned int i = 0; i < n_components; ++i)
+        for (unsigned int j = 0; j < n_components; ++j)
+          AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) < epsilon_d,
+                      dealii::ExcMessage("Problem with eigenvectors: l_" +
+                                         std::to_string(i + 1) + " * r_" +
+                                         std::to_string(j + 1) +
+                                         " != delta_ij"));
+
+      right_eigenvectors.mmult(tmp_matrix, left_eigenvectors);
+      saplog << "R*L:" << std::endl;
+      tmp_matrix.print(saplog, 12, 5);
+      for (unsigned int i = 0; i < n_components; ++i)
+        for (unsigned int j = 0; j < n_components; ++j)
+          AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) < epsilon_d,
+                      dealii::ExcMessage("Problem with eigenvectors: (R*L)_" +
+                                         std::to_string(i + 1) +
+                                         std::to_string(j + 1) +
+                                         " != delta_ij"));
+
+
+      // Test transformation matrices
+      mhd_equations.compute_transformation_matrices(state,
+                                                    left_matrices,
+                                                    right_matrices);
+
+      // Test conversion to characteristic state
+      mhd_equations.convert_conserved_to_characteristic(state, normal, tmp_1);
+      saplog << "characteristic: " << tmp_1 << std::endl;
+      mhd_equations.convert_characteristic_to_conserved(tmp_1, normal, tmp_2);
+      saplog << "conserved: " << tmp_2 << std::endl;
+      for (unsigned int c = 0; c < n_components; ++c)
+        AssertThrow(std::abs(state[c] - tmp_2[c]) < epsilon_d,
+                    dealii::ExcMessage("Problem with conversion to "
+                                       "characteristic state"));
     }
-
-  // Test eigenvalue
-  const double maximum_normal_eigenvalue =
-    mhd_equations.compute_maximum_normal_eigenvalue(state, normal);
-  saplog << "maximum_normal_eigenvalue=" << maximum_normal_eigenvalue
-         << std::endl;
-  mhd_equations.compute_normale_eigenvalues(state, normal, eigenvalues);
-  saplog << "Eigenvalues: " << eigenvalues << std::endl;
-
-
-  // Test eigensystem
-  saplog << "Test left and right eigenvector matrices:" << std::endl;
-  saplog << "Right eigenvector matrix R:" << std::endl;
-  mhd_equations.compute_right_eigenvector_matrix(state,
-                                                 normal,
-                                                 right_eigenvectors);
-  right_eigenvectors.print(saplog, 12, 5);
-  saplog << "Left eigenvector matrix L:" << std::endl;
-  mhd_equations.compute_left_eigenvector_matrix(state,
-                                                normal,
-                                                left_eigenvectors);
-  left_eigenvectors.print(saplog, 12, 5);
-
-  left_eigenvectors.mmult(tmp_matrix, right_eigenvectors);
-  saplog << "L*R:" << std::endl;
-  tmp_matrix.print(saplog, 12, 5);
-  for (unsigned int i = 0; i < n_components; ++i)
-    for (unsigned int j = 0; j < n_components; ++j)
-      AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) < epsilon_d,
-                  dealii::ExcMessage("Problem with eigenvectors: l_" +
-                                     std::to_string(i + 1) + " * r_" +
-                                     std::to_string(j + 1) + " != delta_ij"));
-
-  right_eigenvectors.mmult(tmp_matrix, left_eigenvectors);
-  saplog << "R*L:" << std::endl;
-  tmp_matrix.print(saplog, 12, 5);
-  for (unsigned int i = 0; i < n_components; ++i)
-    for (unsigned int j = 0; j < n_components; ++j)
-      AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) < epsilon_d,
-                  dealii::ExcMessage("Problem with eigenvectors: (R*L)_" +
-                                     std::to_string(i + 1) +
-                                     std::to_string(j + 1) + " != delta_ij"));
-
-
-  // Test transformation matrices
-  mhd_equations.compute_transformation_matrices(state,
-                                                left_matrices,
-                                                right_matrices);
-
-  // Test conversion to characteristic state
-  mhd_equations.convert_conserved_to_characteristic(state, normal, tmp_1);
-  saplog << "characteristic: " << tmp_1 << std::endl;
-  mhd_equations.convert_characteristic_to_conserved(tmp_1, normal, tmp_2);
-  saplog << "conserved: " << tmp_2 << std::endl;
-  for (unsigned int c = 0; c < n_components; ++c)
-    AssertThrow(std::abs(state[c] - tmp_2[c]) < epsilon_d,
-                dealii::ExcMessage("Problem with conversion to "
-                                   "characteristic state"));
 }
 
 
@@ -301,8 +337,18 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
       saplog.init(std::numeric_limits<unsigned int>::max(), true);
+      saplog.depth_console(2);
 
-      test_mhd_equation<2, true>();
+      RandomNumber rnd{};
+      // rnd.set_seed(1083480086);
+
+      const unsigned int num = 1000;
+      test_mhd_equation<1, false>(rnd, num);
+      test_mhd_equation<2, false>(rnd, num);
+      test_mhd_equation<3, false>(rnd, num);
+      test_mhd_equation<1, true>(rnd, num);
+      test_mhd_equation<2, true>(rnd, num);
+      test_mhd_equation<3, true>(rnd, num);
     }
   catch (std::exception &exc)
     {
