@@ -589,7 +589,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_momentum_component + d][1] =
         sgn_nb * n_perp_cross_normal[d];
       eigenvectors[first_magnetic_component + d][1] =
-        n_perp_cross_normal[d] / state[density_component];
+        n_perp_cross_normal[d] / std::sqrt(state[density_component]);
     }
   if constexpr (divergence_cleaning)
     eigenvectors[divergence_cleaning_component][1] = 0.;
@@ -668,7 +668,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       eigenvectors[first_momentum_component + d][6] =
         -sgn_nb * n_perp_cross_normal[d];
       eigenvectors[first_magnetic_component + d][6] =
-        n_perp_cross_normal[d] / state[density_component];
+        n_perp_cross_normal[d] / std::sqrt(state[density_component]);
     }
   if constexpr (divergence_cleaning)
     eigenvectors[divergence_cleaning_component][6] = 0.;
