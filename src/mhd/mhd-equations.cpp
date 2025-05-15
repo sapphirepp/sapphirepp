@@ -33,12 +33,14 @@
 #include <cmath>
 #include <limits>
 
+#include "mhd-parameters.h"
 #include "sapphirepp-logstream.h"
 
 
 
-/** Precision for safe double comparision */
-const double epsilon_d = 1e-6;
+/** @ref sapphirepp::MHD::MHDParameters<1>::epsilon_d */
+static constexpr double epsilon_d =
+  sapphirepp::MHD::MHDParameters<1>::epsilon_d;
 
 
 

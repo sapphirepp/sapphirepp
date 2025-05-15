@@ -33,6 +33,7 @@
 #include <random>
 
 #include "mhd-equations.h"
+#include "mhd-parameters.h"
 #include "sapphirepp-logstream.h"
 
 using namespace sapphirepp;
@@ -40,7 +41,9 @@ using namespace MHD;
 
 
 
-const double epsilon_d = 1e-6;
+/** @ref sapphirepp::MHD::MHDParameters<1>::epsilon_d */
+static constexpr double epsilon_d =
+  sapphirepp::MHD::MHDParameters<1>::epsilon_d;
 
 
 

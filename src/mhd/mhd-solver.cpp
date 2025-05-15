@@ -798,14 +798,14 @@ sapphirepp::MHD::MHDSolver<dim>::indicate_positivity_limiting(
                 MHDFlags::none)
     return false;
 
-  const double eps = 1e-10;
+  const double &mhd_floor = mhd_parameters.mhd_floor;
 
   for (const state_type &state : states)
     {
       const double pressure = mhd_equations.compute_pressure_unsafe(state);
 
-      if ((state[density_component] <= eps) ||
-          (state[energy_component] <= eps) || (pressure <= eps))
+      if ((state[density_component] < mhd_floor) ||
+          (state[energy_component] < mhd_floor) || (pressure < mhd_floor))
         return true;
     }
 
@@ -866,17 +866,18 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
     // Check if cell avg is valid state
     const state_type &cell_avg = get_cell_average(cell);
-    Assert(cell_avg[density_component] > 0.,
+    Assert(cell_avg[density_component] >= mhd_parameters.mhd_floor,
            ExcNonAdmissibleState<dim>(cell_avg,
                                       "Invalid cell average. "
                                       "Can not perform limiting.",
                                       cell->center()));
-    Assert(cell_avg[energy_component] > 0.,
+    Assert(cell_avg[energy_component] >= mhd_parameters.mhd_floor,
            ExcNonAdmissibleState<dim>(cell_avg,
                                       "Invalid cell average. "
                                       "Can not perform limiting.",
                                       cell->center()));
-    Assert(mhd_equations.compute_pressure_unsafe(cell_avg) > 0.,
+    Assert(mhd_equations.compute_pressure_unsafe(cell_avg) >=
+             mhd_parameters.mhd_floor,
            ExcNonAdmissibleState<dim>(cell_avg,
                                       "Invalid cell average. "
                                       "Can not perform limiting.",

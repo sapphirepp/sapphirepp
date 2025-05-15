@@ -173,20 +173,25 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.enter_subsection("Numerical parameters");
   {
     prm.add_parameter(
-      "indicator_threshold",
-      indicator_threshold,
+      "mhd_floor",
+      mhd_floor,
       "This section collects numerical parameters for the MHD solver. \n"
       "!DO NOT CHANGE unless you are aware what the parameters do! \n\n"
-      "Threshold for KXRCF shock indicator.",
+      "Floor value for pressure, density and energy.",
       Patterns::Double(0.));
+
+    prm.add_parameter("indicator_threshold",
+                      indicator_threshold,
+                      "Threshold for KXRCF shock indicator.",
+                      Patterns::Double(0.));
 
     prm.add_parameter("minmod_threshold",
                       minmod_threshold,
-                      "minmod threshold parameter $M$ for slope limiter",
+                      "minmod threshold parameter $M$ for slope limiter.",
                       Patterns::Double(0.));
     prm.add_parameter("minmod_beta",
                       minmod_beta,
-                      "minmod limiter parameter $\\beta$ for slope limiter",
+                      "minmod limiter parameter $\\beta$ for slope limiter.",
                       Patterns::Double(0.));
   } // Numerical parameters
   prm.leave_subsection();

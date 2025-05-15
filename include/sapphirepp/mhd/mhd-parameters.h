@@ -125,12 +125,17 @@ namespace sapphirepp
        * @note !DO NOT CHANGE unless you are aware what the parameters do!
        * @{
        */
+      /** Precision for double / zero comparision. */
+      static constexpr double epsilon_d = 1e-8;
+      /** Floor value for pressure, density and energy. */
+      double mhd_floor = epsilon_d;
+
       /** Threshold for KXRCF shock indicator. */
       double indicator_threshold = 0.1;
 
-      /** minmod threshold parameter \f$ M \f$ for slope limiter */
+      /** minmod threshold parameter \f$ M \f$ for slope limiter. */
       double minmod_threshold = 0.;
-      /** minmod limiter parameter \f$ \beta \f$ for slope limiter */
+      /** minmod limiter parameter \f$ \beta \f$ for slope limiter. */
       double minmod_beta = 2.;
       /** @} */
 
