@@ -321,9 +321,11 @@ test_mhd_equation(RandomNumber      &rnd,
                  << std::endl;
           continue;
         }
+      // The rest of the tests have only a precision sqrt(epsilon_d)
       for (unsigned int i = 0; i < n_components; ++i)
         for (unsigned int j = 0; j < n_components; ++j)
-          AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) < epsilon_d,
+          AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) <
+                        std::sqrt(epsilon_d),
                       dealii::ExcMessage("Problem with eigenvectors: (R*L)_" +
                                          std::to_string(i + 1) +
                                          std::to_string(j + 1) +
@@ -341,7 +343,7 @@ test_mhd_equation(RandomNumber      &rnd,
       mhd_equations.convert_characteristic_to_conserved(tmp_1, normal, tmp_2);
       saplog << "conserved: " << tmp_2 << std::endl;
       for (unsigned int c = 0; c < n_components; ++c)
-        AssertThrow(std::abs(state[c] - tmp_2[c]) < epsilon_d,
+        AssertThrow(std::abs(state[c] - tmp_2[c]) < std::sqrt(epsilon_d),
                     dealii::ExcMessage("Problem with conversion to "
                                        "characteristic state"));
     }

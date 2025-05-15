@@ -247,11 +247,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(
-    a_s2 >= 0.,
-    ExcNonAdmissibleState(state,
-                          "Negative squared adiabatic sound speed, a_s^2 = " +
-                            std::to_string(a_s2)));
+  Assert(a_s2 >= epsilon_d,
+         ExcNonAdmissibleState(
+           state,
+           "Expect positive squared adiabatic sound speed, a_s^2 = " +
+             std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
          ExcNonAdmissibleState(state,
                                "Negative squared alfven speed, c_a^2 = " +
@@ -260,9 +260,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state, "Negative d_n = " + std::to_string(d_n)));
   const double c_f2 =
     0.5 * (a_s2 + b2 / state[density_component] + std::sqrt(d_n));
-  Assert(c_f2 >= 0.,
+  Assert(c_f2 >= epsilon_d,
          ExcNonAdmissibleState(state,
-                               "Negative squared fast speed, c_f^2 = " +
+                               "Expect positive squared fast speed, c_f^2 = " +
                                  std::to_string(c_f2)));
 
   return std::fabs(nu) + std::sqrt(c_f2);
@@ -291,15 +291,15 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   const double max_u = std::sqrt(p2) / state[density_component];
 
   const double a_s2 = adiabatic_index * pressure / state[density_component];
-  Assert(
-    a_s2 >= 0.,
-    ExcNonAdmissibleState(state,
-                          "Negative squared adiabatic sound speed, a_s^2 = " +
-                            std::to_string(a_s2)));
+  Assert(a_s2 >= epsilon_d,
+         ExcNonAdmissibleState(
+           state,
+           "Expect positive squared adiabatic sound speed, a_s^2 = " +
+             std::to_string(a_s2)));
   const double max_c_f2 = a_s2 + b2 / state[density_component];
-  Assert(max_c_f2 >= 0.,
+  Assert(max_c_f2 >= epsilon_d,
          ExcNonAdmissibleState(state,
-                               "Negative squared fast speed, c_f^2 = " +
+                               "Expect positive squared fast speed, c_f^2 = " +
                                  std::to_string(max_c_f2)));
 
   return max_u + std::sqrt(max_c_f2);
@@ -386,11 +386,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(
-    a_s2 >= 0.,
-    ExcNonAdmissibleState(state,
-                          "Negative squared adiabatic sound speed, a_s^2 = " +
-                            std::to_string(a_s2)));
+  Assert(a_s2 >= epsilon_d,
+         ExcNonAdmissibleState(
+           state,
+           "Expect positive squared adiabatic sound speed, a_s^2 = " +
+             std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
          ExcNonAdmissibleState(state,
                                "Negative squared alfven speed, c_a^2 = " +
@@ -405,9 +405,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state,
                                "Negative squared slow speed, c_s^2 = " +
                                  std::to_string(c_s2)));
-  Assert(c_f2 >= 0.,
+  Assert(c_f2 >= epsilon_d,
          ExcNonAdmissibleState(state,
-                               "Negative squared fast speed, c_f^2 = " +
+                               "Expect positive squared fast speed, c_f^2 = " +
                                  std::to_string(c_f2)));
   if constexpr (divergence_cleaning)
     Assert(divergence_cleaning_speed > 0.,
@@ -481,11 +481,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(
-    a_s2 >= 0.,
-    ExcNonAdmissibleState(state,
-                          "Negative squared adiabatic sound speed, a_s^2 = " +
-                            std::to_string(a_s2)));
+  Assert(a_s2 >= epsilon_d,
+         ExcNonAdmissibleState(
+           state,
+           "Expect positive squared adiabatic sound speed, a_s^2 = " +
+             std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
          ExcNonAdmissibleState(state,
                                "Negative squared alfven speed, c_a^2 = " +
@@ -500,9 +500,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state,
                                "Negative squared slow speed, c_s^2 = " +
                                  std::to_string(c_s2)));
-  Assert(c_f2 >= 0.,
+  Assert(c_f2 >= epsilon_d,
          ExcNonAdmissibleState(state,
-                               "Negative squared fast speed, c_f^2 = " +
+                               "Expect positive squared fast speed, c_f^2 = " +
                                  std::to_string(c_f2)));
   const double a_s = std::sqrt(a_s2);
   const double c_a = std::sqrt(c_a2);
@@ -768,11 +768,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   const double d_n  = (a_s2 + b2 / state[density_component]) *
                        (a_s2 + b2 / state[density_component]) -
                      4. * a_s2 * c_a2;
-  Assert(
-    a_s2 >= 0.,
-    ExcNonAdmissibleState(state,
-                          "Negative squared adiabatic sound speed, a_s^2 = " +
-                            std::to_string(a_s2)));
+  Assert(a_s2 >= epsilon_d,
+         ExcNonAdmissibleState(
+           state,
+           "Expect positive squared adiabatic sound speed, a_s^2 = " +
+             std::to_string(a_s2)));
   Assert(c_a2 >= 0.,
          ExcNonAdmissibleState(state,
                                "Negative squared alfven speed, c_a^2 = " +
@@ -787,9 +787,9 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
          ExcNonAdmissibleState(state,
                                "Negative squared slow speed, c_s^2 = " +
                                  std::to_string(c_s2)));
-  Assert(c_f2 >= 0.,
+  Assert(c_f2 >= epsilon_d,
          ExcNonAdmissibleState(state,
-                               "Negative squared fast speed, c_f^2 = " +
+                               "Expect positive squared fast speed, c_f^2 = " +
                                  std::to_string(c_f2)));
   const double a_s = std::sqrt(a_s2);
   const double c_a = std::sqrt(c_a2);
@@ -854,7 +854,17 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       (c_s2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2);
   const double theta_2 =
     (sgn_nb * alp_f * alp_f * c_f * a_s + sgn_nb * alp_s * alp_s * c_s * c_a);
-  Assert(theta_1 >= epsilon_d,
+  /**
+   * @note The left eigenvectors have only a numerical accuracy of
+   * \f$ \sqrt{\epsilon} \f$,
+   * where \f$ \epsilon \f$ is @ref MHDParameters::epsilon_d.
+   * This is because of divisions with the parameter
+   * \f$ \theta_1 \propto c_a^4 \f$
+   * which scales like \f$ \theta_1 \sim \epsilon^2 \f$
+   * for small \f$ c_a^2 \sim \epsilon \f$.
+   * This is relevant for states with \f$ P \ll \rho \f$.
+   */
+  Assert(theta_1 >= epsilon_d * epsilon_d,
          ExcNonAdmissibleState(state,
                                "Expect positive value for theta_1 = " +
                                  std::to_string(theta_1)));
