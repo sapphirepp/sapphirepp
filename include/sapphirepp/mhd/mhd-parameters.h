@@ -128,7 +128,7 @@ namespace sapphirepp
       /** Precision for double / zero comparision. */
       static constexpr double epsilon_d = 1e-8;
       /** Floor value for pressure, density and energy. */
-      double mhd_floor = epsilon_d;
+      double mhd_floor = 10. * epsilon_d;
 
       /** Threshold for KXRCF shock indicator. */
       double indicator_threshold = 0.1;

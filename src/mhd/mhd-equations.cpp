@@ -340,12 +340,12 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::compute_pressure(
   const state_type &state) const
 {
   AssertDimension(state.size(), n_components);
-  Assert(state[density_component] > 0., ExcNonAdmissibleState(state));
-  Assert(state[energy_component] > 0., ExcNonAdmissibleState(state));
+  Assert(state[density_component] >= epsilon_d, ExcNonAdmissibleState(state));
+  Assert(state[energy_component] >= epsilon_d, ExcNonAdmissibleState(state));
 
   const double pressure = compute_pressure_unsafe(state);
 
-  Assert(pressure > 0., ExcNonAdmissibleState(state));
+  Assert(pressure >= epsilon_d, ExcNonAdmissibleState(state));
   return pressure;
 }
 
@@ -535,7 +535,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
 
   // Construct perpendicular normal vector n_perp
   dealii::Tensor<1, n_vec_components> n_perp;
-  if (b_perp > 0)
+  if (b_perp >= epsilon_d)
     {
       for (unsigned int d = 0; d < n_vec_components; ++d)
         n_perp[d] = (state[first_magnetic_component + d] - nb * normal_3d[d]);
@@ -818,7 +818,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
 
   // Construct perpendicular normal vector n_perp
   dealii::Tensor<1, n_vec_components> n_perp;
-  if (b_perp > 0)
+  if (b_perp >= epsilon_d)
     {
       for (unsigned int d = 0; d < n_vec_components; ++d)
         n_perp[d] = (state[first_magnetic_component + d] - nb * normal_3d[d]);
@@ -854,11 +854,11 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
       (c_s2 + (2. - adiabatic_index) / (adiabatic_index - 1.) * a_s2);
   const double theta_2 =
     (sgn_nb * alp_f * alp_f * c_f * a_s + sgn_nb * alp_s * alp_s * c_s * c_a);
-  Assert(theta_1 > 0.,
+  Assert(theta_1 >= epsilon_d,
          ExcNonAdmissibleState(state,
                                "Expect positive value for theta_1 = " +
                                  std::to_string(theta_1)));
-  Assert(std::fabs(theta_2) > epsilon_d,
+  Assert(std::fabs(theta_2) >= epsilon_d,
          ExcNonAdmissibleState(state,
                                "Expect non-zero value for theta_2 = " +
                                  std::to_string(theta_2)));
@@ -1069,10 +1069,10 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
 {
   AssertDimension(primitive_state.size(), n_components);
   AssertDimension(conserved_state.size(), n_components);
-  Assert(primitive_state[density_component] > 0.,
+  Assert(primitive_state[density_component] >= epsilon_d,
          ExcNonAdmissibleState(primitive_state,
                                "Non-admissible primitive state."));
-  Assert(primitive_state[pressure_component] > 0.,
+  Assert(primitive_state[pressure_component] >= epsilon_d,
          ExcNonAdmissibleState(primitive_state,
                                "Non-admissible primitive state."));
 
@@ -1089,7 +1089,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   const double energy =
     0.5 * primitive_state[density_component] * u2 +
     primitive_state[pressure_component] / (adiabatic_index - 1.) + 0.5 * b2;
-  Assert(energy > 0.,
+  Assert(energy >= epsilon_d,
          ExcNonAdmissibleState(primitive_state,
                                "Non-admissible primitive state."));
 
