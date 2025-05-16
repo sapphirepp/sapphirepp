@@ -56,8 +56,7 @@ public:
   {
     seed = std::random_device{}();
     saplog << "RandomNumber(" << mean << ", " << stddev << ")"
-           << " with seed: \n"
-           << seed << std::endl;
+           << " with seed: " << seed << std::endl;
     rng.seed(seed);
   }
 
@@ -199,14 +198,13 @@ test_mhd_equation(RandomNumber      &rnd,
   using state_type = typename MHDEquations<dim, hdc>::state_type;
   using flux_type  = typename MHDEquations<dim, hdc>::flux_type;
 
-  dealii::LogStream::Prefix p("MHDEquations<" + std::to_string(dim) + "," +
-                                std::to_string(hdc) + ">",
-                              saplog);
-
   const double adiabatic_index = rnd.rand_uniform(1., 2.);
   saplog << "Test MHDEquations with dim=" << dim
          << ", divergence_cleaning=" << hdc
          << ", adiabatic_index=" << adiabatic_index << std::endl;
+  dealii::LogStream::Prefix p("MHDEquations<" + std::to_string(dim) + "," +
+                                std::to_string(hdc) + ">",
+                              saplog);
 
   // Declare variables
   dealii::Tensor<1, dim> normal;
@@ -267,7 +265,7 @@ test_mhd_equation(RandomNumber      &rnd,
       mhd_equations.compute_flux_matrix(state, flux_matrix);
       saplog << "Flux matrix: ";
       for (unsigned int c = 0; c < n_components; ++c)
-        saplog << "\n " << flux_matrix[c];
+        saplog << flux_matrix[c] << " ";
       saplog << std::endl;
       if constexpr (hdc)
         {
@@ -360,7 +358,7 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
       saplog.init(std::numeric_limits<unsigned int>::max(), true);
-      saplog.depth_console(2);
+      saplog.depth_console(1);
 
       RandomNumber rnd{};
       // rnd.set_seed(1083480086);
