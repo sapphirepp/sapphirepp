@@ -142,7 +142,9 @@ and compare it to the analytical solution.
 We use an expansion order $l_{\mathrm{max}} = 9$ and set the velocity $v = \sqrt{8}/3$.
 The result is shown in the following animation:
 
-<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc.gif" alt="Time-depnedent solution with an inflow boundary condition." width="75%"/>
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc.gif" alt="Time-depnedent solution with an inflow boundary condition." width="60%"/>
+</CENTER>
 
 The dashed lines show the derived analytical solution. 
 Because we chose $f$ to be isotropic at the boundary, 
@@ -292,14 +294,28 @@ $$
 
 The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt{8}/3$) and the analytical solution match, i.e.
 
-<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc-steady-state-l1.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to one expansion" width="75%"/>
-
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc-steady-state-l1.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to one expansion" width="60%"/>
+</CENTER>
 
 However, reconstructing $f$ at $x = L$, i.e. computing 
 $f(x = L, \cos\theta) = f_{000}(x = L) Y_{000} + f_{100}(x=L) Y_{100}(\cos\theta)$, 
-results in a negative distribution function. Hence, $l_{\mathrm{max}}$ is too low for the level of scattering $\nu = 0.1$. 
+results in a negative distribution function, because $f_{000}$ and $f_{100}$ must equal. 
+A higher expansion order $l_{\mathrm{max}}$ results in a positive distribution function.
+Additionally, the anisotropies resulting from an inflow produced by an isotropic distribution $f$
+are reduced by the included scattering. This is shown in the following plots:
 
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-plus-scattering.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to twelve" width="60%"/>
+</CENTER>
 
+Note that we enlarged the computational domain, namely $L = 10$.
+At the boundaries $x=-L$ and $x=L$,  the distribution function $f$ is
+
+<p float="left">
+  <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-scattering-phase-space-left.png" width="48%" />
+  <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-scattering-phase-space-right.png" width="48%" />
+</p>
 
 
 ## Reflecting boundary conditions
