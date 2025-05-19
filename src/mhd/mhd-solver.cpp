@@ -257,7 +257,7 @@ namespace sapphirepp
          *       us to use `std::vector`.
          */
         std::vector<types::global_dof_index>     local_dof_indices;
-        std::vector<double>                      cell_dof_values;
+        Vector<double>                           cell_dof_values;
         ArrayView<const types::global_dof_index> cell_indices; // unused
 
         template <typename Iterator>
@@ -269,7 +269,7 @@ namespace sapphirepp
           local_dof_indices.resize(dofs_per_cell);
           cell->get_dof_indices(local_dof_indices);
 
-          cell_dof_values.resize(dofs_per_cell);
+          cell_dof_values.reinit(dofs_per_cell, true);
           cell->get_dof_values(solution,
                                cell_dof_values.begin(),
                                cell_dof_values.end());
@@ -1102,9 +1102,16 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
      */
     if (limit_cell)
       {
+        FEValues<dim> &fe_sup_points = scratch_data.fe_support_points;
+        fe_sup_points.reinit(cell);
+
+        const std::vector<Point<dim>> &support_points =
+          fe_sup_points.get_quadrature_points();
+
         slope_limiter.limited_solution_to_dof_values(cell_avg,
                                                      limited_gradient,
-                                                     support_point_values,
+                                                     cell->center(),
+                                                     support_points,
                                                      fe,
                                                      copy_data.cell_dof_values);
       }

@@ -174,7 +174,7 @@ namespace sapphirepp
        * there are different approaches:
        *
        * - For a basis with support points (e.g. Lagrange) we use
-       *   @dealref{FESystem.convert_generalized_support_point_values_to_dof_values(),classFESystem,aba8b17ed5f02545b31eed23b325ef3e3}..
+       *   primitive support_points.
        *
        * @todo For Legendre and LDF basis, there are these alternatives:
        *   - Compute the projection of the limited solution onto the DoFs:
@@ -196,17 +196,19 @@ namespace sapphirepp
        *
        * @param cell_avg cell average state
        * @param limited_gradient limited gradient
-       * @param support_point_values limited solution at support points
+       * @param cell_center cell center
+       * @param primitive_support_points support points for primitive basis
        * @param fe @dealref{FESystem}
        * @param cell_dof_values DoF values on the cell
        */
       void
       limited_solution_to_dof_values(
-        const state_type                  &cell_avg,
-        const flux_type                   &limited_gradient,
-        const std::vector<Vector<double>> &support_point_values,
-        const FESystem<dim>               &fe,
-        std::vector<double>               &cell_dof_values) const;
+        const state_type              &cell_avg,
+        const flux_type               &limited_gradient,
+        const Point<dim>              &cell_center,
+        const std::vector<Point<dim>> &primitive_support_points,
+        const FESystem<dim>           &fe,
+        Vector<double>                &cell_dof_values) const;
 
 
 
@@ -246,7 +248,7 @@ namespace sapphirepp
         const Point<dim>              &cell_center,
         const std::vector<Point<dim>> &primitive_support_points,
         const FESystem<dim>           &fe,
-        std::vector<double>           &cell_dof_values) const;
+        Vector<double>                &cell_dof_values) const;
     };
   } // namespace MHD
 } // namespace sapphirepp

@@ -141,18 +141,19 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
 template <unsigned int dim, bool divergence_cleaning>
 void
 sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
-  limited_solution_to_dof_values(
-    const state_type                  &cell_avg,
-    const flux_type                   &limited_gradient,
-    const std::vector<Vector<double>> &support_point_values,
-    const FESystem<dim>               &fe,
-    std::vector<double>               &cell_dof_values) const
+  limited_solution_to_dof_values(const state_type &cell_avg,
+                                 const flux_type  &limited_gradient,
+                                 const Point<dim> &cell_center,
+                                 const std::vector<Point<dim>> &support_points,
+                                 const FESystem<dim>           &fe,
+                                 Vector<double> &cell_dof_values) const
 {
-  static_cast<void>(cell_avg);
-  static_cast<void>(limited_gradient);
-
-  fe.convert_generalized_support_point_values_to_dof_values(
-    support_point_values, cell_dof_values);
+  to_dof_values_using_primitive_support_points(cell_avg,
+                                               limited_gradient,
+                                               cell_center,
+                                               support_points,
+                                               fe,
+                                               cell_dof_values);
 }
 
 
@@ -166,7 +167,7 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
     const Point<dim>              &cell_center,
     const std::vector<Point<dim>> &support_points,
     const FESystem<dim>           &fe,
-    std::vector<double>           &cell_dof_values) const
+    Vector<double>                &cell_dof_values) const
 {
   AssertDimension(cell_dof_values.size(), fe.n_dofs_per_cell());
 
