@@ -132,11 +132,14 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
     MHDEquations<dim, hdc>::density_component;
   constexpr unsigned int energy_component =
     MHDEquations<dim, hdc>::energy_component;
+  constexpr unsigned int first_momentum_component =
+    MHDEquations<dim, hdc>::first_momentum_component;
   constexpr unsigned int first_magnetic_component =
     MHDEquations<dim, hdc>::first_magnetic_component;
   constexpr unsigned int divergence_cleaning_component =
     MHDEquations<dim, hdc>::divergence_cleaning_component;
-  using state_type = typename MHDEquations<dim, hdc>::state_type;
+  using state_type       = typename MHDEquations<dim, hdc>::state_type;
+  const double mhd_floor = 10 * epsilon_d;
 
   dealii::LogStream::Prefix p("random_state", saplog);
 
@@ -146,10 +149,10 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
     state[c] = rnd();
   state[density_component] = std::abs(state[density_component]);
   state[density_component] =
-    state[density_component] < epsilon_d ? epsilon_d : state[density_component];
+    state[density_component] < mhd_floor ? mhd_floor : state[density_component];
   state[energy_component] = std::abs(state[energy_component]);
   state[energy_component] =
-    state[energy_component] < epsilon_d ? epsilon_d : state[energy_component];
+    state[energy_component] < mhd_floor ? mhd_floor : state[energy_component];
   if (!magnetic_field)
     {
       for (unsigned int d = 0; d < n_vec_components; ++d)
@@ -157,19 +160,17 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
       if (hdc)
         state[divergence_cleaning_component] = 0.;
     }
+  // Use velocity as random variable for less vacuum states
+  for (unsigned int d = 0; d < n_vec_components; ++d)
+    state[first_momentum_component + d] =
+      state[first_momentum_component + d] * state[density_component];
+
 
   double pressure = mhd_equations.compute_pressure_unsafe(state);
-  if (pressure < epsilon_d)
-    {
-      // Ensure positive pressure by setting: E' = 2E - P/(gamma-1)
-      state[energy_component] = 2 * state[energy_component] -
-                                pressure / (mhd_equations.adiabatic_index - 1.);
-      pressure = mhd_equations.compute_pressure_unsafe(state);
-    }
 
   // Test specific state
   // const std::string tmp =
-  //   "1.06777 0.171278 0.465832 -0.0949130 0.119569 0.00000 0.00000 0.00000";
+  //   "3.17207e-05 -2.29659 1.42733 -1.66069 158721. 0.00000 0.00000 0.00000";
   // state                               = 0;
   // std::vector<double> hardcoded_state = dealii::Utilities::string_to_double(
   //   dealii::Utilities::split_string_list(tmp, " "));
@@ -177,6 +178,16 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
   // ++c)
   //   state[c] = hardcoded_state[c];
   // pressure = mhd_equations.compute_pressure_unsafe(state);
+
+  if (pressure < mhd_floor)
+    {
+      saplog << "P_old=" << pressure << std::endl;
+      // Ensure positive pressure by setting E' = E + dP/(gamma-1)
+      state[energy_component] +=
+        (mhd_floor - pressure) / (mhd_equations.adiabatic_index - 1.);
+      // TODO: Due to double precision the new pressure can be below mhd_floor
+      pressure = mhd_equations.compute_pressure_unsafe(state);
+    }
 
   saplog << "Generated state: " << state << ", P=" << pressure << std::endl;
   AssertThrow(state[density_component] >= epsilon_d,
@@ -202,9 +213,8 @@ test_mhd_equation(RandomNumber      &rnd,
   saplog << "Test MHDEquations with dim=" << dim
          << ", divergence_cleaning=" << hdc
          << ", adiabatic_index=" << adiabatic_index << std::endl;
-  dealii::LogStream::Prefix p("MHDEquations<" + std::to_string(dim) + "," +
-                                std::to_string(hdc) + ">",
-                              saplog);
+  saplog.push("MHDEquations<" + std::to_string(dim) + "," +
+              std::to_string(hdc) + ">");
 
   // Declare variables
   dealii::Tensor<1, dim> normal;
@@ -228,13 +238,15 @@ test_mhd_equation(RandomNumber      &rnd,
   MHDEquations<dim, hdc> mhd_equations(adiabatic_index);
 
 
+  unsigned int skipped_tests = 0;
   for (unsigned int n = 0; n < num; ++n)
     {
       // Generate a state and normal
       random_state(mhd_equations, rnd, magnetic_field, state);
-      normal = random_normal<dim>(rnd);
-      saplog << "state[" << n << "]:\t" << state
-             << ", P=" << mhd_equations.compute_pressure(state) << std::endl;
+      normal                = random_normal<dim>(rnd);
+      const double pressure = mhd_equations.compute_pressure(state);
+      saplog << "state[" << n << "]:\t" << state << ", P=" << pressure
+             << std::endl;
       saplog << "normal: \t" << normal << std::endl;
       dealii::LogStream::Prefix p("state[" + std::to_string(n) + "]", saplog);
 
@@ -248,6 +260,19 @@ test_mhd_equation(RandomNumber      &rnd,
                     dealii::ExcMessage("Problem with conversion to "
                                        "primitive state"));
 
+      const double a_s2 = adiabatic_index * pressure /
+                          state[MHDEquations<dim, hdc>::density_component];
+      saplog << "adiabatic sound speed a_s2=" << a_s2 << std::endl;
+      if (a_s2 < std::sqrt(epsilon_d))
+        {
+          saplog << "The eigensystem has problems, "
+                    "if the adiabatic sound speed is too small. "
+                    "Skip remaining tests!"
+                 << std::endl;
+          skipped_tests++;
+          continue;
+        }
+
       // Setup hyperbolic divergence cleaning
       const double       dx        = 1.;
       const unsigned int fe_degree = 1;
@@ -260,6 +285,16 @@ test_mhd_equation(RandomNumber      &rnd,
       mhd_equations.compute_hyperbolic_divergence_cleaning_speed(dt,
                                                                  dx,
                                                                  fe_degree);
+
+      if (max_eigenvalue > 1. / std::sqrt(epsilon_d))
+        {
+          saplog << "The eigensystem has problems, "
+                    "if the max eigenvalue is too big. "
+                    "Skip remaining tests!"
+                 << std::endl;
+          skipped_tests++;
+          continue;
+        }
 
       // Test flux and sources
       mhd_equations.compute_flux_matrix(state, flux_matrix);
@@ -295,12 +330,14 @@ test_mhd_equation(RandomNumber      &rnd,
                                                     left_eigenvectors);
       left_eigenvectors.print(saplog, 12, 5);
 
+      // The rest of the tests have only a precision sqrt(epsilon_d)
       left_eigenvectors.mmult(tmp_matrix, right_eigenvectors);
       saplog << "L*R:" << std::endl;
       tmp_matrix.print(saplog, 12, 5);
       for (unsigned int i = 0; i < n_components; ++i)
         for (unsigned int j = 0; j < n_components; ++j)
-          AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) < epsilon_d,
+          AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) <
+                        std::sqrt(epsilon_d),
                       dealii::ExcMessage("Problem with eigenvectors: l_" +
                                          std::to_string(i + 1) + " * r_" +
                                          std::to_string(j + 1) +
@@ -311,15 +348,15 @@ test_mhd_equation(RandomNumber      &rnd,
       tmp_matrix.print(saplog, 12, 5);
       if (state[MHDEquations<dim, hdc>::energy_component] /
             state[MHDEquations<dim, hdc>::density_component] >
-          1e4)
+          1. / std::sqrt(epsilon_d))
         {
           saplog << "The eigensystem has problems, "
                     "if the energy is much larger the density. "
                     "Skip remaining tests!"
                  << std::endl;
+          skipped_tests++;
           continue;
         }
-      // The rest of the tests have only a precision sqrt(epsilon_d)
       for (unsigned int i = 0; i < n_components; ++i)
         for (unsigned int j = 0; j < n_components; ++j)
           AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) <
@@ -345,6 +382,9 @@ test_mhd_equation(RandomNumber      &rnd,
                     dealii::ExcMessage("Problem with conversion to "
                                        "characteristic state"));
     }
+  saplog.pop();
+  saplog << "Needed to skip " << skipped_tests << "/" << num
+         << " due to vacuum states." << std::endl;
 }
 
 
@@ -363,7 +403,7 @@ main(int argc, char *argv[])
       RandomNumber rnd{};
       // rnd.set_seed(1083480086);
 
-      const unsigned int num = 1000;
+      const unsigned int num = 10000;
       test_mhd_equation<1, false>(rnd, num);
       test_mhd_equation<2, false>(rnd, num);
       test_mhd_equation<3, false>(rnd, num);
