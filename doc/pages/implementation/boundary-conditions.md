@@ -37,7 +37,7 @@ The outflow is a consequence of the problem itself, e.g. of the flow field $\bol
 and cannot be prescribed.
 
 @sapphire solves a __system__ of advection-reaction equations
-resulting from a spherical harmonic expansion of the distribution function $f$, 
+resulting from a spherical harmonic expansion of the distribution function $f$,
 see equations (14) and (15) in @cite Schween2025 .
 However, the inclusion of the boundary conditions into the (discrete) weak formulation
 can be generalised to the case of a system of partial differential equations (PDE)s.
@@ -65,16 +65,16 @@ In the next sections, we go through possible choices for $\mathbf{h}$ and illust
 
 Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$.
 For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant in space and time;
-setting $h_0 = \sqrt{4 \pi}$ at $x = -L$, 
-enforces an inflow that stems from an isotropic distribution $f$ of value $1$ 
-at the left $x$ boundary located at $-L$. 
+setting $h_0 = \sqrt{4 \pi}$ at $x = -L$,
+enforces an inflow that stems from an isotropic distribution $f$ of value $1$
+at the left $x$ boundary located at $-L$.
 Since the distribution function $f$ is isotropic at the boundary,
-we expect that half of the particles, namely all particles with $\theta < \pi/2$, 
+we expect that half of the particles, namely all particles with $\theta < \pi/2$,
 enter the computational domain.
 As a side remark, we note that representing such a phase-space distribution of particles
 requires the inclusion of many spherical harmonics in the expansion of $f$.
 
-To illustrate the inflow produced by an isotropic distribution $f$, 
+To illustrate the inflow produced by an isotropic distribution $f$,
 we use the @ref sapphirepp::VFP::VFPFlags "VFPFlags" to only include the temporal evolution
 and the advection term. As stated above, we also set $h_0 = \sqrt{4\pi}$ at $x = -L$ for all $t$.
 This results in the following set of equations
@@ -83,7 +83,7 @@ $$
 	\frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \partial_x \mathbf{f} = \mathbf{0}
 	\quad \text{with } \mathbf{f}^{-}(t, x = -L) = \mathbf{h}^{-} \text{ and } \mathbf{f}_{0}(x) \equiv \mathbf{f}(t = 0, x ) = 0
 $$
-where $\mathbf{f}^{-}$ denotes the inflowing components of the expansion coefficients. 
+where $\mathbf{f}^{-}$ denotes the inflowing components of the expansion coefficients.
 
 To determine the inflow , namely the flux through the boundary at $x = -L$, we integrate
 over a small control volume, e.g. $[-L, -L + \epsilon]$, close to the boundary:
@@ -94,19 +94,19 @@ $$
 $$
 
 At $x = -L$ , we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
-We emphasise that, in the case of a multidimensional problem, 
+We emphasise that, in the case of a multidimensional problem,
 the minus is consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
-If we diagonalize $- v \mathbf{A}_x$, i.e. 
+If we diagonalize $- v \mathbf{A}_x$, i.e.
 
 $$
-	-v \mathbf{A}_x = \mathbf{V}_x \boldsymbol{\Lambda}_x \mathbf{V}^{T}_{x} 
+	-v \mathbf{A}_x = \mathbf{V}_x \boldsymbol{\Lambda}_x \mathbf{V}^{T}_{x}
 	= \mathbf{V}_x \left(\boldsymbol{\Lambda}^{+}_{x} + \boldsymbol{\Lambda}^{-}_x \right) \mathbf{V}^{T}_x \,,
 $$
-we can distinguish between inflowing components, 
-i.e. the flow is in the opposite direction of $\mathbf{n}$ 
+we can distinguish between inflowing components,
+i.e. the flow is in the opposite direction of $\mathbf{n}$
 and they correspond to the negative eigenvalues $\boldsymbol{\Lambda}^{-}_{x}$,
-and the outflowing component belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$. 
-This distinction may become clearer 
+and the outflowing component belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$.
+This distinction may become clearer
 when looking at the following transformation of the above system of PDEs
 
 $$
@@ -115,17 +115,17 @@ $$
 $$
 
 where $\tilde{\mathbf{f}} \equiv \mathbf{V}^{T}_{x} \mathbf{f}$ are the _characteristic variables_. Note that $\mathbf{V}^{-1} = \mathbf{V}^{T}$, because $\mathbf{A}^{T}_{x} = \mathbf{A}_x$.
-The analytical solution of the above equations is 
+The analytical solution of the above equations is
 
 $$
 	\tilde{f}_i(x,t) = \tilde{f}_{0,i}(x + \lambda_{i} t) \, .
 $$
 
-$\mathbf{f}_{0}(x)$ are the initial conditions (or the boundary conditions) 
+$\mathbf{f}_{0}(x)$ are the initial conditions (or the boundary conditions)
 of the expansion coefficients.
-This solution implies that negative eigenvalues, $\lambda_{i} < 0$, 
-move the transformed initial (or boundary) conditions, $\tilde{f}_{0,i}$, 
-into the positive $x$-direction, 
+This solution implies that negative eigenvalues, $\lambda_{i} < 0$,
+move the transformed initial (or boundary) conditions, $\tilde{f}_{0,i}$,
+into the positive $x$-direction,
 i.e. into the opposite direction of the outward normal of the boundary surface at $x = -L$.
 
 We now formalise the concept of inflowing components $\mathbf{f}^{-}$ with the following definition
@@ -135,10 +135,10 @@ $$
 $$
 
 where $\boldsymbol{\mathbb{1}}^{-}$ is a matrix with ones on the diagonal
-where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero. 
+where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero.
 
-We wrap up and use the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$ in @sapphire 
-and compare it to the analytical solution. 
+We wrap up and use the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$ in @sapphire
+and compare it to the analytical solution.
 We use an expansion order $l_{\mathrm{max}} = 9$ and set the velocity $v = \sqrt{8}/3$.
 The result is shown in the following animation:
 
@@ -146,8 +146,8 @@ The result is shown in the following animation:
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc.gif" alt="Time-depnedent solution with an inflow boundary condition." width="60%"/>
 </CENTER>
 
-The dashed lines show the derived analytical solution. 
-Because we chose $f$ to be isotropic at the boundary, 
+The dashed lines show the derived analytical solution.
+Because we chose $f$ to be isotropic at the boundary,
 particles with velocity component $v_x = v \cos\theta \in [0, v]$ enter the computational domain.
 The ones with velocities close to $v$ cross the domain fastest.
 This can be seen during the first time steps.
@@ -155,16 +155,16 @@ Though, the steady inflow of particles will eventually lead to a state
 in which particles cover the complete velocity range $[0, v]$.
 This state is steady and reached at the end of the animation.
 
-During the animation's first moments, the plotted expansion coefficients are step functions. 
+During the animation's first moments, the plotted expansion coefficients are step functions.
 This is an effect of a finite expansion order.
-If we solved the equation for $f$ directly, i.e. 
+If we solved the equation for $f$ directly, i.e.
 
 $$
-	\frac{\partial f}{\partial t} + v \cos\theta \frac{\partial f}{\partial x} \quad 
+	\frac{\partial f}{\partial t} + v \cos\theta \frac{\partial f}{\partial x} \quad
 	\text{with } f(0,x) = 0 \text{ and } f(t,-L) = 1 \,,
 $$
 
-we would get 
+we would get
 
 $$
 	f(t,x,\theta) =
@@ -174,75 +174,75 @@ $$
 	\end{cases}\; .
 $$
 
-This implies that $f_{000}$ of an infinite order expansion is 
+This implies that $f_{000}$ of an infinite order expansion is
 
 $$
 	f_{000}(t,x) = \int Y_{000} f(t,x,\theta) \mathrm{d}\Omega
-	= 
+	=
 	\begin{cases}
 	\sqrt{\pi}\left(1 - \frac{x + L}{vt}\right) &\text{for } x < -L + vt \\
 	0 &\text{for } x \geq -L + vt
 	\end{cases}	\; ,
 $$
 where we used that $f = 1$ when $\cos\theta > (x + L)/vt$.
-We also plotted this function; it's label is `f_000_no_expansion`.
+We also plotted this function; its label is `f_000_no_expansion`.
 It is a linear function; that is approximated by a step function and the higher the expansion order,
-the better the approximation. 
-This means that we would need an infinite angular resolution to capture it exactly. 
+the better the approximation.
+This means that we would need an infinite angular resolution to capture it exactly.
 
 In applications, the last statement is crucial.
 If there is no scattering, the expansion order must be very high.
-A fact that becomes clear when we reconstruct phase space at some point $x$ 
+A fact that becomes clear when we reconstruct phase space at some point $x$
 after steady state has been reached:
 
-The plot compares the phase space reconstruction for $l_{\mathrm{max}} = 9$ 
-and $l_{\mathrm{max}} = 63$. 
+The plot compares the phase space reconstruction for $l_{\mathrm{max}} = 9$
+and $l_{\mathrm{max}} = 63$.
 
 <p float="left">
   <img src="https://sapphirepp.org/img/implementation/boundary-conditions/l_max9.png" width="48%" />
   <img src="https://sapphirepp.org/img/implementation/boundary-conditions/l_max63.png" width="48%" />
 </p>
 
-A low expansion order leads to a distribution function with negative values. 
-Moreover, if there is no scattering 
+A low expansion order leads to a distribution function with negative values.
+Moreover, if there is no scattering
 a difference between odd and even $l_{\mathrm{max}}$ can be observed,
 for details see Sec. 2 in  @cite Garret2016.
 
-To conclude we look at the same example, 
-but we include scattering, we directly compute the steady-state solution 
-and use the zero inflow boundary condition. 
+To conclude we look at the same example,
+but we include scattering, we directly compute the steady-state solution
+and use the zero inflow boundary condition.
 We solve
 
 $$
 	 v \mathbf{A}_x \partial_x \mathbf{f} = \nu \mathbf{C} \quad \text{with } \mathbf{f}^{-}(x = -L) = \mathbf{h}^{-} \text{ and } \mathbf{f}^{-}(x = L) = \mathbf{0}  \,.
 $$
 
-For $l_{\mathrm{max}} = 1$, the explicit system of equations is 
+For $l_{\mathrm{max}} = 1$, the explicit system of equations is
 
 $$
-	\frac{v}{\sqrt{3}} 
+	\frac{v}{\sqrt{3}}
 	\begin{pmatrix}
 	0 & 0 & 1 & 0 \\
-	0 & 0 & 0 & 0 \\ 
+	0 & 0 & 0 & 0 \\
 	1 & 0 & 0 & 0 \\
-	0 & 0 & 0 & 0 
+	0 & 0 & 0 & 0
 	\end{pmatrix} \partial_{x} \mathbf{f}
-	= -\nu 
+	= -\nu
 \begin{pmatrix}
 	0 & 0 & 0 & 0 \\
-	0 & 1 & 0 & 0 \\ 
+	0 & 1 & 0 & 0 \\
 	0 & 0 & 1 & 0 \\
-	0 & 0 & 0 & 1 
+	0 & 0 & 0 & 1
    	\end{pmatrix} \mathbf{f} \, .
 $$
-Hence, 
+Hence,
 
 $$
 \begin{split}
 f_{000} &= -\frac{\sqrt{3}\nu}{v} f_{100} x + c_{0} \\
-f_{110} &= 0 \\ 
+f_{110} &= 0 \\
 f_{100} &=c_{1} \\
-f_{111}  &= 0 \\ 
+f_{111}  &= 0 \\
 \end{split}
 $$
 
@@ -254,7 +254,7 @@ $$
 	f_{000} + f_{100}\\
 	0 \\
 	f_{000} + f_{100} \\
-	0 
+	0
 \end{pmatrix}
 = \sqrt{\pi}
 \begin{pmatrix}
@@ -271,9 +271,9 @@ $$
 	f_{000} - f_{100}\\
 	0 \\
 	-f_{000} + f_{100} \\
-	0 
+	0
 \end{pmatrix}
-= 
+=
 \begin{pmatrix}
 0 \\
 0 \\
@@ -282,8 +282,8 @@ $$
 \end{pmatrix}
 $$
 
-This can be condensed into the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$, which determine the two constants $c_{0}$ and $c_{1}$. 
-The solution is 
+This can be condensed into the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$, which determine the two constants $c_{0}$ and $c_{1}$.
+The solution is
 
 $$
 \begin{split}
@@ -298,9 +298,9 @@ The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc-steady-state-l1.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to one expansion" width="60%"/>
 </CENTER>
 
-However, reconstructing $f$ at $x = L$, i.e. computing 
-$f(x = L, \cos\theta) = f_{000}(x = L) Y_{000} + f_{100}(x=L) Y_{100}(\cos\theta)$, 
-results in a negative distribution function, because $f_{000}$ and $f_{100}$ must equal. 
+However, reconstructing $f$ at $x = L$, i.e. computing
+$f(x = L, \cos\theta) = f_{000}(x = L) Y_{000} + f_{100}(x=L) Y_{100}(\cos\theta)$,
+results in a negative distribution function, because $f_{000}$ and $f_{100}$ must equal.
 A higher expansion order $l_{\mathrm{max}}$ results in a positive distribution function.
 Additionally, the anisotropies resulting from an inflow produced by an isotropic distribution $f$
 are reduced by the included scattering. This is shown in the following plots:
@@ -320,72 +320,158 @@ At the boundaries $x=-L$ and $x=L$,  the distribution function $f$ is
 
 ## Reflecting boundary conditions
 
-This implies that implementing reflexive boundary conditions, requires us to find a vector $\mathbf{g}$ that "reflects" $\mathbf{f}_{h}$. For the sake of simplicity, we restrict our attention to the boundaries at $x = 0$ and at $x = L $, where $L$ is the size of our computational domain in $x$-direction. A reflection at $y-z$-plane is a transformation that flips the sign of the $x$-component of, say, a vector $\mathbf{w} \in \mathbb{R}^{3}$. Formally,
+Reflecting, as periodic and continuous, boundary conditions differ from inflow boundary conditions
+in computing the boundary distribution function $\mathbf{h}$ from its numerical value
+$\mathbf{f}_{h}$ at the "inner" boundary instead of prescribing it manually.
+The subscript $h$ was introduced to emphasise
+that we use the numerical approximation of the actual solution $\mathbf{f}$
+
+At a reflecting boundary the particles are reflected in the sense
+that their angle of incidence equals their angle of reflection.
+Mathematically, this can be formalised as "mirroring" their velocity vector at the boundary.
+For the sake of simplicity and of example,
+we restrict our attention to boundaries whose normal points into the $x$-direction,
+i.e. we reflect the velocity vector $\mathbf{v}$ at  the $y-z$-plane. Formally,
 
 $$
-\mathbf{w}'=
+\mathbf{v}'= \mathbf{M}_{\mathbf{e}_{x}} \mathbf{v} \equiv
 \begin{pmatrix}
 	-1 & 0 & 0 \\
 	0  & 1 & 0 \\
     0  & 0 & 1
-\end{pmatrix} \mathbf{w} \,.
+\end{pmatrix} \mathbf{v} \,,
+$$
+i.e. this reflection is a transformation that flips the sign of the $v_{x}$-component.
+
+To apply this transformation to our spherical harmonic expansion of the distribution function $f$,
+we need to find the representation matrix of the reflection operator $\hat{M}_{\mathbf{e}_x}$
+in the space of spherical harmonics.
+As stated above, its action is
+$\hat{M}_{\mathbf{e}_x}f(t, \mathbf{x},\mathbf{p}) = f(t, \mathbf{x}, \mathbf{M}_{\mathbf{e}_x} \mathbf{p})$.
+If applied to a spherical harmonic, we get $Y_{lms}(\mathbf{M}_{\mathbf{e}_x} \hat{\mathbf{p}})$,
+where
+
+$$
+	\mathbf{M}_{\mathbf{e}_x} \hat{\mathbf{p}}
+	=
+	\begin{pmatrix}
+	- \cos \theta \\
+	\sin \theta \cos \varphi \\
+	\sin \theta \sin \varphi
+	\end{pmatrix}
+    = \begin{pmatrix}
+	\cos (\pi - \theta) \\
+	\sin (\pi - \theta) \cos \varphi \\
+	\sin (\pi - \theta) \sin \varphi
+	\end{pmatrix} \,.
 $$
 
-To apply this transformation to our spherical harmonic expansion of the distribution function $f$, we need quantities that transform like vectors. These are the moments of $f$. For example,
+Whence it follows that the reflection matrix
+
+$$
+	\begin{split}
+    \left(\mathbf{P}_{\mathbf{e}_x}\right)_{i(l',m',s')j(l,m,s)}
+	&= \left( Y_{l'm's'}(\theta, \varphi) \mid \hat{M}_{\mathbf{e}_x}Y_{lms}(\theta, \varphi) \right) \\    &= \left( Y_{l'm's'}(\theta, \varphi) \mid Y_{lms}(\pi - \theta, \varphi) \right) \\
+	&= (-1)^{(l-m)} \delta_{l'l}\delta_{m'm} \delta_{s's}
+	\end{split}
+$$
+
+is a diagonal matrix with ones and minus ones.
+For more details on representation matrices in the context of @sapphire,
+we refer the reader to @cite Schween2024a .
+
+The boundary distribution function $\mathbf{h}$ is then computed via
+
+$$
+	\mathbf{h} = \mathbf{P}_{\mathbf{e}_x} \mathbf{f}_{h} \big|_{\text{at $x$-boundary}} \,.
+$$
+
+For the sake of completeness, we include the representation matrices of the reflection operators
+$\hat{M}_{\mathbf{e}_y}$ and $\hat{M}_{\mathbf{e}_z}$.
+Repeating the above computation yields
+
+$$
+	\mathbf{M}_{\mathbf{e}_y} \hat{\mathbf{p}}
+	=
+	\begin{pmatrix}
+    \cos \theta \\
+	 -\sin \theta \cos \varphi \\
+	\sin \theta \sin \varphi
+	\end{pmatrix}
+    = \begin{pmatrix}
+	\cos (\theta) \\
+	\sin (\theta) \cos (\pi - \varphi) \\
+	\sin (\theta) \sin (\pi - \varphi)
+	\end{pmatrix}
+
+	\quad \text{and} \quad
+
+	\mathbf{M}_{\mathbf{e}_z} \hat{\mathbf{p}}
+	=
+	\begin{pmatrix}
+	\cos \theta \\
+	\sin \theta \cos \varphi \\
+	- \sin \theta \sin \varphi
+	\end{pmatrix}
+    = \begin{pmatrix}
+	\cos (\pi - \theta) \\
+	\sin (\pi - \theta) \cos (2 \pi - \varphi) \\
+	\sin (\pi - \theta) \sin (2 \pi - \varphi)
+	\end{pmatrix} \,
+$$
+
+where $\mathbf{M}_{\mathbf{e}_y}$ and $\mathbf{M}_{\mathbf{e}_z}$ are reflections
+at the $x--z$-plane and $x--y$-plane respectively.
+The representation matrices are
+
+$$
+	\left(\mathbf{P}_{\mathbf{e}_y}\right)_{i(l',m',s')j(l,m,s)} = (-1)^{(m+s)} \delta_{l'l}\delta_{m'm} \delta_{s's}
+	\quad \text{and} \quad
+	\left(\mathbf{P}_{\mathbf{e}_z}\right)_{i(l',m',s')j(l,m,s)} = (-1)^{s} \delta_{l'l}\delta_{m'm} \delta_{s's} \,.
+$$
+
+To demonstrate the reflective boundary conditions, we look at a toy example.
+We solve
+$$
+	\frac{\partial \mathbf{f}}{\partial t}
+	+ v \mathbf{A}_x \frac{\partial \mathbf{f}}{\partial x} = 0
+	\quad \text{with } \mathbf{f}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right)
+$$
+
+with reflective boundaries at $x = -L$ and a zero inflow boundary condition at $x = L$.
+Although, an expansion order $l_{\mathrm{max}} = 1$ is not representative
+of the actual distribution function $f$, it shows what reflective boundaries are doing.
+The result is shown in the following animation
+
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/reflective-bc.gif" alt="Demonstration of the reflective boundary conditions." width="60%"/>
+</CENTER>
+
+We close this section with a remark about the moments of the distribution function $f$,
+i.e. about
 
 $$
 \begin{split}
   j^{i}(\mathbf{x}) &= \int f v^{i} \, \mathrm{d}^{3} p \\
-  T^{ij}(\mathbf{x}) & = \int f v^{i}v^{j} \, \mathrm{d}^{3} p \, .
+  T^{ij}(\mathbf{x}) &= \int f v^{i}v^{j} \, \mathrm{d}^{3} p \\
+	                 &\phantom{=}\vdots
 \end{split}
 $$
 
-The moments of $f$ can be computed straightforwardly, $f$ is expanded in the Cartesian tensors, i.e.
-$$
-  f(t, \mathbf{x}, \mathbf{p}) = \sum^{\infty}_{l_{\mathrm{max}}} F^{(l)}_{i_{1} \cdots i_{l}} \frac{p^{i_{1}} \cdots p^{i_{l}}}{p^{l}} \,.
-$$
-
-The second moment is then a sum of the zeroth order expansion coefficient and the second order expansion coefficient. The third moment is a sum of the first order expansion coefficient and the third order expansion coefficient. In mathematics
+They are tensors and they transform accordingly.
+We can directly apply our reflection $\mathbf{M}_{\mathbf{e}_x}$.
+This yields
 
 $$
-\begin{split}
-	n         & = c_{1} \int F^{(0)} p^{2} \mathrm{d}^{3}p  \\
-        j^{i} & = c_{2} \int F^{(1)}_{i} p \mathrm{d}^{3} p \\
-    T^{ij}    & = c_{3} \int F^{(0)} p^{2} \mathrm{d}^{3}p  + \int F^{(2)}_{ij} h(p) \mathrm{d}^{3} p
-\end{split}
+	\begin{split}
+	j'^{i} &= (\mathbf{M}_{\mathbf{e}_x})_{ij} j^{j} = \int f (\mathbf{M}_{\mathbf{e}_x})_{ij} v^{j} \, \mathrm{d}^{3} p \\
+	T'^{ij}(\mathbf{x}) &= \int f (\mathbf{M}_{\mathbf{e}_x})_{ik} (\mathbf{M}_{\mathbf{e}_x})_{jl} v^{k}v^{l} \, \mathrm{d}^{3} p
+	\end{split}
 $$
 
-```math
-\alpha + \beta = \gamma
-```
+A reflection in velocity space leads to expected reflection of the moments of $f$ in configuration space.
 
-The Cartesian tensor expansion coefficients can be expressed in spherical harmonics. For example,
-
-$$
-\begin{split}
-  j^{x} &= c f_{100} \\
-  j^{y} &= -c f_{110} \\
-  j^{z} &= -c f_{111}
-\end{split}
-$$
-
-```math
-\begin{split}
- \alpha &= \gamma \\
- \beta &= \delta
-\end{split}
-```
-or for the second order expansion coefficient, $F_{yz} = \frac{1}{4} \sqrt{\frac{15}{\pi}} f_{221}$, $F_{xy} = -\frac{1}{4} \sqrt{\frac{15}{\pi}} f_{210}$, $F_{xz} = -\frac{1}{4} \sqrt{\frac{15}{\pi}} f_{211}$, $F_{zz} = -\frac{1}{4} \sqrt{\frac{15}{\pi}} f_{220} - \frac{1}{4} \sqrt{\frac{5}{\pi}} f_{200}$ and $F_{xx} = \frac{1}{2} \sqrt{\frac{5}{\pi}} f_{000}$.
-
-We can now apply our transformation to this tensors, to get our vector $\mathbf{g}$.
-For example, $\mathbf{j}'$ gets a minus sign in its $x$-component. For a vector $\mathbf{g}$, we can take the value $\mathbf{f}_{h,1}$ on the inner side of our computational domain, and flip the sign of the $f_{100}$ component. Repeating this procedure with the second moment, we see that the sign of the $F_{xx}$ component is unchanged, because the reflection was applied twice. However, the sign of $F_{xy}$ and $F_{xz}$ changes. Hence, we have to flip the sign of the component $f_{210}$ and $f_{211}$. This can be done with higher order moments as well. There will always be a sign flip whenever the is an odd number of $x$s, e.g. $F_{xxx}$, will flip the signs of the spherical harmonic expansion coefficients that contain it.
-
-In the end, we can work out which components of $\mathbf{f}_{h,1}$ have to change their signs. We formalise this with a signature $\mathbf{g} = \mathbf{\eta} \mathbf{f}_{h,1}$.
-
-Using the above procedure to determine this signature matrix is complicated. Luckily there is an easier, if we take a look at momentum space. In this space we use spherical coordinates, and we reflect  our velocity vector $\mathbf{v}$, by changing $\theta \rightarrow \pi - \theta$. Now keeping in mind that all the moments are computed with the velocities in it,
-we can apply our transformation, before integrating them out.
-(This needs a clearer argument.) We can directly get the signature by using working out the sing changes corresponding to $Y^{m}_{l}(\pi - \theta, \varphi)$.
-
-The reflection at the other boundaries should work analogously.
 
 ## Continuous boundary conditions
+
+## Periodic boundary conditions
