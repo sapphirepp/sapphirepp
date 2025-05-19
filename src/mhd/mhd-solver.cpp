@@ -203,10 +203,11 @@ namespace sapphirepp
       {
       public:
         // Constructor
-        ScratchDataSlopeLimiter(const Mapping<dim>       &mapping,
-                                const FiniteElement<dim> &fe,
-                                const FiniteElement<dim> &fe_primitive,
-                                const Quadrature<dim>    &quadrature)
+        ScratchDataSlopeLimiter(const Mapping<dim>        &mapping,
+                                const FiniteElement<dim>  &fe,
+                                const FiniteElement<dim>  &fe_primitive,
+                                const Quadrature<dim>     &quadrature,
+                                const Quadrature<dim - 1> &quadrature_face)
           : fe_values_gradient(mapping,
                                fe,
                                quadrature,
@@ -216,11 +217,8 @@ namespace sapphirepp
                               Quadrature<dim>(
                                 fe_primitive.get_generalized_support_points()),
                               update_quadrature_points)
-          , fe_support_values(mapping,
-                              fe,
-                              Quadrature<dim>(
-                                fe_primitive.get_generalized_support_points()),
-                              update_values)
+          , fe_values(mapping, fe, quadrature, update_values)
+          , fe_values_face(mapping, fe, quadrature_face, update_values)
         {}
 
         // Copy Constructor
@@ -235,15 +233,20 @@ namespace sapphirepp
                               scratch_data.fe_support_points.get_fe(),
                               scratch_data.fe_support_points.get_quadrature(),
                               scratch_data.fe_support_points.get_update_flags())
-          , fe_support_values(scratch_data.fe_support_values.get_mapping(),
-                              scratch_data.fe_support_values.get_fe(),
-                              scratch_data.fe_support_values.get_quadrature(),
-                              scratch_data.fe_support_values.get_update_flags())
+          , fe_values(scratch_data.fe_values.get_mapping(),
+                      scratch_data.fe_values.get_fe(),
+                      scratch_data.fe_values.get_quadrature(),
+                      scratch_data.fe_values.get_update_flags())
+          , fe_values_face(scratch_data.fe_values_face.get_mapping(),
+                           scratch_data.fe_values_face.get_fe(),
+                           scratch_data.fe_values_face.get_quadrature(),
+                           scratch_data.fe_values_face.get_update_flags())
         {}
 
-        FEValues<dim> fe_values_gradient;
-        FEValues<dim> fe_support_points;
-        FEValues<dim> fe_support_values;
+        FEValues<dim>     fe_values_gradient;
+        FEValues<dim>     fe_support_points;
+        FEValues<dim>     fe_values;
+        FEFaceValues<dim> fe_values_face;
       };
 
 
@@ -878,11 +881,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                      fe.n_dofs_per_cell(),
                      locally_relevant_current_solution);
 
-    bool                        limit_cell = false;
-    flux_type                   limited_gradient;
-    std::vector<Vector<double>> support_point_values(
-      scratch_data.fe_support_points.n_quadrature_points,
-      Vector<double>(n_components));
+    bool      limit_cell = false;
+    flux_type limited_gradient;
 
 
     /**
@@ -1039,15 +1039,30 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
     if constexpr ((mhd_flags & MHDFlags::no_positivity_limiting) ==
                   MHDFlags::none)
       {
-        FEValues<dim> &fe_sup_val = scratch_data.fe_support_values;
-        fe_sup_val.reinit(cell);
+        FEValues<dim> &fe_values = scratch_data.fe_values;
+        fe_values.reinit(cell);
+        std::vector<Vector<double>> solution_values(
+          fe_values.n_quadrature_points, Vector<double>(n_components));
 
-        fe_sup_val.get_function_values(copy_data.cell_dof_values,
-                                       copy_data.cell_indices,
-                                       support_point_values);
+        fe_values.get_function_values(copy_data.cell_dof_values,
+                                      copy_data.cell_indices,
+                                      solution_values);
+        bool limit_positivity = indicate_positivity_limiting(solution_values);
 
-        const bool limit_positivity =
-          indicate_positivity_limiting(support_point_values);
+        for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+          {
+            FEFaceValues<dim> &fe_values_face = scratch_data.fe_values_face;
+            fe_values_face.reinit(cell, f);
+
+            solution_values.resize(fe_values_face.n_quadrature_points,
+                                   Vector<double>(n_components));
+            fe_values_face.get_function_values(copy_data.cell_dof_values,
+                                               copy_data.cell_indices,
+                                               solution_values);
+
+            limit_positivity =
+              limit_positivity | indicate_positivity_limiting(solution_values);
+          }
 
         if (limit_positivity)
           {
@@ -1082,11 +1097,9 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   };
 
 
-  ScratchDataSlopeLimiter<dim> scratch_data(mapping,
-                                            fe,
-                                            fe.base_element(0),
-                                            quadrature);
-  CopyDataSlopeLimiter         copy_data;
+  ScratchDataSlopeLimiter<dim> scratch_data(
+    mapping, fe, fe.base_element(0), quadrature, quadrature_face);
+  CopyDataSlopeLimiter copy_data;
   saplog << "Begin limiting of solution." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
