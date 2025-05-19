@@ -629,6 +629,52 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cell_average()
               solution_values[q_index][c] * JxW[q_index];
 
         cell_average[cell_index] /= cell->measure();
+
+        if constexpr ((mhd_flags & MHDFlags::no_positivity_limiting) ==
+                      MHDFlags::none)
+          {
+            // Set average to floor values if needed.
+            const double &mhd_floor = mhd_parameters.mhd_floor;
+            if (cell_average[cell_index][density_component] < mhd_floor)
+              {
+                positivity_limiter_indicator[cell_index]    = 2;
+                cell_average[cell_index][density_component] = mhd_floor;
+              }
+            if (cell_average[cell_index][energy_component] < mhd_floor)
+              {
+                positivity_limiter_indicator[cell_index]   = 2;
+                cell_average[cell_index][energy_component] = mhd_floor;
+              }
+            const double pressure_average =
+              mhd_equations.compute_pressure_unsafe(cell_average[cell_index]);
+            if (pressure_average < mhd_floor)
+              {
+                positivity_limiter_indicator[cell_index] = 2;
+                // Ensure positive pressure by setting E' = E + dP/(gamma-1)
+                // We use a slightly higher floor value
+                // to avoid numerical precision problems
+                cell_average[cell_index][energy_component] +=
+                  (1.1 * mhd_floor - pressure_average) /
+                  (mhd_equations.adiabatic_index - 1.);
+              }
+
+            Assert(cell_average[cell_index][density_component] >= mhd_floor,
+                   ExcNonAdmissibleState<dim>(cell_average[cell_index],
+                                              "Invalid cell average "
+                                              "after enforcing positivity.",
+                                              cell->center()));
+            Assert(cell_average[cell_index][energy_component] >= mhd_floor,
+                   ExcNonAdmissibleState<dim>(cell_average[cell_index],
+                                              "Invalid cell average "
+                                              "after enforcing positivity.",
+                                              cell->center()));
+            Assert(mhd_equations.compute_pressure_unsafe(
+                     cell_average[cell_index]) >= mhd_floor,
+                   ExcNonAdmissibleState<dim>(cell_average[cell_index],
+                                              "Invalid cell average "
+                                              "after enforcing positivity.",
+                                              cell->center()));
+          }
       }
 }
 
@@ -817,7 +863,6 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   if constexpr ((mhd_flags & MHDFlags::no_limiting) != MHDFlags::none)
     return;
 
-  TimerOutput::Scope t(timer, "Limiter - MHD");
   saplog << "Limit solution" << std::endl;
   LogStream::Prefix p("Limiter", saplog);
 
@@ -838,17 +883,18 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
    */
 
   /** Step 1: Precompute @ref cell_average and @ref shock_indicator. */
+  positivity_limiter_indicator = 0;
   compute_cell_average();
   if constexpr ((mhd_flags & MHDFlags::no_shock_indicator) == MHDFlags::none)
     compute_shock_indicator();
 
+  TimerOutput::Scope t(timer, "Limiter - MHD");
   AssertDimension(cell_average.size(), triangulation.n_active_cells());
   AssertDimension(shock_indicator.size(), triangulation.n_active_cells());
   AssertDimension(positivity_limiter_indicator.size(),
                   triangulation.n_active_cells());
 
-  locally_owned_solution       = 0; // DoFs are copied if not limited
-  positivity_limiter_indicator = 0.;
+  locally_owned_solution = 0; // DoFs are copied if not limited
 
 
   // assemble cell terms
@@ -1066,8 +1112,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
         if (limit_positivity)
           {
-            limit_cell                               = true;
-            positivity_limiter_indicator[cell_index] = 1;
+            limit_cell = true;
+            positivity_limiter_indicator[cell_index] += 1;
 
             for (unsigned int c = 0; c < n_components; ++c)
               limited_gradient[c] = 0.;

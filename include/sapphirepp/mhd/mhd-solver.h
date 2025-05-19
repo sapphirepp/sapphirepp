@@ -588,7 +588,9 @@ namespace sapphirepp
        * @{
        */
       /**
-       * @brief Computes @ref cell_average of the current solution
+       * @brief Computes @ref cell_average of the current solution.
+       *
+       * Enforces positivity of the cell_average.
        */
       void
       compute_cell_average();
