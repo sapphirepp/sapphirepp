@@ -250,15 +250,10 @@ namespace sapphirepp
 
       struct CopyDataSlopeLimiter
       {
-        /**
-         * @todo Use a `dealii::Vector<double>` for `cell_dof_values`. At the
-         *       moment using
-         *       `convert_generalized_support_point_values_to_dof_values` forces
-         *       us to use `std::vector`.
-         */
         std::vector<types::global_dof_index>     local_dof_indices;
         Vector<double>                           cell_dof_values;
-        ArrayView<const types::global_dof_index> cell_indices; // unused
+        std::vector<types::global_dof_index>     cell_indices_vector;
+        ArrayView<const types::global_dof_index> cell_indices;
 
         template <typename Iterator>
         void
@@ -274,11 +269,9 @@ namespace sapphirepp
                                cell_dof_values.begin(),
                                cell_dof_values.end());
 
-          // std::vector<types::global_dof_index> indices_vector(dofs_per_cell);
-          // std::iota(indices_vector.begin(), indices_vector.end(), 0);
-          // cell_indices =
-          //   ArrayView<types::global_dof_index>(indices_vector.data(),
-          //                                      indices_vector.size());
+          cell_indices_vector.resize(dofs_per_cell);
+          std::iota(cell_indices_vector.begin(), cell_indices_vector.end(), 0);
+          cell_indices = make_array_view(cell_indices_vector);
         }
       };
     } // namespace MHDSolver
@@ -922,12 +915,9 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         std::vector<std::vector<Tensor<1, dim>>> solution_gradients(
           fe_v_grad.n_quadrature_points,
           std::vector<Tensor<1, dim>>(n_components));
-        /** @todo Add local version of `get_function_gradients` to @dealii */
-        // fe_v_grad.get_function_gradients(copy_data.cell_dof_values,
-        //                                  copy_data.cell_indices,
-        //                                  solution_gradients);
-        fe_v_grad.get_function_gradients(locally_relevant_current_solution,
-                                         solution_gradients);
+        fe_v_grad.get_function_gradients(copy_data.cell_dof_values,
+                                         copy_data.cell_indices,
+                                         make_array_view(solution_gradients));
         for (unsigned int c = 0; c < n_components; ++c)
           {
             for (const unsigned int q_index :
@@ -1055,11 +1045,8 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
         FEValues<dim> &fe_sup_val = scratch_data.fe_support_values;
         fe_sup_val.reinit(cell);
 
-        /** @todo Use local version of `get_function_values` */
-        // fe_sup_val.get_function_gradients(copy_data.cell_dof_values,
-        //                                     copy_data.cell_indices,
-        //                                     support_point_values);
-        fe_sup_val.get_function_values(locally_relevant_current_solution,
+        fe_sup_val.get_function_values(copy_data.cell_dof_values,
+                                       copy_data.cell_indices,
                                        support_point_values);
       }
 
