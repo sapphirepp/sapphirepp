@@ -474,4 +474,20 @@ A reflection in velocity space leads to expected reflection of the moments of $f
 
 ## Continuous boundary conditions
 
+Continuous boundary conditions pretend that there is no boundary. The boundary distribution function $\mathbf{h}$ is set to the numerical approximation of the distribution function $\mathbf{f}$, i.e.
+
+$$
+ \mathbf{h} = \mathbf{f}_{h} \big |_{\partial D} \,.
+$$
+
+A variation of the @ref 
+
 ## Periodic boundary conditions
+
+Periodic boundary conditions take the numerical value of the distribution function $\mathbf{f}$ on side of the domain and use to set the boundary distribution function $\mathbf{h}$ on the opposite side. For example, 
+
+$$
+\mathbf{h}\big|_{x = - L} = \mathbf{f}_{h} \big |_{x = L} \,.
+$$
+
+
