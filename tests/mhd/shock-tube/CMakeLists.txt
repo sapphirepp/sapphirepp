@@ -1,4 +1,4 @@
-file(COPY parameter-sod.prm
+file(COPY parameter-sod.prm parameter-brio-wu.prm
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -21,6 +21,21 @@ add_test(NAME shock-tube-sod COMMAND
 set_property(TEST shock-tube-sod PROPERTY LABELS
   "shock-tube"
   "1d" "sod"
+  "ERK2" "zero-inflow"
+  "fast" "commit-Debug" "commit-Release"
+  "full-suite-Release" "full-suite-Debug"
+)
+
+add_test(NAME shock-tube-brio-wu COMMAND
+  ./test-shock-tube parameter-brio-wu.prm
+  # "athena-results"
+  "/home/schulze/Documents/PhD/Code/athena-results" # TODO: copy data over
+  "BrioWu"
+  6e-3
+)
+set_property(TEST shock-tube-brio-wu PROPERTY LABELS
+  "shock-tube"
+  "1d" "brio-wu"
   "ERK2" "zero-inflow"
   "fast" "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"

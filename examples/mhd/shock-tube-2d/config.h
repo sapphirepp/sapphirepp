@@ -52,9 +52,9 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    unsigned int test_case;
+    unsigned int test_case   = 0;
+    double       shock_width = 0.02;
     double       theta;
-    double       shock_width;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -70,20 +70,22 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("Test case",
-                        "0",
-                        dealii::Patterns::Integer(0, 1),
+      prm.add_parameter("Test case",
+                        test_case,
                         "Test case to run: "
                         "0 - Sod Shock Tube, "
-                        "1 - Brio & Wu Shock Tube");
+                        "1 - Brio & Wu Shock Tube",
+                        dealii::Patterns::Integer(0, 1));
+      prm.add_parameter("Shock width",
+                        shock_width,
+                        "The width of the shock.",
+                        dealii::Patterns::Double(0.));
+
+      // Use declare_entry for theta so we can convert it to radiant on parsing
       prm.declare_entry("Theta",
                         "0.",
                         dealii::Patterns::Double(-90., 90.),
                         "Rotation around z-axis in degrees.");
-      prm.declare_entry("Shock width",
-                        "0.1",
-                        dealii::Patterns::Double(0.),
-                        "The width of the shock.");
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -100,11 +102,12 @@ namespace sapphirepp
       std::string s;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      test_case   = static_cast<unsigned int>(prm.get_integer("Test case"));
-      theta       = prm.get_double("Theta") / 180. * M_PI;
-      shock_width = prm.get_double("Shock width");
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
+      // Parameters are automatically parsed by add_parameter()
+
+      // Convert theta to radiant
+      theta = prm.get_double("Theta") / 180. * M_PI;
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }

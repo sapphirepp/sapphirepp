@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 5
   set Output frequency             = 1
   set Results folder               = ./results
-  set Simulation identifier        = shock-tube-sod
+  set Simulation identifier        = shock-tube-brio-wu
 end
 subsection MHD
   subsection Finite element
@@ -21,14 +21,14 @@ subsection MHD
     end
   end
   subsection Plasma properties
-    set Adiabatic index = 1.4
+    set Adiabatic index = 2.0
   end
   subsection Time stepping
-    set Final time     = 0.25
+    set Final time     = 0.1
     set Method         = ERK2
     set Courant number = 0.8
   end
 end
 subsection Physical parameters
-  set Test case = 0
+  set Test case = 1
 end

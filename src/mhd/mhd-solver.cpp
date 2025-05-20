@@ -1414,7 +1414,6 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
           {
             case BoundaryConditionsMHD::zero_inflow:
               {
-                /** @todo Check if this BC is equivalent to zero inflow */
                 virtual_neighbor_state = states[q_index];
                 break;
               }

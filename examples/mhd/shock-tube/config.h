@@ -52,7 +52,7 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    unsigned int test_case;
+    unsigned int test_case = 0;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -68,12 +68,12 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("Test case",
-                        "0",
-                        dealii::Patterns::Integer(0, 1),
+      prm.add_parameter("Test case",
+                        test_case,
                         "Test case to run: "
                         "0 - Sod Shock Tube, "
-                        "1 - Brio & Wu Shock Tube");
+                        "1 - Brio & Wu Shock Tube",
+                        dealii::Patterns::Integer(0, 1));
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -90,9 +90,9 @@ namespace sapphirepp
       std::string s;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      test_case = static_cast<unsigned int>(prm.get_integer("Test case"));
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
+      // Parameters are automatically parsed by add_parameter()
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }
@@ -111,8 +111,7 @@ namespace sapphirepp
 
     /** [MHD Flags] */
     /** Specify which MHD flags should be active */
-    static constexpr MHDFlags mhd_flags =
-      MHDFlags::hyperbolic_divergence_cleaning;
+    static constexpr MHDFlags mhd_flags = MHDFlags::none;
     /** [MHD Flags] */
 
 

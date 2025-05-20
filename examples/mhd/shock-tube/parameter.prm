@@ -1,6 +1,6 @@
 subsection Output
   set Base file name               = solution
-  set Format                       = pvtu
+  set Format                       = vtu
   set Number of digits for counter = 5
   set Output frequency             = 1
   set Results folder               = ./results
@@ -12,7 +12,7 @@ subsection MHD
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 20
+    set Number of cells = 256
     set Point 1         = -0.5
     set Point 2         = 0.5
     subsection Boundary conditions
@@ -24,9 +24,9 @@ subsection MHD
     set Adiabatic index = 1.4
   end
   subsection Time stepping
-    set Final time     = 2
-    set Method         = ERK4
-    set Time step size = 0.001
+    set Final time     = 0.25
+    set Method         = ERK2
+    set Courant number = 0.8
   end
 end
 subsection Physical parameters

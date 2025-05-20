@@ -1,6 +1,6 @@
 subsection Output
   set Base file name               = solution
-  set Format                       = pvtu
+  set Format                       = vtu
   set Number of digits for counter = 5
   set Output frequency             = 1
   set Results folder               = ./results
@@ -12,7 +12,7 @@ subsection MHD
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 20, 20
+    set Number of cells = 64, 64
     set Point 1         = -0.5, -0.5
     set Point 2         = 0.5, 0.5
     subsection Boundary conditions
@@ -33,6 +33,6 @@ subsection MHD
 end
 subsection Physical parameters
   set Test case   = 0
-  set Theta       = 45
-  set Shock width = 0.1
+  set Theta       = 10
+  set Shock width = 0.02
 end
