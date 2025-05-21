@@ -531,6 +531,18 @@ $$
 \mathbf{h}\big|_{x = - L} = \mathbf{f}_{h} \big |_{x = L} \,.
 $$
 
+A way to demonstrate the periodic boundary conditions is to led an initially isotropic
+and mono-energetic particle distribution evolve in a background plasma flow
+that advects the particles towards the boundaries of the computational domain.
+To this end, we solve
+$$
+	\frac{\partial \mathbf{f}}{\partial t}
+	+ \left(u \boldsymbol{\mathbb{1}} + v\mathbf{A}_x\right) \frac{\partial \mathbf{f}}{\partial x} = - \nu \mathbf{C} \mathbf{f}
+	\quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right) \,,
+$$
+where chose a scattering frequency $\nu$ to such that the Gaussian distribution spreads slowly in comparison to the crossing time $2 L/u$.
+
+The results are shown in the following animation:
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/periodic-bc.gif" alt="Demonstration of the periodic boundary conditions." width="60%"/>
