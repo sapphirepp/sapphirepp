@@ -430,12 +430,20 @@ $$
 	\left(\mathbf{P}_{\mathbf{e}_z}\right)_{i(l',m',s')j(l,m,s)} = (-1)^{s} \delta_{l'l}\delta_{m'm} \delta_{s's} \,.
 $$
 
+Representation matrices of reflections at planes with arbitrary normal vectors $\mathbf{n}$
+can be obtained by rotating the spherical harmonics such that $\mathbf{n} \parallel \mathbf{e}_x$,
+mirroring and subsequently performing a back rotation:
+
+$$
+ \mathbf{P}_{\mathbf{n}} = \mathbf{U}^{\dagger} \mathbf{M}_{\mathbf{e}_x} \mathbf{U} \,.
+$$
+
 To demonstrate the reflective boundary conditions, we look at a toy example.
 We solve
 $$
 	\frac{\partial \mathbf{f}}{\partial t}
 	+ v \mathbf{A}_x \frac{\partial \mathbf{f}}{\partial x} = 0
-	\quad \text{with } \mathbf{f}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right)
+	\quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right)
 $$
 
 with reflective boundaries at $x = -L$ and a zero inflow boundary condition at $x = L$.
@@ -474,20 +482,58 @@ A reflection in velocity space leads to expected reflection of the moments of $f
 
 ## Continuous boundary conditions
 
-Continuous boundary conditions pretend that there is no boundary. The boundary distribution function $\mathbf{h}$ is set to the numerical approximation of the distribution function $\mathbf{f}$, i.e.
+Continuous boundary conditions pretend that there is no boundary.
+The boundary distribution function $\mathbf{h}$
+is set to the numerical approximation of the distribution function $\mathbf{f}$, i.e.
 
 $$
  \mathbf{h} = \mathbf{f}_{h} \big |_{\partial D} \,.
 $$
 
-A variation of the @ref 
+A variation of the @ref gyro-advection "Gyro motion" example
+can be used to demonstrate the merits and the limits of the continuous boundary conditions:
+
+We simulate an initially isotropic and mono-energetic distribution of particles
+which gyrate about an out-of-plane magnetic field.
+The corresponding set of partial differential equations is
+
+$$
+	\frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \frac{\partial f}{\partial x}
+	- \omega_y \boldsymbol{\Omega}_{y}\mathbf{f} = \mathbf{0}
+	\quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right)
+$$
+
+The gradients in the initial distribution function $f$
+lead to a pulsating motion of the Gaussian distribution of the particles.
+
+To show the effects of the continuous boundary conditions, we ran two simulations:
+Firstly, one with a computational domain large enough that it's boundaries do not have any effect
+and, secondly, we chose the size of the computation domain such that it truncates the tails of the Gaussian distribution of particles.
+In the following animation, the results of the first run are plotted with dashed lines.
+The run with the small computational domain and continuous boundary conditions is shown using solid lines.
+
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/continuous-bc.gif" alt="Demonstration of the continuous boundary conditions." width="60%"/>
+</CENTER>
+
+It can be seen that the qualitative behaviour of the actual $f_{000}$ solution is captured
+with continuous boundary conditions.
+Though, there is a clear deviation in the $f_{111}$ expansion coefficient.
 
 ## Periodic boundary conditions
 
-Periodic boundary conditions take the numerical value of the distribution function $\mathbf{f}$ on side of the domain and use to set the boundary distribution function $\mathbf{h}$ on the opposite side. For example, 
+Periodic boundary conditions take the numerical value of the distribution function $\mathbf{f}$
+on one side of the domain and use it to set the boundary distribution function $\mathbf{h}$ o
+n the opposite side.
+For example,
 
 $$
 \mathbf{h}\big|_{x = - L} = \mathbf{f}_{h} \big |_{x = L} \,.
 $$
+
+
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/boundary-conditions/periodic-bc.gif" alt="Demonstration of the periodic boundary conditions." width="60%"/>
+</CENTER>
 
 
