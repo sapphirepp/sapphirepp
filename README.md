@@ -69,7 +69,7 @@ A detailed description of the installation process can be found in the
 ## Getting started
 
 To run Sapphire++ you need to provide a parameter file:
-  
+
 ```shell
 ./build/sapphirepp parameter-template.prm
 ```
@@ -93,7 +93,13 @@ feel free to reach out to us
 via the [GitHub Discussions page](https://github.com/sapphirepp/sapphirepp/discussions)
 for support and community interaction.
 
-## Licence
+## Contributing
+
+We welcome contributions to Sapphire++. If you want to contribute code, please
+follow the [contribution guidelines](CONTRIBUTING.md) and our
+[code of conduct](CODE_OF_CONDUCT.md).
+
+## Licence and citation
 
 Sapphire++ is distributed under the [LGPL 3.0 license](LICENSE).
 
@@ -120,10 +126,4 @@ abstract = {We present Sapphire++, an open-source code designed to numerically s
 ```
 
 Sapphire++ builds on top of the [deal.II](https://www.dealii.org) library.
-We therefore encourage you to [cite the deal.II library](https://www.dealii.org/community/publications/) as well.
-
-## Contributing
-
-We welcome contributions to Sapphire++. If you want to contribute code, please
-follow the [contribution guidelines](CONTRIBUTING.md) and our
-[code of conduct](CODE_OF_CONDUCT.md).
+We therefore strongly encourage you to [cite the deal.II library](https://www.dealii.org/community/publications/) as well.
