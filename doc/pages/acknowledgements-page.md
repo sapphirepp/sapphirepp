@@ -21,8 +21,8 @@ Special thanks go to all
 
 <div class="section_buttons">
 
-| Previous    |                Next |
-|:------------|--------------------:|
-| [IDE](#ide) | [Licence](#licence) |
+| Previous                        |                Next |
+| :------------------------------ | ------------------: |
+| [Release Notes](#release-notes) | [Licence](#licence) |
 
 </div>
