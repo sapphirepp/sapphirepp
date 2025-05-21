@@ -447,15 +447,13 @@ Here is a simple configuration to get started with:
 
 ```
 
-
 <div class="section_buttons">
 
-| Previous                                  |                                  Next |
-|:------------------------------------------|--------------------------------------:|
-| [Coding Convections](#coding-conventions) | [Acknowledgements](#acknowledgements) |
+| Previous                                  |                            Next |
+| :---------------------------------------- | ------------------------------: |
+| [Coding Convections](#coding-conventions) | [Release Notes](#release-notes) |
 
 </div>
 
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
 @date Thu Feb 27 05:16:58 PM CET 2025
-
