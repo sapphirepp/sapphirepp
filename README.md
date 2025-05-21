@@ -29,7 +29,12 @@ $$
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S .
 $$
 
-Sapphire++ is developed by the [Astrophysical Plasma
+
+Sapphire++ is developed by
+[Nils Schween](https://github.com/nils-schween),
+[Florian Schulze](https://github.com/floschulze) and
+[Brian Reville](https://github.com/brevrev)
+members of the [Astrophysical Plasma
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
 group located at the [Max-Planck-Institut für
 Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
