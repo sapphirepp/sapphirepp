@@ -66,7 +66,11 @@ Even though primarily developed in the context of cosmic-ray physics, @sapphire
 can be applied in the context of inertial confinement fusion, or for example to
 compute the transport of radiation (interpreting $f$ as the intensity).
 
-@sapphire is developed by the [Astrophysical Plasma
+@sapphire is developed by
+[Nils Schween](https://github.com/nils-schween),
+[Florian Schulze](https://github.com/floschulze) and
+[Brian Reville](https://github.com/brevrev)
+members of the [Astrophysical Plasma
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
 group located at the [Max-Planck-Institut für
 Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.

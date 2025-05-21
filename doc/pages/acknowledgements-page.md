@@ -10,7 +10,7 @@ developers are
 [Brian Reville](https://github.com/brevrev).
 
 @sapphire is built on the foundation of @dealii. We extend our gratitude to the
-[deal.II developers](https://www.dealii.org/authors.html) for their invaluable
+[deal.II developers](https://dealii.org/community/team/) for their invaluable
 work and support.
 
 To build the documentation, we use [Doxygen](https://www.doxygen.nl) and the
@@ -21,8 +21,8 @@ Special thanks go to all
 
 <div class="section_buttons">
 
-| Previous    |                Next |
-|:------------|--------------------:|
-| [IDE](#ide) | [Licence](#licence) |
+| Previous                        |                Next |
+| :------------------------------ | ------------------: |
+| [Release Notes](#release-notes) | [Licence](#licence) |
 
 </div>
