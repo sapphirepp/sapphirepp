@@ -23,8 +23,8 @@
 
 <div class="section_buttons">
 
-| Previous                        |                          Next |
-|:--------------------------------|------------------------------:|
-| [Visualization](#visualization) | [Contributing](#contributing) |
+| Previous                        |                              Next |
+| :------------------------------ | --------------------------------: |
+| [Visualization](#visualization) | [Implementation](#implementation) |
 
 </div>
