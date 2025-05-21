@@ -79,7 +79,7 @@ OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/doc
 # control the number of sub-directories.
 # The default value is: NO.
 
-CREATE_SUBDIRS         = 
+CREATE_SUBDIRS         =
 
 # Controls the number of sub-directories that will be created when
 # CREATE_SUBDIRS tag is set to YES. Level 0 represents 16 directories, and every
@@ -958,6 +958,7 @@ INPUT                  = @PROJECT_SOURCE_DIR@/doc/pages/mainpage.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/visualization.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/examples.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/contributing-page.md \
+                         @PROJECT_SOURCE_DIR@/doc/pages/release-notes.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/acknowledgements-page.md \
                          @PROJECT_SOURCE_DIR@/doc/pages/licence-page.md \
                          @PROJECT_SOURCE_DIR@
@@ -1066,7 +1067,8 @@ EXCLUDE                = @PROJECT_SOURCE_DIR@/examples \
 		       	         @PROJECT_SOURCE_DIR@/scripts \
 		       	         @PROJECT_SOURCE_DIR@/doc/doxygen-awesome \
 			             @PROJECT_SOURCE_DIR@/CONTRIBUTING.md \
-			             @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md \
+				     @PROJECT_SOURCE_DIR@/CODE_OF_CONDUCT.md \
+				     @PROJECT_SOURCE_DIR@/CHANGELOG.md \
 		                 @PROJECT_SOURCE_DIR@/README.md
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
@@ -1381,7 +1383,7 @@ HTML_EXTRA_STYLESHEET  = @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesom
                          @PROJECT_SOURCE_DIR@/doc/doxygen-custom/custom.css \
                          @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome-sidebar-only.css \
                          @PROJECT_SOURCE_DIR@/doc/doxygen-awesome/doxygen-awesome-sidebar-only-darkmode-toggle.css
-			 
+
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1848,7 +1850,7 @@ MATHJAX_RELPATH        = @MATHJAX_PATH@
 # MATHJAX_EXTENSIONS = ams
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
-MATHJAX_EXTENSIONS     = 
+MATHJAX_EXTENSIONS     =
 
 # The MATHJAX_CODEFILE tag can be used to specify a file with javascript pieces
 # of code that will be used on startup of the MathJax code. See the MathJax site
