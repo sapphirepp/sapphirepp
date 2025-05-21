@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14506755.svg)](https://doi.org/10.5281/zenodo.14506755)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14506754.svg)](https://doi.org/10.5281/zenodo.14506754)
 [![GitHub CI](https://github.com/sapphirepp/sapphirepp/actions/workflows/tests.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/tests.yml)
 [![clang-format Check](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml)
 [![Documentation](https://github.com/sapphirepp/sapphirepp/actions/workflows/documentation.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/documentation.yml)
@@ -69,7 +69,7 @@ A detailed description of the installation process can be found in the
 ## Getting started
 
 To run Sapphire++ you need to provide a parameter file:
-  
+
 ```shell
 ./build/sapphirepp parameter-template.prm
 ```
@@ -93,15 +93,19 @@ feel free to reach out to us
 via the [GitHub Discussions page](https://github.com/sapphirepp/sapphirepp/discussions)
 for support and community interaction.
 
-## Licence
+## Contributing
+
+We welcome contributions to Sapphire++. If you want to contribute code, please
+follow the [contribution guidelines](CONTRIBUTING.md) and our
+[code of conduct](CODE_OF_CONDUCT.md).
+
+## Licence and citation
 
 Sapphire++ is distributed under the [LGPL 3.0 license](LICENSE).
 
-If you use this software in your research, please cite the following paper:
+If you use Sapphire++ in your research, please cite the following paper and the software:
 
 > Schween, N. W. and Schulze, F. and Reville, B., Sapphire++: A Particle Transport Code Combining a Spherical Harmonic Expansion and the Discontinuous Galerkin Method, 2025, DOI: https://doi.org/10.1016/j.jcp.2024.113690
-
-Here's the BibTeX entry for the paper:
 
 ```bibtex
 @article{Sapphirepp2025,
@@ -119,8 +123,8 @@ abstract = {We present Sapphire++, an open-source code designed to numerically s
 }
 ```
 
-## Contributing
+The reference to the Sapphire++ software
+can be found on [Zenodo](https://doi.org/10.5281/zenodo.14506754).
 
-We welcome contributions to Sapphire++. If you want to contribute code, please
-follow the [contribution guidelines](CONTRIBUTING.md) and our
-[code of conduct](CODE_OF_CONDUCT.md).
+Sapphire++ builds on top of the [deal.II](https://www.dealii.org) library.
+We therefore strongly encourage you to [cite the deal.II library](https://www.dealii.org/community/publications/) as well.
