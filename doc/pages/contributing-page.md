@@ -14,8 +14,8 @@
 
 <div class="section_buttons">
 
-| Previous              |                                Next |
-|:----------------------|------------------------------------:|
-| [Examples](#examples) | [Code of Conduct](#code-of-conduct) |
+| Previous                          |                                Next |
+| :-------------------------------- | ----------------------------------: |
+| [Implementation](#implementation) | [Code of Conduct](#code-of-conduct) |
 
 </div>

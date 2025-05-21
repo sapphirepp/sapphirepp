@@ -6,8 +6,8 @@
 
 <div class="section_buttons">
 
-| Previous            |               Next |
-|:--------------------|-------------------:|
-| [Licence](#licence) | [ToDo List](#todo) |
+| Previous              |                          Next |
+| :-------------------- | ----------------------------: |
+| [Examples](#examples) | [Contributing](#contributing) |
 
 </div>
