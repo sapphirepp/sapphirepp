@@ -398,9 +398,9 @@ $$
  \sin \theta \sin \varphi
  \end{pmatrix}
     = \begin{pmatrix}
- \cos (\theta) \\
- \sin (\theta) \cos (\pi - \varphi) \\
- \sin (\theta) \sin (\pi - \varphi)
+ \cos \theta \\
+ \sin \theta \cos (\pi - \varphi) \\
+ \sin \theta \sin (\pi - \varphi)
  \end{pmatrix}
 
  \quad \text{and} \quad
@@ -413,14 +413,14 @@ $$
  - \sin \theta \sin \varphi
  \end{pmatrix}
     = \begin{pmatrix}
- \cos (\theta) \\
- \sin (\theta) \cos (2 \pi - \varphi) \\
- \sin (\theta) \sin (2 \pi - \varphi)
+ \cos \theta \\
+ \sin \theta \cos (2 \pi - \varphi) \\
+ \sin \theta \sin (2 \pi - \varphi)
  \end{pmatrix} \,
 $$
 
 where $\mathbf{M}_{\mathbf{e}_y}$ and $\mathbf{M}_{\mathbf{e}_z}$ are reflections
-at the $x--z$-plane and $x--y$-plane respectively.
+at the $x-z$-plane and $x-y$-plane respectively.
 The representation matrices are
 
 $$
@@ -434,7 +434,7 @@ can be obtained by rotating the spherical harmonics such that $\mathbf{n} \paral
 mirroring and subsequently performing a back rotation:
 
 $$
- \mathbf{P}_{\mathbf{n}} = \mathbf{U}^{\dagger} \mathbf{M}_{\mathbf{e}_x} \mathbf{U} \,.
+ \mathbf{P}_{\mathbf{n}} = \mathbf{U}^{\dagger} \mathbf{P}_{\mathbf{e}_x} \mathbf{U} \,.
 $$
 
 To demonstrate the reflective boundary conditions, we look at a toy example.
