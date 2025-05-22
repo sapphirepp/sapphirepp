@@ -64,12 +64,12 @@ namespace sapphirepp
     class SlopeLimiter
     {
     public:
+      /** Shorthand for @ref MHDEquations */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
       /** @ref MHDEquations::state_type */
-      using state_type =
-        typename MHDEquations<dim, divergence_cleaning>::state_type;
+      using state_type = typename MHDEqs::state_type;
       /** @ref MHDEquations::flux_type */
-      using flux_type =
-        typename MHDEquations<dim, divergence_cleaning>::flux_type;
+      using flux_type = typename MHDEqs::flux_type;
 
 
 
@@ -213,13 +213,6 @@ namespace sapphirepp
 
 
     private:
-      /** @ref MHDEquations::n_components */
-      static constexpr unsigned int n_components =
-        MHDEquations<dim, divergence_cleaning>::n_components;
-      /** @ref MHDEquations::first_magnetic_component */
-      static constexpr unsigned int first_magnetic_component =
-        MHDEquations<dim, divergence_cleaning>::first_magnetic_component;
-
       /** minmod threshold parameter \f$ M \f$ */
       const double minmod_threshold;
       /** minmod limiter parameter \f$ \beta \f$ */

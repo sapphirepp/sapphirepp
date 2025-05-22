@@ -118,52 +118,44 @@ random_normal(RandomNumber &rnd)
 
 
 
-template <unsigned int dim, bool hdc>
+template <unsigned int dim, bool divergence_cleaning>
 void
-random_state(const MHDEquations<dim, hdc>                &mhd_equations,
-             RandomNumber                                &rnd,
-             const bool                                   magnetic_field,
-             typename MHDEquations<dim, hdc>::state_type &state)
+random_state(const MHDEquations<dim, divergence_cleaning> &mhd_equations,
+             RandomNumber                                 &rnd,
+             const bool                                    magnetic_field,
+             typename MHDEquations<dim, divergence_cleaning>::state_type &state)
 {
-  constexpr unsigned int n_components = MHDEquations<dim, hdc>::n_components;
-  constexpr unsigned int n_vec_components =
-    MHDEquations<dim, hdc>::n_vec_components;
-  constexpr unsigned int density_component =
-    MHDEquations<dim, hdc>::density_component;
-  constexpr unsigned int energy_component =
-    MHDEquations<dim, hdc>::energy_component;
-  constexpr unsigned int first_momentum_component =
-    MHDEquations<dim, hdc>::first_momentum_component;
-  constexpr unsigned int first_magnetic_component =
-    MHDEquations<dim, hdc>::first_magnetic_component;
-  constexpr unsigned int divergence_cleaning_component =
-    MHDEquations<dim, hdc>::divergence_cleaning_component;
-  using state_type       = typename MHDEquations<dim, hdc>::state_type;
+  using MHDEqs           = MHDEquations<dim, divergence_cleaning>;
   const double mhd_floor = 10 * epsilon_d;
 
   dealii::LogStream::Prefix p("random_state", saplog);
 
-  AssertDimension(state.size(), n_components);
+  AssertDimension(state.size(), MHDEqs::n_components);
 
-  for (unsigned int c = 0; c < n_components; ++c)
+  for (unsigned int c = 0; c < MHDEqs::n_components; ++c)
     state[c] = rnd();
-  state[density_component] = std::abs(state[density_component]);
-  state[density_component] =
-    state[density_component] < mhd_floor ? mhd_floor : state[density_component];
-  state[energy_component] = std::abs(state[energy_component]);
-  state[energy_component] =
-    state[energy_component] < mhd_floor ? mhd_floor : state[energy_component];
+  state[MHDEqs::density_component] = std::abs(state[MHDEqs::density_component]);
+  state[MHDEqs::density_component] =
+    state[MHDEqs::density_component] < mhd_floor ?
+      mhd_floor :
+      state[MHDEqs::density_component];
+  state[MHDEqs::energy_component] = std::abs(state[MHDEqs::energy_component]);
+  state[MHDEqs::energy_component] =
+    state[MHDEqs::energy_component] < mhd_floor ?
+      mhd_floor :
+      state[MHDEqs::energy_component];
   if (!magnetic_field)
     {
-      for (unsigned int d = 0; d < n_vec_components; ++d)
-        state[first_magnetic_component + d] = 0.;
-      if (hdc)
-        state[divergence_cleaning_component] = 0.;
+      for (unsigned int d = 0; d < MHDEqs::n_vec_components; ++d)
+        state[MHDEqs::first_magnetic_component + d] = 0.;
+      if (divergence_cleaning)
+        state[MHDEqs::divergence_cleaning_component] = 0.;
     }
   // Use velocity as random variable for less vacuum states
-  for (unsigned int d = 0; d < n_vec_components; ++d)
-    state[first_momentum_component + d] =
-      state[first_momentum_component + d] * state[density_component];
+  for (unsigned int d = 0; d < MHDEqs::n_vec_components; ++d)
+    state[MHDEqs::first_momentum_component + d] =
+      state[MHDEqs::first_momentum_component + d] *
+      state[MHDEqs::density_component];
 
 
   double pressure = mhd_equations.compute_pressure_unsafe(state);
@@ -174,8 +166,9 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
   // state                               = 0;
   // std::vector<double> hardcoded_state = dealii::Utilities::string_to_double(
   //   dealii::Utilities::split_string_list(tmp, " "));
-  // for (unsigned int c = 0; c < n_components && c < hardcoded_state.size();
-  // ++c)
+  // for (unsigned int c = 0;
+  //      c < MHDEqs::n_components && c < hardcoded_state.size();
+  //      ++c)
   //   state[c] = hardcoded_state[c];
   // pressure = mhd_equations.compute_pressure_unsafe(state);
 
@@ -183,59 +176,60 @@ random_state(const MHDEquations<dim, hdc>                &mhd_equations,
     {
       saplog << "P_old=" << pressure << std::endl;
       // Ensure positive pressure by setting E' = E + dP/(gamma-1)
-      state[energy_component] +=
+      state[MHDEqs::energy_component] +=
         (mhd_floor - pressure) / (mhd_equations.adiabatic_index - 1.);
       // TODO: Due to double precision the new pressure can be below mhd_floor
       pressure = mhd_equations.compute_pressure_unsafe(state);
     }
 
   saplog << "Generated state: " << state << ", P=" << pressure << std::endl;
-  AssertThrow(state[density_component] >= epsilon_d,
+  AssertThrow(state[MHDEqs::density_component] >= epsilon_d,
               ExcNonAdmissibleState<dim>(state));
-  AssertThrow(state[energy_component] >= epsilon_d,
+  AssertThrow(state[MHDEqs::energy_component] >= epsilon_d,
               ExcNonAdmissibleState<dim>(state));
   AssertThrow(pressure >= epsilon_d, ExcNonAdmissibleState<dim>(state));
 }
 
 
 
-template <unsigned int dim, bool hdc>
+template <unsigned int dim, bool divergence_cleaning>
 void
 test_mhd_equation(RandomNumber      &rnd,
                   const unsigned int num            = 1,
-                  const bool         magnetic_field = hdc)
+                  const bool         magnetic_field = divergence_cleaning)
 {
-  constexpr unsigned int n_components = MHDEquations<dim, hdc>::n_components;
-  using state_type = typename MHDEquations<dim, hdc>::state_type;
-  using flux_type  = typename MHDEquations<dim, hdc>::flux_type;
+  using MHDEqs     = MHDEquations<dim, divergence_cleaning>;
+  using state_type = typename MHDEqs::state_type;
+  using flux_type  = typename MHDEqs::flux_type;
 
   const double adiabatic_index = rnd.rand_uniform(1., 2.);
   saplog << "Test MHDEquations with dim=" << dim
-         << ", divergence_cleaning=" << hdc
+         << ", divergence_cleaning=" << divergence_cleaning
          << ", adiabatic_index=" << adiabatic_index << std::endl;
   saplog.push("MHDEquations<" + std::to_string(dim) + "," +
-              std::to_string(hdc) + ">");
+              std::to_string(divergence_cleaning) + ">");
 
   // Declare variables
   dealii::Tensor<1, dim> normal;
-  state_type state(n_components), tmp_1(n_components), tmp_2(n_components);
-  flux_type  flux_matrix;
-  dealii::Vector<double>     eigenvalues(n_components);
-  dealii::FullMatrix<double> right_eigenvectors(n_components),
-    left_eigenvectors(n_components), tmp_matrix(n_components);
-  dealii::IdentityMatrix                      id_matrix(n_components);
+  state_type state(MHDEqs::n_components), tmp_1(MHDEqs::n_components),
+    tmp_2(MHDEqs::n_components);
+  flux_type                  flux_matrix;
+  dealii::Vector<double>     eigenvalues(MHDEqs::n_components);
+  dealii::FullMatrix<double> right_eigenvectors(MHDEqs::n_components),
+    left_eigenvectors(MHDEqs::n_components), tmp_matrix(MHDEqs::n_components);
+  dealii::IdentityMatrix                      id_matrix(MHDEqs::n_components);
   dealii::FullMatrix<double>                  identity(id_matrix);
   std::array<dealii::FullMatrix<double>, dim> left_matrices;
   std::array<dealii::FullMatrix<double>, dim> right_matrices;
   for (unsigned int d = 0; d < dim; ++d)
     {
-      left_matrices[d]  = dealii::FullMatrix<double>(n_components);
-      right_matrices[d] = dealii::FullMatrix<double>(n_components);
+      left_matrices[d]  = dealii::FullMatrix<double>(MHDEqs::n_components);
+      right_matrices[d] = dealii::FullMatrix<double>(MHDEqs::n_components);
     }
 
 
   // Setup MHD equations
-  MHDEquations<dim, hdc> mhd_equations(adiabatic_index);
+  MHDEqs mhd_equations(adiabatic_index);
 
 
   unsigned int skipped_tests = 0;
@@ -255,13 +249,13 @@ test_mhd_equation(RandomNumber      &rnd,
       saplog << "primitive: " << tmp_1 << std::endl;
       mhd_equations.convert_primitive_to_conserved(tmp_1, tmp_2);
       saplog << "conserved: " << tmp_2 << std::endl;
-      for (unsigned int c = 0; c < n_components; ++c)
+      for (unsigned int c = 0; c < MHDEqs::n_components; ++c)
         AssertThrow(std::abs(state[c] - tmp_2[c]) < epsilon_d,
                     dealii::ExcMessage("Problem with conversion to "
                                        "primitive state"));
 
-      const double a_s2 = adiabatic_index * pressure /
-                          state[MHDEquations<dim, hdc>::density_component];
+      const double a_s2 =
+        adiabatic_index * pressure / state[MHDEqs::density_component];
       saplog << "adiabatic sound speed a_s2=" << a_s2 << std::endl;
       if (a_s2 < std::sqrt(epsilon_d))
         {
@@ -299,10 +293,10 @@ test_mhd_equation(RandomNumber      &rnd,
       // Test flux and sources
       mhd_equations.compute_flux_matrix(state, flux_matrix);
       saplog << "Flux matrix: ";
-      for (unsigned int c = 0; c < n_components; ++c)
+      for (unsigned int c = 0; c < MHDEqs::n_components; ++c)
         saplog << flux_matrix[c] << " ";
       saplog << std::endl;
-      if constexpr (hdc)
+      if constexpr (divergence_cleaning)
         {
           mhd_equations.add_source_divergence_cleaning(state, tmp_1);
           saplog << "HDC source: " << tmp_1 << std::endl;
@@ -334,8 +328,8 @@ test_mhd_equation(RandomNumber      &rnd,
       left_eigenvectors.mmult(tmp_matrix, right_eigenvectors);
       saplog << "L*R:" << std::endl;
       tmp_matrix.print(saplog, 12, 5);
-      for (unsigned int i = 0; i < n_components; ++i)
-        for (unsigned int j = 0; j < n_components; ++j)
+      for (unsigned int i = 0; i < MHDEqs::n_components; ++i)
+        for (unsigned int j = 0; j < MHDEqs::n_components; ++j)
           AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) <
                         std::sqrt(epsilon_d),
                       dealii::ExcMessage("Problem with eigenvectors: l_" +
@@ -346,8 +340,7 @@ test_mhd_equation(RandomNumber      &rnd,
       right_eigenvectors.mmult(tmp_matrix, left_eigenvectors);
       saplog << "R*L:" << std::endl;
       tmp_matrix.print(saplog, 12, 5);
-      if (state[MHDEquations<dim, hdc>::energy_component] /
-            state[MHDEquations<dim, hdc>::density_component] >
+      if (state[MHDEqs::energy_component] / state[MHDEqs::density_component] >
           1. / std::sqrt(epsilon_d))
         {
           saplog << "The eigensystem has problems, "
@@ -357,8 +350,8 @@ test_mhd_equation(RandomNumber      &rnd,
           skipped_tests++;
           continue;
         }
-      for (unsigned int i = 0; i < n_components; ++i)
-        for (unsigned int j = 0; j < n_components; ++j)
+      for (unsigned int i = 0; i < MHDEqs::n_components; ++i)
+        for (unsigned int j = 0; j < MHDEqs::n_components; ++j)
           AssertThrow(std::abs(tmp_matrix[i][j] - identity[i][j]) <
                         std::sqrt(epsilon_d),
                       dealii::ExcMessage("Problem with eigenvectors: (R*L)_" +
@@ -377,7 +370,7 @@ test_mhd_equation(RandomNumber      &rnd,
       saplog << "characteristic: " << tmp_1 << std::endl;
       mhd_equations.convert_characteristic_to_conserved(tmp_1, normal, tmp_2);
       saplog << "conserved: " << tmp_2 << std::endl;
-      for (unsigned int c = 0; c < n_components; ++c)
+      for (unsigned int c = 0; c < MHDEqs::n_components; ++c)
         AssertThrow(std::abs(state[c] - tmp_2[c]) < std::sqrt(epsilon_d),
                     dealii::ExcMessage("Problem with conversion to "
                                        "characteristic state"));

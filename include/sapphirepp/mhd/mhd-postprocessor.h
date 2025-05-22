@@ -61,30 +61,19 @@ namespace sapphirepp
     class MHDPostprocessor : public DataPostprocessor<dim>
     {
     public:
-      /** @ref MHDEquations::n_components */
-      static constexpr unsigned int n_components =
-        MHDEquations<dim, divergence_cleaning>::n_components;
-      /** @ref MHDEquations::n_vec_components */
-      static constexpr unsigned int n_vec_components =
-        MHDEquations<dim, divergence_cleaning>::n_vec_components;
-      /** @ref MHDEquations::density_component */
-      static constexpr unsigned int density_component =
-        MHDEquations<dim, divergence_cleaning>::density_component;
-      /** @ref MHDEquations::first_momentum_component */
-      static constexpr unsigned int first_momentum_component =
-        MHDEquations<dim, divergence_cleaning>::first_momentum_component;
-
+      /** Shorthand for @ref MHDEquations */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
       /** @ref MHDEquations::state_type */
-      using state_type =
-        typename MHDEquations<dim, divergence_cleaning>::state_type;
+      using state_type = typename MHDEqs::state_type;
 
       /** Number of components of the postprocessor output */
-      static constexpr unsigned int n_components_out = 1 + n_vec_components;
+      static constexpr unsigned int n_components_out =
+        1 + MHDEqs::n_vec_components;
       /** Outputindex of the pressure component \f$ P \f$. */
       static constexpr unsigned int pressure_component_out = 0;
       /**
        * Starting outputindex of the velocity components \f$ \mathbf{u} \f$
-       * (@ref n_vec_components components).
+       * (@ref MHDEqs::n_vec_components components).
        */
       static constexpr unsigned int first_velocity_component_out = 1;
 
@@ -96,9 +85,8 @@ namespace sapphirepp
        * @param mhd_equations Instance of the underlying @ref MHDEquations.
        * @param prefix Prefix for the variable names.
        */
-      MHDPostprocessor(
-        const MHDEquations<dim, divergence_cleaning> &mhd_equations,
-        const std::string                            &prefix = "");
+      MHDPostprocessor(const MHDEqs      &mhd_equations,
+                       const std::string &prefix = "");
 
 
 
@@ -153,7 +141,7 @@ namespace sapphirepp
 
     private:
       /** @ref MHDEquations */
-      const MHDEquations<dim, divergence_cleaning> &mhd_equations;
+      const MHDEqs &mhd_equations;
 
       /** Prefix for the variable names */
       const std::string prefix;

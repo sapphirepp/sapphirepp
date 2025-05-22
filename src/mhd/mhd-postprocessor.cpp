@@ -33,8 +33,8 @@
 
 template <unsigned int dim, bool divergence_cleaning>
 sapphirepp::MHD::MHDPostprocessor<dim, divergence_cleaning>::MHDPostprocessor(
-  const MHDEquations<dim, divergence_cleaning> &mhd_equations,
-  const std::string                            &prefix)
+  const MHDEqs      &mhd_equations,
+  const std::string &prefix)
   : mhd_equations{mhd_equations}
   , prefix(prefix)
 {}
@@ -46,14 +46,14 @@ std::vector<std::string>
 sapphirepp::MHD::MHDPostprocessor<dim, divergence_cleaning>::get_names() const
 {
   std::vector<std::string> component_names(n_components_out);
-  const char vec_component_name[n_vec_components] = {'x', 'y', 'z'};
+  const char vec_component_name[MHDEqs::n_vec_components] = {'x', 'y', 'z'};
 
   component_names[pressure_component_out] = prefix + "P";
   for (unsigned int d = 0; d < dim; ++d)
     {
       component_names[first_velocity_component_out + d] = prefix + "u";
     }
-  for (unsigned int d = dim; d < n_vec_components; ++d)
+  for (unsigned int d = dim; d < MHDEqs::n_vec_components; ++d)
     {
       component_names[first_velocity_component_out + d] =
         prefix + "u_" + vec_component_name[d];
@@ -80,7 +80,7 @@ sapphirepp::MHD::MHDPostprocessor<dim, divergence_cleaning>::
         dealii::DataComponentInterpretation::component_is_part_of_vector;
     }
   // Interpret components out of the plain as scalars
-  for (unsigned int d = dim; d < n_vec_components; ++d)
+  for (unsigned int d = dim; d < MHDEqs::n_vec_components; ++d)
     {
       data_component_interpretation[first_velocity_component_out + d] =
         dealii::DataComponentInterpretation::component_is_scalar;
@@ -115,15 +115,16 @@ sapphirepp::MHD::MHDPostprocessor<dim, divergence_cleaning>::
       AssertDimension(computed_quantities[q_index].size(), n_components_out);
 
       const state_type &state = inputs.solution_values[q_index];
-      AssertDimension(state.size(), n_components);
+      AssertDimension(state.size(), MHDEqs::n_components);
 
       computed_quantities[q_index][pressure_component_out] =
         mhd_equations.compute_pressure_unsafe(state); // No warnings for saving
 
-      for (unsigned int d = 0; d < n_vec_components; ++d)
+      for (unsigned int d = 0; d < MHDEqs::n_vec_components; ++d)
         {
           computed_quantities[q_index][first_velocity_component_out + d] =
-            state[first_momentum_component + d] / state[density_component];
+            state[MHDEqs::first_momentum_component + d] /
+            state[MHDEqs::density_component];
         }
     }
 }

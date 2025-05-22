@@ -69,7 +69,7 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
   double              difference = 0.;
   std::vector<double> values;
   values.reserve(neighbor_gradients.size() + 1);
-  for (unsigned int c = 0; c < n_components; ++c)
+  for (unsigned int c = 0; c < MHDEqs::n_components; ++c)
     {
       for (unsigned int d = 0; d < dim; ++d)
         {
@@ -96,7 +96,7 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::minmod_gradients(
         }
     }
 
-  difference /= static_cast<double>(n_components);
+  difference /= static_cast<double>(MHDEqs::n_components);
   return difference;
 }
 
@@ -113,9 +113,10 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
   for (unsigned int d = 0; d < dim; ++d)
     {
       delta_p +=
-        std::max(limited_gradient[first_magnetic_component + d][d], 0.);
+        std::max(limited_gradient[MHDEqs::first_magnetic_component + d][d], 0.);
       delta_m +=
-        std::max(-limited_gradient[first_magnetic_component + d][d], 0.);
+        std::max(-limited_gradient[MHDEqs::first_magnetic_component + d][d],
+                 0.);
     }
 
   const double delta = delta_p - delta_m;
@@ -123,15 +124,15 @@ sapphirepp::MHD::SlopeLimiter<dim, divergence_cleaning>::
   if (delta > 0)
     {
       for (unsigned int d = 0; d < dim; ++d)
-        if (limited_gradient[first_magnetic_component + d][d] > 0)
-          limited_gradient[first_magnetic_component + d][d] *=
+        if (limited_gradient[MHDEqs::first_magnetic_component + d][d] > 0)
+          limited_gradient[MHDEqs::first_magnetic_component + d][d] *=
             delta_m / delta_p;
     }
   else
     {
       for (unsigned int d = 0; d < dim; ++d)
-        if (limited_gradient[first_magnetic_component + d][d] < 0)
-          limited_gradient[first_magnetic_component + d][d] *=
+        if (limited_gradient[MHDEqs::first_magnetic_component + d][d] < 0)
+          limited_gradient[MHDEqs::first_magnetic_component + d][d] *=
             delta_p / delta_m;
     }
 }

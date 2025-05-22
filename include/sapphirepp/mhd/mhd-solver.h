@@ -96,32 +96,12 @@ namespace sapphirepp
         (mhd_flags & MHDFlags::hyperbolic_divergence_cleaning) !=
         MHDFlags::none;
 
-      /** @ref MHDEquations::n_components */
-      static constexpr unsigned int n_components =
-        MHDEquations<dim, divergence_cleaning>::n_components;
-      /** @ref MHDEquations::density_component */
-      static constexpr unsigned int density_component =
-        MHDEquations<dim, divergence_cleaning>::density_component;
-      /** @ref MHDEquations::first_momentum_component */
-      static constexpr unsigned int first_momentum_component =
-        MHDEquations<dim, divergence_cleaning>::first_momentum_component;
-      /** @ref MHDEquations::energy_component */
-      static constexpr unsigned int energy_component =
-        MHDEquations<dim, divergence_cleaning>::energy_component;
-      /** @ref MHDEquations::first_magnetic_component */
-      static constexpr unsigned int first_magnetic_component =
-        MHDEquations<dim, divergence_cleaning>::first_magnetic_component;
-      /** @ref MHDEquations::divergence_cleaning_component */
-      static constexpr unsigned int divergence_cleaning_component =
-        MHDEquations<dim, divergence_cleaning>::divergence_cleaning_component;
-
+      /** Shorthand for @ref MHDEquations<dim, divergence_cleaning> */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
       /** @ref MHDEquations::state_type */
-      using state_type =
-        typename MHDEquations<dim, divergence_cleaning>::state_type;
+      using state_type = typename MHDEqs::state_type;
       /** @ref MHDEquations::flux_type */
-      using flux_type =
-        typename MHDEquations<dim, divergence_cleaning>::flux_type;
-
+      using flux_type = typename MHDEqs::flux_type;
 
       /**
        * Type of triangulation.
@@ -313,7 +293,7 @@ namespace sapphirepp
        *
        * @return const MHDEquations&
        */
-      const MHDEquations<dim, divergence_cleaning> &
+      const MHDEqs &
       get_mhd_equations() const;
 
       /**
@@ -415,7 +395,7 @@ namespace sapphirepp
 
       /** @{ */
       /** @ref MHDEquations */
-      MHDEquations<dim, divergence_cleaning> mhd_equations;
+      MHDEqs mhd_equations;
       /** @ref NumericalFlux */
       NumericalFlux<dim, divergence_cleaning> numerical_flux;
       /** @ref SlopeLimiter */
@@ -637,7 +617,7 @@ namespace sapphirepp
           }
         else
           {
-            state_type avg(n_components);
+            state_type avg(MHDEqs::n_components);
             double     measure = 0;
             for (const auto &child_cell : cell->child_iterators())
               {

@@ -48,6 +48,11 @@
 
 
 
+static constexpr bool divergence_cleaning =
+  sapphirepp::MHD::MHDSolver<sapphirepp::MHD::dim_mhd>::divergence_cleaning;
+
+
+
 template <unsigned int dim>
 int
 test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
@@ -60,12 +65,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
     {
       using namespace sapphirepp;
       using namespace MHD;
-
-      static constexpr bool divergence_cleaning =
-        MHDSolver<dim>::divergence_cleaning;
-      constexpr unsigned int n_components =
-        MHDEquations<dim, divergence_cleaning>::n_components;
-      static_cast<void>(n_components);
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
 
       saplog << "Start test run mhd" << std::endl;
       LogStream::Prefix p("Test", saplog);
@@ -96,7 +96,7 @@ test_run_mhd(const sapphirepp::MHD::MHDParameters<dim> &mhd_parameters,
 
 
       /** [Setup analytic solution] */
-      AssertDimension(exact_solution.n_components, n_components);
+      AssertDimension(exact_solution.n_components, MHDEqs::n_components);
       PETScWrappers::MPI::Vector analytic_solution_vector;
       analytic_solution_vector.reinit(
         mhd_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);

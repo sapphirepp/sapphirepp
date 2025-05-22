@@ -58,13 +58,19 @@ namespace sapphirepp
     class NumericalFlux
     {
     public:
+      /** Shorthand for @ref MHDEquations */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEqs::state_type;
+
+
+
       /**
        * @brief Constructor
        *
        * @param mhd_equations Instance of the underlying @ref MHDEquations.
        */
-      NumericalFlux(
-        const MHDEquations<dim, divergence_cleaning> &mhd_equations);
+      NumericalFlux(const MHDEqs &mhd_equations);
 
 
 
@@ -88,20 +94,16 @@ namespace sapphirepp
        *        \f$ \mathbf{F}^{\text{num}} \f$.
        */
       void
-      compute_numerical_normal_flux(
-        const dealii::Tensor<1, dim> &normal,
-        const typename MHDEquations<dim, divergence_cleaning>::state_type
-          &state_1,
-        const typename MHDEquations<dim, divergence_cleaning>::state_type
-          &state_2,
-        typename MHDEquations<dim, divergence_cleaning>::state_type
-          &numerical_normal_flux) const;
+      compute_numerical_normal_flux(const dealii::Tensor<1, dim> &normal,
+                                    const state_type             &state_1,
+                                    const state_type             &state_2,
+                                    state_type &numerical_normal_flux) const;
 
 
 
     private:
       /** @ref MHDEquations */
-      const MHDEquations<dim, divergence_cleaning> &mhd_equations;
+      const MHDEqs &mhd_equations;
     };
   } // namespace MHD
 } // namespace sapphirepp
