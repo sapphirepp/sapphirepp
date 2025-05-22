@@ -413,9 +413,9 @@ $$
  - \sin \theta \sin \varphi
  \end{pmatrix}
     = \begin{pmatrix}
- \cos (\pi - \theta) \\
- \sin (\pi - \theta) \cos (2 \pi - \varphi) \\
- \sin (\pi - \theta) \sin (2 \pi - \varphi)
+ \cos (\theta) \\
+ \sin (\theta) \cos (2 \pi - \varphi) \\
+ \sin (\theta) \sin (2 \pi - \varphi)
  \end{pmatrix} \,
 $$
 
