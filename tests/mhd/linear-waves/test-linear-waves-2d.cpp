@@ -96,8 +96,13 @@ main(int argc, char *argv[])
       /** [Copy MHD parameter] */
 
       /** [Setup analytic solution] */
-      InitialConditionMHD<dim> analytic_solution(
-        physical_parameters, mhd_parameters.adiabatic_index);
+      MHDEquations<dim, divergence_cleaning> mhd_equations(
+        mhd_parameters.adiabatic_index);
+      // Set divergence cleaning speed to arbitrary values
+      mhd_equations.compute_hyperbolic_divergence_cleaning_speed(1., 1., 1);
+
+      InitialConditionMHD<dim, divergence_cleaning> analytic_solution(
+        physical_parameters, mhd_equations);
       /** [Setup analytic solution] */
 
       return test_run_mhd<dim>(mhd_parameters,

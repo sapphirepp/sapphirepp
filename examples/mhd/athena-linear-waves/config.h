@@ -124,17 +124,24 @@ namespace sapphirepp
 
 
 
-    template <unsigned int spacedim>
-    class InitialConditionMHD : public dealii::Function<spacedim>
+    template <unsigned int dim, bool divergence_cleaning>
+    class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
+      /** Shorthand for @ref MHDEquations<dim, divergence_cleaning> */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEqs::state_type;
+
+
+
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
-                          const double              adiabatic_index)
-        : dealii::Function<spacedim>(MHDEquations::n_components)
+                          const MHDEqs             &mhd_equations)
+        : dealii::Function<dim>(MHDEqs::n_components)
         , prm{physical_parameters}
-        , mhd_equations(adiabatic_index)
-        , background_state(MHDEquations::n_components)
-        , eigenvector(MHDEquations::n_components)
+        , mhd_equations{mhd_equations}
+        , background_state(MHDEqs::n_components)
+        , eigenvector(MHDEqs::n_components)
       {
         const double density  = 1.;
         const double pressure = 1. / mhd_equations.adiabatic_index;
@@ -161,17 +168,14 @@ namespace sapphirepp
           0.5 * (b_x * b_x + b_y * b_y + b_z * b_z);
 
         // Background state in conserved variables
-        background_state[MHDEquations::density_component] = density;
-        background_state[MHDEquations::first_momentum_component + 0] =
-          density * u_x;
-        background_state[MHDEquations::first_momentum_component + 1] =
-          density * u_y;
-        background_state[MHDEquations::first_momentum_component + 2] =
-          density * u_z;
-        background_state[MHDEquations::energy_component]             = energy;
-        background_state[MHDEquations::first_magnetic_component + 0] = b_x;
-        background_state[MHDEquations::first_magnetic_component + 1] = b_y;
-        background_state[MHDEquations::first_magnetic_component + 2] = b_z;
+        background_state[MHDEqs::density_component]            = density;
+        background_state[MHDEqs::first_momentum_component + 0] = density * u_x;
+        background_state[MHDEqs::first_momentum_component + 1] = density * u_y;
+        background_state[MHDEqs::first_momentum_component + 2] = density * u_z;
+        background_state[MHDEqs::energy_component]             = energy;
+        background_state[MHDEqs::first_magnetic_component + 0] = b_x;
+        background_state[MHDEqs::first_magnetic_component + 1] = b_y;
+        background_state[MHDEqs::first_magnetic_component + 2] = b_z;
 
         saplog << "Conserved background state: " << std::endl;
         saplog << background_state << std::endl;
@@ -291,57 +295,57 @@ namespace sapphirepp
         double tmp_x, tmp_y, tmp_z;
 
         // Rotate by theta around z-axis
-        tmp_x = background_state[MHDEquations::first_momentum_component + 0];
-        tmp_y = background_state[MHDEquations::first_momentum_component + 1];
-        background_state[MHDEquations::first_momentum_component + 0] =
+        tmp_x = background_state[MHDEqs::first_momentum_component + 0];
+        tmp_y = background_state[MHDEqs::first_momentum_component + 1];
+        background_state[MHDEqs::first_momentum_component + 0] =
           std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
-        background_state[MHDEquations::first_momentum_component + 1] =
+        background_state[MHDEqs::first_momentum_component + 1] =
           std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
-        tmp_x = background_state[MHDEquations::first_magnetic_component + 0];
-        tmp_y = background_state[MHDEquations::first_magnetic_component + 1];
-        background_state[MHDEquations::first_magnetic_component + 0] =
+        tmp_x = background_state[MHDEqs::first_magnetic_component + 0];
+        tmp_y = background_state[MHDEqs::first_magnetic_component + 1];
+        background_state[MHDEqs::first_magnetic_component + 0] =
           std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
-        background_state[MHDEquations::first_magnetic_component + 1] =
+        background_state[MHDEqs::first_magnetic_component + 1] =
           std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
 
-        tmp_x = eigenvector[MHDEquations::first_momentum_component + 0];
-        tmp_y = eigenvector[MHDEquations::first_momentum_component + 1];
-        eigenvector[MHDEquations::first_momentum_component + 0] =
+        tmp_x = eigenvector[MHDEqs::first_momentum_component + 0];
+        tmp_y = eigenvector[MHDEqs::first_momentum_component + 1];
+        eigenvector[MHDEqs::first_momentum_component + 0] =
           std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
-        eigenvector[MHDEquations::first_momentum_component + 1] =
+        eigenvector[MHDEqs::first_momentum_component + 1] =
           std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
-        tmp_x = eigenvector[MHDEquations::first_magnetic_component + 0];
-        tmp_y = eigenvector[MHDEquations::first_magnetic_component + 1];
-        eigenvector[MHDEquations::first_magnetic_component + 0] =
+        tmp_x = eigenvector[MHDEqs::first_magnetic_component + 0];
+        tmp_y = eigenvector[MHDEqs::first_magnetic_component + 1];
+        eigenvector[MHDEqs::first_magnetic_component + 0] =
           std::cos(theta) * tmp_x - std::sin(theta) * tmp_y;
-        eigenvector[MHDEquations::first_magnetic_component + 1] =
+        eigenvector[MHDEqs::first_magnetic_component + 1] =
           std::sin(theta) * tmp_x + std::cos(theta) * tmp_y;
 
         // Rotate by phi around x-axis
-        tmp_y = background_state[MHDEquations::first_momentum_component + 1];
-        tmp_z = background_state[MHDEquations::first_momentum_component + 2];
-        background_state[MHDEquations::first_momentum_component + 1] =
+        tmp_y = background_state[MHDEqs::first_momentum_component + 1];
+        tmp_z = background_state[MHDEqs::first_momentum_component + 2];
+        background_state[MHDEqs::first_momentum_component + 1] =
           std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
-        background_state[MHDEquations::first_momentum_component + 2] =
+        background_state[MHDEqs::first_momentum_component + 2] =
           std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
-        tmp_y = background_state[MHDEquations::first_magnetic_component + 1];
-        tmp_z = background_state[MHDEquations::first_magnetic_component + 2];
-        background_state[MHDEquations::first_magnetic_component + 1] =
+        tmp_y = background_state[MHDEqs::first_magnetic_component + 1];
+        tmp_z = background_state[MHDEqs::first_magnetic_component + 2];
+        background_state[MHDEqs::first_magnetic_component + 1] =
           std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
-        background_state[MHDEquations::first_magnetic_component + 2] =
+        background_state[MHDEqs::first_magnetic_component + 2] =
           std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
 
-        tmp_y = eigenvector[MHDEquations::first_momentum_component + 1];
-        tmp_z = eigenvector[MHDEquations::first_momentum_component + 2];
-        eigenvector[MHDEquations::first_momentum_component + 1] =
+        tmp_y = eigenvector[MHDEqs::first_momentum_component + 1];
+        tmp_z = eigenvector[MHDEqs::first_momentum_component + 2];
+        eigenvector[MHDEqs::first_momentum_component + 1] =
           std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
-        eigenvector[MHDEquations::first_momentum_component + 2] =
+        eigenvector[MHDEqs::first_momentum_component + 2] =
           std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
-        tmp_y = eigenvector[MHDEquations::first_magnetic_component + 1];
-        tmp_z = eigenvector[MHDEquations::first_magnetic_component + 2];
-        eigenvector[MHDEquations::first_magnetic_component + 1] =
+        tmp_y = eigenvector[MHDEqs::first_magnetic_component + 1];
+        tmp_z = eigenvector[MHDEqs::first_magnetic_component + 2];
+        eigenvector[MHDEqs::first_magnetic_component + 1] =
           std::cos(phi) * tmp_y - std::sin(phi) * tmp_z;
-        eigenvector[MHDEquations::first_magnetic_component + 2] =
+        eigenvector[MHDEqs::first_magnetic_component + 2] =
           std::sin(phi) * tmp_y + std::cos(phi) * tmp_z;
 
         saplog << "Rotated background state: " << background_state << std::endl;
@@ -351,8 +355,8 @@ namespace sapphirepp
 
 
       void
-      vector_value(const dealii::Point<spacedim> &point,
-                   dealii::Vector<double>        &f) const override
+      vector_value(const dealii::Point<dim> &point,
+                   dealii::Vector<double>   &f) const override
       {
         AssertDimension(f.size(), this->n_components);
         static_cast<void>(point); // suppress compiler warning
@@ -362,7 +366,7 @@ namespace sapphirepp
 
         f = background_state;
 
-        for (unsigned int c = 0; c < MHDEquations::n_components; ++c)
+        for (unsigned int c = 0; c < MHDEqs::n_components; ++c)
           {
             f[c] += prm.amplitude * eigenvector[c] *
                     std::sin(wave_vector * point - wave_number * t);
@@ -373,13 +377,13 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters            prm;
-      const MHDEquations                  mhd_equations;
-      typename MHDEquations::state_type   background_state;
-      typename MHDEquations::state_type   eigenvector;
-      double                              eigenvalue;
-      dealii::Tensor<1, spacedim, double> wave_vector;
-      double                              wave_number;
+      const PhysicalParameters       prm;
+      const MHDEqs                   mhd_equations;
+      state_type                     background_state;
+      state_type                     eigenvector;
+      double                         eigenvalue;
+      dealii::Tensor<1, dim, double> wave_vector;
+      double                         wave_number;
     };
 
   } // namespace MHD

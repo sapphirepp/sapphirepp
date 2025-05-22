@@ -121,51 +121,47 @@ namespace sapphirepp
 
 
 
-    template <unsigned int dim>
+    template <unsigned int dim, bool divergence_cleaning>
     class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
-      static constexpr bool hdc =
-        (mhd_flags & MHDFlags::hyperbolic_divergence_cleaning) !=
-        MHDFlags::none;
+      /** Shorthand for @ref MHDEquations<dim, divergence_cleaning> */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEqs::state_type;
+
+
 
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
-                          const double              adiabatic_index)
-        : dealii::Function<dim>(MHDEquations<dim, hdc>::n_components)
+                          const MHDEqs             &mhd_equations)
+        : dealii::Function<dim>(MHDEqs::n_components)
         , prm{physical_parameters}
-        , mhd_equations(adiabatic_index)
-        , primitive_ambient_state(MHDEquations<dim, hdc>::n_components)
-        , primitive_inner_state(MHDEquations<dim, hdc>::n_components)
+        , mhd_equations{mhd_equations}
+        , primitive_ambient_state(MHDEqs::n_components)
+        , primitive_inner_state(MHDEqs::n_components)
       {
-        primitive_ambient_state = 0.;
-        primitive_ambient_state[MHDEquations<dim, hdc>::density_component] =
-          1.0;
-        primitive_ambient_state[MHDEquations<dim, hdc>::pressure_component] =
-          0.1;
+        primitive_ambient_state                             = 0.;
+        primitive_ambient_state[MHDEqs::density_component]  = 1.0;
+        primitive_ambient_state[MHDEqs::pressure_component] = 0.1;
         if (prm.test_case == 1)
           {
-            primitive_ambient_state
-              [MHDEquations<dim, hdc>::first_magnetic_component + 0] =
-                M_SQRT1_2;
-            primitive_ambient_state
-              [MHDEquations<dim, hdc>::first_magnetic_component + 1] =
-                M_SQRT1_2;
+            primitive_ambient_state[MHDEqs::first_magnetic_component + 0] =
+              M_SQRT1_2;
+            primitive_ambient_state[MHDEqs::first_magnetic_component + 1] =
+              M_SQRT1_2;
           }
         saplog << "Primitive ambient state: " << std::endl;
         saplog << primitive_ambient_state << std::endl;
 
-        primitive_inner_state                                            = 0.;
-        primitive_inner_state[MHDEquations<dim, hdc>::density_component] = 1.0;
-        primitive_inner_state[MHDEquations<dim, hdc>::pressure_component] =
-          10.0;
+        primitive_inner_state                             = 0.;
+        primitive_inner_state[MHDEqs::density_component]  = 1.0;
+        primitive_inner_state[MHDEqs::pressure_component] = 10.0;
         if (prm.test_case == 1)
           {
-            primitive_ambient_state
-              [MHDEquations<dim, hdc>::first_magnetic_component + 0] =
-                M_SQRT1_2;
-            primitive_ambient_state
-              [MHDEquations<dim, hdc>::first_magnetic_component + 1] =
-                M_SQRT1_2;
+            primitive_ambient_state[MHDEqs::first_magnetic_component + 0] =
+              M_SQRT1_2;
+            primitive_ambient_state[MHDEqs::first_magnetic_component + 1] =
+              M_SQRT1_2;
           }
         saplog << "Primitive inner state: " << std::endl;
         saplog << primitive_inner_state << std::endl;
@@ -193,10 +189,10 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters                    prm;
-      const MHDEquations<dim, hdc>                mhd_equations;
-      typename MHDEquations<dim, hdc>::state_type primitive_ambient_state;
-      typename MHDEquations<dim, hdc>::state_type primitive_inner_state;
+      const PhysicalParameters prm;
+      const MHDEqs             mhd_equations;
+      state_type               primitive_ambient_state;
+      state_type               primitive_inner_state;
     };
 
   } // namespace MHD

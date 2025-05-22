@@ -348,8 +348,8 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
 
   {
     TimerOutput::Scope timer_section(timer, "Project initial condition - MHD");
-    InitialConditionMHD<dim> initial_condition_function(
-      physical_parameters, mhd_equations.adiabatic_index);
+    InitialConditionMHD<dim, divergence_cleaning> initial_condition_function(
+      physical_parameters, mhd_equations);
     project(initial_condition_function, locally_owned_solution);
     // Here a non ghosted vector, is copied into a ghosted vector. I think
     // that is the moment where the ghost cells are filled.

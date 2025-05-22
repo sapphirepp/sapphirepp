@@ -116,31 +116,25 @@ namespace sapphirepp
 
 
 
-    template <unsigned int dim>
+    template <unsigned int dim, bool divergence_cleaning>
     class InitialConditionMHD : public dealii::Function<dim>
     {
     public:
-      static constexpr bool hdc =
-        (mhd_flags & MHDFlags::hyperbolic_divergence_cleaning) !=
-        MHDFlags::none;
+      /** Shorthand for @ref MHDEquations<dim, divergence_cleaning> */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEqs::state_type;
+
+
 
       InitialConditionMHD(const PhysicalParameters &physical_parameters,
-                          const double              adiabatic_index)
-        : dealii::Function<dim>(MHDEquations<dim, hdc>::n_components)
+                          const MHDEqs             &mhd_equations)
+        : dealii::Function<dim>(MHDEqs::n_components)
         , prm{physical_parameters}
-        , mhd_equations(adiabatic_index)
-        , state_l(MHDEquations<dim, hdc>::n_components)
-        , state_r(MHDEquations<dim, hdc>::n_components)
+        , mhd_equations{mhd_equations}
+        , state_l(MHDEqs::n_components)
+        , state_r(MHDEqs::n_components)
       {
-        const unsigned int i_rho = MHDEquations<dim, hdc>::density_component;
-        const unsigned int i_P   = MHDEquations<dim, hdc>::pressure_component;
-        const unsigned int i_ux =
-          MHDEquations<dim, hdc>::first_velocity_component;
-        const unsigned int i_Bx =
-          MHDEquations<dim, hdc>::first_magnetic_component;
-        const unsigned int i_By =
-          MHDEquations<dim, hdc>::first_magnetic_component + 1;
-
         state_l = 0.;
         state_r = 0.;
 
@@ -148,22 +142,22 @@ namespace sapphirepp
           {
             case 1:
               // Brio Wu
-              state_l[i_Bx] = 0.75;
-              state_l[i_By] = 1.0;
+              state_l[MHDEqs::first_magnetic_component]     = 0.75;
+              state_l[MHDEqs::first_magnetic_component + 1] = 1.0;
 
-              state_r[i_Bx] = 0.75;
-              state_r[i_By] = -1.0;
+              state_r[MHDEqs::first_magnetic_component]     = 0.75;
+              state_r[MHDEqs::first_magnetic_component + 1] = -1.0;
               [[fallthrough]]; // HD part is same as for Sod
 
             case 0:
               // Sod
-              state_l[i_rho] = 1.0;
-              state_l[i_ux]  = 0.0;
-              state_l[i_P]   = 1.0;
+              state_l[MHDEqs::density_component]        = 1.0;
+              state_l[MHDEqs::first_velocity_component] = 0.0;
+              state_l[MHDEqs::pressure_component]       = 1.0;
 
-              state_r[i_rho] = 0.125;
-              state_r[i_ux]  = 0.0;
-              state_r[i_P]   = 0.1;
+              state_r[MHDEqs::density_component]        = 0.125;
+              state_r[MHDEqs::first_velocity_component] = 0.0;
+              state_r[MHDEqs::pressure_component]       = 0.1;
               break;
 
             default:
@@ -197,10 +191,10 @@ namespace sapphirepp
 
 
     private:
-      const PhysicalParameters                    prm;
-      const MHDEquations<dim, hdc>                mhd_equations;
-      typename MHDEquations<dim, hdc>::state_type state_l;
-      typename MHDEquations<dim, hdc>::state_type state_r;
+      const PhysicalParameters prm;
+      const MHDEqs             mhd_equations;
+      state_type               state_l;
+      state_type               state_r;
     };
 
   } // namespace MHD

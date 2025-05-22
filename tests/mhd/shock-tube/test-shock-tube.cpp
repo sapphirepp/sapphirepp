@@ -89,9 +89,6 @@ main(int argc, char *argv[])
       /** [Main function setup] */
 
       /** [Setup exact solution] */
-      static constexpr bool divergence_cleaning =
-        MHDSolver<dim>::divergence_cleaning;
-
       Utils::GridDataFunction<dim_mhd> exact_solution(
         comparison_path,
         comparison_base_filename,
