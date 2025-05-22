@@ -208,8 +208,18 @@ namespace sapphirepp
       /** @} */
 
 
-      /** Constructor */
-      MHDEquations(const double adiabatic_index);
+      /**
+       * @brief Constructor
+       *
+       * @param adiabatic_index Adiabatic index \f$ \gamma \f$.
+       * @param divergence_cleaning_Ch Constant \f$ C_h \f$
+       *        for hyperbolic divergence cleaning.
+       * @param divergence_cleaning_Cr Constant \f$ C_r \f$
+       *        for hyperbolic divergence cleaning.
+       */
+      MHDEquations(const double adiabatic_index,
+                   const double divergence_cleaning_Ch = 0.8,
+                   const double divergence_cleaning_Cr = 0.18);
 
 
       /** @{ */
@@ -672,6 +682,10 @@ namespace sapphirepp
 
 
     private:
+      /** Constant \f$ C_h \f$ for hyperbolic divergence cleaning. */
+      const double divergence_cleaning_Ch;
+      /** Constant \f$ C_r \f$ for hyperbolic divergence cleaning. */
+      const double divergence_cleaning_Cr;
       /** Speed for hyperbolic divergence cleaning, \f$ c_h \f$. */
       double divergence_cleaning_speed;
       /**

@@ -193,6 +193,15 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
                       minmod_beta,
                       "minmod limiter parameter $\\beta$ for slope limiter.",
                       Patterns::Double(0.));
+
+    prm.add_parameter("divergence_cleaning_Ch",
+                      divergence_cleaning_Ch,
+                      "Constant $C_h$ for hyperbolic divergence cleaning.",
+                      Patterns::Double(0., 1.));
+    prm.add_parameter("divergence_cleaning_Cr",
+                      divergence_cleaning_Cr,
+                      "Constant $C_r$ for hyperbolic divergence cleaning.",
+                      Patterns::Double(0.));
   } // Numerical parameters
   prm.leave_subsection();
 

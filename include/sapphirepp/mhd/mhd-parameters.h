@@ -137,6 +137,11 @@ namespace sapphirepp
       double minmod_threshold = 0.;
       /** minmod limiter parameter \f$ \beta \f$ for slope limiter. */
       double minmod_beta = 2.;
+
+      /** Constant \f$ C_h \f$ for hyperbolic divergence cleaning. */
+      double divergence_cleaning_Ch = 0.8;
+      /** Constant \f$ C_r \f$ for hyperbolic divergence cleaning. */
+      double divergence_cleaning_Cr = 0.18;
       /** @} */
 
 

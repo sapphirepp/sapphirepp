@@ -47,8 +47,12 @@ static constexpr double epsilon_d =
 
 template <unsigned int dim, bool divergence_cleaning>
 sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
-  const double adiabatic_index)
+  const double adiabatic_index,
+  const double divergence_cleaning_Ch,
+  const double divergence_cleaning_Cr)
   : adiabatic_index{adiabatic_index}
+  , divergence_cleaning_Ch{divergence_cleaning_Ch}
+  , divergence_cleaning_Cr{divergence_cleaning_Cr}
   , divergence_cleaning_speed{std::numeric_limits<double>::quiet_NaN()}
   , divergence_cleaning_damping{0.}
 {
@@ -56,6 +60,13 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
               dealii::ExcMessage("Adiabatic index must be larger than 1."));
   AssertThrow(adiabatic_index <= 2.0,
               dealii::ExcMessage("Adiabatic index must be smaller than 2."));
+
+  AssertThrow(divergence_cleaning_Ch >= 0.,
+              dealii::ExcMessage("C_h must be larger than 0."));
+  AssertThrow(divergence_cleaning_Ch <= 1.,
+              dealii::ExcMessage("C_h must be smaller than 1."));
+  AssertThrow(divergence_cleaning_Cr >= 0.,
+              dealii::ExcMessage("C_r must be positive."));
 }
 
 
@@ -1253,13 +1264,15 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   Assert(dt_cfl > 0, dealii::ExcMessage("CFL time step must be positive."));
   Assert(dx_min > 0, dealii::ExcMessage("Cell size must be positive."));
 
-  // c_h = C_h dx / ((2k+1) dt);
-  const double C_h          = 0.8;
-  divergence_cleaning_speed = C_h * dx_min / ((2 * fe_degree + 1) * dt_cfl);
 
-  // c_p = sqrt(C_r * c_h);
-  const double C_r            = 0.18;
-  divergence_cleaning_damping = divergence_cleaning_speed / C_r;
+  // c_h = C_h dx / ((2k+1) dt)
+  divergence_cleaning_speed =
+    divergence_cleaning_Ch * dx_min / ((2 * fe_degree + 1) * dt_cfl);
+
+  // c_p = sqrt(C_r * c_h)
+  // tau^{-1} = c_h^2 / c_p^2 = c_h / C_r
+  divergence_cleaning_damping =
+    divergence_cleaning_speed / divergence_cleaning_Cr;
 
   saplog << "divergence_cleaning_speed=" << divergence_cleaning_speed
          << ", divergence_cleaning_damping=" << divergence_cleaning_damping
