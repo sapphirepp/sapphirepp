@@ -158,9 +158,9 @@ namespace sapphirepp
         primitive_inner_state[MHDEqs::pressure_component] = 10.0;
         if (prm.test_case == 1)
           {
-            primitive_ambient_state[MHDEqs::first_magnetic_component + 0] =
+            primitive_inner_state[MHDEqs::first_magnetic_component + 0] =
               M_SQRT1_2;
-            primitive_ambient_state[MHDEqs::first_magnetic_component + 1] =
+            primitive_inner_state[MHDEqs::first_magnetic_component + 1] =
               M_SQRT1_2;
           }
         saplog << "Primitive inner state: " << std::endl;
