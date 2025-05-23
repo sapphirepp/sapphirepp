@@ -52,8 +52,8 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    unsigned int test_case;
-    double       radius;
+    unsigned int test_case = 0;
+    double       radius    = 0.1;
     /** [Define runtime parameter] */
 
     PhysicalParameters() = default;
@@ -69,14 +69,16 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("Test case",
-                        "0",
-                        dealii::Patterns::Integer(0, 1),
-                        "Test case: 0 - HD, 1 - MHD");
-      prm.declare_entry("Radius",
-                        "0.1",
-                        dealii::Patterns::Double(0.),
-                        "Initial radius of the blast wave");
+      prm.add_parameter("Test case",
+                        test_case,
+                        "Test case to run: "
+                        "0 - HD, "
+                        "1 - MHD",
+                        dealii::Patterns::Integer(0, 1));
+      prm.add_parameter("Radius",
+                        radius,
+                        "Initial radius of the blast wave",
+                        dealii::Patterns::Double(0.));
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -90,12 +92,10 @@ namespace sapphirepp
       dealii::LogStream::Prefix pre1("Startup", saplog);
       dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
-      std::string s;
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
-      test_case = static_cast<unsigned int>(prm.get_integer("Test case"));
-      radius    = prm.get_double("Radius");
+      // Parameters are automatically parsed by add_parameter()
       /** [Parse runtime parameter]  */
 
       prm.leave_subsection();

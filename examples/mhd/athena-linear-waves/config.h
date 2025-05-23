@@ -94,7 +94,6 @@ namespace sapphirepp
       dealii::LogStream::Prefix pre1("Startup", saplog);
       dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
-      std::string s;
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */

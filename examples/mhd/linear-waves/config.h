@@ -124,13 +124,13 @@ namespace sapphirepp
       dealii::LogStream::Prefix pre1("Startup", saplog);
       dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
-      std::string s;
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter]  */
       rho_0 = prm.get_double("rho_0");
       P_0   = prm.get_double("P_0");
 
+      std::string s;
       s = prm.get("u_0");
       std::stringstream u_0_string(s);
       for (std::string tmp; std::getline(u_0_string, tmp, ',');)
