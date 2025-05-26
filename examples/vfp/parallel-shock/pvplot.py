@@ -40,7 +40,7 @@ solution = XMLPartitionedUnstructuredGridReader(
     registrationName="solution",
     FileName=pvtu_files,
 )
-solution.UpdatePipeline()
+solution.UpdatePipelineInformation()
 
 # for pvtu, the time variable does not work
 # solution.TimeArray = "None"

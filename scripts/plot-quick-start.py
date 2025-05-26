@@ -49,7 +49,7 @@ solution.TimeArray = "None"
 solution.PointArrayStatus = ["f_000", "f_100"]
 
 # Update Pipeline
-solution.UpdatePipeline()
+solution.UpdatePipelineInformation()
 
 
 # =============================================================================

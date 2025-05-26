@@ -65,7 +65,7 @@ solution.TimeArray = "None"
 solution.PointArrayStatus = ["f_000"]
 
 # Update Pipeline
-solution.UpdatePipeline()
+solution.UpdatePipelineInformation()
 
 # Get the bounds
 # Get data information from the solution
