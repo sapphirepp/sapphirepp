@@ -37,6 +37,8 @@
 
 #include <deal.II/numerics/data_component_interpretation.h>
 
+#include <mhd-parameters.h>
+
 #include <array>
 #include <exception>
 #include <ostream>
@@ -211,15 +213,9 @@ namespace sapphirepp
       /**
        * @brief Constructor
        *
-       * @param adiabatic_index Adiabatic index \f$ \gamma \f$.
-       * @param divergence_cleaning_Ch Constant \f$ C_h \f$
-       *        for hyperbolic divergence cleaning.
-       * @param divergence_cleaning_Cr Constant \f$ C_r \f$
-       *        for hyperbolic divergence cleaning.
+       * @param mhd_parameters Parameters for the MHD equation
        */
-      MHDEquations(const double adiabatic_index,
-                   const double divergence_cleaning_Ch = 0.8,
-                   const double divergence_cleaning_Cr = 0.18);
+      MHDEquations(const MHDParameters<dim> &mhd_parameters);
 
 
       /** @{ */

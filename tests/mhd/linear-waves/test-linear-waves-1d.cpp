@@ -96,10 +96,7 @@ main(int argc, char *argv[])
       /** [Copy MHD parameter] */
 
       /** [Setup analytic solution] */
-      MHDEquations<dim, divergence_cleaning> mhd_equations(
-        mhd_parameters.adiabatic_index,
-        mhd_parameters.divergence_cleaning_Ch,
-        mhd_parameters.divergence_cleaning_Cr);
+      MHDEquations<dim, divergence_cleaning> mhd_equations(mhd_parameters);
       // Set divergence cleaning speed to arbitrary values
       mhd_equations.compute_hyperbolic_divergence_cleaning_speed(1., 1., 1);
 

@@ -291,9 +291,7 @@ sapphirepp::MHD::MHDSolver<dim>::MHDSolver(
   : mhd_parameters{mhd_parameters}
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
-  , mhd_equations(mhd_parameters.adiabatic_index,
-                  mhd_parameters.divergence_cleaning_Ch,
-                  mhd_parameters.divergence_cleaning_Cr)
+  , mhd_equations(mhd_parameters)
   , numerical_flux(mhd_equations)
   , slope_limiter(mhd_parameters)
   , mhd_postprocessor(mhd_equations)

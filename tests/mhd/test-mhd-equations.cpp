@@ -229,7 +229,9 @@ test_mhd_equation(RandomNumber      &rnd,
 
 
   // Setup MHD equations
-  MHDEqs mhd_equations(adiabatic_index);
+  MHDParameters<dim> mhd_parameters;
+  mhd_parameters.adiabatic_index = adiabatic_index;
+  MHDEqs mhd_equations(mhd_parameters);
 
 
   unsigned int skipped_tests = 0;

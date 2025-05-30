@@ -47,12 +47,10 @@ static constexpr double epsilon_d =
 
 template <unsigned int dim, bool divergence_cleaning>
 sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
-  const double adiabatic_index,
-  const double divergence_cleaning_Ch,
-  const double divergence_cleaning_Cr)
-  : adiabatic_index{adiabatic_index}
-  , divergence_cleaning_Ch{divergence_cleaning_Ch}
-  , divergence_cleaning_Cr{divergence_cleaning_Cr}
+  const MHDParameters<dim> &mhd_parameters)
+  : adiabatic_index{mhd_parameters.adiabatic_index}
+  , divergence_cleaning_Ch{mhd_parameters.divergence_cleaning_Ch}
+  , divergence_cleaning_Cr{mhd_parameters.divergence_cleaning_Cr}
   , divergence_cleaning_speed{std::numeric_limits<double>::quiet_NaN()}
   , divergence_cleaning_damping{0.}
 {
