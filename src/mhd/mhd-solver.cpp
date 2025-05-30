@@ -1335,6 +1335,10 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
   static_cast<void>(time); // suppress compiler warning
   dg_rhs = 0;
 
+  BoundaryValueFunctionMHD<dim, divergence_cleaning> bc_value_function(
+    physical_parameters, mhd_equations);
+  bc_value_function.set_time(time);
+
   // assemble cell terms
   const auto cell_worker = [&](const Iterator   &cell,
                                ScratchData<dim> &scratch_data,
@@ -1414,17 +1418,49 @@ sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
     // Compute states
     fe_v_face.get_function_values(locally_relevant_current_solution, states);
 
+    std::vector<Vector<double>> bc_values(q_points.size(),
+                                          Vector<double>(MHDEqs::n_components));
+    bc_value_function.bc_vector_value_list(q_points, boundary_id, bc_values);
+
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
         // Calculate virtual neighbor state according to boundary condition
         switch (boundary_condition)
           {
-            case BoundaryConditionsMHD::zero_inflow:
+            case BoundaryConditionsMHD::continuous:
               {
                 virtual_neighbor_state = states[q_index];
                 break;
               }
+            case BoundaryConditionsMHD::zero_inflow:
+              {
+                virtual_neighbor_state = 0;
+                Assert(false,
+                       ExcNotImplemented(
+                         "This boundary condition is not tested."));
+                break;
+              }
+            case BoundaryConditionsMHD::reflective:
+              {
+                virtual_neighbor_state = states[q_index];
+                for (unsigned int d = 0; d < MHDEqs::n_vec_components; ++d)
+                  virtual_neighbor_state[MHDEqs::first_momentum_component +
+                                         d] *= -1;
+                Assert(false,
+                       ExcNotImplemented(
+                         "This boundary condition is not tested."));
+                break;
+              }
+            case BoundaryConditionsMHD::inflow:
+              {
+                virtual_neighbor_state = bc_values[q_index];
+                Assert(false,
+                       ExcNotImplemented(
+                         "This boundary condition is not tested."));
+                break;
+              }
             case BoundaryConditionsMHD::periodic:
+              break;
             default:
               Assert(false, ExcNotImplemented());
           }

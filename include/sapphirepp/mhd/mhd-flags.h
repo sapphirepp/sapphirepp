@@ -143,9 +143,25 @@ namespace sapphirepp
     enum class BoundaryConditionsMHD
     {
       /**
+       * Continuous. The distribution function at the boundary is continuously
+       * extrapolated from the interior.
+       */
+      continuous,
+
+      /**
        * Zero inflow. Only outflow, no inflow at the boundary.
        */
       zero_inflow,
+
+      /**
+       * Reflective. The particles velocity is reflected at the boundary.
+       */
+      reflective,
+
+      /** Inflow. Inflow plus outflow. Inflow at specified boundary is
+       *  determined by a boundary value function.
+       */
+      inflow,
 
       /**
        * Periodic boundary conditions. Has to be set on both sides of the

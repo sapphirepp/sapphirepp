@@ -16,8 +16,8 @@ subsection MHD
     set Point 1         = -0.5
     set Point 2         = 0.5
     subsection Boundary conditions
-      set lower x = zero inflow
-      set upper x = zero inflow
+      set lower x = continuous
+      set upper x = continuous
     end
   end
   subsection Plasma properties

@@ -254,6 +254,77 @@ namespace sapphirepp
       state_type               state_r;
     };
 
+
+
+    template <unsigned int dim, bool divergence_cleaning>
+    class BoundaryValueFunctionMHD : public dealii::Function<dim>
+    {
+    public:
+      /** Shorthand for @ref MHDEquations */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEqs::state_type;
+
+
+
+      BoundaryValueFunctionMHD(const PhysicalParameters &physical_parameters,
+                               const MHDEqs             &mhd_equations)
+        : dealii::Function<dim>(MHDEqs::n_components)
+        , prm{physical_parameters}
+        , mhd_equations{mhd_equations}
+      {}
+
+
+
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
+
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+          {
+            /** [MHD Boundary value] */
+            if (boundary_id == 0)
+              {
+                // lower x
+              }
+            else if (boundary_id == 1)
+              {
+                // upper x
+              }
+            else if (boundary_id == 2)
+              {
+                // lower y
+              }
+            else if (boundary_id == 3)
+              {
+                // upper y
+              }
+            else if (boundary_id == 4)
+              {
+                // lower z
+              }
+            else if (boundary_id == 5)
+              {
+                // upper z
+              }
+            /** [MHD Boundary value] */
+          }
+      }
+
+
+
+    private:
+      const PhysicalParameters prm;
+      const MHDEqs             mhd_equations;
+    };
+
   } // namespace MHD
 } // namespace sapphirepp
 #endif

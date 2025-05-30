@@ -966,6 +966,126 @@ namespace sapphirepp
       const MHDEqs mhd_equations;
     };
 
+
+
+    /**
+     * @brief Inflow boundary condition for MHD
+     *
+     * @tparam dim Dimension of the configuration space \f$ (\mathbf{x}) \f$,
+     *         `dim`
+     * @tparam divergence_cleaning Use Lagrange multiplier \f$ \psi \f$
+     *         for hyperbolic divergence cleaning.
+     */
+    template <unsigned int dim, bool divergence_cleaning>
+    class BoundaryValueFunctionMHD : public dealii::Function<dim>
+    {
+    public:
+      /** Shorthand for @ref MHDEquations */
+      using MHDEqs = MHDEquations<dim, divergence_cleaning>;
+      /** @ref MHDEquations::state_type */
+      using state_type = typename MHDEqs::state_type;
+
+
+
+      /**
+       * @brief Constructor
+       *
+       * @param physical_parameters User defined runtime parameters
+       * @param mhd_equations @ref MHDEquations
+       */
+      BoundaryValueFunctionMHD(const PhysicalParameters &physical_parameters,
+                               const MHDEqs             &mhd_equations)
+        : dealii::Function<dim>(MHDEqs::n_components)
+        , prm{physical_parameters}
+        , mhd_equations{mhd_equations}
+      {}
+
+
+
+      /**
+       * @brief Values of the MHD state at the boundary
+       *        specified by `boundary_id`.
+       *
+       * Return a vector containing the @ref state_type "states"
+       * at `points` on the boundary with `boundary_id`.
+       *
+       * The `boundary_id` is used to specify the states at a
+       * specific boundary of the computational domain. The relation between the
+       * possible boundaries and the boundary ids
+       * depends on the dimension `dim`.
+       * For a 3D problem the boundary ids are,
+       *
+       * | Boundary | ID |
+       * |----------|----|
+       * | lower x  | 0  |
+       * | upper x  | 1  |
+       * | lower y  | 2  |
+       * | upper z  | 3  |
+       * | lower z  | 4  |
+       * | upper z  | 5  |
+       *
+       * Only if in the parameter file the corresponding boundary is set to
+       *  `inflow`, the function `bc_vector_value` will be called.
+       *
+       * @param points Points in reduced phase space on the boundary
+       * @param boundary_id ID of the boundary of the computational domain
+       * @param bc_values Return vector of states at each point
+       * @see @ref sapphirepp::VFP::BoundaryValueFunction,
+       *      @dealref{dealii::BoundaryIndicator,DEALGlossary,GlossBoundaryIndicator},
+       *      @dealref{dealii::hyper_rectangle(),namespaceGridGenerator,a56019d263ae45708302d5d7599f0d458}
+       */
+      void
+      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
+                           const unsigned int                     boundary_id,
+                           std::vector<dealii::Vector<double>> &bc_values) const
+      {
+        AssertDimension(points.size(), bc_values.size());
+        AssertDimension(bc_values[0].size(), this->n_components);
+        static_cast<void>(points); // suppress compiler warning
+        static_cast<void>(boundary_id);
+        static_cast<void>(bc_values);
+
+        for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+          {
+            /** [MHD Boundary value] */
+            // !!!EDIT HERE!!!
+            if (boundary_id == 0)
+              {
+                // lower x
+              }
+            else if (boundary_id == 1)
+              {
+                // upper x
+              }
+            else if (boundary_id == 2)
+              {
+                // lower y
+              }
+            else if (boundary_id == 3)
+              {
+                // upper y
+              }
+            else if (boundary_id == 4)
+              {
+                // lower z
+              }
+            else if (boundary_id == 5)
+              {
+                // upper z
+              }
+            /** [MHD Boundary value] */
+          }
+      }
+
+
+
+    private:
+      /** User defined runtime parameters */
+      const PhysicalParameters prm;
+      /** @ref MHDEquations */
+      const MHDEqs mhd_equations;
+    };
+
   } // namespace MHD
 } // namespace sapphirepp
 #endif

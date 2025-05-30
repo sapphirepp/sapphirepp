@@ -91,29 +91,31 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
 
     prm.enter_subsection("Boundary conditions");
     {
-      const auto boundary_pattern = Patterns::Selection("zero inflow|periodic");
+      const auto boundary_pattern = Patterns::Selection(
+        "continuous|zero inflow|reflective|inflow|periodic");
+
       prm.declare_entry("lower x",
-                        "periodic",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower x boundary.");
       prm.declare_entry("upper x",
-                        "periodic",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper x boundary.");
       prm.declare_entry("lower y",
-                        "periodic",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower y boundary.");
       prm.declare_entry("upper y",
-                        "periodic",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper y boundary.");
       prm.declare_entry("lower z",
-                        "periodic",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the lower z boundary.");
       prm.declare_entry("upper z",
-                        "periodic",
+                        "continuous",
                         boundary_pattern,
                         "Boundary condition at the upper z boundary.");
     }
@@ -263,9 +265,19 @@ sapphirepp::MHD::MHDParameters<dim>::parse_parameters(ParameterHandler &prm)
             Assert(false, ExcNotImplemented());
 
           s = prm.get(entry);
-          if (s == "zero inflow")
+
+          if (s == "continuous")
+            boundary_conditions[boundary_id] =
+              MHD::BoundaryConditionsMHD::continuous;
+          else if (s == "zero inflow")
             boundary_conditions[boundary_id] =
               MHD::BoundaryConditionsMHD::zero_inflow;
+          else if (s == "reflective")
+            boundary_conditions[boundary_id] =
+              MHD::BoundaryConditionsMHD::reflective;
+          else if (s == "inflow")
+            boundary_conditions[boundary_id] =
+              MHD::BoundaryConditionsMHD::inflow;
           else if (s == "periodic")
             boundary_conditions[boundary_id] =
               MHD::BoundaryConditionsMHD::periodic;
