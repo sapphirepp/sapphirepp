@@ -27,6 +27,6 @@ subsection Physical parameters
   set u_0        = 1., 0., 0.
   set b_0        = 0., 0., 0.
   set Amplitude  = 1e-4
-  set Eigenmodes = 0, 0, 0, 1, 0, 0, 0, 0
+  set Eigenmodes = 0, 0, 0, 1, 0, 0, 0, 0, 0
   set Direction  = 1, 0, 0
 end

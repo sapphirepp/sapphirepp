@@ -64,7 +64,7 @@ main(int argc, char *argv[])
         max_L2_error = std::stod(argv[2]);
 
       dealii::ParameterHandler prm;
-      PhysicalParameters       physical_parameters(dim);
+      PhysicalParameters       physical_parameters;
       Utils::OutputParameters  output_parameters;
       MHDParameters<dim>       mhd_parameters;
 
@@ -79,26 +79,8 @@ main(int argc, char *argv[])
       mhd_parameters.parse_parameters(prm);
       /** [Main function setup] */
 
-
-      /** [Copy MHD parameter] */
-      physical_parameters.box_length = std::vector<double>(dim);
-      for (unsigned int d = 0; d < dim; ++d)
-        {
-          physical_parameters.box_length[d] =
-            std::abs(mhd_parameters.p1[d] - mhd_parameters.p2[d]);
-
-          AssertThrow((mhd_parameters.boundary_conditions[2 * d + 0] ==
-                       MHD::BoundaryConditionsMHD::periodic) &&
-                        (mhd_parameters.boundary_conditions[2 * d + 1] ==
-                         MHD::BoundaryConditionsMHD::periodic),
-                      dealii::ExcMessage("This example assumes periodic BC."));
-        }
-      /** [Copy MHD parameter] */
-
       /** [Setup analytic solution] */
       MHDEquations<dim, divergence_cleaning> mhd_equations(mhd_parameters);
-      // Set divergence cleaning speed to arbitrary values
-      mhd_equations.compute_hyperbolic_divergence_cleaning_speed(1., 1., 1);
 
       InitialConditionMHD<dim, divergence_cleaning> analytic_solution(
         physical_parameters, mhd_equations);

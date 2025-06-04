@@ -61,7 +61,7 @@ main(int argc, char *argv[])
         parameter_filename = argv[1];
 
       dealii::ParameterHandler prm;
-      PhysicalParameters       physical_parameters(dim_mhd);
+      PhysicalParameters       physical_parameters;
       Utils::OutputParameters  output_parameters;
       MHDParameters<dim_mhd>   mhd_parameters;
 
@@ -74,22 +74,6 @@ main(int argc, char *argv[])
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
       mhd_parameters.parse_parameters(prm);
-
-
-      /** [Copy MHD parameter] */
-      physical_parameters.box_length = std::vector<double>(dim_mhd, 1.);
-      for (unsigned int d = 0; d < dim_mhd; ++d)
-        {
-          physical_parameters.box_length[d] =
-            std::abs(mhd_parameters.p1[d] - mhd_parameters.p2[d]);
-
-          AssertThrow((mhd_parameters.boundary_conditions[2 * d + 0] ==
-                       MHD::BoundaryConditionsMHD::periodic) &&
-                        (mhd_parameters.boundary_conditions[2 * d + 1] ==
-                         MHD::BoundaryConditionsMHD::periodic),
-                      dealii::ExcMessage("This example assumes periodic BC."));
-        }
-      /** [Copy MHD parameter] */
 
       MHDSolver<dim_mhd> mhd_solver(mhd_parameters,
                                     physical_parameters,

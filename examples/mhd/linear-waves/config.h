@@ -52,21 +52,18 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double              rho_0;
-    double              P_0;
-    std::vector<double> u_0;
-    std::vector<double> b_0;
-    double              amplitude;
-    std::vector<double> eigenmodes;
-    std::vector<int>    direction;
+    double                rho_0 = 1.;
+    double                P_0   = 0.6;
+    dealii::Tensor<1, 3>  u_0{{1., 0., 0.}};
+    dealii::Tensor<1, 3>  b_0{{0., 0., 0.}};
+    double                amplitude = 1e-4;
+    std::array<double, 9> eigenmodes{{0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    std::vector<int>      direction{1, 0, 0};
     // Copy of MHD parameters for InitialValueFunction
-    const unsigned int  dimension;
     std::vector<double> box_length;
     /** [Define runtime parameter] */
 
-    PhysicalParameters(const unsigned int dimension)
-      : dimension{dimension}
-    {}
+    PhysicalParameters() = default;
 
 
 
@@ -79,34 +76,26 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.declare_entry("rho_0",
-                        "1.",
-                        dealii::Patterns::Double(0),
-                        "Background density");
-      prm.declare_entry("P_0",
-                        "0.6",
-                        dealii::Patterns::Double(0),
-                        "Background pressure");
-      prm.declare_entry("u_0",
-                        "1., 0., 0.",
-                        dealii::Patterns::Anything(),
-                        "Background velocity in x, y, z direction");
-      prm.declare_entry(
+      prm.add_parameter("rho_0",
+                        rho_0,
+                        "Background density",
+                        dealii::Patterns::Double(0));
+      prm.add_parameter("P_0",
+                        P_0,
+                        "Background pressure",
+                        dealii::Patterns::Double(0));
+      prm.add_parameter("u_0", u_0, "Background velocity in x, y, z direction");
+      prm.add_parameter(
         "b_0",
-        "0., 0., 0.",
-        dealii::Patterns::Anything(),
+        b_0,
         "Background magnetic field $b_0 = B_0 / sqrt(4 pi)$ in x, y, z direction");
-      prm.declare_entry("Amplitude",
-                        "1e-3",
-                        dealii::Patterns::Double(0),
-                        "Amplitude of the perturbation");
-      prm.declare_entry("Eigenmodes",
-                        "0, 0, 0, 0, 0, 0, 0, 0, 0",
-                        dealii::Patterns::Anything(),
-                        "Select the eigenmodes");
-      prm.declare_entry("Direction",
-                        "1, 0, 0",
-                        dealii::Patterns::Anything(),
+      prm.add_parameter("Amplitude",
+                        amplitude,
+                        "Amplitude of the perturbation",
+                        dealii::Patterns::Double(0));
+      prm.add_parameter("Eigenmodes", eigenmodes, "Select the eigenmodes");
+      prm.add_parameter("Direction",
+                        direction,
                         "Integer multiple of wavelength in each direction: "
                         "n_x, n_y, n_z \n"
                         "The wave vector components are determined by"
@@ -124,54 +113,47 @@ namespace sapphirepp
       dealii::LogStream::Prefix pre1("Startup", saplog);
       dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
-      prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
-      rho_0 = prm.get_double("rho_0");
-      P_0   = prm.get_double("P_0");
+      /** [Parse runtime parameter] */
+      // Parameters are automatically parsed by add_parameter()
 
-      std::string s;
-      s = prm.get("u_0");
-      std::stringstream u_0_string(s);
-      for (std::string tmp; std::getline(u_0_string, tmp, ',');)
-        u_0.push_back(std::stod(tmp));
-      AssertThrow(u_0.size() == 3,
-                  dealii::ExcMessage(
-                    "Dimension of background velocity must be 3."));
-      s = prm.get("b_0");
-      std::stringstream b_0_string(s);
-      for (std::string tmp; std::getline(b_0_string, tmp, ',');)
-        b_0.push_back(std::stod(tmp));
-      AssertThrow(b_0.size() == 3,
-                  dealii::ExcMessage(
-                    "Dimension of background magnetic field must be 3."));
+      // Copy MHD parameters
+      std::vector<double> p1, p2;
+      prm.enter_subsection("MHD");
+      prm.enter_subsection("Mesh");
+      {
+        // Two diagonally opposite corner points of the grid
+        dealii::Patterns::Tools::to_value(prm.get("Point 1"), p1);
+        dealii::Patterns::Tools::to_value(prm.get("Point 2"), p2);
+      } // Mesh
+      prm.leave_subsection();
+      prm.leave_subsection();
 
-      amplitude = prm.get_double("Amplitude");
+      const unsigned int dimension = static_cast<unsigned int>(p1.size());
+      AssertDimension(p1.size(), dimension);
+      AssertDimension(p2.size(), dimension);
 
-      s = prm.get("Eigenmodes");
-      std::stringstream em(s);
-      for (std::string tmp; std::getline(em, tmp, ',');)
-        eigenmodes.push_back(std::stod(tmp));
-      AssertThrow(eigenmodes.size() == 9,
-                  dealii::ExcMessage("Size of Eigenmodes x must be 9."));
+      box_length = std::vector<double>(dimension, 1.);
+      for (unsigned int d = 0; d < dimension; ++d)
+        box_length[d] = std::abs(p1[d] - p2[d]);
 
-      s = prm.get("Direction");
-      std::stringstream direction_string(s);
-      for (std::string n; std::getline(direction_string, n, ',');)
-        direction.push_back(std::stoi(n));
+
+      if (direction.size() > dimension)
+        {
+          saplog.print_warning(
+            "Direction specification does not match dimension!");
+          direction.resize(dimension);
+        }
       AssertThrow(
-        dimension <= direction.size(),
+        direction.size() == dimension,
         dealii::ExcMessage(
           "Direction does not specify value in each dimension."
           "Please enter the multiple of wavelength in each direction: \n"
-          "\tset Direction = n_x (, n_y) (, n_z)"));
-      if (direction.size() != dimension)
-        saplog << "WARNING: Direction specification does not match dimension!"
-               << std::endl;
-      direction.resize(dimension);
-      /** [Parse runtime parameter]  */
-
-      prm.leave_subsection();
+          "\tset Direction = n_x (, n_y) (, n_z) \n"
+          "You entered " +
+          std::to_string(direction.size()) + " of " +
+          std::to_string(dimension) + " dimensions."));
+      /** [Parse runtime parameter] */
     }
   };
 
@@ -240,20 +222,16 @@ namespace sapphirepp
         for (unsigned int i = 0; i < prm.direction.size(); i++)
           saplog << prm.direction[i] << ", ";
         saplog << std::endl;
-        AssertThrow(prm.direction.size() == prm.dimension,
-                    dealii::ExcMessage(
-                      "Direction specification does not match dimension!"));
+        AssertDimension(prm.direction.size(), dim);
 
         saplog << "Box length: ";
         for (unsigned int i = 0; i < prm.box_length.size(); i++)
           saplog << prm.box_length[i] << ", ";
         saplog << std::endl;
-        AssertThrow(prm.box_length.size() == prm.dimension,
-                    dealii::ExcMessage(
-                      "Box length specification does not match dimension!"));
+        AssertDimension(prm.box_length.size(), dim);
 
         wave_vector = 0;
-        for (unsigned int d = 0; d < prm.dimension; ++d)
+        for (unsigned int d = 0; d < dim; ++d)
           wave_vector[d] = prm.direction[d] * 2 * M_PI / prm.box_length[d];
         saplog << "Wave vector: " << wave_vector
                << ", norm = " << wave_vector.norm() << std::endl;
