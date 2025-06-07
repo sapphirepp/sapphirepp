@@ -51,7 +51,7 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::MHDEquations(
   : adiabatic_index{mhd_parameters.adiabatic_index}
   , divergence_cleaning_Ch{mhd_parameters.divergence_cleaning_Ch}
   , divergence_cleaning_Cr{mhd_parameters.divergence_cleaning_Cr}
-  , divergence_cleaning_speed{std::numeric_limits<double>::quiet_NaN()}
+  , divergence_cleaning_speed{1.}
   , divergence_cleaning_damping{0.}
 {
   AssertThrow(adiabatic_index >= 1.0,
