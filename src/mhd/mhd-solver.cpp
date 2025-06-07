@@ -529,7 +529,6 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   locally_relevant_current_solution.reinit(locally_owned_dofs,
                                            locally_relevant_dofs,
                                            mpi_communicator);
-  dg_rhs.reinit(locally_owned_dofs, mpi_communicator);
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
   cell_average.resize(triangulation.n_active_cells(),
@@ -1325,7 +1324,9 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
 
 template <unsigned int dim>
 void
-sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(const double time)
+sapphirepp::MHD::MHDSolver<dim>::assemble_dg_rhs(
+  const double                time,
+  PETScWrappers::MPI::Vector &dg_rhs)
 {
   TimerOutput::Scope timer_section(timer, "DG rhs - MHD");
 
@@ -1734,11 +1735,14 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(
       ", is much smaller than CFL condition, dt_cfl=" +
       Utilities::to_string(global_dt_cfl));
 
+  PETScWrappers::MPI::Vector locally_owned_dg_rhs;
+  locally_owned_dg_rhs.reinit(locally_owned_dofs, mpi_communicator);
+
   // Assemble the right hand side
-  assemble_dg_rhs(time);
+  assemble_dg_rhs(time, locally_owned_dg_rhs);
 
   mass_matrix.vmult(system_rhs, locally_owned_solution);
-  system_rhs.add(time_step_size, dg_rhs);
+  system_rhs.add(time_step_size, locally_owned_dg_rhs);
 
   SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
@@ -1871,9 +1875,10 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
     }
 
   // Stage i=0
-  locally_owned_staged_solution[0] = locally_relevant_current_solution;
-  assemble_dg_rhs(time + gamma[0] * time_step_size);
-  locally_owned_staged_dg_rhs[0] = dg_rhs;
+  locally_owned_staged_solution[0] =
+    locally_relevant_current_solution; // already limited
+  assemble_dg_rhs(time + gamma[0] * time_step_size,
+                  locally_owned_staged_dg_rhs[0]);
 
   // Stage 0<i<s
   for (unsigned int i = 1; i < s; ++i)
@@ -1902,8 +1907,9 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
 
       locally_relevant_current_solution = locally_owned_staged_solution[i];
       apply_limiter();
-      assemble_dg_rhs(time + gamma[i] * time_step_size);
-      locally_owned_staged_dg_rhs[i] = dg_rhs;
+      locally_owned_staged_solution[i] = locally_relevant_current_solution;
+      assemble_dg_rhs(time + gamma[i] * time_step_size,
+                      locally_owned_staged_dg_rhs[i]);
     }
 
   // Stage  i=s

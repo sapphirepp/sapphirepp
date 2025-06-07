@@ -458,8 +458,6 @@ namespace sapphirepp
       SparsityPattern sparsity_pattern;
       /** Mass matrix */
       PETScWrappers::MPI::SparseMatrix mass_matrix;
-      /** DG right-hand-side */
-      PETScWrappers::MPI::Vector dg_rhs;
       /** System right hand side, depends on time stepping method */
       PETScWrappers::MPI::Vector system_rhs;
       /** @} */
@@ -533,7 +531,7 @@ namespace sapphirepp
        * @param time Time of the current time step
        */
       void
-      assemble_dg_rhs(const double time);
+      assemble_dg_rhs(const double time, PETScWrappers::MPI::Vector &dg_rhs);
       /** @} */
 
 
@@ -640,7 +638,7 @@ namespace sapphirepp
 
 
       /**
-       * @brief Computes @ref magentic_divergence of the current solution
+       * @brief Computes @ref magnetic_divergence of the current solution
        */
       void
       compute_magnetic_divergence();
