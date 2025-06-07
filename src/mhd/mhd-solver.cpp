@@ -174,7 +174,6 @@ namespace sapphirepp
       {
         unsigned int                         cell_index;
         double                               min_dt;
-        double                               min_dx;
         Vector<double>                       cell_dg_rhs;
         std::vector<types::global_dof_index> local_dof_indices;
         // std::vector<types::global_dof_index> local_dof_indices_neighbor;
@@ -186,7 +185,6 @@ namespace sapphirepp
         {
           cell_index = cell->active_cell_index();
           min_dt     = 0;
-          min_dx     = 0;
 
           cell_dg_rhs.reinit(dofs_per_cell);
 
@@ -560,6 +558,18 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
                      locally_owned_dofs,
                      dsp,
                      mpi_communicator);
+
+  /// Compute minimum cell size
+  global_dx_min = std::numeric_limits<double>::max();
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+      const double dx = cell->minimum_vertex_distance();
+      global_dx_min   = std::min(global_dx_min, dx);
+    }
+  global_dx_min = Utilities::MPI::min(global_dx_min, mpi_communicator);
+  saplog << "Minimum cell size: " << global_dx_min << std::endl;
+  Assert(global_dx_min > 0,
+         ExcMessage("The cell size must be greater than 0."));
 }
 
 
@@ -1628,8 +1638,6 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
   if (mhd_parameters.courant_number == 0.)
     {
       global_dt_cfl = mhd_parameters.max_time_step;
-      /** @todo What to do with global_dx_min in this case? */
-      global_dx_min = 0.;
       if constexpr (divergence_cleaning)
         mhd_equations.compute_hyperbolic_divergence_cleaning_speed(
           global_dt_cfl, global_dx_min, fe.degree);
@@ -1643,7 +1651,6 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
 
   cell_dt       = 0;
   global_dt_cfl = std::numeric_limits<double>::max();
-  global_dx_min = std::numeric_limits<double>::max();
 
   // assemble cell terms
   const auto cell_worker = [&](const Iterator   &cell,
@@ -1671,7 +1678,6 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
     const double dx  = cell->minimum_vertex_distance();
     copy_data.min_dt = mhd_parameters.courant_number * dx /
                        ((2. * fe.degree + 1.) * max_eigenvalue);
-    copy_data.min_dx = dx;
   };
 
 
@@ -1679,7 +1685,6 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
   const auto copier = [&](const CopyData &c) {
     cell_dt[c.cell_index] = c.min_dt;
     global_dt_cfl         = std::min(global_dt_cfl, c.min_dt);
-    global_dx_min         = std::min(global_dx_min, c.min_dx);
   };
 
   /** @todo Use custom scratch_data and copy data for CFL. */
@@ -1697,13 +1702,9 @@ sapphirepp::MHD::MHDSolver<dim>::compute_cfl_condition()
                         MeshWorker::assemble_own_cells);
 
   global_dt_cfl = Utilities::MPI::min(global_dt_cfl, mpi_communicator);
-  global_dx_min = Utilities::MPI::min(global_dx_min, mpi_communicator);
   saplog << "Maximum CFL time step: " << global_dt_cfl << std::endl;
-  saplog << "Minimum cell size: " << global_dx_min << std::endl;
   Assert(global_dt_cfl > 0,
          ExcMessage("The time step must be greater than 0."));
-  Assert(global_dx_min > 0,
-         ExcMessage("The cell size must be greater than 0."));
 
   if constexpr (divergence_cleaning)
     mhd_equations.compute_hyperbolic_divergence_cleaning_speed(global_dt_cfl,
