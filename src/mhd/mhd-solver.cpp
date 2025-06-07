@@ -1893,12 +1893,8 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
   // Stage 0<i<s
   for (unsigned int i = 1; i < s; ++i)
     {
-      temp = locally_owned_staged_solution[0];
-      temp *= alpha[i - 1][0];
-      mass_matrix.vmult(system_rhs, temp);
-      system_rhs.add(beta[i - 1][0] * time_step_size,
-                     locally_owned_staged_dg_rhs[0]);
-      for (unsigned int j = 1; j < i; ++j)
+      system_rhs = 0;
+      for (unsigned int j = 0; j < i; ++j)
         {
           temp = locally_owned_staged_solution[j];
           temp *= alpha[i - 1][j];
@@ -1921,12 +1917,8 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
     }
 
   // Stage  i=s
-  temp = locally_owned_staged_solution[0];
-  temp *= alpha[s - 1][0];
-  mass_matrix.vmult(system_rhs, temp);
-  system_rhs.add(beta[s - 1][0] * time_step_size,
-                 locally_owned_staged_dg_rhs[0]);
-  for (unsigned int j = 1; j < s; ++j)
+  system_rhs = 0;
+  for (unsigned int j = 0; j < s; ++j)
     {
       temp = locally_owned_staged_solution[j];
       temp *= alpha[s - 1][j];
