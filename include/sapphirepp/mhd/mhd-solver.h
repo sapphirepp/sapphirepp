@@ -463,8 +463,6 @@ namespace sapphirepp
       /** @} */
 
       /** @{ */
-      /** Locally owned solution */
-      PETScWrappers::MPI::Vector locally_owned_solution;
       /** Current solution */
       PETScWrappers::MPI::Vector locally_relevant_current_solution;
       /** Component wise cell average of the solution. */
@@ -629,10 +627,15 @@ namespace sapphirepp
 
 
       /**
-       * @brief Applys a slope limiter to the current solution.
+       * @brief Updates the @ref locally_relevant_current_solution
+       *        and applys a slope limiter to the solution.
+       *
+       * @param locally_owned_solution [In/Out] The new unlimited solution.
+       *                               Return the limited solution.
        */
       void
-      apply_limiter();
+      update_and_apply_limiter(
+        PETScWrappers::MPI::Vector &locally_owned_solution);
       /** @} */
 
 

@@ -348,14 +348,15 @@ sapphirepp::MHD::MHDSolver<dim>::setup()
     TimerOutput::Scope timer_section(timer, "Project initial condition - MHD");
     InitialConditionMHD<dim, divergence_cleaning> initial_condition_function(
       physical_parameters, mhd_equations);
+
+    PETScWrappers::MPI::Vector locally_owned_solution;
+    locally_owned_solution.reinit(locally_owned_dofs, mpi_communicator);
     project(initial_condition_function, locally_owned_solution);
-    // Here a non ghosted vector, is copied into a ghosted vector. I think
-    // that is the moment where the ghost cells are filled.
-    locally_relevant_current_solution = locally_owned_solution;
+
+    update_and_apply_limiter(locally_owned_solution);
   }
 
   compute_cfl_condition();
-  apply_limiter();
 }
 
 
@@ -523,7 +524,6 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   // example 23) constraints.close();
 
   // Vectors
-  locally_owned_solution.reinit(locally_owned_dofs, mpi_communicator);
   locally_relevant_current_solution.reinit(locally_owned_dofs,
                                            locally_relevant_dofs,
                                            mpi_communicator);
@@ -872,8 +872,28 @@ sapphirepp::MHD::MHDSolver<dim>::indicate_positivity_limiting(
 
 template <unsigned int dim>
 void
-sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
+sapphirepp::MHD::MHDSolver<dim>::update_and_apply_limiter(
+  PETScWrappers::MPI::Vector &locally_owned_solution)
 {
+  /**
+   * To limit the solution we use the following procedure:
+   *
+   *   0. Update @ref locally_relevant_current_solution
+   *      with unlimited @ref locally_owned_solution.
+   *   1. Precompute cell averages using @ref compute_cell_average().
+   *   2. Compute the limited solution/limited gradient using neighbor cells
+   *      in @ref cell_worker.
+   *   3. Positivity limiting the (limited) solution on the cell.
+   *      We do this by testing if the solution results in
+   *      non-admissible states on any quadrature point.
+   *   4. Distribute local DoFs to the @ref locally_owned_solution.
+   *   5. Update @ref locally_relevant_current_solution
+   *      with limited @ref locally_owned_solution.
+   */
+
+  /** Step 0: Update current solution */
+  locally_relevant_current_solution = locally_owned_solution;
+
   if constexpr ((mhd_flags & MHDFlags::no_limiting) != MHDFlags::none)
     return;
 
@@ -882,19 +902,6 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
 
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::sapinternal::MHDSolver;
-
-
-  /**
-   * To limit the solution we use the following procedure:
-   *
-   *   1. Precompute cell averages using @ref compute_cell_average().
-   *   2. Compute the limited solution/limited gradient using neighbor cells
-   *      in @ref cell_worker.
-   *   3. Positivity limiting the (limited) solution on the cell.
-   *      We do this by testing if the solution results in
-   *      non-admissible states on any quadrature point.
-   *   4. Distribute local DoFs to the @ref locally_relevant_current_solution.
-   */
 
   /** Step 1: Precompute @ref cell_average and @ref shock_indicator. */
   positivity_limiter_indicator = 0;
@@ -1148,7 +1155,7 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
   };
 
 
-  /** Step 4: Distribute to the @ref locally_relevant_current_solution. */
+  /** Step 4: Distribute to the @ref locally_owned_solution. */
   // copier for the mesh_loop function
   const auto copier = [&](const CopyDataSlopeLimiter &c) {
     constraints.distribute_local_to_global(c.cell_dof_values,
@@ -1170,8 +1177,11 @@ sapphirepp::MHD::MHDSolver<dim>::apply_limiter()
                         copy_data,
                         MeshWorker::assemble_own_cells);
   locally_owned_solution.compress(VectorOperation::add);
-  locally_relevant_current_solution = locally_owned_solution;
   saplog << "The solution was limited." << std::endl;
+
+
+  /** Step 6: Update current solution */
+  locally_relevant_current_solution = locally_owned_solution;
 
   /** @todo Remove this line */
   compute_magnetic_divergence();
@@ -1736,12 +1746,14 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(
       ", is much smaller than CFL condition, dt_cfl=" +
       Utilities::to_string(global_dt_cfl));
 
-  PETScWrappers::MPI::Vector locally_owned_dg_rhs;
+  PETScWrappers::MPI::Vector locally_owned_solution, locally_owned_dg_rhs;
+  locally_owned_solution.reinit(locally_owned_dofs, mpi_communicator);
   locally_owned_dg_rhs.reinit(locally_owned_dofs, mpi_communicator);
 
   // Assemble the right hand side
   assemble_dg_rhs(time, locally_owned_dg_rhs);
 
+  locally_owned_solution = locally_relevant_current_solution;
   mass_matrix.vmult(system_rhs, locally_owned_solution);
   system_rhs.add(time_step_size, locally_owned_dg_rhs);
 
@@ -1755,13 +1767,10 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(
   // the locally_owned_solution
   solver.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
 
-  // Update the solution
-  locally_relevant_current_solution = locally_owned_solution;
-
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
 
-  apply_limiter();
+  update_and_apply_limiter(locally_owned_solution);
 
   return time_step_size;
 }
@@ -1906,9 +1915,7 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
       saplog << "Stage i: " << i << "	Solver converged in "
              << solver_control.last_step() << " iterations." << std::endl;
 
-      locally_relevant_current_solution = locally_owned_staged_solution[i];
-      apply_limiter();
-      locally_owned_staged_solution[i] = locally_relevant_current_solution;
+      update_and_apply_limiter(locally_owned_staged_solution[i]);
       assemble_dg_rhs(time + gamma[i] * time_step_size,
                       locally_owned_staged_dg_rhs[i]);
     }
@@ -1929,14 +1936,12 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
     }
 
   solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
-  solver.solve(mass_matrix, locally_owned_solution, system_rhs, preconditioner);
+  // Reuse temp as locallY_owned_solution
+  solver.solve(mass_matrix, temp, system_rhs, preconditioner);
   saplog << "Stage i: " << s << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
 
-  // Update the solution
-  locally_relevant_current_solution = locally_owned_solution;
-
-  apply_limiter();
+  update_and_apply_limiter(temp);
 
   return time_step_size;
 }
