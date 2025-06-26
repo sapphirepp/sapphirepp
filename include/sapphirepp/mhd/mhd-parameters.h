@@ -127,6 +127,12 @@ namespace sapphirepp
        */
       /** Precision for double / zero comparision. */
       static constexpr double epsilon_d = 1e-8;
+
+      /** Relative tolerance of the matrix solver. */
+      double solver_tolerance = epsilon_d;
+      /** Maximum number of iterations for matrix solver. */
+      unsigned int solver_max_iter = 1000;
+
       /** Floor value for pressure, density and energy. */
       double mhd_floor = 10. * epsilon_d;
 

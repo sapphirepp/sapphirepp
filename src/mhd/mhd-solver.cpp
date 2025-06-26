@@ -591,7 +591,7 @@ sapphirepp::MHD::MHDSolver<dim>::project(
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
 
-  SolverControl           solver_control(1000, 1e-12);
+  SolverControl           solver_control(mhd_parameters.solver_max_iter, 1e-12);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
   cg.solve(mass_matrix, projected_function, rhs, preconditioner);
   saplog << "Solved in " << solver_control.last_step() << " iterations."
@@ -1757,7 +1757,9 @@ sapphirepp::MHD::MHDSolver<dim>::forward_euler_method(
   mass_matrix.vmult(system_rhs, locally_owned_solution);
   system_rhs.add(time_step_size, locally_owned_dg_rhs);
 
-  SolverControl              solver_control(1000, 1e-6 * system_rhs.l2_norm());
+  SolverControl              solver_control(mhd_parameters.solver_max_iter,
+                               mhd_parameters.solver_tolerance *
+                                 system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   PETScWrappers::PreconditionBlockJacobi preconditioner;
@@ -1869,7 +1871,7 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
 
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(mass_matrix);
-  SolverControl              solver_control(1000);
+  SolverControl              solver_control(mhd_parameters.solver_max_iter);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
   // PETScWrappers::SolverCG solver(solver_control, mpi_communicator);
 
@@ -1903,7 +1905,8 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
                          locally_owned_staged_dg_rhs[j]);
         }
 
-      solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+      solver_control.set_tolerance(mhd_parameters.solver_tolerance *
+                                   system_rhs.l2_norm());
       solver.solve(mass_matrix,
                    locally_owned_staged_solution[i],
                    system_rhs,
@@ -1927,7 +1930,8 @@ sapphirepp::MHD::MHDSolver<dim>::explicit_runge_kutta(
                      locally_owned_staged_dg_rhs[j]);
     }
 
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver_control.set_tolerance(mhd_parameters.solver_tolerance *
+                               system_rhs.l2_norm());
   // Reuse temp as locallY_owned_solution
   solver.solve(mass_matrix, temp, system_rhs, preconditioner);
   saplog << "Stage i: " << s << "	Solver converged in "

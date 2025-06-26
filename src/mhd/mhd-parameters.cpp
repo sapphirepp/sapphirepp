@@ -175,12 +175,21 @@ sapphirepp::MHD::MHDParameters<dim>::declare_parameters(ParameterHandler &prm)
   prm.enter_subsection("Numerical parameters");
   {
     prm.add_parameter(
-      "mhd_floor",
-      mhd_floor,
+      "solver_tolerance",
+      solver_tolerance,
       "This section collects numerical parameters for the MHD solver. \n"
       "!DO NOT CHANGE unless you are aware what the parameters do! \n\n"
-      "Floor value for pressure, density and energy.",
+      "Relative tolerance of the matrix solver.",
       Patterns::Double(0.));
+    prm.add_parameter("solver_max_iter",
+                      solver_max_iter,
+                      "Maximum number of iterations for matrix solver.",
+                      Patterns::Integer(0));
+
+    prm.add_parameter("mhd_floor",
+                      mhd_floor,
+                      "Floor value for pressure, density and energy.",
+                      Patterns::Double(0.));
 
     prm.add_parameter("indicator_threshold",
                       indicator_threshold,
