@@ -534,6 +534,8 @@ sapphirepp::MHD::MHDSolver<dim>::setup_system()
   shock_indicator.reinit(triangulation.n_active_cells());
   positivity_limiter_indicator.reinit(triangulation.n_active_cells());
   magnetic_divergence.reinit(triangulation.n_active_cells());
+  magnetic_divergence_cells.reinit(triangulation.n_active_cells());
+  magnetic_divergence_faces.reinit(triangulation.n_active_cells());
   cell_dt.reinit(triangulation.n_active_cells());
 
   DynamicSparsityPattern       dsp(locally_relevant_dofs);
@@ -1182,9 +1184,6 @@ sapphirepp::MHD::MHDSolver<dim>::update_and_apply_limiter(
 
   /** Step 6: Update current solution */
   locally_relevant_current_solution = locally_owned_solution;
-
-  /** @todo Remove this line */
-  compute_magnetic_divergence();
 }
 
 
@@ -1200,7 +1199,9 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
   using Iterator = typename DoFHandler<dim>::active_cell_iterator;
   using namespace sapphirepp::sapinternal::MHDSolver;
 
-  magnetic_divergence = 0;
+  magnetic_divergence       = 0;
+  magnetic_divergence_cells = 0;
+  magnetic_divergence_faces = 0;
 
   // empty boundary worker
   std::function<void(
@@ -1240,7 +1241,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
           std::fabs(divergence_values[q_index]) * JxW[q_index];
       }
 
-    magnetic_divergence[cell_index] +=
+    magnetic_divergence_cells[cell_index] +=
       cell_magnetic_divergence / cell->measure();
     // saplog << "Magnetic divergence in cell " << cell_index << ": "
     //        << cell_magnetic_divergence / cell->measure() << std::endl;
@@ -1275,31 +1276,40 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
       scratch_data.fe_values_face_neighbor;
     fe_v_face_neighbor.reinit(neighbor_cell, neighbor_face_no);
 
-    const FEValuesExtractors::Vector magnetic_field(
-      MHDEqs::first_magnetic_component);
-    const unsigned int          n_q_points = fe_v_face.n_quadrature_points;
-    const std::vector<double>  &JxW        = fe_v_face.get_JxW_values();
-    std::vector<Tensor<1, dim>> face_values(n_q_points);
-    std::vector<Tensor<1, dim>> face_values_neighbor(n_q_points);
+    const std::vector<Point<dim>> &q_points = fe_v_face.get_quadrature_points();
+    const std::vector<double>     &JxW      = fe_v_face.get_JxW_values();
+    const std::vector<Tensor<1, dim>> &normals = fe_v_face.get_normal_vectors();
 
+    // Initialise state and flux vectors
+    std::vector<Vector<double>> states(q_points.size(),
+                                       Vector<double>(MHDEqs::n_components));
+    std::vector<Vector<double>> states_neighbor(
+      q_points.size(), Vector<double>(MHDEqs::n_components));
+    state_type numerical_normal_flux(MHDEqs::n_components);
 
-    fe_v_face[magnetic_field].get_function_values(
-      locally_relevant_current_solution, face_values);
-    fe_v_face_neighbor[magnetic_field].get_function_values(
-      locally_relevant_current_solution, face_values_neighbor);
+    // Compute states
+    fe_v_face.get_function_values(locally_relevant_current_solution, states);
+    fe_v_face_neighbor.get_function_values(locally_relevant_current_solution,
+                                           states_neighbor);
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
+        double nb = 0.;
+        for (unsigned int d = 0; d < dim; ++d)
+          nb += normals[q_index][d] *
+                states[q_index][MHDEqs::first_magnetic_component + d];
+        const double nb_avg =
+          mhd_equations.compute_average_normal_magnetic_field(
+            states[q_index], states_neighbor[q_index], normals[q_index]);
+
         // (B_nb - B_j) * n
-        face_magnetic_divergence +=
-          std::fabs((face_values_neighbor[q_index] - face_values[q_index]) *
-                    fe_v_face.normal_vector(q_index)) *
-          JxW[q_index];
+        face_magnetic_divergence += std::fabs(nb_avg - nb) * JxW[q_index];
         face_norm += JxW[q_index];
       }
 
 
-    magnetic_divergence[cell_index] += face_magnetic_divergence / face_norm;
+    magnetic_divergence_faces[cell_index] +=
+      face_magnetic_divergence / face_norm;
   };
 
   /** @todo Use valid or empty copier? */
@@ -1318,7 +1328,7 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
                                 quadrature_face,
                                 update_gradients | update_JxW_values);
   CopyData         copy_data;
-  saplog << "Begin the assembly of the magnetic divergence." << std::endl;
+  saplog << "Begin computation of the magnetic divergence." << std::endl;
   const auto filtered_iterator_range =
     dof_handler.active_cell_iterators() | IteratorFilters::LocallyOwnedCell();
   MeshWorker::mesh_loop(filtered_iterator_range,
@@ -1327,13 +1337,16 @@ sapphirepp::MHD::MHDSolver<dim>::compute_magnetic_divergence()
                         scratch_data,
                         copy_data,
                         MeshWorker::assemble_own_cells |
-                          MeshWorker::assemble_own_interior_faces_once,
-                        // MeshWorker::assemble_own_interior_faces_both,
-                        // MeshWorker::assemble_ghost_faces_both |
+                        MeshWorker::assemble_own_interior_faces_both |
+                        MeshWorker::assemble_ghost_faces_both,
                         empty_boundary_worker,
                         face_worker);
-  saplog << "The magnetic divergence was assembled." << std::endl;
+  saplog << "The magnetic divergence was computed." << std::endl;
 
+  magnetic_divergence.add(1.,
+                          magnetic_divergence_cells,
+                          1.,
+                          magnetic_divergence_faces);
   const double global_divergence =
     Utilities::MPI::sum(magnetic_divergence.l1_norm(), mpi_communicator);
   saplog << "Global divergence of magnetic field: " << global_divergence
@@ -1961,22 +1974,31 @@ sapphirepp::MHD::MHDSolver<dim>::output_results(
   data_out.add_data_vector(locally_relevant_current_solution,
                            mhd_postprocessor);
 
-  /** @todo [Remove Debug] */
-  data_out.add_data_vector(get_cell_average_component(
-                             MHDEqs::density_component),
-                           "average_roh",
-                           DataOut<dim>::type_cell_data);
-  data_out.add_data_vector(shock_indicator,
-                           "shock_indicator",
-                           DataOut<dim>::type_cell_data);
-  data_out.add_data_vector(positivity_limiter_indicator,
-                           "positivity_limiter",
-                           DataOut<dim>::type_cell_data);
-  data_out.add_data_vector(magnetic_divergence,
-                           "magnetic_divergence",
-                           DataOut<dim>::type_cell_data);
-  data_out.add_data_vector(cell_dt, "cell_dt", DataOut<dim>::type_cell_data);
-  /** @todo [Remove Debug] */
+  {
+    // Debug Output
+    LogStream::Prefix p("DebugOutput", saplog);
+    compute_magnetic_divergence();
+    data_out.add_data_vector(get_cell_average_component(
+                               MHDEqs::density_component),
+                             "average_roh",
+                             DataOut<dim>::type_cell_data);
+    data_out.add_data_vector(shock_indicator,
+                             "shock_indicator",
+                             DataOut<dim>::type_cell_data);
+    data_out.add_data_vector(positivity_limiter_indicator,
+                             "positivity_limiter",
+                             DataOut<dim>::type_cell_data);
+    data_out.add_data_vector(magnetic_divergence,
+                             "magnetic_divergence",
+                             DataOut<dim>::type_cell_data);
+    data_out.add_data_vector(magnetic_divergence_cells,
+                             "magnetic_divergence_cells",
+                             DataOut<dim>::type_cell_data);
+    data_out.add_data_vector(magnetic_divergence_faces,
+                             "magnetic_divergence_faces",
+                             DataOut<dim>::type_cell_data);
+    data_out.add_data_vector(cell_dt, "cell_dt", DataOut<dim>::type_cell_data);
+  }
 
   // Output the partition of the mesh
   Vector<float> subdomain(triangulation.n_active_cells());

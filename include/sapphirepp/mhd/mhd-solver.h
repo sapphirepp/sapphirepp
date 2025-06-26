@@ -473,6 +473,10 @@ namespace sapphirepp
       Vector<float> positivity_limiter_indicator;
       /** Magnetic divergence \f$ \nable \cdot \mathbf{B} \f$ per cell. */
       Vector<double> magnetic_divergence;
+      /** Magnetic divergence contributions from the cell interiors. */
+      Vector<double> magnetic_divergence_cells;
+      /** Magnetic divergence contributions from the cell faces. */
+      Vector<double> magnetic_divergence_faces;
       /** @} */
 
       /** @{ */
@@ -641,7 +645,7 @@ namespace sapphirepp
 
 
       /**
-       * @brief Computes @ref magnetic_divergence of the current solution
+       * @brief Computes @ref magnetic_divergence of the current solution.
        */
       void
       compute_magnetic_divergence();
