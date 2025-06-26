@@ -482,6 +482,23 @@ namespace sapphirepp
       /** @} */
 
 
+      /**
+       * @brief Computes the averaged normal magnetic field for two states.
+       *
+       * @param state_1 The first @ref state_type "MHD state"
+       *                in conservative form \f$ \mathbf{w} \f$.
+       * @param state_2 The second. @ref state_type "MHD state"
+       *                in conservative form \f$ \mathbf{w} \f$.
+       * @param normal The normal vector \f$ \hat{\mathbf{n}} \f$.
+       * @return double The averaged normal magnetic field.
+       */
+      double
+      compute_average_normal_magnetic_field(
+        const state_type             &state_1,
+        const state_type             &state_2,
+        const dealii::Tensor<1, dim> &normal) const;
+
+
       /** @{ */
       /**
        * @brief Convert primitive to conserved state.

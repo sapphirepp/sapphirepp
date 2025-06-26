@@ -1090,6 +1090,36 @@ sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
 
 
 template <unsigned int dim, bool divergence_cleaning>
+double
+sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
+  compute_average_normal_magnetic_field(
+    const state_type             &state_1,
+    const state_type             &state_2,
+    const dealii::Tensor<1, dim> &normal) const
+{
+  AssertDimension(state_1.size(), n_components);
+  AssertDimension(state_2.size(), n_components);
+  Assert(std::abs(normal.norm() - 1) < epsilon_d,
+         dealii::ExcMessage("Normal vector must be normalized."));
+
+  double nb_1 = 0.;
+  double nb_2 = 0.;
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      nb_1 += normal[d] * state_1[first_magnetic_component + d];
+      nb_2 += normal[d] * state_2[first_magnetic_component + d];
+    }
+
+  const double sqrt_rho_1 = std::sqrt(state_1[density_component]);
+  const double sqrt_rho_2 = std::sqrt(state_2[density_component]);
+
+  return (nb_1 / sqrt_rho_1 + nb_2 / sqrt_rho_2) /
+         (1. / sqrt_rho_1 + 1. / sqrt_rho_2);
+}
+
+
+
+template <unsigned int dim, bool divergence_cleaning>
 void
 sapphirepp::MHD::MHDEquations<dim, divergence_cleaning>::
   convert_primitive_to_conserved(const state_type &primitive_state,
