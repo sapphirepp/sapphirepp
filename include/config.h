@@ -207,6 +207,7 @@ namespace sapphirepp
 
         for (unsigned int i = 0; i < f.size(); ++i)
           {
+            static_cast<void>(i);
             /** [Initial value] */
             // !!!EDIT HERE!!!
             f[i] = 0.;

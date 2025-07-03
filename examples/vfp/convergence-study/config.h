@@ -287,6 +287,7 @@ namespace sapphirepp
 
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
+            static_cast<void>(i);
             /** [Source] */
             // No Source
             source_values[i] = 0.;

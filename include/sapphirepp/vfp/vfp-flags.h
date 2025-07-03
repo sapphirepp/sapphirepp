@@ -30,6 +30,8 @@
 #ifndef VFP_VFPFLAGS_H
 #define VFP_VFPFLAGS_H
 
+#include <cstdint>
+
 namespace sapphirepp
 {
 
@@ -60,7 +62,7 @@ namespace sapphirepp
      * \f}
      * These terms can be individually activated or deactivated.
      */
-    enum class VFPFlags
+    enum class VFPFlags : std::uint16_t
     {
       none = 0,
       /**
@@ -218,7 +220,7 @@ namespace sapphirepp
     /**
      * @brief Boundary conditions for the VFP equation
      */
-    enum class BoundaryConditions
+    enum class BoundaryConditions : std::uint8_t
     {
       /**
        * Continuous. The distribution function at the boundary is continuously
@@ -253,7 +255,7 @@ namespace sapphirepp
     /**
      * @brief Time stepping methods for the VFP equation
      */
-    enum class TimeSteppingMethod
+    enum class TimeSteppingMethod : std::uint8_t
     {
       /**
        * Implicit Crank-Nicolson method.
@@ -286,7 +288,7 @@ namespace sapphirepp
     /**
      * @brief Grid generation types for the VFP equation
      */
-    enum class GridType
+    enum class GridType : std::uint8_t
     {
       /**
        * Create a hypercube grid.
