@@ -29,6 +29,8 @@
 #ifndef MHD_MHDFLAGS_H
 #define MHD_MHDFLAGS_H
 
+#include <cstdint>
+
 namespace sapphirepp
 {
 
@@ -42,7 +44,7 @@ namespace sapphirepp
     /**
      * @brief Flags for the MHD equation.
      */
-    enum class MHDFlags
+    enum class MHDFlags : std::uint8_t
     {
       none = 0,
 
@@ -140,7 +142,7 @@ namespace sapphirepp
     /**
      * @brief Boundary conditions for the MHD equations
      */
-    enum class BoundaryConditionsMHD
+    enum class BoundaryConditionsMHD : std::uint8_t
     {
       /**
        * Continuous. The distribution function at the boundary is continuously
@@ -175,7 +177,7 @@ namespace sapphirepp
     /**
      * @brief Time stepping methods for the MHD equation
      */
-    enum class TimeSteppingMethodMHD
+    enum class TimeSteppingMethodMHD : std::uint8_t
     {
       /**
        * Explicit Euler method.
@@ -198,7 +200,7 @@ namespace sapphirepp
     /**
      * @brief Grid generation types for the MHD equations
      */
-    enum class GridTypeMHD
+    enum class GridTypeMHD : std::uint8_t
     {
       /**
        * Create a hypercube grid.

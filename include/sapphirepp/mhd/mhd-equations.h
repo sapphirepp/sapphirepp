@@ -77,8 +77,7 @@ namespace sapphirepp
       {}
 
       /** Destructor */
-      virtual ~ExcNonAdmissibleState() noexcept
-      {}
+      virtual ~ExcNonAdmissibleState() noexcept = default;
 
 
 

@@ -218,14 +218,14 @@ namespace sapphirepp
         saplog << conserved_background_state << std::endl;
 
         saplog << "Direction: ";
-        for (unsigned int i = 0; i < prm.direction.size(); i++)
-          saplog << prm.direction[i] << ", ";
+        for (int d : prm.direction)
+          saplog << d << ", ";
         saplog << std::endl;
         AssertDimension(prm.direction.size(), dim);
 
         saplog << "Box length: ";
-        for (unsigned int i = 0; i < prm.box_length.size(); i++)
-          saplog << prm.box_length[i] << ", ";
+        for (double l : prm.box_length)
+          saplog << l << ", ";
         saplog << std::endl;
         AssertDimension(prm.box_length.size(), dim);
 
