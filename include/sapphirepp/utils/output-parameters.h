@@ -37,6 +37,7 @@
 
 #include <mpi.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -48,7 +49,7 @@ namespace sapphirepp
     using namespace dealii;
 
     /** @brief Enum for output formats */
-    enum class OutputFormat
+    enum class OutputFormat : std::uint8_t
     {
       /** VTU output, recommended for short runs */
       vtu,

@@ -31,3 +31,5 @@ Checks: >-
   -performance-avoid-endl
 
 WarningsAsErrors: "*"
+
+HeaderFilterRegex: ".*"
