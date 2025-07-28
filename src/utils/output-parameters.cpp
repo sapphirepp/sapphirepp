@@ -78,6 +78,11 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
                     output_frequency,
                     "The frequency at which output files will be written. "
                     "(In units of time steps)");
+  prm.add_parameter("Debug input functions",
+                    debug_input_functions,
+                    "Append the user defined input_functions "
+                    "like magnetic field and scattering frequency "
+                    "to the output as debug information.");
 
   prm.leave_subsection();
 }

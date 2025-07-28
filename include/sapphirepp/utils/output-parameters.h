@@ -81,6 +81,8 @@ namespace sapphirepp
       unsigned int n_digits_for_counter = 4;
       /** Output format */
       OutputFormat format;
+      /** Append user defined input functions to output as debug information? */
+      bool debug_input_functions = false;
 
       /** @brief Constructor */
       OutputParameters();

@@ -25,6 +25,10 @@ subsection Output
   # The frequency at which output files will be written. (In units of time
   # steps)
   set Output frequency             = 1
+
+  # Append the user defined input_functions like magnetic field and scattering
+  # frequency to the output as debug information.
+  set Debug input functions        = false
 end
 
 
