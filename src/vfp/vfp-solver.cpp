@@ -231,6 +231,11 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , magnetic_field(physical_parameters)
   , background_velocity_field(physical_parameters)
   , bc_value_function(physical_parameters, pde_system.system_size)
+  , debug_input_functions(scattering_frequency,
+                          source_function,
+                          magnetic_field,
+                          background_velocity_field)
+  , debug_input_functions_dof_handler(triangulation)
   , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
@@ -598,6 +603,17 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
 
   dof_handler.clear();
   dof_handler.distribute_dofs(fe);
+
+  if (output_parameters.debug_input_functions)
+    {
+      const FESystem<dim_ps> debug_input_functions_fe(
+        FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree),
+        debug_input_functions.n_components);
+
+      debug_input_functions_dof_handler.clear();
+      debug_input_functions_dof_handler.distribute_dofs(
+        debug_input_functions_fe);
+    }
 
   const unsigned int n_dofs = dof_handler.n_dofs();
   locally_owned_dofs        = dof_handler.locally_owned_dofs();
@@ -2056,6 +2072,21 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   for (unsigned int i = 0; i < subdomain.size(); ++i)
     subdomain(i) = static_cast<float>(triangulation.locally_owned_subdomain());
   data_out.add_data_vector(subdomain, "subdomain");
+
+  if (output_parameters.debug_input_functions)
+    {
+      // Add input functions
+      PETScWrappers::MPI::Vector temp(
+        debug_input_functions_dof_handler.locally_owned_dofs(),
+        mpi_communicator);
+      VectorTools::interpolate(debug_input_functions_dof_handler,
+                               debug_input_functions,
+                               temp);
+      data_out.add_data_vector(
+        debug_input_functions_dof_handler,
+        temp,
+        debug_input_functions.create_component_name_list());
+    }
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);

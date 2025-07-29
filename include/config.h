@@ -672,7 +672,7 @@ namespace sapphirepp
        */
       void
       divergence_list(const std::vector<dealii::Point<dim>> &points,
-                      std::vector<double>                   &divergence)
+                      std::vector<double>                   &divergence) const
       {
         AssertDimension(divergence.size(), points.size());
         static_cast<void>(points); // suppress compiler warning
@@ -716,7 +716,7 @@ namespace sapphirepp
       void
       material_derivative_list(
         const std::vector<dealii::Point<dim>> &points,
-        std::vector<dealii::Vector<double>>   &material_derivatives)
+        std::vector<dealii::Vector<double>>   &material_derivatives) const
       {
         AssertDimension(material_derivatives.size(), points.size());
         AssertDimension(material_derivatives[0].size(), this->n_components);

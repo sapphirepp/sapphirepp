@@ -55,21 +55,18 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
   prm.declare_entry(
     "Results folder",
     "./results",
-    Patterns::Anything(),
+    Patterns::DirectoryName(),
     "Path to the folder in which the simulation results will be stored. "
     "Without a trailing slash.");
-  prm.declare_entry("Simulation identifier",
-                    "01",
-                    Patterns::Anything(),
+  prm.add_parameter("Simulation identifier",
+                    simulation_id,
                     "Name of the simulation run. It will be used to create a "
                     "subdirectory in the results folder.");
-  prm.declare_entry("Base file name",
-                    "solution",
-                    Patterns::Anything(),
+  prm.add_parameter("Base file name",
+                    base_file_name,
                     "The base file name for the output files.");
-  prm.declare_entry("Number of digits for counter",
-                    "4",
-                    Patterns::Integer(0),
+  prm.add_parameter("Number of digits for counter",
+                    n_digits_for_counter,
                     "The number of digits used for the counter in the "
                     "output file names.");
   prm.declare_entry("Format",
@@ -77,11 +74,15 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
                     Patterns::Selection("vtu|pvtu|hdf5"),
                     "The format in which the simulation "
                     "output will be stored.");
-  prm.declare_entry("Output frequency",
-                    "1",
-                    Patterns::Integer(0),
+  prm.add_parameter("Output frequency",
+                    output_frequency,
                     "The frequency at which output files will be written. "
                     "(In units of time steps)");
+  prm.add_parameter("Debug input functions",
+                    debug_input_functions,
+                    "Append the user defined input_functions "
+                    "like magnetic field and scattering frequency "
+                    "to the output as debug information.");
 
   prm.leave_subsection();
 }
@@ -97,12 +98,8 @@ sapphirepp::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
   std::string s;
   prm.enter_subsection("Output");
 
-  results_path   = prm.get("Results folder");
-  simulation_id  = prm.get("Simulation identifier");
-  output_path    = this->results_path / this->simulation_id;
-  base_file_name = prm.get("Base file name");
-  n_digits_for_counter =
-    static_cast<unsigned int>(prm.get_integer("Number of digits for counter"));
+  results_path = prm.get("Results folder");
+  output_path  = this->results_path / this->simulation_id;
 
   s = prm.get("Format");
   if (s == "vtu")
@@ -113,9 +110,6 @@ sapphirepp::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
     format = sapphirepp::Utils::OutputFormat::hdf5;
   else
     Assert(false, ExcNotImplemented());
-
-  output_frequency =
-    static_cast<unsigned int>(prm.get_integer("Output frequency"));
 
   prm.leave_subsection();
 

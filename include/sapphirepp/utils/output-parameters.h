@@ -68,19 +68,21 @@ namespace sapphirepp
     {
     public:
       /** Only put out every n-th step */
-      unsigned int output_frequency;
+      unsigned int output_frequency = 1;
       /** Output folder = results_path + simulation_id */
       std::filesystem::path output_path;
       /** Path to the results directory */
       std::filesystem::path results_path;
       /** Name of the simulation run, i.e. subfolder for the simulation */
-      std::string simulation_id;
+      std::string simulation_id = "01";
       /** File name for the solution */
-      std::string base_file_name;
+      std::string base_file_name = "solution";
       /** Number of digits for time steps */
-      unsigned int n_digits_for_counter;
+      unsigned int n_digits_for_counter = 4;
       /** Output format */
       OutputFormat format;
+      /** Append user defined input functions to output as debug information? */
+      bool debug_input_functions = false;
 
       /** @brief Constructor */
       OutputParameters();
