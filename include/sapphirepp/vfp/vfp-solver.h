@@ -61,6 +61,7 @@
 #include <type_traits>
 
 #include "config.h"
+#include "debug-input-functions.h"
 #include "output-parameters.h"
 #include "pde-system.h"
 #include "probe-location.h"
@@ -488,6 +489,14 @@ namespace sapphirepp
 
       /** Boundary values for inflow boundaries */
       BoundaryValueFunction<dim_ps> bc_value_function;
+      /** @} */
+
+      /** @{ */
+      /** Debug output for input functions */
+      DebugInputFunctions<dim_ps> debug_input_functions;
+
+      /** @dealref{DoFHandler} for @ref DebugInputFunctions */
+      DoFHandler<dim_ps> debug_input_functions_dof_handler;
       /** @} */
 
       /** @{ */
