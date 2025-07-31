@@ -92,7 +92,10 @@ sapphirepp::Utils::Tools::read_csv_to_table(
 
           std::vector<double> values = Utilities::string_to_double(
             Utilities::split_string_list(line, delimiter));
-          AssertDimension(values.size(), n_cols);
+          AssertThrow(values.size() == n_cols,
+                      dealii::ExcDimensionMismatch(values.size(), n_cols));
+          AssertThrow(i < n_rows,
+                      dealii::ExcIndexRange(values.size(), 0, n_rows));
 
           for (unsigned int j = 0; j < data_table.size(1); ++j)
             if (transpose)
@@ -104,7 +107,7 @@ sapphirepp::Utils::Tools::read_csv_to_table(
 
           ++i;
         }
-      AssertDimension(i, n_rows);
+      AssertThrow(i == n_rows, dealii::ExcDimensionMismatch(i, n_rows));
 
       input_file.close();
     }
