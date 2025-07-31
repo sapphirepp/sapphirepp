@@ -150,7 +150,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
       // https://floating-point-gui.de/errors/comparison/
       // std::abs is nessecary because of the boundary faces, i.e. <-| n_k = -1
       // for some faces.
-      if (std::abs(1. - std::abs(normals[0][i])) < 1e-5)
+      if (std::abs(1. - std::abs(normals[0][i])) <
+          VFPParameters<dim>::epsilon_d)
         {
           component    = i;
           found_normal = true;

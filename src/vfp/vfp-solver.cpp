@@ -701,7 +701,8 @@ sapphirepp::VFP::VFPSolver<dim>::project(
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
 
-  SolverControl           solver_control(1000, 1e-12);
+  SolverControl           solver_control(vfp_parameters.solver_max_iter,
+                               vfp_parameters.solver_tolerance);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
   cg.solve(mass_matrix, projected_function, rhs, preconditioner);
   saplog << "Solved in " << solver_control.last_step() << " iterations."
@@ -1667,7 +1668,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   TimerOutput::Scope timer_section(timer, "Steady state solve");
   LogStream::Prefix  p("steady_state", saplog);
 
-  SolverControl              solver_control(5000);
+  SolverControl              solver_control(vfp_parameters.solver_max_iter);
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   PETScWrappers::PreconditionBlockJacobi preconditioner;
@@ -1678,7 +1679,8 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
     system_rhs.add(1., locally_owned_current_source);
   // TODO: add check if non-homogeneous bc is set
   system_rhs.add(1., locally_owned_current_bc);
-  solver_control.set_tolerance(1e-6 * system_rhs.l2_norm());
+  solver_control.set_tolerance(vfp_parameters.solver_tolerance *
+                               system_rhs.l2_norm());
   solver.solve(dg_matrix,
                locally_owned_previous_solution,
                system_rhs,
@@ -1755,7 +1757,9 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   system_matrix.copy_from(mass_matrix);
   system_matrix.add(time_step * theta, dg_matrix);
 
-  SolverControl              solver_control(1000, 1e-8 * system_rhs.l2_norm());
+  SolverControl              solver_control(vfp_parameters.solver_max_iter,
+                               vfp_parameters.solver_tolerance *
+                                 system_rhs.l2_norm());
   PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
@@ -1803,7 +1807,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
 
-  SolverControl           solver_control(1000);
+  SolverControl           solver_control(vfp_parameters.solver_max_iter);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
 
   // I need the previous solution to compute k_0, k_1, k_2, k_3
@@ -1825,7 +1829,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       system_rhs.add(-1., locally_owned_current_source);
     }
   system_rhs.add(-1., locally_owned_current_bc);
-  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
+  solver_control.set_tolerance(vfp_parameters.solver_tolerance *
+                               system_rhs.l2_norm());
   cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
   saplog << "Stage s: " << 0 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1864,7 +1869,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
         }
     }
   system_rhs.add(-1., locally_owned_current_bc);
-  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
+  solver_control.set_tolerance(vfp_parameters.solver_tolerance *
+                               system_rhs.l2_norm());
   cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
   saplog << "	Stage s: " << 1 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1897,7 +1903,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
         }
     }
   system_rhs.add(-1., locally_owned_current_bc);
-  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
+  solver_control.set_tolerance(vfp_parameters.solver_tolerance *
+                               system_rhs.l2_norm());
   cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
   saplog << "	Stage s: " << 2 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1937,7 +1944,8 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
         }
     }
   system_rhs.add(-1., locally_owned_current_bc);
-  solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
+  solver_control.set_tolerance(vfp_parameters.solver_tolerance *
+                               system_rhs.l2_norm());
   cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
   saplog << "	Stage s: " << 3 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
@@ -1986,7 +1994,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   PETScWrappers::PreconditionNone preconditioner;
   preconditioner.initialize(mass_matrix);
 
-  SolverControl           solver_control(1000);
+  SolverControl           solver_control(vfp_parameters.solver_max_iter);
   PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
   // NOTE: The locally_relevant_current_solution is a "ghosted" vector and
   // it cannot be written to. It is necessary to use a vector that does not
@@ -2034,7 +2042,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
             }
         }
 
-      solver_control.set_tolerance(1e-8 * system_rhs.l2_norm());
+      solver_control.set_tolerance(vfp_parameters.solver_tolerance *
+                                   system_rhs.l2_norm());
       cg.solve(mass_matrix, temp, system_rhs, preconditioner);
       saplog << "	Stage s: " << s << "	Solver converged in "
              << solver_control.last_step() << " iterations." << std::endl;

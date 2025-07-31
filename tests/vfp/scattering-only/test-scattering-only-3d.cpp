@@ -105,7 +105,7 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = 1e-10;
+      double max_L2_error = VFPParameters<dimension>::epsilon_d;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 

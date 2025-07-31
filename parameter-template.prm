@@ -140,6 +140,20 @@ subsection VFP
     set n_phi                  = 75
   end
 
+  subsection Numerical parameters
+    # This section collects numerical parameters for the VFP solver.
+    # !DO NOT CHANGE unless you are aware what the parameters do!
+    # 
+    # Relative tolerance of the matrix solver.
+    set solver_tolerance = 1e-08
+
+    # Maximum number of iterations for matrix solver.
+    set solver_max_iter  = 1000
+
+    # Tolerance for RemotePointEvaluation.
+    set rpe_tolerance    = 1e-08
+  end
+
 end
 
 

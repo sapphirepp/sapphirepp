@@ -50,6 +50,15 @@ namespace sapphirepp
      */
     namespace Tools
     {
+      /**
+       * @addtogroup numerical-parameters Numerical parameters
+       * Parameters for the numerical algorithms.
+       * @warning !DO NOT CHANGE unless you are aware what the parameters do!
+       * @{
+       */
+      /** Precision for double / zero comparision. */
+      static constexpr double epsilon_d = 1e-8;
+      /** @} */
 
 
 

@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "sapphirepp-logstream.h"
+#include "tools.h"
 #include "vfp-flags.h"
 
 namespace sapphirepp
@@ -192,6 +193,26 @@ namespace sapphirepp
        * Number of phi points for phase space reconstruction
        */
       unsigned int n_phi;
+      /** @} */
+
+
+      /**
+       * @addtogroup numerical-parameters
+       * @{
+       */
+      /** Precision for double / zero comparision. */
+      static constexpr double epsilon_d = Utils::Tools::epsilon_d;
+
+      /** Relative tolerance of the matrix solver. */
+      double solver_tolerance = epsilon_d;
+      /** Maximum number of iterations for matrix solver. */
+      unsigned int solver_max_iter = 1000;
+
+      /**
+       * Tolerance for
+       * @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation}.
+       */
+      double rpe_tolerance = epsilon_d;
       /** @} */
 
 

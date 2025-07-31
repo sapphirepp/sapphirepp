@@ -257,7 +257,7 @@ main(int argc, char *argv[])
 
       if (run_type == "test_run")
         {
-          double max_L2_error = 1e-10;
+          double max_L2_error = VFPParameters<dimension>::epsilon_d;
           if (argc > 3)
             max_L2_error = std::stod(argv[3]);
           test_run(parameter_filename, max_L2_error);
