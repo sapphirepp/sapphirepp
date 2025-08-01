@@ -1659,7 +1659,8 @@ void
 sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 {
   TimerOutput::Scope timer_section(timer, "Steady state solve");
-  LogStream::Prefix  p("steady_state", saplog);
+  LogStream::Prefix  p("SteadyState", saplog);
+  saplog << "Setup steady-state solver" << std::endl;
 
   SolverControl              solver_control(vfp_parameters.solver_max_iter);
   PETScWrappers::SolverGMRES solver(solver_control);
@@ -1674,6 +1675,10 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   system_rhs.add(1., locally_owned_current_bc);
   solver_control.set_tolerance(vfp_parameters.solver_tolerance *
                                system_rhs.l2_norm());
+  saplog << "Use solver_control(" << vfp_parameters.solver_max_iter << ", "
+         << vfp_parameters.solver_tolerance
+         << "*rhs = " << solver_control.tolerance() << ")" << std::endl;
+  saplog << "Start steady-state solver" << std::endl;
   solver.solve(dg_matrix,
                locally_owned_previous_solution,
                system_rhs,
