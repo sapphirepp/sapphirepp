@@ -15,7 +15,7 @@ fi
 
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
-PETSC_VERSION="3.22.2"
+PETSC_VERSION="3.23.5"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
@@ -24,11 +24,11 @@ fi
 
 INSTALL_P4EST=false
 P4EST_DIR=${P4EST_DIR:-"$HOME/.local/lib/p4est"}
-P4EST_VERSION="2.8.6"
+P4EST_VERSION="2.8.7"
 
 INSTALL_DEAL_II=false
 DEAL_II_DIR=${DEAL_II_DIR:-"$HOME/.local/lib/dealii"}
-DEAL_II_VERSION="9.6.1"
+DEAL_II_VERSION="9.7.0"
 
 if [[ $(uname) == "Darwin" ]]; then
     NUMBER_JOBS=$(sysctl -n hw.ncpu)
@@ -104,10 +104,12 @@ function print_configuration {
     fi
     echo ""
 
-    read -rp "Is this configuration correct? [y/N]: " confirm_input
-    if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
-        echo "Installation aborted."
-        exit 1
+    if [ $INTERACTIVE == true ]; then
+        read -rp "Is this configuration correct? [y/N]: " confirm_input
+        if [[ ! $confirm_input =~ ^[Yy]$ ]]; then
+            echo "Installation aborted."
+            exit 1
+        fi
     fi
 }
 
