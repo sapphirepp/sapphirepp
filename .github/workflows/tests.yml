@@ -10,32 +10,25 @@ on:
   workflow_dispatch:
     
 env:
-  COMPILE_JOBS: 2
+  COMPILE_JOBS: ${{ vars.NCPUS || 1 }}
   CXX_FLAGS: "-Werror -Wall -Wextra -Wno-ignored-optimization-argument"
-  MPI_NPROC: 2
+  MPI_NPROC: ${{ vars.NCPUS || 1 }}
 
 jobs:
   tests:
-    name: Build and test ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+    name: Build and test ${{ matrix.build_type }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: true
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.6.0"]
     
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-jammy
-      options: --user root
+      image: sapphirepp/sapphirepp:latest
 
     steps:
       - uses: actions/checkout@v4
-
-      # - name: Install clang-tidy
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y --no-install-recommends clang-tidy
 
       - name: Compile
         # Removed clang-tidy flag:
