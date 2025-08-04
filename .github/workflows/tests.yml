@@ -30,21 +30,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compile
-        # Removed clang-tidy flag:
-        # -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
+      - name: Configure cmake
         run: |
-          cmake -S . -B build -DSAPPHIREPP=ON -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
+          cmake -S . -B build -DEXAMPLES=ON -DTESTS=ON -DDOC=ON \
+                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                 -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
-                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+                -DCMAKE_CXX_CLANG_TIDY="clang-tidy-19;--extra-arg=-Wno-error=unknown-warning-option" \
+                -DCLANG_FORMAT_EXECUTABLE="clang-format-19"
+
+      - name: Check clang-format style
+        run: |
+          make --directory=build clang-format-check
+
+      - name: Check Documentation
+        run: |
+          echo "Build target doc"
+          make --directory=build doc >&-
+
+      - name: Compile
+        run: |
           make --directory=build -j${{ env.COMPILE_JOBS }}
-       
+
       - name: Test
         env:
-          OMPI_ALLOW_RUN_AS_ROOT: 1
-          OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
           TEST_LABEL: commit-${{ matrix.build_type }}
         run: |
           cd build
           echo "Running tests with label ${{ env.TEST_LABEL }}"
-          ctest -V -L ${{ env.TEST_LABEL }}
+          ctest --output-on-failure -L ${{ env.TEST_LABEL }}

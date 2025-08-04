@@ -99,6 +99,38 @@ if(SAPPHIREPP)
 endif(SAPPHIREPP)
 
 
+set(CLANG_FORMAT_EXECUTABLE "clang-format-19" CACHE STRING "Path to clang-format executable")
+find_program(CLANG_FORMAT_FOUND NAMES ${CLANG_FORMAT_EXECUTABLE} clang-format)
+if(CLANG_FORMAT_FOUND)
+  message(STATUS "Preparing clang-format using ${CLANG_FORMAT_EXECUTABLE}")
+  file(GLOB_RECURSE ALL_SOURCE_FILES
+    "${PROJECT_SOURCE_DIR}/include/config.h"
+    "${PROJECT_SOURCE_DIR}/include/**/*.h"
+    "${PROJECT_SOURCE_DIR}/include/**/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/**/*.h"
+    "${PROJECT_SOURCE_DIR}/src/**/*.cpp"
+    "${PROJECT_SOURCE_DIR}/examples/**/*.h"
+    "${PROJECT_SOURCE_DIR}/examples/**/*.cpp"
+    "${PROJECT_SOURCE_DIR}/tests/**/*.h"
+    "${PROJECT_SOURCE_DIR}/tests/**/*.cpp"
+  )
+
+  add_custom_target(
+    clang-format
+    COMMAND ${CLANG_FORMAT_FOUND} -i ${ALL_SOURCE_FILES}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Running clang-format on all source files"
+  )
+
+  add_custom_target(
+    clang-format-check
+    COMMAND ${CLANG_FORMAT_FOUND} --dry-run --Werror ${ALL_SOURCE_FILES} --verbose
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Checking clang-format on all source files"
+  )
+endif()
+
+
 if(DOC)
   find_package(Doxygen ${DOXYGEN_MIN_VERSION})
   if(DOXYGEN_FOUND)

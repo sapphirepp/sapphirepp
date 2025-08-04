@@ -23,6 +23,8 @@ Checks: >-
   -modernize-use-nodiscard,
   -modernize-avoid-c-arrays,
   -modernize-concat-nested-namespaces,
+  -modernize-use-std-numbers,
+  -modernize-use-ranges,
   use-emplace,
   mpi-*,
   performance-*,

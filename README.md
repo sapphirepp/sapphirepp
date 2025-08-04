@@ -1,7 +1,5 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14506754.svg)](https://doi.org/10.5281/zenodo.14506754)
 [![GitHub CI](https://github.com/sapphirepp/sapphirepp/actions/workflows/tests.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/tests.yml)
-[![clang-format Check](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/clang-format-check.yml)
-[![Documentation](https://github.com/sapphirepp/sapphirepp/actions/workflows/documentation.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/documentation.yml)
 [![Full test suite](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml/badge.svg)](https://github.com/sapphirepp/sapphirepp/actions/workflows/full-test-suite.yml)
 
 <p align="center">
@@ -28,7 +26,6 @@ $$
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) =
   \frac{\nu}{2} \Delta_{\theta, \varphi} f + S .
 $$
-
 
 Sapphire++ is developed by
 [Nils Schween](https://github.com/nils-schween),
