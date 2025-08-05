@@ -182,6 +182,11 @@ namespace sapphirepp
       /**  Points in reduced phase space to probe and reconstruct */
       std::vector<Point<dim>> probe_location_points;
 
+
+      /** @dealref{RemotePointEvaluation::AdditionalData,structUtilities_1_1MPI_1_1RemotePointEvaluation_1_1AdditionalData} */
+      typename Utilities::MPI::RemotePointEvaluation<dim, dim>::AdditionalData
+        rpe_data;
+
       /** @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation} */
       Utilities::MPI::RemotePointEvaluation<dim, dim> rpe_cache;
 

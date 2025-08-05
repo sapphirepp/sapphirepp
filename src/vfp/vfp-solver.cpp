@@ -696,7 +696,7 @@ sapphirepp::VFP::VFPSolver<dim>::project(
 
   SolverControl           solver_control(vfp_parameters.solver_max_iter,
                                vfp_parameters.solver_tolerance);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG cg(solver_control);
   cg.solve(mass_matrix, projected_function, rhs, preconditioner);
   saplog << "Solved in " << solver_control.last_step() << " iterations."
          << std::endl;
@@ -1662,7 +1662,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   LogStream::Prefix  p("steady_state", saplog);
 
   SolverControl              solver_control(vfp_parameters.solver_max_iter);
-  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+  PETScWrappers::SolverGMRES solver(solver_control);
 
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(dg_matrix);
@@ -1753,7 +1753,7 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   SolverControl              solver_control(vfp_parameters.solver_max_iter,
                                vfp_parameters.solver_tolerance *
                                  system_rhs.l2_norm());
-  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+  PETScWrappers::SolverGMRES solver(solver_control);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
   // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
@@ -1801,7 +1801,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   preconditioner.initialize(mass_matrix);
 
   SolverControl           solver_control(vfp_parameters.solver_max_iter);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG cg(solver_control);
 
   // I need the previous solution to compute k_0, k_1, k_2, k_3
   locally_owned_previous_solution = locally_relevant_current_solution;
@@ -1988,7 +1988,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   preconditioner.initialize(mass_matrix);
 
   SolverControl           solver_control(vfp_parameters.solver_max_iter);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG cg(solver_control);
   // NOTE: The locally_relevant_current_solution is a "ghosted" vector and
   // it cannot be written to. It is necessary to use a vector that does not
   // contain ghost cells. We extract the locally owned part with the equal
