@@ -130,14 +130,9 @@ We recommand to integrate code formatting in your IDE.
    ```cpp
    namespace sapinternal
    {
-     namespace ClassNameImplementation
-     {
-       // free functions go here
-     }
+      // free functions go here
    }
    ```
-
-   where `ClassName` is the name of the calling class.
 
 13. Classes, namespaces and types generally are named
    using uppercase letters to denote word beginnings (e.g. `OutputParameters`)
