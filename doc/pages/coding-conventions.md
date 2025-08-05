@@ -154,6 +154,11 @@ We recommand to integrate code formatting in your IDE.
    then a declaration of that value's type should be available
    (by including the necessary header).
 
+15. If a class or function has unused variables or arguments,
+  we use the
+  [`[[maybe_unused]]` attribute](https://en.cppreference.com/w/cpp/language/attributes/maybe_unused)
+  to avoid compiler warnings.
+
 ## Instantiation of templated functions/classes {#coding-conventions-templates}
 
 The majority of classes and functions in @sapphire are templated.

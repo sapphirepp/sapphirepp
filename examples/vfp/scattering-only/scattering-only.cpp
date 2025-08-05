@@ -65,11 +65,10 @@ namespace sapinternal
 
       /** [AnalyticSolution value] */
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &f) const override
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double>                    &f) const override
       {
         AssertDimension(f.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
         for (unsigned int i = 0; i < f.size(); ++i)
           {

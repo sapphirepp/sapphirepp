@@ -64,7 +64,6 @@ namespace sapinternal
       vector_value(const Point<dim> &point, Vector<double> &f) const override
       {
         AssertDimension(f.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
         const double u  = prm.u_sh;
         const double r  = prm.compression_ratio;
@@ -121,7 +120,6 @@ namespace sapinternal
                    Vector<double>   &weight) const override
       {
         AssertDimension(weight.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
         const double p0    = prm.p_inj;
         const double log_p = point[1];
