@@ -160,7 +160,8 @@ namespace sapphirepp
       {
         AssertDimension(f.size(), this->n_components);
 
-        for ([[maybe_unused]] unsigned int i = 0; i < f.size(); ++i)
+        // NOLINTNEXTLINE(modernize-loop-convert)
+        for (unsigned int i = 0; i < f.size(); ++i)
           {
             /** [Initial value] */
             // No initial value
@@ -273,6 +274,7 @@ namespace sapphirepp
       {
         AssertDimension(source_values.size(), this->n_components);
 
+        // NOLINTNEXTLINE(modernize-loop-convert)
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             /** [Source] */
