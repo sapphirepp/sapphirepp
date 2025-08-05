@@ -1,7 +1,9 @@
-# Build with: docker build . -t sapphirepp
-#   if you need to configure a Proxy use: 
-#   docker build --build-arg https_proxy=http://www-cache.mpi-hd.mpg.de:3128 . -t sapphirepp
-# Run with: docker run --rm -ti -v $(pwd):/results sapphirepp bash
+# Build with:
+#   docker build . -t sapphirepp
+# if you need to configure a Proxy use: 
+#   docker build --build-arg https_proxy=http://$https_proxy . -t sapphirepp
+# Run with: 
+#   docker run --rm -ti -u root -v $(pwd)/results:/home/dealii/sapphirepp/results sapphirepp bash
 FROM dealii/dealii:v9.6.2-noble
 USER root
 # Install editors, nodejs (for actions/checkout), clang-tidy and clang-format
