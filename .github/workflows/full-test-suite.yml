@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     
 env:
-  COMPILE_JOBS: 2
+  COMPILE_JOBS: ${{ vars.NCPUS || 1 }}
   CXX_FLAGS: "-Werror -Wall -Wextra -Wno-ignored-optimization-argument"
-  MPI_NPROC: 2
+  MPI_NPROC: ${{ vars.NCPUS || 1 }}
 
 jobs:
   full-test-suite:
@@ -24,10 +24,14 @@ jobs:
         dealii_version: ["v9.6.0", "master"]
     
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-jammy
+      image: dealii/dealii:${{ matrix.dealii_version }}-noble
       options: --user root
 
     steps:
+      - name: Install node-v18 # Needed for checkout
+        run: |
+          sudo apt-get install -y nodejs
+
       - uses: actions/checkout@v4
 
       # - name: Install clang-tidy
@@ -35,13 +39,14 @@ jobs:
       #     sudo apt-get update
       #     sudo apt-get install -y --no-install-recommends clang-tidy
 
-      - name: Compile
-        # Removed clang-tidy flag:
-        # -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
+      - name: Configure cmake
         run: |
-          cmake -S . -B build -DSAPPHIREPP=ON -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
-                -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
-                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake -S . -B build -DEXAMPLES=ON -DTESTS=ON \
+                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}"
+
+      - name: Compile
+        run: |
           make --directory=build -j${{ env.COMPILE_JOBS }}
        
       - name: Test
@@ -52,4 +57,4 @@ jobs:
         run: |
           cd build
           echo "Running tests with label ${{ env.TEST_LABEL }}"
-          ctest -V -L ${{ env.TEST_LABEL }}
+          ctest --output-on-failure -L ${{ env.TEST_LABEL }}
