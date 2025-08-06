@@ -102,7 +102,7 @@ endif(SAPPHIREPP)
 set(CLANG_FORMAT_EXECUTABLE "clang-format-19" CACHE STRING "Path to clang-format executable")
 find_program(CLANG_FORMAT_FOUND NAMES ${CLANG_FORMAT_EXECUTABLE} clang-format)
 if(CLANG_FORMAT_FOUND)
-  message(STATUS "Preparing clang-format using ${CLANG_FORMAT_EXECUTABLE}")
+  message(STATUS "Preparing clang-format using ${CLANG_FORMAT_FOUND}")
   file(GLOB_RECURSE ALL_SOURCE_FILES
     "${PROJECT_SOURCE_DIR}/include/config.h"
     "${PROJECT_SOURCE_DIR}/include/**/*.h"
