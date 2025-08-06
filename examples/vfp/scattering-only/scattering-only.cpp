@@ -42,51 +42,47 @@
 /** [AnalyticSolution namespace] */
 namespace sapinternal
 {
-  namespace AnalyticSolutionImplementation
+  using namespace sapphirepp;
+  /** [AnalyticSolution namespace] */
+
+  /** [AnalyticSolution constructor] */
+  template <unsigned int dim>
+  class AnalyticSolution : public dealii::Function<dim>
   {
-    using namespace sapphirepp;
-    /** [AnalyticSolution namespace] */
-
+  public:
+    AnalyticSolution(const PhysicalParameters &physical_parameters,
+                     const unsigned int        system_size,
+                     const double              time)
+      : dealii::Function<dim>(system_size, time)
+      , prm{physical_parameters}
+      , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
+    {}
     /** [AnalyticSolution constructor] */
-    template <unsigned int dim>
-    class AnalyticSolution : public dealii::Function<dim>
+
+
+
+    /** [AnalyticSolution value] */
+    void
+    vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                 dealii::Vector<double>                    &f) const override
     {
-    public:
-      AnalyticSolution(const PhysicalParameters &physical_parameters,
-                       const unsigned int        system_size,
-                       const double              time)
-        : dealii::Function<dim>(system_size, time)
-        , prm{physical_parameters}
-        , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
-      {}
-      /** [AnalyticSolution constructor] */
+      AssertDimension(f.size(), this->n_components);
+
+      for (unsigned int i = 0; i < f.size(); ++i)
+        {
+          const unsigned int l = lms_indices[i][0];
+          const double       t = this->get_time();
+
+          f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
+        }
+    }
 
 
 
-      /** [AnalyticSolution value] */
-      void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &f) const override
-      {
-        AssertDimension(f.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
-
-        for (unsigned int i = 0; i < f.size(); ++i)
-          {
-            const unsigned int l = lms_indices[i][0];
-            const double       t = this->get_time();
-
-            f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
-          }
-      }
-
-
-
-    private:
-      const PhysicalParameters                       prm;
-      const std::vector<std::array<unsigned int, 3>> lms_indices;
-    };
-  } // namespace AnalyticSolutionImplementation
+  private:
+    const PhysicalParameters                       prm;
+    const std::vector<std::array<unsigned int, 3>> lms_indices;
+  };
 } // namespace sapinternal
 /** [AnalyticSolution value] */
 
@@ -148,9 +144,7 @@ main(int argc, char *argv[])
       /** [VFP Solver] */
 
       /** [Create AnalyticSolution] */
-      using namespace sapinternal::AnalyticSolutionImplementation;
-
-      AnalyticSolution<dimension> analytic_solution(
+      sapinternal::AnalyticSolution<dimension> analytic_solution(
         physical_parameters,
         vfp_solver.get_pde_system().system_size,
         vfp_parameters.final_time);

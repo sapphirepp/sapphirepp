@@ -117,9 +117,9 @@ namespace sapphirepp
        *       with `parallel::shared::Triangulation`.
        */
       using Triangulation =
-        typename std::conditional<dim != 1,
-                                  parallel::distributed::Triangulation<dim>,
-                                  parallel::shared::Triangulation<dim>>::type;
+        typename std::conditional_t<dim != 1,
+                                    parallel::distributed::Triangulation<dim>,
+                                    parallel::shared::Triangulation<dim>>;
 
       /** Is the momentum term activated? */
       static constexpr bool momentum =

@@ -77,14 +77,19 @@ Kernphysik](https://www.mpi-hd.mpg.de/mpi/en/) in Heidelberg, Germany.
 
 # Installation {#installation}
 
-## System requirements {#requirements}
+You can install @sapphire either [from source](#install-from-source)
+or use [Docker](#docker).
 
-@sapphire uses the C++ library @dealii to solve the differential equations with
-finite elements. We use MPI to parallelize @sapphire. For optimized parallel
-grid generation and linear algebra operations, we use the
-[p4est](https://www.p4est.org) and [PETSc](https://petsc.org) through their
-interface in @dealii. In order to compile and use @sapphire you need the
-following programs installed:
+## Install from source {#install-from-source}
+
+### System requirements {#requirements}
+
+@sapphire uses the C++ library @dealii to solve the differential equations with finite elements.
+We use MPI to parallelize @sapphire.
+For optimized parallel grid generation and linear algebra operations,
+we use [p4est](https://www.p4est.org) and [PETSc](https://petsc.org)
+through their interface in @dealii.
+In order to compile and use @sapphire you need the following programs installed:
 
 - [CMake](http://www.cmake.org/) version @cmake_min_version or later
 - [GNU make](http://www.gnu.org/software/make/)
@@ -98,12 +103,12 @@ following programs installed:
 - [PETSc](https://petsc.org)
 - [assimp](https://www.assimp.org/)
 - @dealii version @dealii_min_version or later
-- For generating the documentation: [Doxygen](https://www.doxygen.nl) version
-  @doxygen_min_version or later with `dot`
-- For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/) or
-  @paraview
+- For generating the documentation:
+ [Doxygen](https://www.doxygen.nl) version @doxygen_min_version or later with `dot`
+- For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/) or @paraview
 
-To install @dealii and all necessary prerequisites for @sapphire, we provide an
+To install @dealii and all necessary prerequisites for @sapphire,
+we provide an
 [installation script](https://github.com/sapphirepp/sapphirepp/blob/main/scripts/install-dealii.sh).
 Download the script and it with run the script by executing:
 
@@ -113,44 +118,15 @@ chmod u+x install-dealii.sh
 ./install-dealii.sh
 ```
 
-Follow the on-screen instructions during the installation process. There are a
-few common errors occurring during installation:
+Follow the on-screen instructions during the installation process.
+If you encounter any problems during installation please refer to the designated
+[Installation Issues Discussion](https://github.com/sapphirepp/sapphirepp/discussions/41).
 
-- If the script aborts due to failed tests from a missing Fortran compiler. This
-  sometimes occurs when testing the [PETSc](https://petsc.org) installation. You
-  can try rerunning the script but skip the installation
-  [PETSc](https://petsc.org) (it should be installed successfully already).
-
-  ```shell
-  ./install-dealii.sh --skip-prerequisites
-  ```
-
-- If the installation process is interrupted during the compilation of @dealii,
-  this is often due to compiler running out of memory. At this stage, you can
-  resume the installation with the following commands:
-
-  ```shell
-  cd dealii-X.X.X/build
-  make -j N install
-  ```
-
-  where `X.X.X` represents the version number of @dealii, and `N` specifies the
-  number of threads to use for the compilation. To avoid memory issues, we
-  recommend restarting the compilation with fewer threads.
-
-For macOS user, @dealii offers prepackaged `.dmg` files with all dependencies
-included. To install, follow the
-[deal.II Mac OS X Instructions](https://github.com/dealii/dealii/wiki/MacOSX).
-
-If you have trouble installing @dealii,
-refer to the
-[deal.II installation instructions](https://www.dealii.org/current/readme.html).
-
-## Compiling @sapphire {#compilation}
+### Compiling @sapphire {#compilation}
 
 You can obtain @sapphire either as a tarball from the
-[release page](https://github.com/sapphirepp/sapphirepp/releases), or by
-cloning the `git` repository:
+[release page](https://github.com/sapphirepp/sapphirepp/releases),
+or by cloning the `git` repository:
 
 ```shell
 git clone https://github.com/sapphirepp/sapphirepp.git
@@ -168,11 +144,57 @@ make --directory=build
 Developers are advised to use the following `cmake` options:
 
 ```shell
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON -DCMAKE_CXX_FLAGS="-Werror -Wall -Wextra" -DCMAKE_CXX_CLANG_TIDY=clang-tidy
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DEXAMPLES=ON -DTESTS=ON -DDOC=ON \
+      -DCMAKE_CXX_FLAGS="-Werror -Wall -Wextra -Wno-ignored-optimization-argument" \
+      -DCMAKE_CXX_CLANG_TIDY="clang-tidy-19;--extra-arg=-Wno-error=unknown-warning-option" \
+      -DCLANG_FORMAT_EXECUTABLE="clang-format-19"
 ```
 
-@note Do not forget to switch to the optimized `Release` build before starting
-      extensive simulation runs.
+@note Do not forget to switch to the optimized `Release` build
+      before starting extensive simulation runs.
+
+## Install using Docker {#docker}
+
+A pre-built [Docker](https://docs.docker.com/engine/) container is available on
+[Docker Hub](https://hub.docker.com/r/sapphirepp/sapphirepp).
+
+1. **Pull the container from [Docker Hub](https://hub.docker.com/r/sapphirepp/sapphirepp):**
+
+   ```shell
+   docker pull sapphirepp/sapphirepp:latest
+   ```
+
+2. **Start the container (no edits):**
+
+   To use the precompiled version of @sapphire use:
+
+   ```shell
+   docker run --rm -ti -u root -v $(pwd)/results:/home/dealii/sapphirepp/results sapphirepp/sapphirepp:latest bash
+   ```
+
+   Results will be saved in your local `results` folder.
+
+   @note Any changes to source files in the container will be lost after closing the container.
+
+3. **Start the container with persistent source access:**
+
+   To keep changes to the source code,
+   clone the @sapphire repository
+   and mount it to the container:
+
+   ```shell
+   git clone https://github.com/sapphirepp/sapphirepp.git
+   docker run --rm -ti -u root -v $(pwd)/sapphirepp:/home/dealii/sapphirepp sapphirepp/sapphirepp:latest bash
+   ```
+
+   Now you can edit files on your host and compile inside the container:
+
+   ```shell
+   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DEXAMPLES=ON
+   make --directory=build
+   ```
+
+   Results will be saved in your local `sapphirepp/results` folder.
 
 ## Getting started {#getting-started}
 

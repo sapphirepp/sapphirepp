@@ -69,7 +69,8 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   , real_spherical_harmonics{compute_real_spherical_harmonics(cos_theta_values,
                                                               phi_values,
                                                               lms_indices)}
-  , rpe_cache(vfp_parameters.rpe_tolerance, true)
+  , rpe_data(vfp_parameters.rpe_tolerance, true)
+  , rpe_cache(rpe_data)
 {
   LogStream::Prefix p0("VFP", saplog);
   LogStream::Prefix p("ProbeLocation", saplog);

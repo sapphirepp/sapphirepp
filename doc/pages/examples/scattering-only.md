@@ -176,11 +176,10 @@ function of the parent class. This function needs to provide a value for each
 component $f_{lms}$ at the given point, which is stored in the results vector
 `f`.
 
-To catch implementation errors, we check that the size of the results vector `f`
-matches the number of components `system_size`, using the
-@dealref{Assert,group__Exceptions,ga70a0bb353656e704acf927945277bbc6} macro,
-which is only activated in debug mode. Note that we use
-`static_cast<void>(point)` to avoid a compiler warning about an unused variable.
+To catch implementation errors,
+we check that the size of the results vector `f` matches the number of components `system_size`,
+using the @dealref{Assert,group__Exceptions,ga70a0bb353656e704acf927945277bbc6} macro,
+which is only activated in debug mode.
 We then loop over all indices $i$ and set the result vector `f` to $f_{0}$.
 
 Finally, we close the function definition, after defining the private variable

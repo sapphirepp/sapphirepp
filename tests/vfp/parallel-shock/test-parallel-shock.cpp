@@ -39,109 +39,103 @@
 
 namespace sapinternal
 {
-  namespace AnalyticSolutionImplementation
+  using namespace dealii;
+  using namespace sapphirepp;
+
+  template <unsigned int dim>
+  class AnalyticSolution : public dealii::Function<dim>
   {
-    using namespace dealii;
-    using namespace sapphirepp;
+  public:
+    AnalyticSolution(const PhysicalParameters &physical_parameters,
+                     const unsigned int        system_size,
+                     const double             &mass)
+      : Function<dim>(system_size)
+      , prm{physical_parameters}
+      , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
+      , particle_velocity(mass)
+      , scattering_frequency(prm)
+    {}
 
-    template <unsigned int dim>
-    class AnalyticSolution : public dealii::Function<dim>
+
+
+    void
+    vector_value(const Point<dim> &point, Vector<double> &f) const override
     {
-    public:
-      AnalyticSolution(const PhysicalParameters &physical_parameters,
-                       const unsigned int        system_size,
-                       const double             &mass)
-        : Function<dim>(system_size)
-        , prm{physical_parameters}
-        , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
-        , particle_velocity(mass)
-        , scattering_frequency(prm)
-      {}
+      AssertDimension(f.size(), this->n_components);
+
+      const double u  = prm.u_sh;
+      const double r  = prm.compression_ratio;
+      const double p0 = prm.p_inj;
+
+      const double log_p = point[1];
+      const double x     = point[0];
+
+      std::vector<double>     values(1);
+      std::vector<Point<dim>> points = {point};
+      particle_velocity.value_list(points, values);
+      const double v = values[0];
+      scattering_frequency.value_list(points, values);
+      const double nu = values[0];
+
+      f = 0;
+
+      f[0] = std::sqrt(4 * M_PI) * prm.Q / (p0 * u) * 3. * r / (r - 1.) *
+             std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0)));
+
+      if (x < 0.)
+        {
+          f[0] *= std::exp(3 * u * nu / (v * v) * x);
+          f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
+        }
+    }
 
 
 
-      void
-      vector_value(const Point<dim> &point, Vector<double> &f) const override
-      {
-        AssertDimension(f.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
-
-        const double u  = prm.u_sh;
-        const double r  = prm.compression_ratio;
-        const double p0 = prm.p_inj;
-
-        const double log_p = point[1];
-        const double x     = point[0];
-
-        std::vector<double>     values(1);
-        std::vector<Point<dim>> points = {point};
-        particle_velocity.value_list(points, values);
-        const double v = values[0];
-        scattering_frequency.value_list(points, values);
-        const double nu = values[0];
-
-        f = 0;
-
-        f[0] = std::sqrt(4 * M_PI) * prm.Q / (p0 * u) * 3. * r / (r - 1.) *
-               std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0)));
-
-        if (x < 0.)
-          {
-            f[0] *= std::exp(3 * u * nu / (v * v) * x);
-            f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
-          }
-      }
+  private:
+    const PhysicalParameters                       prm;
+    const std::vector<std::array<unsigned int, 3>> lms_indices;
+    const VFP::ParticleVelocity<dim, true>         particle_velocity;
+    const VFP::ScatteringFrequency<dim>            scattering_frequency;
+  };
 
 
 
-    private:
-      const PhysicalParameters                       prm;
-      const std::vector<std::array<unsigned int, 3>> lms_indices;
-      const VFP::ParticleVelocity<dim, true>         particle_velocity;
-      const VFP::ScatteringFrequency<dim>            scattering_frequency;
-    };
+  template <unsigned int dim>
+  class WeightFunction : public Function<dim>
+  {
+  public:
+    WeightFunction(const PhysicalParameters &physical_parameters,
+                   const unsigned int        system_size)
+      : Function<dim>(system_size)
+      , prm{physical_parameters}
+      , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
+    {}
 
 
 
-    template <unsigned int dim>
-    class WeightFunction : public Function<dim>
+    void
+    vector_value(const Point<dim> &point, Vector<double> &weight) const override
     {
-    public:
-      WeightFunction(const PhysicalParameters &physical_parameters,
-                     const unsigned int        system_size)
-        : Function<dim>(system_size)
-        , prm{physical_parameters}
-        , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
-      {}
+      AssertDimension(weight.size(), this->n_components);
+
+      const double p0    = prm.p_inj;
+      const double log_p = point[1];
+
+      weight = 0;
+
+      if (std::exp(log_p) > p0)
+        {
+          weight[0] = std::exp(4 * log_p);
+          weight[2] = std::exp(4 * log_p);
+        }
+    }
 
 
 
-      void
-      vector_value(const Point<dim> &point,
-                   Vector<double>   &weight) const override
-      {
-        AssertDimension(weight.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
-
-        const double p0    = prm.p_inj;
-        const double log_p = point[1];
-
-        weight = 0;
-
-        if (std::exp(log_p) > p0)
-          {
-            weight[0] = std::exp(4 * log_p);
-            weight[2] = std::exp(4 * log_p);
-          }
-      }
-
-
-
-    private:
-      const PhysicalParameters                       prm;
-      const std::vector<std::array<unsigned int, 3>> lms_indices;
-    };
-  } // namespace AnalyticSolutionImplementation
+  private:
+    const PhysicalParameters                       prm;
+    const std::vector<std::array<unsigned int, 3>> lms_indices;
+  };
 } // namespace sapinternal
 
 
@@ -192,7 +186,7 @@ main(int argc, char *argv[])
 
 
       saplog << "Calculate analytic solution" << std::endl;
-      using namespace sapinternal::AnalyticSolutionImplementation;
+      using namespace sapinternal;
 
       AnalyticSolution<dimension> analytic_solution(
         physical_parameters,

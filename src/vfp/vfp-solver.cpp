@@ -76,131 +76,124 @@
 
 
 
-namespace sapphirepp
+/** @cond sapinternal */
+namespace sapinternal
 {
+  using namespace dealii;
 
-  /** @cond sapinternal */
-  namespace sapinternal
+  // The mesh_loop function requires helper data types
+  template <unsigned int dim_ps>
+  class ScratchData
   {
-    namespace VFPSolver
+  public:
+    // Constructor
+    ScratchData(const Mapping<dim_ps>        &mapping,
+                const FiniteElement<dim_ps>  &fe,
+                const Quadrature<dim_ps>     &quadrature,
+                const Quadrature<dim_ps - 1> &quadrature_face,
+                const UpdateFlags             update_flags = update_values |
+                                                 update_gradients |
+                                                 update_quadrature_points |
+                                                 update_JxW_values,
+                const UpdateFlags face_update_flags = update_values |
+                                                      update_quadrature_points |
+                                                      update_JxW_values |
+                                                      update_normal_vectors,
+                const UpdateFlags neighbor_face_update_flags = update_values)
+      : fe_values(mapping, fe, quadrature, update_flags)
+      , fe_values_face(mapping, fe, quadrature_face, face_update_flags)
+      , fe_values_face_neighbor(mapping,
+                                fe,
+                                quadrature_face,
+                                neighbor_face_update_flags)
+      , fe_values_subface_neighbor(mapping,
+                                   fe,
+                                   quadrature_face,
+                                   neighbor_face_update_flags)
+    {}
+
+    // Copy Constructor
+    ScratchData(const ScratchData<dim_ps> &scratch_data)
+      : fe_values(scratch_data.fe_values.get_mapping(),
+                  scratch_data.fe_values.get_fe(),
+                  scratch_data.fe_values.get_quadrature(),
+                  scratch_data.fe_values.get_update_flags())
+      , fe_values_face(scratch_data.fe_values_face.get_mapping(),
+                       scratch_data.fe_values_face.get_fe(),
+                       scratch_data.fe_values_face.get_quadrature(),
+                       scratch_data.fe_values_face.get_update_flags())
+      , fe_values_face_neighbor(
+          scratch_data.fe_values_face_neighbor.get_mapping(),
+          scratch_data.fe_values_face_neighbor.get_fe(),
+          scratch_data.fe_values_face_neighbor.get_quadrature(),
+          scratch_data.fe_values_face_neighbor.get_update_flags())
+      , fe_values_subface_neighbor(
+          scratch_data.fe_values_subface_neighbor.get_mapping(),
+          scratch_data.fe_values_subface_neighbor.get_fe(),
+          scratch_data.fe_values_subface_neighbor.get_quadrature(),
+          scratch_data.fe_values_subface_neighbor.get_update_flags())
+    {}
+
+    FEValues<dim_ps>        fe_values;
+    FEFaceValues<dim_ps>    fe_values_face;
+    FEFaceValues<dim_ps>    fe_values_face_neighbor;
+    FESubfaceValues<dim_ps> fe_values_subface_neighbor;
+  };
+
+
+
+  struct CopyDataFace
+  {
+    FullMatrix<double> cell_dg_matrix_11;
+    FullMatrix<double> cell_dg_matrix_12;
+    FullMatrix<double> cell_dg_matrix_21;
+    FullMatrix<double> cell_dg_matrix_22;
+
+    std::vector<types::global_dof_index> local_dof_indices;
+    std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+    template <typename Iterator>
+    void
+    reinit(const Iterator &cell,
+           const Iterator &neighbor_cell,
+           unsigned int    dofs_per_cell)
     {
-      using namespace dealii;
+      cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
+      cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
+      cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
+      cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
 
-      // The mesh_loop function requires helper data types
-      template <unsigned int dim_ps>
-      class ScratchData
-      {
-      public:
-        // Constructor
-        ScratchData(
-          const Mapping<dim_ps>        &mapping,
-          const FiniteElement<dim_ps>  &fe,
-          const Quadrature<dim_ps>     &quadrature,
-          const Quadrature<dim_ps - 1> &quadrature_face,
-          const UpdateFlags update_flags = update_values | update_gradients |
-                                           update_quadrature_points |
-                                           update_JxW_values,
-          const UpdateFlags face_update_flags = update_values |
-                                                update_quadrature_points |
-                                                update_JxW_values |
-                                                update_normal_vectors,
-          const UpdateFlags neighbor_face_update_flags = update_values)
-          : fe_values(mapping, fe, quadrature, update_flags)
-          , fe_values_face(mapping, fe, quadrature_face, face_update_flags)
-          , fe_values_face_neighbor(mapping,
-                                    fe,
-                                    quadrature_face,
-                                    neighbor_face_update_flags)
-          , fe_values_subface_neighbor(mapping,
-                                       fe,
-                                       quadrature_face,
-                                       neighbor_face_update_flags)
-        {}
+      local_dof_indices.resize(dofs_per_cell);
+      cell->get_dof_indices(local_dof_indices);
 
-        // Copy Constructor
-        ScratchData(const ScratchData<dim_ps> &scratch_data)
-          : fe_values(scratch_data.fe_values.get_mapping(),
-                      scratch_data.fe_values.get_fe(),
-                      scratch_data.fe_values.get_quadrature(),
-                      scratch_data.fe_values.get_update_flags())
-          , fe_values_face(scratch_data.fe_values_face.get_mapping(),
-                           scratch_data.fe_values_face.get_fe(),
-                           scratch_data.fe_values_face.get_quadrature(),
-                           scratch_data.fe_values_face.get_update_flags())
-          , fe_values_face_neighbor(
-              scratch_data.fe_values_face_neighbor.get_mapping(),
-              scratch_data.fe_values_face_neighbor.get_fe(),
-              scratch_data.fe_values_face_neighbor.get_quadrature(),
-              scratch_data.fe_values_face_neighbor.get_update_flags())
-          , fe_values_subface_neighbor(
-              scratch_data.fe_values_subface_neighbor.get_mapping(),
-              scratch_data.fe_values_subface_neighbor.get_fe(),
-              scratch_data.fe_values_subface_neighbor.get_quadrature(),
-              scratch_data.fe_values_subface_neighbor.get_update_flags())
-        {}
-
-        FEValues<dim_ps>        fe_values;
-        FEFaceValues<dim_ps>    fe_values_face;
-        FEFaceValues<dim_ps>    fe_values_face_neighbor;
-        FESubfaceValues<dim_ps> fe_values_subface_neighbor;
-      };
+      local_dof_indices_neighbor.resize(dofs_per_cell);
+      neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
+    }
+  };
 
 
 
-      struct CopyDataFace
-      {
-        FullMatrix<double> cell_dg_matrix_11;
-        FullMatrix<double> cell_dg_matrix_12;
-        FullMatrix<double> cell_dg_matrix_21;
-        FullMatrix<double> cell_dg_matrix_22;
+  struct CopyData
+  {
+    FullMatrix<double>                   cell_matrix;
+    Vector<double>                       cell_rhs;
+    std::vector<types::global_dof_index> local_dof_indices;
+    std::vector<types::global_dof_index> local_dof_indices_neighbor;
+    std::vector<CopyDataFace>            face_data;
 
-        std::vector<types::global_dof_index> local_dof_indices;
-        std::vector<types::global_dof_index> local_dof_indices_neighbor;
+    template <typename Iterator>
+    void
+    reinit(const Iterator &cell, unsigned int dofs_per_cell)
+    {
+      cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
+      cell_rhs.reinit(dofs_per_cell);
 
-        template <typename Iterator>
-        void
-        reinit(const Iterator &cell,
-               const Iterator &neighbor_cell,
-               unsigned int    dofs_per_cell)
-        {
-          cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
-          cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
-          cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
-          cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
-
-          local_dof_indices.resize(dofs_per_cell);
-          cell->get_dof_indices(local_dof_indices);
-
-          local_dof_indices_neighbor.resize(dofs_per_cell);
-          neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
-        }
-      };
-
-
-
-      struct CopyData
-      {
-        FullMatrix<double>                   cell_matrix;
-        Vector<double>                       cell_rhs;
-        std::vector<types::global_dof_index> local_dof_indices;
-        std::vector<types::global_dof_index> local_dof_indices_neighbor;
-        std::vector<CopyDataFace>            face_data;
-
-        template <typename Iterator>
-        void
-        reinit(const Iterator &cell, unsigned int dofs_per_cell)
-        {
-          cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
-          cell_rhs.reinit(dofs_per_cell);
-
-          local_dof_indices.resize(dofs_per_cell);
-          cell->get_dof_indices(local_dof_indices);
-        }
-      };
-    } // namespace VFPSolver
-  } // namespace sapinternal
-  /** @endcond */
-} // namespace sapphirepp
+      local_dof_indices.resize(dofs_per_cell);
+      cell->get_dof_indices(local_dof_indices);
+    }
+  };
+} // namespace sapinternal
+/** @endcond */
 
 
 
@@ -703,7 +696,7 @@ sapphirepp::VFP::VFPSolver<dim>::project(
 
   SolverControl           solver_control(vfp_parameters.solver_max_iter,
                                vfp_parameters.solver_tolerance);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG cg(solver_control);
   cg.solve(mass_matrix, projected_function, rhs, preconditioner);
   saplog << "Solved in " << solver_control.last_step() << " iterations."
          << std::endl;
@@ -728,7 +721,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
-  using namespace sapphirepp::sapinternal::VFPSolver;
+  using namespace sapinternal;
   upwind_flux.set_time(time);
 
   const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
@@ -1669,7 +1662,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   LogStream::Prefix  p("steady_state", saplog);
 
   SolverControl              solver_control(vfp_parameters.solver_max_iter);
-  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+  PETScWrappers::SolverGMRES solver(solver_control);
 
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(dg_matrix);
@@ -1760,7 +1753,7 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   SolverControl              solver_control(vfp_parameters.solver_max_iter,
                                vfp_parameters.solver_tolerance *
                                  system_rhs.l2_norm());
-  PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+  PETScWrappers::SolverGMRES solver(solver_control);
 
   // PETScWrappers::PreconditionBoomerAMG preconditioner;
   // PETScWrappers::PreconditionBoomerAMG::AdditionalData data;
@@ -1808,7 +1801,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   preconditioner.initialize(mass_matrix);
 
   SolverControl           solver_control(vfp_parameters.solver_max_iter);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG cg(solver_control);
 
   // I need the previous solution to compute k_0, k_1, k_2, k_3
   locally_owned_previous_solution = locally_relevant_current_solution;
@@ -1995,7 +1988,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   preconditioner.initialize(mass_matrix);
 
   SolverControl           solver_control(vfp_parameters.solver_max_iter);
-  PETScWrappers::SolverCG cg(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG cg(solver_control);
   // NOTE: The locally_relevant_current_solution is a "ghosted" vector and
   // it cannot be written to. It is necessary to use a vector that does not
   // contain ghost cells. We extract the locally owned part with the equal

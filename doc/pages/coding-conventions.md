@@ -130,14 +130,9 @@ We recommand to integrate code formatting in your IDE.
    ```cpp
    namespace sapinternal
    {
-     namespace ClassNameImplementation
-     {
-       // free functions go here
-     }
+      // free functions go here
    }
    ```
-
-   where `ClassName` is the name of the calling class.
 
 13. Classes, namespaces and types generally are named
    using uppercase letters to denote word beginnings (e.g. `OutputParameters`)
@@ -153,6 +148,11 @@ We recommand to integrate code formatting in your IDE.
    if a function (or member function) can return a value
    then a declaration of that value's type should be available
    (by including the necessary header).
+
+15. If a class or function has unused variables or arguments,
+  we use the
+  [`[[maybe_unused]]` attribute](https://en.cppreference.com/w/cpp/language/attributes/maybe_unused)
+  to avoid compiler warnings.
 
 ## Instantiation of templated functions/classes {#coding-conventions-templates}
 

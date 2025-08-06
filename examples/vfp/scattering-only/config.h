@@ -143,12 +143,12 @@ namespace sapphirepp
 
       /** [InitialValueFunction value] */
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &f) const override
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double>                    &f) const override
       {
         AssertDimension(f.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
+        // NOLINTNEXTLINE(modernize-loop-convert)
         for (unsigned int i = 0; i < f.size(); ++i)
           {
             // !!!EDIT HERE!!!
@@ -183,15 +183,13 @@ namespace sapphirepp
 
       /** [BoundaryValueFunction value] */
       void
-      bc_vector_value_list(const std::vector<dealii::Point<dim>> &points,
-                           const unsigned int                     boundary_id,
-                           std::vector<dealii::Vector<double>> &bc_values) const
+      bc_vector_value_list(
+        [[maybe_unused]] const std::vector<dealii::Point<dim>> &points,
+        [[maybe_unused]] const unsigned int                     boundary_id,
+        [[maybe_unused]] std::vector<dealii::Vector<double>>   &bc_values) const
       {
         AssertDimension(points.size(), bc_values.size());
         AssertDimension(bc_values[0].size(), this->n_components);
-        static_cast<void>(points); // suppress compiler warning
-        static_cast<void>(boundary_id);
-        static_cast<void>(bc_values);
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
@@ -248,12 +246,12 @@ namespace sapphirepp
 
       /** [ScatteringFrequency value] */
       void
-      value_list(const std::vector<dealii::Point<dim>> &points,
-                 std::vector<double>                   &scattering_frequencies,
-                 const unsigned int component = 0) const override
+      value_list(
+        const std::vector<dealii::Point<dim>> &points,
+        std::vector<double>                   &scattering_frequencies,
+        [[maybe_unused]] const unsigned int    component = 0) const override
       {
         AssertDimension(scattering_frequencies.size(), points.size());
-        static_cast<void>(component); // suppress compiler warning
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
@@ -286,12 +284,12 @@ namespace sapphirepp
 
 
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &source_values) const override
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double> &source_values) const override
       {
         AssertDimension(source_values.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
+        // NOLINTNEXTLINE(modernize-loop-convert)
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             // !!!EDIT HERE!!!
@@ -322,11 +320,10 @@ namespace sapphirepp
 
 
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &magnetic_field) const override
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double> &magnetic_field) const override
       {
         AssertDimension(magnetic_field.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
         // !!!EDIT HERE!!!
         magnetic_field[0] = 0.; // B_x
@@ -358,11 +355,10 @@ namespace sapphirepp
 
       /** [BackgroundVelocityField value] */
       void
-      vector_value(const dealii::Point<dim> &point,
-                   dealii::Vector<double>   &velocity) const override
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double> &velocity) const override
       {
         AssertDimension(velocity.size(), this->n_components);
-        static_cast<void>(point); // suppress compiler warning
 
         // !!!EDIT HERE!!!
         velocity[0] = 0.; // u_x
@@ -375,11 +371,11 @@ namespace sapphirepp
 
       /** [BackgroundVelocityField divergence] */
       void
-      divergence_list(const std::vector<dealii::Point<dim>> &points,
-                      std::vector<double>                   &divergence) const
+      divergence_list(
+        [[maybe_unused]] const std::vector<dealii::Point<dim>> &points,
+        std::vector<double> &divergence) const
       {
         AssertDimension(divergence.size(), points.size());
-        static_cast<void>(points); // suppress compiler warning
 
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {

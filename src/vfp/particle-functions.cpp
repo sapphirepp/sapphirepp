@@ -47,11 +47,10 @@ void
 sapphirepp::VFP::ParticleVelocity<dim, logarithmic_p>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &velocities,
-  unsigned int                           component) const
+  [[maybe_unused]] unsigned int          component) const
 {
   Assert(velocities.size() == points.size(),
          dealii::ExcDimensionMismatch(velocities.size(), points.size()));
-  static_cast<void>(component);
 
   for (unsigned int i = 0; i < points.size(); ++i)
     {
@@ -87,11 +86,10 @@ void
 sapphirepp::VFP::ParticleGamma<dim, logarithmic_p>::value_list(
   const std::vector<dealii::Point<dim>> &points,
   std::vector<double>                   &gammas,
-  unsigned int                           component) const
+  [[maybe_unused]] unsigned int          component) const
 {
   Assert(gammas.size() == points.size(),
          dealii::ExcDimensionMismatch(gammas.size(), points.size()));
-  static_cast<void>(component);
   for (unsigned int i = 0; i < points.size(); ++i)
     {
       double p =

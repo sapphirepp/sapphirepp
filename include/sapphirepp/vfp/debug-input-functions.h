@@ -116,33 +116,29 @@ namespace sapphirepp
             ++i_component;
           }
 
-        for (unsigned int d = 0; d < n_vec_components; ++d)
+        for (const char comp : vec_component_name)
           {
-            component_names[i_component] =
-              prefix + "B_" + vec_component_name[d];
+            component_names[i_component] = prefix + "B_" + comp;
             ++i_component;
           }
 
-        for (unsigned int d = 0; d < n_vec_components; ++d)
+        for (const char comp : vec_component_name)
           {
-            component_names[i_component] =
-              prefix + "u_" + vec_component_name[d];
+            component_names[i_component] = prefix + "u_" + comp;
             ++i_component;
           }
         component_names[i_component] = prefix + "div_u";
         ++i_component;
-        for (unsigned int d = 0; d < n_vec_components; ++d)
+        for (const char comp : vec_component_name)
           {
-            component_names[i_component] =
-              prefix + "DT_u_" + vec_component_name[d];
+            component_names[i_component] = prefix + "DT_u_" + comp;
             ++i_component;
           }
-        for (unsigned int i = 0; i < n_vec_components; ++i)
-          for (unsigned int j = 0; j < n_vec_components; ++j)
+        for (const char comp_i : vec_component_name)
+          for (const char comp_j : vec_component_name)
             {
-              component_names[i_component] = prefix + "du" +
-                                             vec_component_name[i] + "_d" +
-                                             vec_component_name[j];
+              component_names[i_component] =
+                prefix + "du" + comp_i + "_d" + comp_j;
               ++i_component;
             }
 

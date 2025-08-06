@@ -10,48 +10,51 @@ on:
   workflow_dispatch:
     
 env:
-  COMPILE_JOBS: 2
+  COMPILE_JOBS: ${{ vars.NCPUS || 1 }}
   CXX_FLAGS: "-Werror -Wall -Wextra -Wno-ignored-optimization-argument"
-  MPI_NPROC: 2
+  MPI_NPROC: ${{ vars.NCPUS || 1 }}
 
 jobs:
   tests:
-    name: Build and test ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+    name: Build and test ${{ matrix.build_type }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: true
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.6.0"]
     
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-jammy
-      options: --user root
+      image: sapphirepp/sapphirepp:latest
 
     steps:
       - uses: actions/checkout@v4
 
-      # - name: Install clang-tidy
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y --no-install-recommends clang-tidy
+      - name: Configure cmake
+        run: |
+          cmake -S . -B build -DEXAMPLES=ON -DTESTS=ON -DDOC=ON \
+                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
+                -DCMAKE_CXX_CLANG_TIDY="clang-tidy-19;--extra-arg=-Wno-error=unknown-warning-option" \
+                -DCLANG_FORMAT_EXECUTABLE="clang-format-19"
+
+      - name: Check clang-format style
+        run: |
+          make --directory=build clang-format-check
+
+      - name: Check Documentation
+        run: |
+          echo "Build target doc"
+          make --directory=build doc >&-
 
       - name: Compile
-        # Removed clang-tidy flag:
-        # -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--extra-arg=-Wno-error=unknown-warning-option" \
         run: |
-          cmake -S . -B build -DSAPPHIREPP=ON -DVFP=ON -DEXAMPLES=ON -DTESTS=ON \
-                -DCMAKE_CXX_FLAGS="${{ env.CXX_FLAGS }}" \
-                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           make --directory=build -j${{ env.COMPILE_JOBS }}
-       
+
       - name: Test
         env:
-          OMPI_ALLOW_RUN_AS_ROOT: 1
-          OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
           TEST_LABEL: commit-${{ matrix.build_type }}
         run: |
           cd build
           echo "Running tests with label ${{ env.TEST_LABEL }}"
-          ctest -V -L ${{ env.TEST_LABEL }}
+          ctest --output-on-failure -L ${{ env.TEST_LABEL }}
