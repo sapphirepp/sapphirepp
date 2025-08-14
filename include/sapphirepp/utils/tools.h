@@ -76,6 +76,43 @@ namespace sapphirepp
                           const unsigned int num);
 
 
+      /**
+       * @brief Convert a `dealii::Tensor` to a string.
+       *
+       * @tparam dim Dimension of the tensor.
+       * @param value The tensor to convert.
+       * @return std::string String representation of the tensor.
+       */
+      template <unsigned int dim>
+      std::string
+      tensor_to_string(const dealii::Tensor<1, dim, double> &value);
+
+
+
+      /**
+       * @brief Convert a list of tensors to a string.
+       *
+       * @tparam Container Some container of `dealii::Tensor`,
+       *         e.g. `std::vector<dealii::Tensor<1,dim,double>>`.
+       * @tparam dim Dimension of the tensor
+       * @param values The list of tensors.
+       * @return std::string String representation of the list of tensors.
+       */
+      template <typename Container, unsigned int dim>
+      std::enable_if_t<std::is_same_v<typename Container::value_type,
+                                      dealii::Tensor<1, dim, double>>,
+                       std::string>
+      tensor_list_to_string(const Container &values)
+      {
+        std::string s;
+        for (const dealii::Tensor<1, dim, double> &v : values)
+          s += tensor_to_string<dim>(v) + ";  ";
+        if (!s.empty() && s.size() >= 3)
+          s.erase(s.size() - 3); // Remove trailing separator
+        return s;
+      };
+
+
 
       /**
        * @brief Convert a point of dim1 into a point of dim2.

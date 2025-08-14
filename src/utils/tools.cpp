@@ -55,6 +55,48 @@ sapphirepp::Utils::Tools::create_linear_range(const double       start,
 
 
 
+template <unsigned int dim>
+std::string
+sapphirepp::Utils::Tools::tensor_to_string(
+  const dealii::Tensor<1, dim, double> &value)
+{
+  std::string s;
+  for (unsigned int d = 0; d < dim; ++d)
+    s += dealii::Utilities::to_string(value[d]) + " ";
+  if (!s.empty())
+    s.erase(s.size() - 1); // Remove trailing separator
+  return s;
+}
+
+
+/** @cond sapinternal */
+// Explicit instantiations of to_sting functions
+template std::string
+sapphirepp::Utils::Tools::tensor_to_string<1>(
+  const dealii::Tensor<1, 1, double> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_to_string<2>(
+  const dealii::Tensor<1, 2, double> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_to_string<3>(
+  const dealii::Tensor<1, 3, double> &);
+
+template std::string
+sapphirepp::Utils::Tools::tensor_list_to_string<
+  std::vector<dealii::Tensor<1, 1, double>>,
+  1>(const std::vector<dealii::Tensor<1, 1, double>> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_list_to_string<
+  std::vector<dealii::Tensor<1, 2, double>>,
+  2>(const std::vector<dealii::Tensor<1, 2, double>> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_list_to_string<
+  std::vector<dealii::Tensor<1, 3, double>>,
+  3>(const std::vector<dealii::Tensor<1, 3, double>> &);
+/** @endcond */
+
+
+
 dealii::Table<2, double>
 sapphirepp::Utils::Tools::read_csv_to_table(
   const std::filesystem::path &filename,
