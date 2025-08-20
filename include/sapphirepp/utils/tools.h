@@ -141,17 +141,17 @@ namespace sapphirepp
 
 
       /**
-       * @brief Read a csv file into a @dealref{Table}.
+       * @brief Read a `.csv` file into a @dealref{Table}.
        *
        * Skips empty lines and lines starting with '#'.
        *
        * @note The table is only filled in one processor,
        *       and then replicated across all processors.
        *
-       * @param filename Path to the csv file
-       * @param n_rows Number of rows
-       * @param n_columns Number of columns
-       * @param delimiter Delimiter for the csv file
+       * @param filename Path to the `.csv` file.
+       * @param n_rows Number of rows.
+       * @param n_columns Number of columns.
+       * @param delimiter Delimiter for the `.csv` file.
        * @param transpose Transpose the table?
        * @param reverse_rows Reverse the ordering of rows?
        * @param reverse_columns Reverse the ordering of columns?
@@ -167,6 +167,38 @@ namespace sapphirepp
                         const bool                   transpose       = false,
                         const bool                   reverse_rows    = false,
                         const bool                   reverse_columns = false);
+
+
+
+      /**
+       * @brief Read a `.dat` file into a vector.
+       *
+       * The file should be structured the following way:
+       *
+       * ```data
+       * # Column0  Column1    ... ColumnJ    ... ColumnN-1
+       * data[0][0] data[1][0] ... data[j][0] ... data[N-1][0]
+       * data[0][1] data[1][1] ... data[j][1] ... data[N-1][1]
+       * ...
+       * ```
+       *
+       * The number of columns must be know,
+       * the number if rows is determined automatically.
+       *
+       * Skips empty lines and lines starting with '#'.
+       *
+       * @param filename Path to the `.dat` file.
+       * @param n_columns Number of columns.
+       * @param data_vector The return vector with the data,
+       *        `data_vector[j][i]`
+       *         with `j` the column index and `i` the row index.
+       * @param delimiter Delimiter for the `.dat` file.
+       */
+      void
+      read_dat_to_vector(const std::filesystem::path      &filename,
+                         const unsigned int                n_columns,
+                         std::vector<std::vector<double>> &data_vector,
+                         const std::string                &delimiter = " ");
 
     } // namespace Tools
   } // namespace Utils

@@ -129,10 +129,16 @@ sapphirepp::Utils::Tools::read_csv_to_table(
       while (std::getline(input_file, line))
         {
           // Skip lines that start with '#'
-          if (line.empty() || line[0] == '#')
+          line = Utilities::trim(line);
+          if (line.empty() || Utilities::match_at_string_start(line, "#"))
             continue;
 
-          std::vector<double> values = Utilities::string_to_double(
+          // Clean line (needed e.g. for multiple spaces with ' ' delimiter)
+          line = Utilities::replace_in_string(line, "    ", " ");
+          line = Utilities::replace_in_string(line, "   ", " ");
+          line = Utilities::replace_in_string(line, "  ", " ");
+
+          const std::vector<double> values = Utilities::string_to_double(
             Utilities::split_string_list(line, delimiter));
           AssertThrow(values.size() == n_cols,
                       dealii::ExcDimensionMismatch(values.size(), n_cols));
@@ -158,4 +164,49 @@ sapphirepp::Utils::Tools::read_csv_to_table(
   data_table.replicate_across_communicator(mpi_communicator, root_rank);
 
   return data_table;
+}
+
+
+
+void
+sapphirepp::Utils::Tools::read_dat_to_vector(
+  const std::filesystem::path      &filename,
+  const unsigned int                n_columns,
+  std::vector<std::vector<double>> &data_vector,
+  const std::string                &delimiter)
+{
+  using namespace dealii;
+  AssertDimension(data_vector.size(), n_columns);
+
+  saplog << "Read file " << filename << std::endl;
+  std::ifstream input_file(filename);
+  AssertThrow(input_file.is_open(), dealii::ExcFileNotOpen(filename));
+
+  for (unsigned int j = 0; j < n_columns; ++j)
+    data_vector[j].clear();
+
+  std::string line;
+  while (std::getline(input_file, line))
+    {
+      // Skip lines that start with '#'
+      line = Utilities::trim(line);
+      if (line.empty() || Utilities::match_at_string_start(line, "#"))
+        continue;
+
+      // Clean line (needed e.g. for multiple spaces with ' ' delimiter)
+      line = Utilities::replace_in_string(line, "    ", " ");
+      line = Utilities::replace_in_string(line, "   ", " ");
+      line = Utilities::replace_in_string(line, "  ", " ");
+
+      const std::vector<double> values = Utilities::string_to_double(
+        Utilities::split_string_list(line, delimiter));
+
+      AssertThrow(values.size() == n_columns,
+                  dealii::ExcDimensionMismatch(values.size(), n_columns));
+
+      for (unsigned int j = 0; j < n_columns; ++j)
+        data_vector[j].push_back(values[j]);
+    }
+
+  input_file.close();
 }
