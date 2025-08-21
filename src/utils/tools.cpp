@@ -210,3 +210,97 @@ sapphirepp::Utils::Tools::read_dat_to_vector(
 
   input_file.close();
 }
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
+  const std::filesystem::path             &filename,
+  const unsigned int                       n_columns,
+  std::array<std::vector<double>, dim>    &coordinate_values,
+  std::vector<dealii::Table<dim, double>> &data_values,
+  const std::string                       &delimiter,
+  const unsigned int                       col_start_coordinates,
+  const unsigned int                       col_start_data)
+{
+  using namespace dealii;
+  const MPI_Comm     mpi_communicator = MPI_COMM_WORLD;
+  const unsigned int root_rank        = 0;
+
+  Assert(dim == 1, ExcNotImplemented());
+  Assert(col_start_coordinates + dim <= col_start_data,
+         ExcMessage("Coordinates must be given in columns before data."));
+  AssertDimension(data_values.size(), n_columns - col_start_data);
+
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == root_rank)
+    {
+      std::vector<std::vector<double>> data_vector(n_columns);
+      for (auto &vector_comp : data_vector)
+        vector_comp.reserve(data_values[0].n_elements());
+
+      read_dat_to_vector(filename, n_columns, data_vector, delimiter);
+
+      /** @todo This function is not implemented for dim > 1. */
+      coordinate_values[0] = data_vector[col_start_coordinates];
+
+      TableIndices<dim> table_indices;
+      for (unsigned int d = 0; d < dim; ++d)
+        table_indices[d] = coordinate_values[d].size();
+
+      for (unsigned int c = 0; c < data_values.size(); ++c)
+        {
+          data_values[c].reinit(table_indices);
+          data_values[c].fill(data_vector[col_start_data + c].begin());
+        }
+    }
+
+  // Now distribute to all processes
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      const std::size_t count =
+        Utilities::MPI::broadcast(mpi_communicator,
+                                  coordinate_values[d].size(),
+                                  root_rank);
+      coordinate_values[d].resize(count);
+      Utilities::MPI::broadcast(coordinate_values[d].data(),
+                                count,
+                                root_rank,
+                                mpi_communicator);
+    }
+
+  for (unsigned int c = 0; c < data_values.size(); ++c)
+    data_values[c].replicate_across_communicator(mpi_communicator, root_rank);
+}
+
+
+/** @cond sapinternal */
+// Explicit instantiation
+template void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<1>(
+  const std::filesystem::path &filename,
+  const unsigned int,
+  std::array<std::vector<double>, 1> &,
+  std::vector<dealii::Table<1, double>> &,
+  const std::string &,
+  const unsigned int,
+  const unsigned int);
+template void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<2>(
+  const std::filesystem::path &filename,
+  const unsigned int,
+  std::array<std::vector<double>, 2> &,
+  std::vector<dealii::Table<2, double>> &,
+  const std::string &,
+  const unsigned int,
+  const unsigned int);
+template void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<3>(
+  const std::filesystem::path &filename,
+  const unsigned int,
+  std::array<std::vector<double>, 3> &,
+  std::vector<dealii::Table<3, double>> &,
+  const std::string &,
+  const unsigned int,
+  const unsigned int);
+/** @endcond */

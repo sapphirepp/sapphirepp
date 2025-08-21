@@ -200,6 +200,51 @@ namespace sapphirepp
                          std::vector<std::vector<double>> &data_vector,
                          const std::string                &delimiter = " ");
 
+
+
+      /**
+       * @brief Read a `.dat` file into as a
+       *        multicomponent tensor product grid data,
+       *        in the format as defined in the
+       *        @dealref{dealii::InterpolatedTensorProductGridData,classFunctions_1_1InterpolatedTensorProductGridData}.
+       *
+       * The file should be a table of the following format:
+       *
+       * | `x_1` | `x_2` | `x_3` | `comp_1` | `comp_2` |
+       * | ----- | ----- | ----- | -------- | -------- |
+       * | x0    | y0    | z0    | v1(p0)   | v2(p0)   |
+       * | x1    | y0    | z0    | v1(p1)   | v2(p1)   |
+       * | x2    | y0    | z0    | v1(p2)   | v2(p2)   |
+       * | x0    | y1    | z0    | v1(p3)   | v2(p3)   |
+       *
+       * @tparam dim Dimension of the data.
+       * @param filename Path to the `.dat` file.
+       * @param n_columns Number of total columns in the `.dat` file.
+       * @param coordinate_values An array of dim arrays
+       *        to be filled with the coordinate values.
+       *        Each of the inner arrays contains the coordinate values
+       *        \f$ x_0 , \dots , x_{K−1} \f$
+       *        and similarly for the other coordinate directions.
+       *        These arrays need not have the same size.
+       * @param data_values An vector of dim-dimensional tables
+       *        for each of the data components
+       *        to be filled with data at each of the mesh points
+       *        defined by the coordinate arrays above.
+       * @param delimiter Delimiter for the `.dat` file.
+       * @param col_start_coordinates Column index with the first coordinate.
+       * @param col_start_data Column index with the first data component.
+       */
+      template <unsigned int dim>
+      void
+      read_dat_to_tensor_product_grid_data(
+        const std::filesystem::path             &filename,
+        const unsigned int                       n_columns,
+        std::array<std::vector<double>, dim>    &coordinate_values,
+        std::vector<dealii::Table<dim, double>> &data_values,
+        const std::string                       &delimiter             = " ",
+        const unsigned int                       col_start_coordinates = 0,
+        const unsigned int                       col_start_data        = dim);
+
     } // namespace Tools
   } // namespace Utils
 } // namespace sapphirepp
