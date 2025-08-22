@@ -36,6 +36,7 @@
 
 #include <mpi.h>
 
+#include <iostream>
 #include <limits>
 
 #include "version.h"
