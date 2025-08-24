@@ -224,13 +224,13 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
   std::vector<dealii::Table<dim, double>> &data_values,
   const std::string                       &delimiter,
   const unsigned int                       col_start_coordinates,
-  const unsigned int                       col_start_data)
+  const unsigned int                       col_start_data,
+  const bool                               last_coordinate_runs_fastest)
 {
   using namespace dealii;
   const MPI_Comm     mpi_communicator = MPI_COMM_WORLD;
   const unsigned int root_rank        = 0;
 
-  Assert(dim == 1, ExcNotImplemented());
   Assert(col_start_coordinates + dim <= col_start_data,
          ExcMessage("Coordinates must be given in columns before data."));
   AssertDimension(data_values.size(), n_columns - col_start_data);
@@ -243,8 +243,16 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
 
       read_dat_to_vector(filename, n_columns, data_vector, delimiter);
 
-      /** @todo This function is not implemented for dim > 1. */
-      coordinate_values[0] = data_vector[col_start_coordinates];
+      AssertThrow(data_vector[0].size() > 0,
+                  ExcMessage("Empty file: " + std::string(filename)));
+
+      std::array<dealii::ArrayView<double>, dim> coordinates;
+      for (unsigned int d = 0; d < dim; ++d)
+        coordinates[d] =
+          make_array_view(data_vector[col_start_coordinates + d]);
+      coordinates_to_tensor_grid<dim>(coordinates,
+                                      coordinate_values,
+                                      last_coordinate_runs_fastest);
 
       TableIndices<dim> table_indices;
       for (unsigned int d = 0; d < dim; ++d)
@@ -253,7 +261,8 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
       for (unsigned int c = 0; c < data_values.size(); ++c)
         {
           data_values[c].reinit(table_indices);
-          data_values[c].fill(data_vector[col_start_data + c].begin());
+          data_values[c].fill(data_vector[col_start_data + c].begin(),
+                              last_coordinate_runs_fastest);
         }
     }
 
@@ -286,7 +295,8 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<1>(
   std::vector<dealii::Table<1, double>> &,
   const std::string &,
   const unsigned int,
-  const unsigned int);
+  const unsigned int,
+  const bool);
 template void
 sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<2>(
   const std::filesystem::path &filename,
@@ -295,7 +305,8 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<2>(
   std::vector<dealii::Table<2, double>> &,
   const std::string &,
   const unsigned int,
-  const unsigned int);
+  const unsigned int,
+  const bool);
 template void
 sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<3>(
   const std::filesystem::path &filename,
@@ -304,7 +315,8 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<3>(
   std::vector<dealii::Table<3, double>> &,
   const std::string &,
   const unsigned int,
-  const unsigned int);
+  const unsigned int,
+  const bool);
 /** @endcond */
 
 

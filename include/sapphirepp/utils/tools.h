@@ -234,6 +234,9 @@ namespace sapphirepp
        * @param delimiter Delimiter for the `.dat` file.
        * @param col_start_coordinates Column index with the first coordinate.
        * @param col_start_data Column index with the first data component.
+       * @param last_coordinate_runs_fastest If set to true,
+       *        the last coordinate runs the fastest
+       *        and the first coordinate runs slowest.
        */
       template <unsigned int dim>
       void
@@ -244,7 +247,8 @@ namespace sapphirepp
         std::vector<dealii::Table<dim, double>> &data_values,
         const std::string                       &delimiter             = " ",
         const unsigned int                       col_start_coordinates = 0,
-        const unsigned int                       col_start_data        = dim);
+        const unsigned int                       col_start_data        = dim,
+        const bool last_coordinate_runs_fastest                        = false);
 
 
 
