@@ -29,6 +29,7 @@
 #define UTILS_TOOLS_H
 
 
+#include <deal.II/base/array_view.h>
 #include <deal.II/base/point.h>
 #include <deal.II/base/table.h>
 
@@ -244,6 +245,49 @@ namespace sapphirepp
         const std::string                       &delimiter             = " ",
         const unsigned int                       col_start_coordinates = 0,
         const unsigned int                       col_start_data        = dim);
+
+
+
+      /**
+       * @brief Convert coordinate values to a tensor grid.
+       *
+       * The `coordinates` are the coordinates of the grid points,
+       * and must be given with the first component running fastest:
+       *
+       * | `coordinates[0]` | `coordinates[1]` | `coordinates[2]` |
+       * | ---------------- | ---------------- | ---------------- |
+       * | \f$ x_0 \f$      | \f$ y_0 \f$      |  \f$ z_0 \f$     |
+       * | \f$ x_1 \f$      | \f$ y_0 \f$      |  \f$ z_0 \f$     |
+       * | \f$ x_2 \f$      | \f$ y_0 \f$      |  \f$ z_0 \f$     |
+       * | \f$ x_0 \f$      | \f$ y_1 \f$      |  \f$ z_0 \f$     |
+       * | \f$ x_1 \f$      | \f$ y_1 \f$      |  \f$ z_0 \f$     |
+       * | \f$ x_2 \f$      | \f$ y_1 \f$      |  \f$ z_0 \f$     |
+       * | \f$ \dots \f$    | \f$ \dots \f$    |  \f$ \dots \f$   |
+       * | \f$ x_0 \f$      | \f$ y_0 \f$      |  \f$ z_1 \f$     |
+       * | \f$ x_1 \f$      | \f$ y_0 \f$      |  \f$ z_1 \f$     |
+       * | \f$ \dots \f$    | \f$ \dots \f$    |  \f$ \dots \f$   |
+       *
+       * The `tensor_grid` of the coordinates is extracted as:
+       *
+       * ```cpp
+       *  tensor_grid[0] = [x_0, x_1, x_2]
+       *  tensor_grid[1] = [y_0, y_1, ...]
+       *  tensor_grid[2] = [z_0, z_1, ...]
+       *  ```
+       *
+       * @tparam dim Dimension of the grid.
+       * @param coordinates The coordinate values of the grid points.
+       * @param tensor_grid The tensor grid of the coordinates.
+       * @param last_coordinate_runs_fastest If set to true,
+       *        the last coordinate runs the fastest
+       *        and the first coordinate runs slowest.
+       */
+      template <unsigned int dim>
+      void
+      coordinates_to_tensor_grid(
+        const std::array<dealii::ArrayView<double>, dim> &coordinates,
+        std::array<std::vector<double>, dim>             &tensor_grid,
+        const bool last_coordinate_runs_fastest = false);
 
     } // namespace Tools
   } // namespace Utils

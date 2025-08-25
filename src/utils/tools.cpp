@@ -32,6 +32,8 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
 
+#include <algorithm>
+
 #include "sapphirepp-logstream.h"
 
 
@@ -303,4 +305,95 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<3>(
   const std::string &,
   const unsigned int,
   const unsigned int);
+/** @endcond */
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid(
+  const std::array<dealii::ArrayView<double>, dim> &coordinates_in,
+  std::array<std::vector<double>, dim>             &tensor_grid,
+  const bool last_coordinate_runs_fastest)
+{
+  const size_t n_rows = coordinates_in[0].size();
+
+  Assert(n_rows > 0, dealii::ExcMessage("Empty coordinate vector"));
+  if constexpr (dim > 1)
+    AssertDimension(coordinates_in[1].size(), coordinates_in[0].size());
+  if constexpr (dim > 2)
+    AssertDimension(coordinates_in[2].size(), coordinates_in[0].size());
+
+  std::array<dealii::ArrayView<double>, dim> coordinates = coordinates_in;
+  if (last_coordinate_runs_fastest)
+    std::reverse(coordinates.begin(), coordinates.end());
+
+  std::array<unsigned int, dim> i_coord;
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      i_coord[d] = 0;
+      tensor_grid[d].clear();
+      tensor_grid[d].push_back(coordinates[d][0]);
+    }
+
+  for (unsigned int i = 1; i < n_rows; ++i)
+    {
+      // Find wich component changed
+      unsigned int d;
+      for (d = 0; d < dim; ++d)
+        if (coordinates[d][i] > tensor_grid[d][i_coord[d]])
+          break;
+      AssertThrow(d < dim,
+                  dealii::ExcMessage("Wrong coordinate ordering at i=" +
+                                     std::to_string(i)));
+
+      // Faster running components rest to 0
+      for (unsigned int k = 0; k < d; ++k)
+        {
+          i_coord[k] = 0;
+          AssertThrow(std::abs(coordinates[k][i] - tensor_grid[k][i_coord[k]]) <
+                        epsilon_d,
+                      dealii::ExcMessage("Wrong coordinate ordering at i=" +
+                                         std::to_string(i)));
+        }
+
+      // Slower running components stay the same
+      bool new_value = true;
+      for (unsigned int k = d + 1; k < dim; ++k)
+        {
+          AssertThrow(std::abs(coordinates[k][i] - tensor_grid[k][i_coord[k]]) <
+                        epsilon_d,
+                      dealii::ExcMessage("Wrong coordinate ordering at i=" +
+                                         std::to_string(i)));
+          new_value = new_value && (i_coord[k] == 0);
+        }
+
+      // Only add if new value (i.e. slower components still at 0)
+      if (new_value)
+        tensor_grid[d].push_back(coordinates[d][i]);
+      ++i_coord[d];
+    }
+
+  if (last_coordinate_runs_fastest)
+    std::reverse(tensor_grid.begin(), tensor_grid.end());
+}
+
+
+/** @cond sapinternal */
+// Explicit instantiation
+template void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid<1>(
+  const std::array<dealii::ArrayView<double>, 1> &,
+  std::array<std::vector<double>, 1> &,
+  const bool);
+template void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid<2>(
+  const std::array<dealii::ArrayView<double>, 2> &,
+  std::array<std::vector<double>, 2> &,
+  const bool);
+template void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid<3>(
+  const std::array<dealii::ArrayView<double>, 3> &,
+  std::array<std::vector<double>, 3> &,
+  const bool);
 /** @endcond */
