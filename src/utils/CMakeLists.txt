@@ -1,6 +1,7 @@
 add_library(UtilsLib
   output-parameters.cpp
   sapphirepp-logstream.cpp
+  grid-data-function.cpp
   tools.cpp
 )
 deal_ii_setup_target(UtilsLib)

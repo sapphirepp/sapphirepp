@@ -25,6 +25,7 @@ Checks: >-
   -modernize-concat-nested-namespaces,
   -modernize-use-std-numbers,
   -modernize-use-ranges,
+  -modernize-use-constraints,
   use-emplace,
   mpi-*,
   performance-*,

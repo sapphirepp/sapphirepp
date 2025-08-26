@@ -32,6 +32,8 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
 
+#include <algorithm>
+
 #include "sapphirepp-logstream.h"
 
 
@@ -52,6 +54,48 @@ sapphirepp::Utils::Tools::create_linear_range(const double       start,
   values[num - 1] = stop;
   return values;
 }
+
+
+
+template <unsigned int dim>
+std::string
+sapphirepp::Utils::Tools::tensor_to_string(
+  const dealii::Tensor<1, dim, double> &value)
+{
+  std::string s;
+  for (unsigned int d = 0; d < dim; ++d)
+    s += dealii::Utilities::to_string(value[d]) + " ";
+  if (!s.empty())
+    s.erase(s.size() - 1); // Remove trailing separator
+  return s;
+}
+
+
+/** @cond sapinternal */
+// Explicit instantiations of to_sting functions
+template std::string
+sapphirepp::Utils::Tools::tensor_to_string<1>(
+  const dealii::Tensor<1, 1, double> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_to_string<2>(
+  const dealii::Tensor<1, 2, double> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_to_string<3>(
+  const dealii::Tensor<1, 3, double> &);
+
+template std::string
+sapphirepp::Utils::Tools::tensor_list_to_string<
+  std::vector<dealii::Tensor<1, 1, double>>,
+  1>(const std::vector<dealii::Tensor<1, 1, double>> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_list_to_string<
+  std::vector<dealii::Tensor<1, 2, double>>,
+  2>(const std::vector<dealii::Tensor<1, 2, double>> &);
+template std::string
+sapphirepp::Utils::Tools::tensor_list_to_string<
+  std::vector<dealii::Tensor<1, 3, double>>,
+  3>(const std::vector<dealii::Tensor<1, 3, double>> &);
+/** @endcond */
 
 
 
@@ -87,10 +131,16 @@ sapphirepp::Utils::Tools::read_csv_to_table(
       while (std::getline(input_file, line))
         {
           // Skip lines that start with '#'
-          if (line.empty() || line[0] == '#')
+          line = Utilities::trim(line);
+          if (line.empty() || Utilities::match_at_string_start(line, "#"))
             continue;
 
-          std::vector<double> values = Utilities::string_to_double(
+          // Clean line (needed e.g. for multiple spaces with ' ' delimiter)
+          line = Utilities::replace_in_string(line, "    ", " ");
+          line = Utilities::replace_in_string(line, "   ", " ");
+          line = Utilities::replace_in_string(line, "  ", " ");
+
+          const std::vector<double> values = Utilities::string_to_double(
             Utilities::split_string_list(line, delimiter));
           AssertThrow(values.size() == n_cols,
                       dealii::ExcDimensionMismatch(values.size(), n_cols));
@@ -117,3 +167,245 @@ sapphirepp::Utils::Tools::read_csv_to_table(
 
   return data_table;
 }
+
+
+
+void
+sapphirepp::Utils::Tools::read_dat_to_vector(
+  const std::filesystem::path      &filename,
+  const unsigned int                n_columns,
+  std::vector<std::vector<double>> &data_vector,
+  const std::string                &delimiter)
+{
+  using namespace dealii;
+  AssertDimension(data_vector.size(), n_columns);
+
+  saplog << "Read file " << filename << std::endl;
+  std::ifstream input_file(filename);
+  AssertThrow(input_file.is_open(), dealii::ExcFileNotOpen(filename));
+
+  for (unsigned int j = 0; j < n_columns; ++j)
+    data_vector[j].clear();
+
+  std::string line;
+  while (std::getline(input_file, line))
+    {
+      // Skip lines that start with '#'
+      line = Utilities::trim(line);
+      if (line.empty() || Utilities::match_at_string_start(line, "#"))
+        continue;
+
+      // Clean line (needed e.g. for multiple spaces with ' ' delimiter)
+      line = Utilities::replace_in_string(line, "    ", " ");
+      line = Utilities::replace_in_string(line, "   ", " ");
+      line = Utilities::replace_in_string(line, "  ", " ");
+
+      const std::vector<double> values = Utilities::string_to_double(
+        Utilities::split_string_list(line, delimiter));
+
+      AssertThrow(values.size() == n_columns,
+                  dealii::ExcDimensionMismatch(values.size(), n_columns));
+
+      for (unsigned int j = 0; j < n_columns; ++j)
+        data_vector[j].push_back(values[j]);
+    }
+
+  input_file.close();
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
+  const std::filesystem::path             &filename,
+  const unsigned int                       n_columns,
+  std::array<std::vector<double>, dim>    &coordinate_values,
+  std::vector<dealii::Table<dim, double>> &data_values,
+  const std::string                       &delimiter,
+  const unsigned int                       col_start_coordinates,
+  const unsigned int                       col_start_data,
+  const bool                               last_coordinate_runs_fastest)
+{
+  using namespace dealii;
+  const MPI_Comm     mpi_communicator = MPI_COMM_WORLD;
+  const unsigned int root_rank        = 0;
+
+  Assert(col_start_coordinates + dim <= col_start_data,
+         ExcMessage("Coordinates must be given in columns before data."));
+  AssertDimension(data_values.size(), n_columns - col_start_data);
+
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == root_rank)
+    {
+      std::vector<std::vector<double>> data_vector(n_columns);
+      for (auto &vector_comp : data_vector)
+        vector_comp.reserve(data_values[0].n_elements());
+
+      read_dat_to_vector(filename, n_columns, data_vector, delimiter);
+
+      AssertThrow(data_vector[0].size() > 0,
+                  ExcMessage("Empty file: " + std::string(filename)));
+
+      std::array<dealii::ArrayView<double>, dim> coordinates;
+      for (unsigned int d = 0; d < dim; ++d)
+        coordinates[d] =
+          make_array_view(data_vector[col_start_coordinates + d]);
+      coordinates_to_tensor_grid<dim>(coordinates,
+                                      coordinate_values,
+                                      last_coordinate_runs_fastest);
+
+      TableIndices<dim> table_indices;
+      for (unsigned int d = 0; d < dim; ++d)
+        table_indices[d] = coordinate_values[d].size();
+
+      for (unsigned int c = 0; c < data_values.size(); ++c)
+        {
+          data_values[c].reinit(table_indices);
+          data_values[c].fill(data_vector[col_start_data + c].begin(),
+                              last_coordinate_runs_fastest);
+        }
+    }
+
+  // Now distribute to all processes
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      const std::size_t count =
+        Utilities::MPI::broadcast(mpi_communicator,
+                                  coordinate_values[d].size(),
+                                  root_rank);
+      coordinate_values[d].resize(count);
+      Utilities::MPI::broadcast(coordinate_values[d].data(),
+                                count,
+                                root_rank,
+                                mpi_communicator);
+    }
+
+  for (unsigned int c = 0; c < data_values.size(); ++c)
+    data_values[c].replicate_across_communicator(mpi_communicator, root_rank);
+}
+
+
+/** @cond sapinternal */
+// Explicit instantiation
+template void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<1>(
+  const std::filesystem::path &filename,
+  const unsigned int,
+  std::array<std::vector<double>, 1> &,
+  std::vector<dealii::Table<1, double>> &,
+  const std::string &,
+  const unsigned int,
+  const unsigned int,
+  const bool);
+template void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<2>(
+  const std::filesystem::path &filename,
+  const unsigned int,
+  std::array<std::vector<double>, 2> &,
+  std::vector<dealii::Table<2, double>> &,
+  const std::string &,
+  const unsigned int,
+  const unsigned int,
+  const bool);
+template void
+sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data<3>(
+  const std::filesystem::path &filename,
+  const unsigned int,
+  std::array<std::vector<double>, 3> &,
+  std::vector<dealii::Table<3, double>> &,
+  const std::string &,
+  const unsigned int,
+  const unsigned int,
+  const bool);
+/** @endcond */
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid(
+  const std::array<dealii::ArrayView<double>, dim> &coordinates_in,
+  std::array<std::vector<double>, dim>             &tensor_grid,
+  const bool last_coordinate_runs_fastest)
+{
+  const size_t n_rows = coordinates_in[0].size();
+
+  Assert(n_rows > 0, dealii::ExcMessage("Empty coordinate vector"));
+  if constexpr (dim > 1)
+    AssertDimension(coordinates_in[1].size(), coordinates_in[0].size());
+  if constexpr (dim > 2)
+    AssertDimension(coordinates_in[2].size(), coordinates_in[0].size());
+
+  std::array<dealii::ArrayView<double>, dim> coordinates = coordinates_in;
+  if (last_coordinate_runs_fastest)
+    std::reverse(coordinates.begin(), coordinates.end());
+
+  std::array<unsigned int, dim> i_coord;
+  for (unsigned int d = 0; d < dim; ++d)
+    {
+      i_coord[d] = 0;
+      tensor_grid[d].clear();
+      tensor_grid[d].push_back(coordinates[d][0]);
+    }
+
+  for (unsigned int i = 1; i < n_rows; ++i)
+    {
+      // Find wich component changed
+      unsigned int d;
+      for (d = 0; d < dim; ++d)
+        if (coordinates[d][i] > tensor_grid[d][i_coord[d]])
+          break;
+      AssertThrow(d < dim,
+                  dealii::ExcMessage("Wrong coordinate ordering at i=" +
+                                     std::to_string(i)));
+
+      // Faster running components rest to 0
+      for (unsigned int k = 0; k < d; ++k)
+        {
+          i_coord[k] = 0;
+          AssertThrow(std::abs(coordinates[k][i] - tensor_grid[k][i_coord[k]]) <
+                        epsilon_d,
+                      dealii::ExcMessage("Wrong coordinate ordering at i=" +
+                                         std::to_string(i)));
+        }
+
+      // Slower running components stay the same
+      bool new_value = true;
+      for (unsigned int k = d + 1; k < dim; ++k)
+        {
+          AssertThrow(std::abs(coordinates[k][i] - tensor_grid[k][i_coord[k]]) <
+                        epsilon_d,
+                      dealii::ExcMessage("Wrong coordinate ordering at i=" +
+                                         std::to_string(i)));
+          new_value = new_value && (i_coord[k] == 0);
+        }
+
+      // Only add if new value (i.e. slower components still at 0)
+      if (new_value)
+        tensor_grid[d].push_back(coordinates[d][i]);
+      ++i_coord[d];
+    }
+
+  if (last_coordinate_runs_fastest)
+    std::reverse(tensor_grid.begin(), tensor_grid.end());
+}
+
+
+/** @cond sapinternal */
+// Explicit instantiation
+template void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid<1>(
+  const std::array<dealii::ArrayView<double>, 1> &,
+  std::array<std::vector<double>, 1> &,
+  const bool);
+template void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid<2>(
+  const std::array<dealii::ArrayView<double>, 2> &,
+  std::array<std::vector<double>, 2> &,
+  const bool);
+template void
+sapphirepp::Utils::Tools::coordinates_to_tensor_grid<3>(
+  const std::array<dealii::ArrayView<double>, 3> &,
+  std::array<std::vector<double>, 3> &,
+  const bool);
+/** @endcond */
