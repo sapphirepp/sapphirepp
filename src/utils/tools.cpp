@@ -230,6 +230,7 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
   using namespace dealii;
   const MPI_Comm     mpi_communicator = MPI_COMM_WORLD;
   const unsigned int root_rank        = 0;
+  LogStream::Prefix  pre("ReadTensorGrid", saplog);
 
   Assert(col_start_coordinates + dim <= col_start_data,
          ExcMessage("Coordinates must be given in columns before data."));
@@ -257,6 +258,17 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
       TableIndices<dim> table_indices;
       for (unsigned int d = 0; d < dim; ++d)
         table_indices[d] = coordinate_values[d].size();
+
+      saplog << "Grid of size " << table_indices << " with "
+             << data_vector[0].size() << " points" << std::endl;
+      saplog << "Grid starts at ";
+      for (unsigned int d = 0; d < dim; ++d)
+        saplog << coordinate_values[d][0] << " ";
+      saplog << "and ends at ";
+      for (unsigned int d = 0; d < dim; ++d)
+        saplog << coordinate_values[d][coordinate_values[d].size() - 1] << " ";
+      saplog << std::endl;
+
 
       for (unsigned int c = 0; c < data_values.size(); ++c)
         {

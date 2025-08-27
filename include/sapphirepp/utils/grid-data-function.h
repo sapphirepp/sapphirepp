@@ -29,7 +29,6 @@
 #define UTILS_GRIDDATAFUNCTION_H
 
 #include <deal.II/base/function.h>
-#include <deal.II/base/function_lib.h>
 #include <deal.II/base/table.h>
 #include <deal.II/base/tensor.h>
 
@@ -82,6 +81,8 @@ namespace sapphirepp
        *        in the data files.
        * @param last_coordinate_runs_fastest Last coordinate in the data files
        *        runs fastest?
+       * @param uniform_grid Assume uniform grid?
+       * @param periodic Extend the grid periodically?
        * @param athena_ordering Data files use Athena++ ordering of components?
        */
       GridDataFunction(const std::filesystem::path &input_path,
@@ -93,6 +94,8 @@ namespace sapphirepp
                        const unsigned int           col_start_coordinates = 0,
                        const unsigned int           col_start_data        = dim,
                        const bool last_coordinate_runs_fastest = false,
+                       const bool uniform_grid                 = false,
+                       const bool periodic                     = false,
                        const bool athena_ordering              = false);
 
 
@@ -113,6 +116,8 @@ namespace sapphirepp
        *        in the data files.
        * @param last_coordinate_runs_fastest Last coordinate in the data files
        *        runs fastest?
+       * @param uniform_grid Assume uniform grid?
+       * @param periodic Extend the grid periodically?
        * @param athena_ordering Data files use Athena++ ordering of components?
        */
       GridDataFunction(const std::filesystem::path &filename,
@@ -122,6 +127,8 @@ namespace sapphirepp
                        const unsigned int           col_start_coordinates = 0,
                        const unsigned int           col_start_data        = dim,
                        const bool last_coordinate_runs_fastest = false,
+                       const bool uniform_grid                 = false,
+                       const bool periodic                     = false,
                        const bool athena_ordering              = false);
 
 
@@ -189,6 +196,27 @@ namespace sapphirepp
 
 
 
+      /**
+       * @brief Get the coordinate values of the grid points.
+       *
+       * @return const std::array<std::vector<double>, dim>&
+       */
+      const std::array<std::vector<double>, dim> &
+      get_coordinate_values() const;
+
+
+
+      /**
+       * @brief Get the left and right grid end points of the intervals
+       *        in each of the coordinate directions.
+       *
+       * @return const std::array<std::pair<double, double>, dim>&
+       */
+      const std::array<std::pair<double, double>, dim> &
+      get_interval_endpoints() const;
+
+
+
     private:
       /** Folder where the files are located. */
       const std::filesystem::path input_path;
@@ -203,6 +231,18 @@ namespace sapphirepp
       const unsigned int col_start_data;
       /** Last coordinate in the data files runs fastest? */
       const bool last_coordinate_runs_fastest;
+      /**
+       * @brief Assume uniform grid?
+       *
+       * If true,
+       * @dealref{InterpolatedUniformGridData,classFunctions_1_1InterpolatedUniformGridData}
+       * is used,
+       * otherwise
+       * @dealref{InterpolatedTensorProductGridData,classFunctions_1_1InterpolatedTensorProductGridData}.
+       */
+      const bool uniform_grid;
+      /** Extend the grid periodically? */
+      const bool periodic;
       /** Files use Athena++ ordering of components? */
       const bool athena_ordering;
 
@@ -211,13 +251,21 @@ namespace sapphirepp
       /** Time index of currently loaded data. */
       unsigned int time_index;
 
+      /** The coordinate values of the grid points. */
+      std::array<std::vector<double>, dim> coordinate_values;
+      /**
+       * The left and right grid end points of the intervals
+       * in each of the coordinate directions.
+       */
+      std::array<std::pair<double, double>, dim> interval_endpoints;
+
       /**
        * @dealref{InterpolatedTensorProductGridData,classFunctions_1_1InterpolatedTensorProductGridData}
+       * or
+       * @dealref{InterpolatedUniformGridData,classFunctions_1_1InterpolatedUniformGridData}
        * for each component.
        */
-      std::vector<
-        std::unique_ptr<dealii::Functions::InterpolatedUniformGridData<dim>>>
-        grid_functions;
+      std::vector<std::unique_ptr<dealii::Function<dim>>> grid_functions;
     };
 
   } // namespace Utils
