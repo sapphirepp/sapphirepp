@@ -405,7 +405,24 @@ sapphirepp::VFP::VFPSolver<dim>::run()
       saplog << "Simulation ended at t = " << discrete_time.get_current_time()
              << " \t[" << Utilities::System::get_time() << "]" << std::endl;
     }
-  timer.print_wall_time_statistics(mpi_communicator);
+
+  {
+    LogStream::Prefix              pre2("Summary", saplog);
+    Utilities::System::MemoryStats memory_stats;
+    Utilities::System::get_memory_stats(memory_stats);
+    saplog << "Peak (local) resident memory size (HWM):    \t" //
+           << memory_stats.VmHWM << " KiB"                     //
+           << " \t= " << (memory_stats.VmHWM >> 10) << " MiB " //
+           << " \t= " << (memory_stats.VmHWM >> 20) << " GiB " //
+           << std::endl;
+    saplog << "Peak (local) virtual/available memory size: \t"  //
+           << memory_stats.VmPeak << " KiB"                     //
+           << " \t= " << (memory_stats.VmPeak >> 10) << " MiB " //
+           << " \t= " << (memory_stats.VmPeak >> 20) << " GiB " //
+           << std::endl;
+
+    timer.print_wall_time_statistics(mpi_communicator);
+  }
 }
 
 
@@ -673,6 +690,14 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
                            mpi_communicator);
     }
   probe_location.reinit(triangulation, mapping);
+
+  Utilities::System::MemoryStats memory_stats;
+  Utilities::System::get_memory_stats(memory_stats);
+  saplog << "Current (local) memory usage: \t"               //
+         << memory_stats.VmRSS << " KiB"                     //
+         << " \t= " << (memory_stats.VmRSS >> 10) << " MiB " //
+         << " \t= " << (memory_stats.VmRSS >> 20) << " GiB " //
+         << std::endl;
 }
 
 
