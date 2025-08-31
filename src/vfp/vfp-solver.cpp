@@ -296,18 +296,18 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::setup()
 {
-  LogStream::Prefix prefix_vfp("VFP", saplog);
+  TimerOutput::Scope timer_section_setup(timer, "VFP - Setup");
+  LogStream::Prefix  prefix_vfp("VFP", saplog);
   saplog << "Setup VFP equation solver. \t[" << Utilities::System::get_time()
          << "]" << std::endl;
   LogStream::Prefix prefix("Setup", saplog);
-  timer.reset();
   make_grid();
   setup_system();
 
   {
     if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
       {
-        TimerOutput::Scope timer_section(timer, "Assemble mass matrix");
+        TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
         saplog << "Assemble mass matrix." << std::endl;
         MatrixCreator::create_mass_matrix(mapping,
                                           dof_handler,
@@ -319,7 +319,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   {
     if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
       {
-        TimerOutput::Scope timer_section(timer, "Project initial condition");
+        TimerOutput::Scope           timer_section(timer, "VFP - Project IC");
         InitialValueFunction<dim_ps> initial_value_function(
           physical_parameters, pde_system.system_size);
         PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
@@ -336,6 +336,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   // Source term at t = 0;
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
+      TimerOutput::Scope timer_source(timer, "VFP - Source");
       source_function.set_time(0);
       VectorTools::create_right_hand_side(mapping,
                                           dof_handler,
@@ -431,7 +432,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::make_grid()
 {
-  TimerOutput::Scope timer_section(timer, "Grid setup");
+  TimerOutput::Scope timer_section(timer, "VFP - Grid setup");
   saplog << "Create the grid" << std::endl;
 
   switch (vfp_parameters.grid_type)
@@ -608,7 +609,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::setup_system()
 {
-  TimerOutput::Scope timer_section(timer, "FE system");
+  TimerOutput::Scope timer_section(timer, "VFP - Setup FE system");
   saplog << "Setup the finite element system" << std::endl;
 
   dof_handler.clear();
@@ -736,7 +737,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 {
-  TimerOutput::Scope timer_section(timer, "DG matrix");
+  TimerOutput::Scope timer_section(timer, "VFP - DG matrix");
   /*
     What kind of loops are there ?
     1. Loop over all cells (this happens inside the mesh_loop)
@@ -1683,7 +1684,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 {
-  TimerOutput::Scope timer_section(timer, "Steady state solve");
+  TimerOutput::Scope timer_section(timer, "VFP - Steady state");
   saplog << "Steady-state solve" << std::endl;
   LogStream::Prefix prefix("SteadyState", saplog);
 
@@ -1704,10 +1705,13 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
          << vfp_parameters.solver_tolerance
          << "*rhs = " << solver_control.tolerance() << ")" << std::endl;
   saplog << "Start steady-state solver" << std::endl;
-  solver.solve(dg_matrix,
-               locally_owned_previous_solution,
-               system_rhs,
-               preconditioner);
+  {
+    TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+    solver.solve(dg_matrix,
+                 locally_owned_previous_solution,
+                 system_rhs,
+                 preconditioner);
+  }
 
   locally_relevant_current_solution = locally_owned_previous_solution;
 
@@ -1722,7 +1726,7 @@ void
 sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "Theta method");
+  TimerOutput::Scope timer_section(timer, "VFP - Theta method");
   LogStream::Prefix  prefix("ThetaMethod", saplog);
   // Equation: (mass_matrix + time_step * theta * dg_matrix(time +
   // time_step)) f(time + time_step) = (mass_matrix - time_step * (1 -
@@ -1744,6 +1748,7 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
         {
           system_rhs.add((1 - theta) * time_step, locally_owned_current_source);
           // Update the source term
+          TimerOutput::Scope timer_source(timer, "VFP - Source");
           source_function.set_time(time + time_step);
           VectorTools::create_right_hand_side(mapping,
                                               dof_handler,
@@ -1796,10 +1801,13 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
   PETScWrappers::PreconditionBlockJacobi preconditioner;
   preconditioner.initialize(system_matrix);
 
-  solver.solve(system_matrix,
-               locally_owned_previous_solution,
-               system_rhs,
-               preconditioner);
+  {
+    TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+    solver.solve(system_matrix,
+                 locally_owned_previous_solution,
+                 system_rhs,
+                 preconditioner);
+  }
 
   // Update the solution
   locally_relevant_current_solution = locally_owned_previous_solution;
@@ -1815,7 +1823,7 @@ void
 sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "ERK4");
+  TimerOutput::Scope timer_section(timer, "VFP - ERK");
   LogStream::Prefix  prefix("ERK", saplog);
   // ERK 4
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
@@ -1854,7 +1862,10 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(vfp_parameters.solver_tolerance *
                                system_rhs.l2_norm());
-  cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
+  {
+    TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+    cg.solve(mass_matrix, k_0, system_rhs, preconditioner);
+  }
   saplog << "Stage s: " << 0 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
   k_0 *= -1.;
@@ -1878,6 +1889,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
+          TimerOutput::Scope timer_source(timer, "VFP - Source");
           source_function.set_time(time + c[1] * time_step);
           VectorTools::create_right_hand_side(mapping,
                                               dof_handler,
@@ -1894,7 +1906,10 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(vfp_parameters.solver_tolerance *
                                system_rhs.l2_norm());
-  cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
+  {
+    TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+    cg.solve(mass_matrix, k_1, system_rhs, preconditioner);
+  }
   saplog << "	Stage s: " << 1 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
   k_1 *= -1.;
@@ -1912,6 +1927,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
+          TimerOutput::Scope timer_source(timer, "VFP - Source");
           source_function.set_time(time + c[2] * time_step);
           VectorTools::create_right_hand_side(mapping,
                                               dof_handler,
@@ -1928,7 +1944,10 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(vfp_parameters.solver_tolerance *
                                system_rhs.l2_norm());
-  cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
+  {
+    TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+    cg.solve(mass_matrix, k_2, system_rhs, preconditioner);
+  }
   saplog << "	Stage s: " << 2 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
   k_2 *= -1.;
@@ -1953,6 +1972,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
       if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                     VFPFlags::none) // time dependent source
         {
+          TimerOutput::Scope timer_source(timer, "VFP - Source");
           source_function.set_time(time + c[3] * time_step);
           VectorTools::create_right_hand_side(mapping,
                                               dof_handler,
@@ -1969,7 +1989,10 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   system_rhs.add(-1., locally_owned_current_bc);
   solver_control.set_tolerance(vfp_parameters.solver_tolerance *
                                system_rhs.l2_norm());
-  cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
+  {
+    TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+    cg.solve(mass_matrix, k_3, system_rhs, preconditioner);
+  }
   saplog << "	Stage s: " << 3 << "	Solver converged in "
          << solver_control.last_step() << " iterations." << std::endl;
   k_3 *= -1.;
@@ -1987,7 +2010,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "LSERK4");
+  TimerOutput::Scope timer_section(timer, "VFP - LSERK");
   LogStream::Prefix  prefix("LSERK", saplog);
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
@@ -2051,6 +2074,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
           if constexpr ((vfp_flags & VFPFlags::time_independent_source) ==
                         VFPFlags::none) // time dependent source
             {
+              TimerOutput::Scope timer_source(timer, "VFP - Source");
               source_function.set_time(time + c[s] * time_step);
               VectorTools::create_right_hand_side(mapping,
                                                   dof_handler,
@@ -2067,7 +2091,10 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
 
       solver_control.set_tolerance(vfp_parameters.solver_tolerance *
                                    system_rhs.l2_norm());
-      cg.solve(mass_matrix, temp, system_rhs, preconditioner);
+      {
+        TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
+        cg.solve(mass_matrix, temp, system_rhs, preconditioner);
+      }
       saplog << "	Stage s: " << s << "	Solver converged in "
              << solver_control.last_step() << " iterations." << std::endl;
 
@@ -2088,7 +2115,7 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   const unsigned int time_step_number,
   const double       cur_time)
 {
-  TimerOutput::Scope timer_section(timer, "Output");
+  TimerOutput::Scope timer_section(timer, "VFP - Output");
   LogStream::Prefix  prefix("Output", saplog);
   saplog << "Output results at t = " << cur_time << std::endl;
   DataOut<dim_ps> data_out;
