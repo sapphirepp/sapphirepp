@@ -72,9 +72,9 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
   , rpe_data(vfp_parameters.rpe_tolerance, true)
   , rpe_cache(rpe_data)
 {
-  LogStream::Prefix p0("VFP", saplog);
-  LogStream::Prefix p("ProbeLocation", saplog);
-  LogStream::Prefix p1("Constructor", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
+  LogStream::Prefix prefix_location("ProbeLocation", saplog);
+  LogStream::Prefix prefix("Constructor", saplog);
 
   if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     probe_location_points = vfp_parameters.probe_location_points;
@@ -98,7 +98,7 @@ sapphirepp::VFP::ProbeLocation<dim>::reinit(
 {
   if (!perform_probe_location)
     return;
-  LogStream::Prefix p("ProbeLocation", saplog);
+  LogStream::Prefix prefix("ProbeLocation", saplog);
   saplog << "Setting up points for probe location" << std::endl;
 
   rpe_cache.reinit(probe_location_points, triangulation, mapping);
@@ -122,9 +122,9 @@ sapphirepp::VFP::ProbeLocation<dim>::probe_all_points(
 {
   if (!perform_probe_location)
     return;
-  LogStream::Prefix p("ProbeLocation", saplog);
+  LogStream::Prefix prefix_location("ProbeLocation", saplog);
   saplog << "Probe points in reduced phase space" << std::endl;
-  LogStream::Prefix p2("Evaluate", saplog);
+  LogStream::Prefix prefix("Evaluate", saplog);
   Assert(rpe_cache.is_ready(), ExcMessage("rpe_cache is no initialized."));
 
   using CellData =

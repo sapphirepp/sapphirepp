@@ -190,7 +190,7 @@ main(int argc, char *argv[])
 
           /** [Calculate error] */
           {
-            LogStream::Prefix prefix2("Error", saplog);
+            LogStream::Prefix prefix_error("Error", saplog);
             saplog << "Calculate error" << std::endl;
 
             const double L2_error =
@@ -277,7 +277,7 @@ main(int argc, char *argv[])
       }
 
       {
-        LogStream::Prefix prefix2("Error", saplog);
+        LogStream::Prefix prefix_error("Error", saplog);
         saplog << "Calculate L2 error" << std::endl;
 
         const double L2_error =

@@ -52,8 +52,8 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("VFPParameters", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
+  LogStream::Prefix prefix("VFPParameters", saplog);
   saplog << "Declaring parameters" << std::endl;
   prm.enter_subsection("VFP");
 
@@ -277,8 +277,8 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("VFPParameters", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
+  LogStream::Prefix prefix("VFPParameters", saplog);
   saplog << "Parsing parameters" << std::endl;
   std::string s;
   prm.enter_subsection("VFP");

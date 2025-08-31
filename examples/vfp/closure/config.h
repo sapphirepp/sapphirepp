@@ -63,8 +63,8 @@ namespace sapphirepp
     void
     declare_parameters(dealii::ParameterHandler &prm)
     {
-      dealii::LogStream::Prefix pre1("Startup", saplog);
-      dealii::LogStream::Prefix pre2("Physical parameters", saplog);
+      dealii::LogStream::Prefix prefix_startup("Startup", saplog);
+      dealii::LogStream::Prefix prefix("PhysicalParameters", saplog);
       saplog << "Declaring parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
@@ -86,8 +86,8 @@ namespace sapphirepp
     void
     parse_parameters(dealii::ParameterHandler &prm)
     {
-      dealii::LogStream::Prefix pre1("Startup", saplog);
-      dealii::LogStream::Prefix pre2("PhysicalParameters", saplog);
+      dealii::LogStream::Prefix prefix_startup("Startup", saplog);
+      dealii::LogStream::Prefix prefix("PhysicalParameters", saplog);
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 

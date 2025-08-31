@@ -230,7 +230,7 @@ sapphirepp::Utils::Tools::read_dat_to_tensor_product_grid_data(
   using namespace dealii;
   const MPI_Comm     mpi_communicator = MPI_COMM_WORLD;
   const unsigned int root_rank        = 0;
-  LogStream::Prefix  pre("ReadTensorGrid", saplog);
+  LogStream::Prefix  prefix("ReadTensorGrid", saplog);
 
   Assert(col_start_coordinates + dim <= col_start_data,
          ExcMessage("Coordinates must be given in columns before data."));

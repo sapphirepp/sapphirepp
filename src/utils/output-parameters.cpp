@@ -46,8 +46,8 @@ sapphirepp::Utils::OutputParameters::OutputParameters()
 void
 sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("OutputParameters", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
+  LogStream::Prefix prefix("OutputParameters", saplog);
   saplog << "Declaring parameters" << std::endl;
 
   prm.enter_subsection("Output");
@@ -92,8 +92,8 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
 void
 sapphirepp::Utils::OutputParameters::parse_parameters(ParameterHandler &prm)
 {
-  LogStream::Prefix pre1("Startup", saplog);
-  LogStream::Prefix pre2("OutputParameters", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
+  LogStream::Prefix prefix("OutputParameters", saplog);
   saplog << "Parsing parameters" << std::endl;
   std::string s;
   prm.enter_subsection("Output");
@@ -145,7 +145,7 @@ sapphirepp::Utils::OutputParameters::write_results(
   const double       cur_time,
   const std::string &filename)
 {
-  LogStream::Prefix p("OutputParameters", saplog);
+  LogStream::Prefix prefix("OutputParameters", saplog);
   saplog << "Writing results at time_step " << time_step_number << std::endl;
 
   const std::string tmp_base_file_name =
@@ -271,7 +271,7 @@ sapphirepp::Utils::OutputParameters::write_grid(
   const Triangulation<dim> &triangulation,
   const std::string        &filename) const
 {
-  LogStream::Prefix p("OutputParameters", saplog);
+  LogStream::Prefix prefix("OutputParameters", saplog);
   saplog << "Write grid " << filename << std::endl;
 
   GridOutFlags::Ucd ucd_flags;

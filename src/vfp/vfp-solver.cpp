@@ -232,8 +232,8 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
 {
-  LogStream::Prefix p("VFP", saplog);
-  LogStream::Prefix p2("Constructor", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
+  LogStream::Prefix prefix("Constructor", saplog);
   saplog << vfp_flags << std::endl;
   saplog << "dim_ps=" << dim_ps << ", dim_cs=" << dim_cs << std::endl;
   if constexpr ((vfp_flags & VFPFlags::scaled_distribution_function) !=
@@ -296,10 +296,10 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::setup()
 {
-  LogStream::Prefix p("VFP", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
   saplog << "Setup VFP equation solver. \t[" << Utilities::System::get_time()
          << "]" << std::endl;
-  LogStream::Prefix p2("Setup", saplog);
+  LogStream::Prefix prefix("Setup", saplog);
   timer.reset();
   make_grid();
   setup_system();
@@ -352,7 +352,7 @@ void
 sapphirepp::VFP::VFPSolver<dim>::run()
 {
   setup();
-  LogStream::Prefix p("VFP", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
   if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
       steady_state_solve();
@@ -407,7 +407,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     }
 
   {
-    LogStream::Prefix              pre2("Summary", saplog);
+    LogStream::Prefix              prefix("Summary", saplog);
     Utilities::System::MemoryStats memory_stats;
     Utilities::System::get_memory_stats(memory_stats);
     saplog << "Peak (local) resident memory size (HWM):    \t" //
@@ -709,7 +709,7 @@ sapphirepp::VFP::VFPSolver<dim>::project(
   PETScWrappers::MPI::Vector &projected_function) const
 {
   saplog << "Project a function onto the finite element space" << std::endl;
-  LogStream::Prefix p("project", saplog);
+  LogStream::Prefix prefix("project", saplog);
 
   // Create right hand side
   PETScWrappers::MPI::Vector rhs(locally_owned_dofs, mpi_communicator);
@@ -1684,8 +1684,8 @@ void
 sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 {
   TimerOutput::Scope timer_section(timer, "Steady state solve");
-  LogStream::Prefix  p("SteadyState", saplog);
-  saplog << "Setup steady-state solver" << std::endl;
+  saplog << "Steady-state solve" << std::endl;
+  LogStream::Prefix prefix("SteadyState", saplog);
 
   SolverControl              solver_control(vfp_parameters.solver_max_iter);
   PETScWrappers::SolverGMRES solver(solver_control);
@@ -1723,7 +1723,7 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "Theta method");
-  LogStream::Prefix  p("theta_method", saplog);
+  LogStream::Prefix  prefix("ThetaMethod", saplog);
   // Equation: (mass_matrix + time_step * theta * dg_matrix(time +
   // time_step)) f(time + time_step) = (mass_matrix - time_step * (1 -
   // theta) * dg_matrix(time) ) f(time) + time_step * theta * s(time +
@@ -1816,7 +1816,7 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "ERK4");
-  LogStream::Prefix  p("ERK4", saplog);
+  LogStream::Prefix  prefix("ERK", saplog);
   // ERK 4
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // Butcher's array
@@ -1988,7 +1988,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time_step)
 {
   TimerOutput::Scope timer_section(timer, "LSERK4");
-  LogStream::Prefix  p("LSERK4", saplog);
+  LogStream::Prefix  prefix("LSERK", saplog);
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
   Vector<double> a({0.,
@@ -2089,7 +2089,9 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
   const double       cur_time)
 {
   TimerOutput::Scope timer_section(timer, "Output");
-  DataOut<dim_ps>    data_out;
+  LogStream::Prefix  prefix("Output", saplog);
+  saplog << "Output results at t = " << cur_time << std::endl;
+  DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(
     locally_relevant_current_solution,
@@ -2145,9 +2147,9 @@ sapphirepp::VFP::VFPSolver<dim>::compute_global_error(
   const VectorTools::NormType    &global_norm,
   const Function<dim_ps, double> *weight) const
 {
-  LogStream::Prefix p("VFP", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
   saplog << "Compute the global error" << std::endl;
-  LogStream::Prefix p2("Error", saplog);
+  LogStream::Prefix prefix("Error", saplog);
 
   Vector<float> cell_errors(triangulation.n_locally_owned_active_cells());
 
@@ -2181,9 +2183,9 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
   const VectorTools::NormType    &global_norm,
   const Function<dim_ps, double> *weight) const
 {
-  LogStream::Prefix p("VFP", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
   saplog << "Compute the weighted norm" << std::endl;
-  LogStream::Prefix p2("Norm", saplog);
+  LogStream::Prefix prefix("Norm", saplog);
 
   Vector<float> cell_norms(triangulation.n_locally_owned_active_cells());
 

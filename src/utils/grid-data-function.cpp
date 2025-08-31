@@ -69,7 +69,7 @@ sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   , time_index{0}
   , grid_functions(n_components_data == 0 ? n_components : n_components_data)
 {
-  LogStream::Prefix pre0("Setup", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
   const std::string filename = base_filename + ".block0.out1." +
                                Utilities::int_to_string(time_index, 5) + ".tab";
   load_data_from_file(input_path / filename);
@@ -104,7 +104,7 @@ sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   , time_index{0}
   , grid_functions(n_components_data == 0 ? n_components : n_components_data)
 {
-  LogStream::Prefix pre0("Setup", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
   load_data_from_file(filename);
 }
 
@@ -214,7 +214,7 @@ void
 sapphirepp::Utils::GridDataFunction<dim>::load_data_from_file(
   const std::filesystem::path &filename)
 {
-  LogStream::Prefix p("GridDataFunction", saplog);
+  LogStream::Prefix prefix("GridDataFunction", saplog);
   saplog << "Load data from file: " << filename << std::endl;
 
   std::vector<Table<dim, double>> data_values(grid_functions.size());
@@ -377,8 +377,8 @@ std::vector<double>
 sapphirepp::Utils::GridDataFunction<dim>::read_hst_to_time_series(
   const std::filesystem::path &filename)
 {
-  LogStream::Prefix pre0("Setup", saplog);
-  LogStream::Prefix pew1("GridDataFunction", saplog);
+  LogStream::Prefix prefix_startup("Startup", saplog);
+  LogStream::Prefix prefix("GridDataFunction", saplog);
   saplog << "Load time series from file: " << filename << std::endl;
   const unsigned int               n_columns = 13;
   std::vector<std::vector<double>> data_vector(n_columns);
