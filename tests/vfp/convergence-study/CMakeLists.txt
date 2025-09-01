@@ -8,6 +8,9 @@ add_executable(test-convergence-study test-convergence-study.cpp)
 sapphirepp_setup_target_vfp(test-convergence-study
   ${PROJECT_SOURCE_DIR}/examples/vfp/convergence-study
 )
+target_include_directories(test-convergence-study PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
+)
 
 add_test(NAME convergence-study-CN COMMAND
   ./test-convergence-study parameter-CN.prm 5e-6
