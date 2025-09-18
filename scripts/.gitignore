@@ -1,4 +1,6 @@
 # Ignore output of install-dealii.sh
+*.tar.gz
+assimp*
 petsc*
 p4est*
 dealii*

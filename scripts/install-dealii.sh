@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
+export LC_ALL="C" # suppress warnings in p4est installation
 
 # Set default values
 INTERACTIVE=true
 SKIP_PREREQUISITE=false
-PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb assimp"
+PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb (assimp)"
 PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb assimp"
 PREREQUISITES_APT="build-essential gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbb2 libtbb2-dev libassimp-dev"
 if [[ $(uname) == "Darwin" ]]; then
@@ -13,22 +14,32 @@ else
     PACKAGE_INSTALLER="apt"
 fi
 
+INSTALL_ASSIMP=false
+ASSIMP_DIR=${ASSIMP_DIR:-"$HOME/.local/lib/assimp"}
+# Check here for new versions: https://github.com/assimp/assimp/releases
+ASSIMP_VERSION="6.0.2"
+
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
-PETSC_VERSION="3.23.5"
+# Check here for new versions: https://gitlab.com/petsc/petsc/-/tags
+PETSC_VERSION="3.23.6"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
     PETSC_ARCH=${PETSC_ARCH:-"arch-linux-c-debug"}
 fi
+PETSC_FLAGS=${PETSC_FLAGS:-"--download-scalapack --download-mumps --download-hypre"}
 
 INSTALL_P4EST=false
 P4EST_DIR=${P4EST_DIR:-"$HOME/.local/lib/p4est"}
+# Check here for new versions: https://github.com/cburstedde/p4est/tags
 P4EST_VERSION="2.8.7"
 
 INSTALL_DEAL_II=false
 DEAL_II_DIR=${DEAL_II_DIR:-"$HOME/.local/lib/dealii"}
-DEAL_II_VERSION="9.7.0"
+# Check here for new versions: https://github.com/dealii/dealii/releases
+DEAL_II_VERSION="9.7.1"
+DEAL_II_FLAGS=${DEAL_II_FLAGS:-""}
 
 if [[ $(uname) == "Darwin" ]]; then
     NUMBER_JOBS=$(sysctl -n hw.ncpu)
@@ -41,6 +52,8 @@ WORKPWD=${WORKPWD:-$(pwd)}
 # Define functions
 function set_configuration {
     # Prompt the user for input
+    read -rp "Is assimp already installed on your machine? [y/N]: " install_assimp_input
+    read -rp "Enter the installation directory for assimp (default: $ASSIMP_DIR): " assimp_dir_input
     read -rp "Is PETSc already installed on your machine? [y/N]: " install_petsc_input
     read -rp "Enter the installation directory for PETSc (default: $PETSC_DIR): " petsc_dir_input
     read -rp "Is p4est already installed on your machine? [y/N]: " install_p4est_input
@@ -51,6 +64,12 @@ function set_configuration {
     read -rp "Do you want to run the test suite after installation? [y/N]: " run_test_input
 
     # Set the configuration based on user input
+    if [[ $install_assimp_input =~ ^[Nn]$ ]]; then
+        INSTALL_ASSIMP=true
+    fi
+    if [[ $assimp_dir_input ]]; then
+        ASSIMP_DIR=$assimp_dir_input
+    fi
     if [[ $install_petsc_input =~ ^[Nn]$ ]]; then
         INSTALL_PETSC=true
     fi
@@ -81,8 +100,13 @@ function print_configuration {
     echo ""
     echo "Configuration to be installed"
     echo "-----------------------------------"
+    if [ $INSTALL_ASSIMP == true ]; then
+        echo "Install assimp-v$ASSIMP_VERSION in \"$ASSIMP_DIR\""
+    else
+        echo "Use assimp installation in \"$ASSIMP_DIR\""
+    fi
     if [ $INSTALL_PETSC == true ]; then
-        echo "Install PETSc-v$PETSC_VERSION in \"$PETSC_DIR\""
+        echo "Install PETSc-v$PETSC_VERSION in \"$PETSC_DIR\" using PETSC_ARCH=$PETSC_ARCH and PETSC_FLAGS=\"$PETSC_FLAGS\""
     else
         echo "Use PETSc installation in \"$PETSC_DIR\""
     fi
@@ -92,11 +116,11 @@ function print_configuration {
         echo "Use p4est installation in \"$P4EST_DIR\""
     fi
     if [ $INSTALL_DEAL_II == true ]; then
-        echo "Install deal.II-v$DEAL_II_VERSION in \"$DEAL_II_DIR\""
+        echo "Install deal.II-v$DEAL_II_VERSION in \"$DEAL_II_DIR\" using DEAL_II_FLAGS=\"$DEAL_II_FLAGS\""
     else
         echo "Use deal.II installation in \"$DEAL_II_DIR\""
     fi
-    echo "Compile on $NUMBER_JOBS processor(s)"
+    echo "Compile using $NUMBER_JOBS job(s)"
     if [ $RUN_TEST == true ]; then
         echo "Run test suite after installation"
     else
@@ -161,9 +185,33 @@ function install_prerequisites {
     exit 2
 }
 
+function install_assimp {
+    echo ""
+    echo "Installing assimp-v$ASSIMP_VERSION in \"$ASSIMP_DIR\""
+    echo "-----------------------------------"
+    echo ""
+
+    cd "$WORKPWD"
+    tarname="v$ASSIMP_VERSION"
+    dirname="assimp-$ASSIMP_VERSION"
+    curl -LO "https://github.com/assimp/assimp/archive/refs/tags/$tarname.tar.gz"
+    tar -xzf "$tarname.tar.gz"
+    rm "$tarname.tar.gz"
+    cd "$dirname"
+
+    mkdir -p "$ASSIMP_DIR"
+    rm -rf "$ASSIMP_DIR"
+    cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$ASSIMP_DIR"
+    cd build
+    make -j"$NUMBER_JOBS" install
+
+    cd "$WORKPWD"
+    rm -rf "$dirname"
+}
+
 function install_petsc {
     echo ""
-    echo "Installing PETSc-v$PETSC_VERSION in \"$PETSC_DIR\" using PETSC_ARCH=$PETSC_ARCH"
+    echo "Installing PETSc-v$PETSC_VERSION in \"$PETSC_DIR\" using PETSC_ARCH=$PETSC_ARCH and PETSC_FLAGS=\"$PETSC_FLAGS\""
     echo "-----------------------------------"
     echo ""
 
@@ -174,17 +222,20 @@ function install_petsc {
     rm "$dirname.tar.gz"
     mkdir -p "$PETSC_DIR"
     rm -rf "$PETSC_DIR"
-    mv "$dirname" "$PETSC_DIR"
-    cd "$PETSC_DIR"
+    cd "$dirname"
 
-    ./configure --download-hypre --download-scalapack --download-mumps
-    make -j"$NUMBER_JOBS" PETSC_DIR="$PETSC_DIR" PETSC_ARCH="$PETSC_ARCH" all
-
+    # shellcheck disable=SC2086
+    ./configure --prefix="$PETSC_DIR" --PETSC_DIR="$(pwd)" --PETSC_ARCH="$PETSC_ARCH" $PETSC_FLAGS
+    make -j"$NUMBER_JOBS" PETSC_DIR="$(pwd)" PETSC_ARCH="$PETSC_ARCH" all
+    make -j"$NUMBER_JOBS" PETSC_DIR="$(pwd)" PETSC_ARCH="$PETSC_ARCH" install
+    
     if [[ $RUN_TEST == true ]]; then
-        make PETSC_DIR="$PETSC_DIR" PETSC_ARCH="$PETSC_ARCH" check
+        make PETSC_DIR="$(pwd)" PETSC_ARCH="$PETSC_ARCH" check
+        make PETSC_DIR="$PETSC_DIR" PETSC_ARCH="" check
     fi
 
     cd "$WORKPWD"
+    rm -rf "$dirname"
 }
 
 function install_p4est {
@@ -211,7 +262,7 @@ function install_p4est {
 
 function install_deal_ii {
     echo ""
-    echo "Installing deal.II-v$DEAL_II_VERSION in \"$DEAL_II_DIR\""
+    echo "Installing deal.II-v$DEAL_II_VERSION in \"$DEAL_II_DIR\" using DEAL_II_FLAGS=\"$DEAL_II_FLAGS\""
     echo "-----------------------------------"
     echo ""
 
@@ -224,13 +275,15 @@ function install_deal_ii {
     cd "$dirname"
 
     # Set CMake flags for deal.II configuration
-    deal_ii_flags=(
+    tmp_deal_ii_flags=(
         "-DCMAKE_INSTALL_PREFIX=$DEAL_II_DIR"
         "-DDEAL_II_CXX_FLAGS=-std=c++17"
+        # "-DDEAL_II_WITH_TBB=ON"
         "-DDEAL_II_WITH_MPI=ON"
         "-DDEAL_II_WITH_HDF5=ON"
-        "-DDEAL_II_WITH_PETSC=ON"
         "-DDEAL_II_WITH_ASSIMP=ON"
+        "-DASSIMP_DIR=$ASSIMP_DIR"
+        "-DDEAL_II_WITH_PETSC=ON"
         "-DPETSC_DIR=$PETSC_DIR"
         "-DPETSC_ARCH=$PETSC_ARCH"
         "-DDEAL_II_WITH_P4EST=ON"
@@ -238,12 +291,14 @@ function install_deal_ii {
     )
 
     # Print CMake flags for debugging purposes
-    echo "${deal_ii_flags[@]}"
+    # shellcheck disable=SC2086
+    echo Configure deal.II using "${tmp_deal_ii_flags[@]}" $DEAL_II_FLAGS
 
     # Configure and build deal.II
     mkdir -p "$DEAL_II_DIR"
     rm -rf "$DEAL_II_DIR"
-    cmake -S . -B build "${deal_ii_flags[@]}"
+    # shellcheck disable=SC2086
+    cmake -S . -B build "${tmp_deal_ii_flags[@]}" $DEAL_II_FLAGS
     cd build
     make -j"$NUMBER_JOBS" install
 
@@ -270,6 +325,20 @@ while [[ $# -gt 0 ]]; do
         SKIP_PREREQUISITE=true
         shift
         ;;
+    -asp | --assimp)
+        INSTALL_ASSIMP=true
+        shift
+        ;;
+    -aspd | --assimp-dir)
+        ASSIMP_DIR="$2"
+        shift
+        shift
+        ;;
+    -aspv | --assimp-version)
+        ASSIMP_VERSION="$2"
+        shift
+        shift
+        ;;
     -psc | --petsc)
         INSTALL_PETSC=true
         shift
@@ -281,6 +350,11 @@ while [[ $# -gt 0 ]]; do
         ;;
     -pscv | --petsc-version)
         PETSC_VERSION="$2"
+        shift
+        shift
+        ;;
+    -pscf | --petsc-flags)
+        PETSC_FLAGS="$2"
         shift
         shift
         ;;
@@ -312,7 +386,12 @@ while [[ $# -gt 0 ]]; do
         shift
         shift
         ;;
-    -np | --number-of-processors)
+    -df | --dealii-flags)
+        DEAL_II_FLAGS="$2"
+        shift
+        shift
+        ;;
+    -j | --jobs)
         NUMBER_JOBS="$2"
         shift
         shift
@@ -342,6 +421,11 @@ fi
 print_configuration
 
 echo "Starting installation. This may take a while!"
+
+# Install assimp
+if [ $INSTALL_ASSIMP == true ]; then
+    install_assimp
+fi
 
 # Install PETSc
 if [ $INSTALL_PETSC == true ]; then
