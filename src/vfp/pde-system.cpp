@@ -257,19 +257,21 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
   // compute the matrices for expansion_order + 1 and later shrink them to
   // expansion_order
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
+  const std::vector<std::array<unsigned int, 3>> lms =
+    PDESystem::create_lms_indices(matrix_size);
   for (auto &advection_matrix : advection_matrices)
     advection_matrix.reinit(matrix_size);
 
-  for (unsigned int i = 0; i < system_size; ++i)
+  for (unsigned int i = 0; i < matrix_size; ++i)
     {
-      const unsigned int l = lms_indices[i][0];
-      const unsigned int m = lms_indices[i][1];
-      const unsigned int s = lms_indices[i][2];
-      for (unsigned int j = 0; j < system_size; ++j)
+      const unsigned int l = lms[i][0];
+      const unsigned int m = lms[i][1];
+      const unsigned int s = lms[i][2];
+      for (unsigned int j = 0; j < matrix_size; ++j)
         {
-          const unsigned int l_prime = lms_indices[j][0];
-          const unsigned int m_prime = lms_indices[j][1];
-          const unsigned int s_prime = lms_indices[j][2];
+          const unsigned int l_prime = lms[j][0];
+          const unsigned int m_prime = lms[j][1];
+          const unsigned int s_prime = lms[j][2];
 
           // Ax
           if (l + 1 == l_prime && m == m_prime && s == s_prime)
@@ -457,19 +459,21 @@ void
 sapphirepp::VFP::PDESystem::create_generator_rotation_matrices()
 {
   unsigned int matrix_size = (expansion_order + 2) * (expansion_order + 2);
+  const std::vector<std::array<unsigned int, 3>> lms =
+    PDESystem::create_lms_indices(matrix_size);
   for (auto &generator_matrix : generator_rotation_matrices)
     generator_matrix.reinit(matrix_size);
 
-  for (unsigned int i = 0; i < system_size; ++i)
+  for (unsigned int i = 0; i < matrix_size; ++i)
     {
-      const unsigned int l = lms_indices[i][0];
-      const unsigned int m = lms_indices[i][1];
-      const unsigned int s = lms_indices[i][2];
-      for (unsigned int j = 0; j < system_size; ++j)
+      const unsigned int l = lms[i][0];
+      const unsigned int m = lms[i][1];
+      const unsigned int s = lms[i][2];
+      for (unsigned int j = 0; j < matrix_size; ++j)
         {
-          const unsigned int l_prime = lms_indices[j][0];
-          const unsigned int m_prime = lms_indices[j][1];
-          const unsigned int s_prime = lms_indices[j][2];
+          const unsigned int l_prime = lms[j][0];
+          const unsigned int m_prime = lms[j][1];
+          const unsigned int s_prime = lms[j][2];
 
           // Omega_x
           if (l == l_prime && m == m_prime && s == 0 && s_prime == 1)
