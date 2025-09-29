@@ -4,7 +4,7 @@ subsection Output
   set Number of digits for counter = 4
   set Output frequency             = 1
   set Results folder               = ./results
-  set Simulation identifier        = parallel-shock
+  set Simulation identifier        = steady-state-parallel-shock
 end
 subsection VFP
   subsection Expansion
@@ -27,11 +27,6 @@ subsection VFP
       set lower p = continuous
       set upper p = continuous
     end
-  end
-  subsection Time stepping
-    set Final time     = 5e4
-    set Method         = CN
-    set Time step size = 100
   end
 end
 

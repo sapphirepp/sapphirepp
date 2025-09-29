@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/vfpgyro-advection/test-advection.cpp
+ * @file tests/vfp/gyro-advection/test-advection.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement tests for gyro-advection example
  */
@@ -33,9 +33,13 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
+#include "test-run-vfp.h"
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
 
+
+
+const unsigned int dim = sapphirepp::VFP::dimension;
 
 
 int
@@ -43,6 +47,7 @@ main(int argc, char *argv[])
 {
   try
     {
+      /** [Main function setup] */
       using namespace sapphirepp;
       using namespace VFP;
 
@@ -55,26 +60,28 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = VFPParameters<dimension>::epsilon_d;
+      double max_L2_error = VFPParameters<dim>::epsilon_d;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 
-      dealii::Timer            timer;
-      ParameterHandler         prm;
-      VFPParameters<dimension> vfp_parameters(vfp_flags);
-      PhysicalParameters       physical_parameters;
-      Utils::OutputParameters  output_parameters;
+      ParameterHandler        prm;
+      PhysicalParameters      physical_parameters;
+      Utils::OutputParameters output_parameters;
+      VFPParameters<dim>      vfp_parameters(vfp_flags);
 
-      vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
 
       prm.parse_input(parameter_filename);
 
-      vfp_parameters.parse_parameters(prm);
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
+      /** [Main function setup] */
 
+
+      /** [Check parameters] */
       const double gyroperiod =
         vfp_parameters.gamma * vfp_parameters.mass /
         (physical_parameters.B0 / (2 * M_PI) * vfp_parameters.charge);
@@ -103,42 +110,41 @@ main(int argc, char *argv[])
                     "Final time is not a multiple of the crossing time.\n\t" +
                     dealii::Utilities::to_string(vfp_parameters.final_time) +
                     " != n * " + dealii::Utilities::to_string(crossing_time)));
+      /** [Check parameters] */
 
-      timer.start();
-      VFPSolver<dimension> vfp_solver(vfp_parameters,
-                                      physical_parameters,
-                                      output_parameters);
+
+      /** [Run simulation] */
+      VFPSolver<dim> vfp_solver(vfp_parameters,
+                                physical_parameters,
+                                output_parameters);
       vfp_solver.run();
-      timer.stop();
+      /** [Run simulation] */
 
 
-      saplog << "Calculate analytic solution" << std::endl;
-      InitialValueFunction<dimension> analytic_solution(
+      /** [Compare to exact solution] */
+      saplog << "Compare to exact solution" << std::endl;
+
+      InitialValueFunction<dim> exact_solution(
         physical_parameters, vfp_solver.get_pde_system().system_size);
 
-      const dealii::ComponentSelectFunction<dimension> weight(
+      const dealii::ComponentSelectFunction<dim> weight(
         0, vfp_solver.get_pde_system().system_size);
 
-      const double L2_error =
-        vfp_solver.compute_global_error(analytic_solution,
-                                        dealii::VectorTools::L2_norm,
-                                        dealii::VectorTools::L2_norm,
-                                        &weight);
-      const double L2_norm =
-        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                         dealii::VectorTools::L2_norm,
-                                         &weight);
+      test_run_vfp_output<dim>(vfp_solver,
+                               vfp_parameters,
+                               output_parameters,
+                               exact_solution,
+                               0,
+                               vfp_parameters.final_time,
+                               "exact_solution");
 
-      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-             << ", rel error = " << L2_error / L2_norm
-             << ", CPU/wall time = " << timer.cpu_time() << "/"
-             << timer.wall_time() << " s" << std::endl;
 
-      AssertThrow((L2_error / L2_norm) < max_L2_error,
-                  dealii::ExcMessage(
-                    "L2 error is too large! (" +
-                    dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
-                    dealii::Utilities::to_string(max_L2_error) + ")"));
+      test_run_vfp_error<dim>(
+        vfp_solver, exact_solution, saplog, max_L2_error, &weight);
+
+      sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
+      return 0;
+      /** [Compare to exact solution] */
     }
   catch (std::exception &exc)
     {

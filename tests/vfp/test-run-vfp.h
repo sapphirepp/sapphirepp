@@ -58,6 +58,7 @@
  * @param exact_solution Exact solution to compare to
  * @param time_step_number Time step number
  * @param cur_time Simulation time
+ * @param filename Overwrite for the @ref base_file_name
  */
 template <unsigned int dim>
 void
@@ -66,7 +67,8 @@ test_run_vfp_output(const sapphirepp::VFP::VFPSolver<dim>     &vfp_solver,
                     sapphirepp::Utils::OutputParameters &output_parameters,
                     const dealii::Function<dim>         &exact_solution,
                     const unsigned int                   time_step_number,
-                    const double                         cur_time)
+                    const double                         cur_time,
+                    const std::string                   &filename = "")
 {
   using namespace sapphirepp;
   using namespace VFP;
@@ -95,12 +97,15 @@ test_run_vfp_output(const sapphirepp::VFP::VFPSolver<dim>     &vfp_solver,
                              vfp_solver.get_pde_system().system_size,
                              "numeric_" + function_symbol + "_"));
 
-  // Output projected exact solution
-  vfp_solver.project(exact_solution, exact_solution_vector);
-  data_out.add_data_vector(exact_solution_vector,
-                           PDESystem::create_component_name_list(
-                             vfp_solver.get_pde_system().system_size,
-                             "project_" + function_symbol + "_"));
+  // Output projected exact solution (skip in steady-state)
+  if ((vfp_flags & VFPFlags::time_evolution) != VFPFlags::none)
+    {
+      vfp_solver.project(exact_solution, exact_solution_vector);
+      data_out.add_data_vector(exact_solution_vector,
+                               PDESystem::create_component_name_list(
+                                 vfp_solver.get_pde_system().system_size,
+                                 "project_" + function_symbol + "_"));
+    }
 
   // Output interpolated exact solution
   dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
@@ -134,7 +139,10 @@ test_run_vfp_output(const sapphirepp::VFP::VFPSolver<dim>     &vfp_solver,
   //   }
 
   data_out.build_patches(vfp_parameters.polynomial_degree);
-  output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
+  output_parameters.write_results<dim>(data_out,
+                                       time_step_number,
+                                       cur_time,
+                                       filename);
 
   // probe_location.probe_all_points(
   //   dof_handler,
@@ -143,6 +151,66 @@ test_run_vfp_output(const sapphirepp::VFP::VFPSolver<dim>     &vfp_solver,
   //   time_step_number,
   //   cur_time,
   //   function_symbol);
+}
+
+
+
+/**
+ * @brief Calculate the L2 error for the VFP test run.
+ *
+ * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$,
+ *         `dim_ps`
+ * @param vfp_solver @ref sapphirepp::VFP::VFPSolver
+ * @param exact_solution Exact solution to compare to
+ * @param error_file Output stream to save the error
+ * @param max_L2_error Maximum expected L2 error
+ * @param weight Weights for the error
+ * @param time_step_number Time step number
+ * @param cur_time Simulation time
+ */
+template <unsigned int dim>
+void
+test_run_vfp_error(
+  const sapphirepp::VFP::VFPSolver<dim> &vfp_solver,
+  dealii::Function<dim>                 &exact_solution,
+  std::ostream                          &error_file,
+  const double max_L2_error = sapphirepp::VFP::VFPParameters<dim>::epsilon_d,
+  const dealii::Function<dim, double> *weight           = nullptr,
+  const unsigned int                   time_step_number = 0,
+  const double                         cur_time         = 0.)
+{
+  using namespace sapphirepp;
+
+  // dealii::TimerOutput::Scope timer_section(vfp_solver.get_timer(),
+  //                                          "VFP - Error");
+  dealii::LogStream::Prefix prefix_error("Error", saplog);
+  saplog << "Calculate L2 error" << std::endl;
+
+  const double L2_error =
+    vfp_solver.compute_global_error(exact_solution,
+                                    dealii::VectorTools::L2_norm,
+                                    dealii::VectorTools::L2_norm,
+                                    weight);
+  const double L2_norm =
+    vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                     dealii::VectorTools::L2_norm,
+                                     weight);
+
+  saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+         << ", rel error = " << L2_error / L2_norm << std::endl;
+
+  error_file << time_step_number << "; " //
+             << cur_time << "; "         //
+             << L2_norm << "; "          //
+             << L2_error << "; "         //
+             << L2_error / L2_norm << std::endl;
+
+
+  AssertThrow((L2_error / L2_norm) < max_L2_error,
+              dealii::ExcMessage(
+                "L2 error is too large! (" +
+                dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
+                dealii::Utilities::to_string(max_L2_error) + ")"));
 }
 
 
@@ -220,42 +288,25 @@ test_run_vfp(
           /** [Output solution] */
           if ((discrete_time.get_step_number() %
                output_parameters.output_frequency) == 0)
-            test_run_vfp_output<dim>(vfp_solver,
-                                     vfp_parameters,
-                                     output_parameters,
-                                     exact_solution,
-                                     discrete_time.get_step_number(),
-                                     discrete_time.get_current_time());
-          /** [Output solution] */
+            {
+              test_run_vfp_output<dim>(vfp_solver,
+                                       vfp_parameters,
+                                       output_parameters,
+                                       exact_solution,
+                                       discrete_time.get_step_number(),
+                                       discrete_time.get_current_time());
+              /** [Output solution] */
 
 
-          /** [Calculate error] */
-          {
-            // dealii::TimerOutput::Scope timer_section(vfp_solver.get_timer(),
-            //                                          "VFP - Error");
-            dealii::LogStream::Prefix prefix_error("Error", saplog);
-            saplog << "Calculate L2 error" << std::endl;
-
-            const double L2_error =
-              vfp_solver.compute_global_error(exact_solution,
-                                              dealii::VectorTools::L2_norm,
-                                              dealii::VectorTools::L2_norm,
-                                              weight);
-            const double L2_norm =
-              vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                               dealii::VectorTools::L2_norm,
-                                               weight);
-
-            saplog << "L2_error = " << L2_error //
-                   << ", L2_norm = " << L2_norm //
-                   << ", rel error = " << L2_error / L2_norm << std::endl;
-
-            error_file << discrete_time.get_step_number() << "; "  //
-                       << discrete_time.get_current_time() << "; " //
-                       << L2_norm << "; "                          //
-                       << L2_error << "; "                         //
-                       << L2_error / L2_norm << std::endl;
-          }
+              /** [Calculate error] */
+              test_run_vfp_error<dim>(vfp_solver,
+                                      exact_solution,
+                                      error_file,
+                                      max_L2_error,
+                                      weight,
+                                      discrete_time.get_step_number(),
+                                      discrete_time.get_current_time());
+            }
           /** [Calculate error] */
 
 
@@ -295,38 +346,13 @@ test_run_vfp(
                                discrete_time.get_step_number(),
                                discrete_time.get_current_time());
 
-      {
-        // dealii::TimerOutput::Scope timer_section(vfp_solver.get_timer(),
-        //                                          "VFP - Error");
-        dealii::LogStream::Prefix prefix_error("Error", saplog);
-        saplog << "Calculate L2 error" << std::endl;
-
-        const double L2_error =
-          vfp_solver.compute_global_error(exact_solution,
-                                          dealii::VectorTools::L2_norm,
-                                          dealii::VectorTools::L2_norm,
-                                          weight);
-        const double L2_norm =
-          vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                           dealii::VectorTools::L2_norm,
-                                           weight);
-
-        saplog << "L2_error = " << L2_error //
-               << ", L2_norm = " << L2_norm //
-               << ", rel error = " << L2_error / L2_norm << std::endl;
-
-        error_file << discrete_time.get_step_number() << "; "  //
-                   << discrete_time.get_current_time() << "; " //
-                   << L2_norm << "; "                          //
-                   << L2_error << "; "                         //
-                   << L2_error / L2_norm << std::endl;
-
-        AssertThrow((L2_error / L2_norm) < max_L2_error,
-                    dealii::ExcMessage(
-                      "L2 error is too large! (" +
-                      dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
-                      dealii::Utilities::to_string(max_L2_error) + ")"));
-      }
+      test_run_vfp_error<dim>(vfp_solver,
+                              exact_solution,
+                              error_file,
+                              max_L2_error,
+                              weight,
+                              discrete_time.get_step_number(),
+                              discrete_time.get_current_time());
       /** [Last time step] */
 
 

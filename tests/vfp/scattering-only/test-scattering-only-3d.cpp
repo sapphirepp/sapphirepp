@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/vfpscattering-only/test-scattering-only-3d.cpp
+ * @file tests/vfp/scattering-only/test-scattering-only-3d.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement 3d tests for scattering-only example
  */
@@ -33,10 +33,14 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
+#include "test-run-vfp.h"
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
 
+
+
 const unsigned int dim = 3;
+
 
 
 namespace sapinternal
@@ -81,77 +85,75 @@ namespace sapinternal
 } // namespace sapinternal
 
 
+
 int
 main(int argc, char *argv[])
 {
   try
     {
+      /** [Main function setup] */
       using namespace sapphirepp;
       using namespace VFP;
+
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-
-      saplog.depth_console(2);
-      saplog.init();
+      saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = VFPParameters<dimension>::epsilon_d;
+      double max_L2_error = VFPParameters<dim>::epsilon_d;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 
-      saplog << "Start test-scattering-only-2d with parameter file \""
-             << parameter_filename << "\" and maximal L2 error of "
-             << max_L2_error << std::endl;
-
-      dealii::Timer           timer;
       ParameterHandler        prm;
-      VFPParameters<dim>      vfp_parameters(vfp_flags);
       PhysicalParameters      physical_parameters;
       Utils::OutputParameters output_parameters;
+      VFPParameters<dim>      vfp_parameters(vfp_flags);
 
-      vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
+
       prm.parse_input(parameter_filename);
 
-      vfp_parameters.parse_parameters(prm);
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
+      /** [Main function setup] */
 
-      timer.start();
+
+      /** [Run simulation] */
       VFPSolver<dim> vfp_solver(vfp_parameters,
                                 physical_parameters,
                                 output_parameters);
       vfp_solver.run();
-      timer.stop();
+      /** [Run simulation] */
 
-      sapinternal::AnalyticSolution<dim> analytic_solution(
+
+      /** [Compare to exact solution] */
+      saplog << "Compare to exact solution" << std::endl;
+
+      sapinternal::AnalyticSolution<dim> exact_solution(
         physical_parameters,
         vfp_solver.get_pde_system().system_size,
         vfp_parameters.final_time);
 
-      const double L2_error =
-        vfp_solver.compute_global_error(analytic_solution,
-                                        dealii::VectorTools::L2_norm,
-                                        dealii::VectorTools::L2_norm);
-      const double L2_norm =
-        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                         dealii::VectorTools::L2_norm);
+      test_run_vfp_output<dim>(vfp_solver,
+                               vfp_parameters,
+                               output_parameters,
+                               exact_solution,
+                               0,
+                               vfp_parameters.final_time,
+                               "exact_solution");
 
-      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-             << ", rel error = " << L2_error / L2_norm
-             << ", CPU/wall time = " << timer.cpu_time() << "/"
-             << timer.wall_time() << " s" << std::endl;
 
-      AssertThrow(L2_error / L2_norm < max_L2_error,
-                  dealii::ExcMessage(
-                    "L2 error is too large! (" +
-                    dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
-                    dealii::Utilities::to_string(max_L2_error) + ")"));
+      test_run_vfp_error<dim>(vfp_solver, exact_solution, saplog, max_L2_error);
+
+      sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
+      /** [Compare to exact solution] */
     }
   catch (std::exception &exc)
     {

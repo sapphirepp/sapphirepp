@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/vfpparallel-shock/test-parallel-shock.cpp
+ * @file tests/vfp/parallel-shock/test-parallel-shock.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement tests for parallel-shock example
  */
@@ -33,8 +33,14 @@
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
+#include "test-run-vfp.h"
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
+
+
+
+const unsigned int dim = sapphirepp::VFP::dimension;
+
 
 
 namespace sapinternal
@@ -145,6 +151,7 @@ main(int argc, char *argv[])
 {
   try
     {
+      /** [Main function setup] */
       using namespace sapphirepp;
       using namespace VFP;
 
@@ -157,94 +164,60 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = VFPParameters<dimension>::epsilon_d;
+      double max_L2_error = VFPParameters<dim>::epsilon_d;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 
-      dealii::Timer            timer;
-      ParameterHandler         prm;
-      VFPParameters<dimension> vfp_parameters(vfp_flags);
-      PhysicalParameters       physical_parameters;
-      Utils::OutputParameters  output_parameters;
+      ParameterHandler        prm;
+      PhysicalParameters      physical_parameters;
+      Utils::OutputParameters output_parameters;
+      VFPParameters<dim>      vfp_parameters(vfp_flags);
 
-      vfp_parameters.declare_parameters(prm);
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
 
       prm.parse_input(parameter_filename);
 
-      vfp_parameters.parse_parameters(prm);
       physical_parameters.parse_parameters(prm);
       output_parameters.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
+      /** [Main function setup] */
 
-      timer.start();
-      VFPSolver<dimension> vfp_solver(vfp_parameters,
-                                      physical_parameters,
-                                      output_parameters);
+
+      /** [Run simulation] */
+      VFPSolver<dim> vfp_solver(vfp_parameters,
+                                physical_parameters,
+                                output_parameters);
       vfp_solver.run();
-      timer.stop();
+      /** [Run simulation] */
 
 
-      saplog << "Calculate analytic solution" << std::endl;
-      using namespace sapinternal;
+      /** [Compare to exact solution] */
+      saplog << "Compare to exact solution" << std::endl;
 
-      AnalyticSolution<dimension> analytic_solution(
+      sapinternal::AnalyticSolution<dim> exact_solution(
         physical_parameters,
         vfp_solver.get_pde_system().system_size,
         vfp_parameters.mass);
 
-      WeightFunction<dimension> weight(physical_parameters,
-                                       vfp_solver.get_pde_system().system_size);
+      const sapinternal::WeightFunction<dim> weight(
+        physical_parameters, vfp_solver.get_pde_system().system_size);
 
-      const double L2_error =
-        vfp_solver.compute_global_error(analytic_solution,
-                                        dealii::VectorTools::L2_norm,
-                                        dealii::VectorTools::L2_norm,
-                                        &weight);
-      const double L2_norm =
-        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                         dealii::VectorTools::L2_norm,
-                                         &weight);
+      test_run_vfp_output<dim>(vfp_solver,
+                               vfp_parameters,
+                               output_parameters,
+                               exact_solution,
+                               0,
+                               vfp_parameters.final_time,
+                               "exact_solution");
 
-      PETScWrappers::MPI::Vector analytic_solution_vector;
-      analytic_solution_vector.reinit(
-        vfp_solver.get_dof_handler().locally_owned_dofs(), MPI_COMM_WORLD);
-      dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                                       analytic_solution,
-                                       analytic_solution_vector);
-      PETScWrappers::MPI::Vector weight_vector;
-      weight_vector.reinit(vfp_solver.get_dof_handler().locally_owned_dofs(),
-                           MPI_COMM_WORLD);
-      dealii::VectorTools::interpolate(vfp_solver.get_dof_handler(),
-                                       weight,
-                                       weight_vector);
 
-      dealii::DataOut<dimension> data_out;
-      data_out.attach_dof_handler(vfp_solver.get_dof_handler());
-      data_out.add_data_vector(analytic_solution_vector,
-                               PDESystem::create_component_name_list(
-                                 vfp_solver.get_pde_system().system_size,
-                                 "analytic_f_"));
-      data_out.add_data_vector(weight_vector,
-                               PDESystem::create_component_name_list(
-                                 vfp_solver.get_pde_system().system_size,
-                                 "weight_"));
-      data_out.build_patches(vfp_parameters.polynomial_degree);
-      output_parameters.write_results<dimension>(data_out,
-                                                 0,
-                                                 vfp_parameters.final_time,
-                                                 "analytic_solution");
+      test_run_vfp_error<dim>(
+        vfp_solver, exact_solution, saplog, max_L2_error, &weight);
 
-      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-             << ", rel error = " << L2_error / L2_norm
-             << ", CPU/wall time = " << timer.cpu_time() << "/"
-             << timer.wall_time() << " s" << std::endl;
-
-      AssertThrow((L2_error / L2_norm) < max_L2_error,
-                  dealii::ExcMessage(
-                    "L2 error is too large! (" +
-                    dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
-                    dealii::Utilities::to_string(max_L2_error) + ")"));
+      sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
+      /** [Compare to exact solution] */
     }
   catch (std::exception &exc)
     {

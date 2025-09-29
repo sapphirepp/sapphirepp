@@ -92,8 +92,8 @@ main(int argc, char *argv[])
       physical_parameters.charge   = vfp_parameters.charge;
       physical_parameters.mass     = vfp_parameters.mass;
 
-      AssertThrow(dimension == 1,
-                  dealii::ExcMessage("This example assumes 'dimension = 1'."));
+      AssertThrow(dim == 1,
+                  dealii::ExcMessage("This example assumes 'dim = 1'."));
       AssertThrow(vfp_parameters.expansion_order == 1,
                   dealii::ExcMessage(
                     "This example assumes 'Expansion order = 1'."));
@@ -108,17 +108,19 @@ main(int argc, char *argv[])
       /** [Setup exact solution] */
       const unsigned int system_size = (vfp_parameters.expansion_order + 1) *
                                        (vfp_parameters.expansion_order + 1);
-      InitialValueFunction<dimension> exact_solution(physical_parameters,
-                                                     system_size);
-      const dealii::ComponentSelectFunction<dimension> weight(0, system_size);
+      InitialValueFunction<dim> exact_solution(physical_parameters,
+                                               system_size);
+      const dealii::ComponentSelectFunction<dim> weight(0, system_size);
       /** [Setup exact solution] */
 
+      /** [Start test run] */
       return test_run_vfp<dim>(vfp_parameters,
                                physical_parameters,
                                output_parameters,
                                exact_solution,
                                max_L2_error,
                                &weight);
+      /** [Start test run] */
     }
   catch (std::exception &exc)
     {

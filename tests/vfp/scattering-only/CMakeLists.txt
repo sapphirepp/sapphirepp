@@ -10,9 +10,12 @@ add_executable(test-scattering-only-1d test-scattering-only-1d.cpp)
 sapphirepp_setup_target_vfp(test-scattering-only-1d
   ${PROJECT_SOURCE_DIR}/examples/vfp/scattering-only
 )
+target_include_directories(test-scattering-only-1d PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
+)
 
 add_test(NAME scattering-only-1d-CN COMMAND
-  ./test-scattering-only-1d parameter-1d-CN.prm test_run 1e-2
+  ./test-scattering-only-1d parameter-1d-CN.prm 1e-2
 )
 set_property(TEST scattering-only-1d-CN PROPERTY LABELS
   "scattering-only"
@@ -22,7 +25,7 @@ set_property(TEST scattering-only-1d-CN PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-ERK4 COMMAND
-  ./test-scattering-only-1d parameter-1d-ERK4.prm test_run 1e-4
+  ./test-scattering-only-1d parameter-1d-ERK4.prm 1e-4
 )
 set_property(TEST scattering-only-1d-ERK4 PROPERTY LABELS
   "scattering-only"
@@ -33,7 +36,7 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-LSERK4 COMMAND
-  ./test-scattering-only-1d parameter-1d-LSERK4.prm test_run 3e-3
+  ./test-scattering-only-1d parameter-1d-LSERK4.prm 3e-3
 )
 set_property(TEST scattering-only-1d-LSERK4 PROPERTY LABELS
   "scattering-only"
@@ -43,7 +46,7 @@ set_property(TEST scattering-only-1d-LSERK4 PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-FE COMMAND
-  ./test-scattering-only-1d parameter-1d-FE.prm test_run 1e-1
+  ./test-scattering-only-1d parameter-1d-FE.prm 1e-1
 )
 set_property(TEST scattering-only-1d-FE PROPERTY LABELS
   "scattering-only"
@@ -53,7 +56,7 @@ set_property(TEST scattering-only-1d-FE PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-BE COMMAND
-  ./test-scattering-only-1d parameter-1d-BE.prm test_run 1e-1
+  ./test-scattering-only-1d parameter-1d-BE.prm 1e-1
 )
 set_property(TEST scattering-only-1d-BE PROPERTY LABELS
   "scattering-only"
@@ -66,6 +69,9 @@ set_property(TEST scattering-only-1d-BE PROPERTY LABELS
 add_executable(test-scattering-only-2d test-scattering-only-2d.cpp)
 sapphirepp_setup_target_vfp(test-scattering-only-2d
   ${PROJECT_SOURCE_DIR}/examples/vfp/scattering-only
+)
+target_include_directories(test-scattering-only-2d PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
 )
 
 add_test(NAME scattering-only-2d COMMAND
@@ -82,6 +88,9 @@ set_property(TEST scattering-only-2d PROPERTY LABELS
 add_executable(test-scattering-only-3d test-scattering-only-3d.cpp)
 sapphirepp_setup_target_vfp(test-scattering-only-3d
   ${PROJECT_SOURCE_DIR}/examples/vfp/scattering-only
+)
+target_include_directories(test-scattering-only-3d PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
 )
 
 add_test(NAME scattering-only-3d COMMAND

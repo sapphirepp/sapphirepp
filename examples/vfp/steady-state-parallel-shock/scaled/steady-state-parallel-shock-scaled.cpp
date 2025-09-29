@@ -21,9 +21,9 @@
 
 /**
  * @file
- * examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock.cpp
+ * examples/vfp/steady-state-parallel-shock/scaled/steady-state-parallel-shock-scaled.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
- * @brief Implement main function for steady-state-parallel-shock example
+ * @brief Implement main function for steady-state-parallel-shock-scaled example
  */
 
 #include <deal.II/base/mpi.h>

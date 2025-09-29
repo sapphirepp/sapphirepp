@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/vfpscattering-only/test-scattering-only-1d.cpp
+ * @file tests/vfp/scattering-only/test-scattering-only-1d.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement 1d tests for scattering-only example
  */
@@ -30,13 +30,17 @@
 
 #include <mpi.h>
 
-#include <fstream>
-
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
+#include "test-run-vfp.h"
 #include "vfp-parameters.h"
 #include "vfp-solver.h"
+
+
+
+const unsigned int dim = 1;
+
 
 
 namespace sapinternal
@@ -81,195 +85,75 @@ namespace sapinternal
 } // namespace sapinternal
 
 
-const unsigned int dim = 1;
-
-int
-convergence_with_expansion_order(const std::string         &parameter_filename,
-                                 const std::vector<double> &values)
-{
-  using namespace sapphirepp;
-  using namespace VFP;
-
-  saplog.push("Tests");
-  saplog << "Compute convergence with expansion_order" << std::endl;
-
-  Timer                   timer;
-  ParameterHandler        prm;
-  VFPParameters<dim>      vfp_parameters(vfp_flags);
-  PhysicalParameters      physical_parameters;
-  Utils::OutputParameters output_parameters;
-
-  vfp_parameters.declare_parameters(prm);
-  physical_parameters.declare_parameters(prm);
-  output_parameters.declare_parameters(prm);
-
-  prm.parse_input(parameter_filename);
-
-  vfp_parameters.parse_parameters(prm);
-  physical_parameters.parse_parameters(prm);
-  output_parameters.parse_parameters(prm);
-
-  std::ofstream log_file(output_parameters.results_path /
-                           output_parameters.simulation_id /
-                           "convergence_expansion_order.csv",
-                         std::ios::app);
-  saplog.attach(log_file, false);
-
-  saplog.pop();
-  saplog << "# "
-         << "expansion_order"
-         << "\t L2\t Linfty\t CPU time [s]\t Wall time [s]\t n_dof"
-         << std::endl;
-  saplog.push("Tests");
-  for (const double value : values)
-    {
-      saplog << "expansion_order"
-             << "=" << value << std::endl;
-      vfp_parameters.expansion_order = static_cast<unsigned int>(value);
-      output_parameters.base_file_name =
-        "expansion_order_" + dealii::Utilities::to_string(value);
-
-      VFPSolver<dim> vfp_solver(vfp_parameters,
-                                physical_parameters,
-                                output_parameters);
-      vfp_solver.run();
-      timer.stop();
-
-      using namespace sapinternal;
-      AnalyticSolution<dimension> analytic_solution(
-        physical_parameters,
-        vfp_solver.get_pde_system().system_size,
-        vfp_parameters.final_time);
-
-      const double L2_error =
-        vfp_solver.compute_global_error(analytic_solution,
-                                        dealii::VectorTools::L2_norm,
-                                        dealii::VectorTools::L2_norm);
-      const double L2_norm =
-        vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                         dealii::VectorTools::L2_norm);
-
-      saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-             << ", rel error = " << L2_error / L2_norm
-             << ", CPU/wall time = " << timer.cpu_time() << "/"
-             << timer.wall_time() << " s" << std::endl;
-      saplog.push("Tests");
-    }
-
-  saplog.detach();
-  log_file.close();
-
-  return 0;
-}
-
-
-int
-test_run(const std::string &parameter_filename, const double max_L2_error)
-{
-  using namespace sapphirepp;
-  using namespace VFP;
-
-  saplog.push("Tests");
-  saplog << "Test run with parameter file \"" << parameter_filename
-         << "\" and maximal L2 error of " << max_L2_error << std::endl;
-
-  dealii::Timer           timer;
-  ParameterHandler        prm;
-  VFPParameters<dim>      vfp_parameters(vfp_flags);
-  PhysicalParameters      physical_parameters;
-  Utils::OutputParameters output_parameters;
-
-  vfp_parameters.declare_parameters(prm);
-  physical_parameters.declare_parameters(prm);
-  output_parameters.declare_parameters(prm);
-  prm.parse_input(parameter_filename);
-
-  vfp_parameters.parse_parameters(prm);
-  physical_parameters.parse_parameters(prm);
-  output_parameters.parse_parameters(prm);
-
-  timer.start();
-  VFPSolver<dim> vfp_solver(vfp_parameters,
-                            physical_parameters,
-                            output_parameters);
-  vfp_solver.run();
-  timer.stop();
-
-  sapinternal::AnalyticSolution<dimension> analytic_solution(
-    physical_parameters,
-    vfp_solver.get_pde_system().system_size,
-    vfp_parameters.final_time);
-
-  const double L2_error =
-    vfp_solver.compute_global_error(analytic_solution,
-                                    dealii::VectorTools::L2_norm,
-                                    dealii::VectorTools::L2_norm);
-  const double L2_norm =
-    vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                     dealii::VectorTools::L2_norm);
-
-  saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-         << ", rel error = " << L2_error / L2_norm
-         << ", CPU/wall time = " << timer.cpu_time() << "/" << timer.wall_time()
-         << " s" << std::endl;
-
-  AssertThrow(L2_error / L2_norm < max_L2_error,
-              dealii::ExcMessage(
-                "L2 error is too large! (" +
-                dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
-                dealii::Utilities::to_string(max_L2_error) + ")"));
-  saplog.pop();
-  return 0;
-}
-
 
 int
 main(int argc, char *argv[])
 {
   try
     {
+      /** [Main function setup] */
       using namespace sapphirepp;
       using namespace VFP;
+
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-
-      saplog.init();
-      saplog.pop();
-      saplog.depth_console(2);
-      saplog.depth_file(0);
-      saplog << "Start test-scattering-only-1d" << std::endl;
+      saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter.prm";
       if (argc > 1)
         parameter_filename = argv[1];
 
-      std::string run_type = "test_run";
+      double max_L2_error = VFPParameters<dim>::epsilon_d;
       if (argc > 2)
-        run_type = argv[2];
+        max_L2_error = std::stod(argv[2]);
 
-      if (run_type == "test_run")
-        {
-          double max_L2_error = VFPParameters<dimension>::epsilon_d;
-          if (argc > 3)
-            max_L2_error = std::stod(argv[3]);
-          test_run(parameter_filename, max_L2_error);
-        }
-      else if (run_type == "expansion_order")
-        {
-          std::vector<double> values = {1, 2, 3, 4, 5, 6, 7, 8};
-          if (argc > 3)
-            {
-              values.clear();
-              for (int i = 3; i < argc; i++)
-                values.push_back(std::stod(argv[i]));
-            }
-          convergence_with_expansion_order(parameter_filename, values);
-        }
-      else
-        AssertThrow(false,
-                    dealii::ExcMessage("Unknown run type \"" + run_type +
-                                       "\"!"));
+      ParameterHandler        prm;
+      PhysicalParameters      physical_parameters;
+      Utils::OutputParameters output_parameters;
+      VFPParameters<dim>      vfp_parameters(vfp_flags);
+
+      physical_parameters.declare_parameters(prm);
+      output_parameters.declare_parameters(prm);
+      vfp_parameters.declare_parameters(prm);
+
+      prm.parse_input(parameter_filename);
+
+      physical_parameters.parse_parameters(prm);
+      output_parameters.parse_parameters(prm);
+      vfp_parameters.parse_parameters(prm);
+      /** [Main function setup] */
+
+
+      /** [Run simulation] */
+      VFPSolver<dim> vfp_solver(vfp_parameters,
+                                physical_parameters,
+                                output_parameters);
+      vfp_solver.run();
+      /** [Run simulation] */
+
+
+      /** [Compare to exact solution] */
+      saplog << "Compare to exact solution" << std::endl;
+
+      sapinternal::AnalyticSolution<dim> exact_solution(
+        physical_parameters,
+        vfp_solver.get_pde_system().system_size,
+        vfp_parameters.final_time);
+
+      test_run_vfp_output<dim>(vfp_solver,
+                               vfp_parameters,
+                               output_parameters,
+                               exact_solution,
+                               0,
+                               vfp_parameters.final_time,
+                               "exact_solution");
+
+
+      test_run_vfp_error<dim>(vfp_solver, exact_solution, saplog, max_L2_error);
+
+      sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
+      /** [Compare to exact solution] */
     }
   catch (std::exception &exc)
     {

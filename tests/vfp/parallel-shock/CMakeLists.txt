@@ -7,6 +7,9 @@ add_executable(test-parallel-shock test-parallel-shock.cpp)
 sapphirepp_setup_target_vfp(test-parallel-shock
   ${PROJECT_SOURCE_DIR}/examples/vfp/parallel-shock
 )
+target_include_directories(test-parallel-shock PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
+)
 
 add_test(NAME parallel-shock COMMAND
   mpirun -np ${MPI_NPROC} ./test-parallel-shock parameter.prm 0.33

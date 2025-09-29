@@ -20,9 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file tests/vfp/scattering-only/test-scattering-only-2d.cpp
+ * @file
+ * tests/vfp/steady-state-parallel-shock/test-steady-state-parallel-shock-scaled.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement 2d tests for scattering-only example
+ * @brief Implement tests for steady-state-parallel-shock-scaled example
  */
 
 #include <deal.II/base/mpi.h>
@@ -39,12 +40,13 @@
 
 
 
-const unsigned int dim = 2;
+const unsigned int dim = sapphirepp::VFP::dimension;
 
 
 
 namespace sapinternal
 {
+  using namespace dealii;
   using namespace sapphirepp;
 
   template <unsigned int dim>
@@ -53,8 +55,66 @@ namespace sapinternal
   public:
     AnalyticSolution(const PhysicalParameters &physical_parameters,
                      const unsigned int        system_size,
-                     const double              time)
-      : dealii::Function<dim>(system_size, time)
+                     const double             &mass)
+      : Function<dim>(system_size)
+      , prm{physical_parameters}
+      , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
+      , particle_velocity(mass)
+      , scattering_frequency(prm)
+    {}
+
+
+
+    void
+    vector_value(const Point<dim> &point, Vector<double> &f) const override
+    {
+      AssertDimension(f.size(), this->n_components);
+
+      const double u  = prm.u_sh;
+      const double r  = prm.compression_ratio;
+      const double p0 = prm.p_inj;
+
+      const double log_p = point[1];
+      const double x     = point[0];
+
+      std::vector<double>     values(1);
+      std::vector<Point<dim>> points = {point};
+      particle_velocity.value_list(points, values);
+      const double v = values[0];
+      scattering_frequency.value_list(points, values);
+      const double nu = values[0];
+
+      f = 0;
+
+      f[0] = 3. * prm.Q / (std::sqrt(4 * M_PI) * u * p0 * p0 * p0) * r /
+             (r - 1.) * std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0))) *
+             std::exp(3 * log_p);
+
+      if (x < 0.)
+        {
+          f[0] *= std::exp(3 * u * nu / (v * v) * x);
+          f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
+        }
+    }
+
+
+
+  private:
+    const PhysicalParameters                       prm;
+    const std::vector<std::array<unsigned int, 3>> lms_indices;
+    const VFP::ParticleVelocity<dim, true>         particle_velocity;
+    const VFP::ScatteringFrequency<dim>            scattering_frequency;
+  };
+
+
+
+  template <unsigned int dim>
+  class WeightFunction : public Function<dim>
+  {
+  public:
+    WeightFunction(const PhysicalParameters &physical_parameters,
+                   const unsigned int        system_size)
+      : Function<dim>(system_size)
       , prm{physical_parameters}
       , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
     {}
@@ -62,17 +122,19 @@ namespace sapinternal
 
 
     void
-    vector_value([[maybe_unused]] const dealii::Point<dim> &point,
-                 dealii::Vector<double>                    &f) const override
+    vector_value(const Point<dim> &point, Vector<double> &weight) const override
     {
-      AssertDimension(f.size(), this->n_components);
+      AssertDimension(weight.size(), this->n_components);
 
-      for (unsigned int i = 0; i < f.size(); ++i)
+      const double p0    = prm.p_inj;
+      const double log_p = point[1];
+
+      weight = 0;
+
+      if (std::exp(log_p) > p0)
         {
-          const unsigned int l = lms_indices[i][0];
-          const double       t = this->get_time();
-
-          f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
+          weight[0] = std::exp(4 * log_p);
+          weight[2] = std::exp(4 * log_p);
         }
     }
 
@@ -139,7 +201,10 @@ main(int argc, char *argv[])
       sapinternal::AnalyticSolution<dim> exact_solution(
         physical_parameters,
         vfp_solver.get_pde_system().system_size,
-        vfp_parameters.final_time);
+        vfp_parameters.mass);
+
+      const sapinternal::WeightFunction<dim> weight(
+        physical_parameters, vfp_solver.get_pde_system().system_size);
 
       test_run_vfp_output<dim>(vfp_solver,
                                vfp_parameters,
@@ -150,7 +215,8 @@ main(int argc, char *argv[])
                                "exact_solution");
 
 
-      test_run_vfp_error<dim>(vfp_solver, exact_solution, saplog, max_L2_error);
+      test_run_vfp_error<dim>(
+        vfp_solver, exact_solution, saplog, max_L2_error, &weight);
 
       sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
       /** [Compare to exact solution] */
