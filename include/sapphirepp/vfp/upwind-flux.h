@@ -105,6 +105,26 @@ namespace sapphirepp
         std::vector<dealii::FullMatrix<double>>   &negative_flux_matrices);
 
 
+
+      /**
+       * @brief TODO
+       *
+       * @param q_points Quadrature points
+       * @param normals Normal vectors at the quadrature points
+       * @param positive_flux_matrices Return positive flux matrices
+       *                               at the quadrature points
+       * @param negative_flux_matrices Return negative flux matrices
+       *                               at the quadrature points
+       */
+      void
+      compute_local_lax_friedrichs_fluxes(
+        const std::vector<dealii::Point<dim>>     &q_points,
+        const std::vector<dealii::Tensor<1, dim>> &normals,
+        std::vector<dealii::FullMatrix<double>>   &flux_matrices,
+        std::vector<double>                       &max_eigenvalues);
+
+
+
       /**
        * @brief Test the upwind flux computation for random input.
        */
