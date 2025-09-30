@@ -88,7 +88,7 @@ namespace sapphirepp
 
 
       /**
-       * @brief Computes the upwind fluxes at the quadrature points
+       * @brief Computes the upwind fluxes at the quadrature points.
        *
        * @param q_points Quadrature points
        * @param normals Normal vectors at the quadrature points
@@ -103,6 +103,26 @@ namespace sapphirepp
         const std::vector<dealii::Tensor<1, dim>> &normals,
         std::vector<dealii::FullMatrix<double>>   &positive_flux_matrices,
         std::vector<dealii::FullMatrix<double>>   &negative_flux_matrices);
+
+
+
+      /**
+       * @brief Computes the local Lax-Friedrichs fluxes
+       *        at the quadrature points.
+       *
+       * @param q_points Quadrature points
+       * @param normals Normal vectors at the quadrature points
+       * @param flux_matrices Return flux matrices at the quadrature points
+       * @param max_eigenvalues Return maximum eigenvalues
+       *                        at the quadrature points
+       */
+      void
+      compute_local_lax_friedrichs_fluxes(
+        const std::vector<dealii::Point<dim>>     &q_points,
+        const std::vector<dealii::Tensor<1, dim>> &normals,
+        std::vector<dealii::FullMatrix<double>>   &flux_matrices,
+        std::vector<double>                       &max_eigenvalues);
+
 
 
       /**

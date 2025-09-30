@@ -1558,12 +1558,27 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
       q_points.size(), FullMatrix<double>(pde_system.system_size));
     std::vector<FullMatrix<double>> negative_flux_matrices(
       q_points.size(), FullMatrix<double>(pde_system.system_size));
+    std::vector<FullMatrix<double>> lax_friedrichs_flux_matrices(
+      q_points.size(), FullMatrix<double>(pde_system.system_size));
+    std::vector<double> max_eigenvalues(q_points.size());
     // NOLINTEND(google-readability-casting)
 
-    upwind_flux.compute_upwind_fluxes(q_points,
-                                      normals,
-                                      positive_flux_matrices,
-                                      negative_flux_matrices);
+    const bool lax_friedrichs = true;
+
+    if (!lax_friedrichs)
+      {
+        upwind_flux.compute_upwind_fluxes(q_points,
+                                          normals,
+                                          positive_flux_matrices,
+                                          negative_flux_matrices);
+      }
+    else
+      {
+        upwind_flux.compute_local_lax_friedrichs_fluxes(
+          q_points, normals, lax_friedrichs_flux_matrices, max_eigenvalues);
+      }
+
+    // TODO: Make the loop
 
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {

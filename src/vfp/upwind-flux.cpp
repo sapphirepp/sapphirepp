@@ -234,6 +234,79 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
 sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+  compute_local_lax_friedrichs_fluxes(
+    const std::vector<dealii::Point<dim>>     &q_points,
+    const std::vector<dealii::Tensor<1, dim>> &normals,
+    std::vector<dealii::FullMatrix<double>>   &flux_matrices,
+    std::vector<double>                       &max_eigenvalues)
+{
+  bool space_direction = true;
+  if constexpr (has_momentum)
+    {
+      if (std::abs(1. - std::abs(normals[0][dim - 1])) <
+          VFPParameters<dim>::epsilon_d)
+        space_direction = false;
+    }
+
+  if (space_direction)
+    {
+      // Background velocity field
+      // Get the value of the velocity field at every quadrature point
+      // TODO: Value list for a specific component would be faster.
+      std::vector<dealii::Vector<double>> velocities(q_points.size(),
+                                                     dealii::Vector<double>(3));
+      background_velocity_field.vector_value_list(q_points, velocities);
+
+      // Particle
+      std::vector<double> particle_velocities(q_points.size());
+      if constexpr (has_momentum)
+        {
+          // if distribution functions depends on p, the particle velocity
+          // depends on the position in the phase space and needs to be computed
+          particle_velocity_func.value_list(q_points, particle_velocities);
+        }
+      else
+        {
+          std::fill(particle_velocities.begin(),
+                    particle_velocities.end(),
+                    velocity);
+        }
+
+      for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
+        {
+          for (unsigned int d = 0; d < dim_cs; ++d)
+            for (unsigned int i = 0; i < matrix_size; ++i)
+              for (unsigned int j = 0; j < matrix_size; ++j)
+                flux_matrices[q_index](i, j) +=
+                  (normals[q_index][d] * particle_velocities[q_index] *
+                     advection_matrices[d][i * matrix_size + j] +
+                   ((i == j) ? normals[q_index][d] * velocities[q_index][d] :
+                               0.)); // NOTE: integer divide is on purpose )
+
+          double normal_velocity = 0;
+          for (unsigned int d = 0; d < dim_cs; ++d)
+            normal_velocity += normals[q_index][d] * velocities[q_index][d];
+
+          const double max_eigenvalue_advection_matrices =
+            *std::max_element(eigenvalues_advection_matrices.begin(),
+                              eigenvalues_advection_matrices.end());
+
+          max_eigenvalues[q_index] =
+            particle_velocities[q_index] * max_eigenvalue_advection_matrices +
+            std::abs(normal_velocity);
+        }
+    }
+  else
+    {
+      // TODO: Momentum direction
+    }
+}
+
+
+
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
+void
+sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   prepare_work_arrays_for_lapack()
 {
   // Preparations for the eigenvalue and eigenvector computations
@@ -242,31 +315,32 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // compute eigenvalues and eigenvectors for every face with n_p = 1 (or -1).
   // Lapack needs correctly sized work arrays to do these computations. It can
   // determine the sizes it needs with a specific call to the used eigenvalue
-  // routine. The work arrays will be allocated only once and then reused every
-  // time eigenvalues and eigenvectors are computed.
+  // routine. The work arrays will be allocated only once and then reused
+  // every time eigenvalues and eigenvectors are computed.
 
   // https://stackoverflow.com/questions/46618391/what-is-the-use-of-the-work-parameters-in-lapack-routines
   // Quote: "If dynamic allocation is available, the most common use of LAPACK
-  // functions is to first perform a workspace query using LWORK = -1, then use
-  // the return value to allocate a WORK array of the correct size and finally
-  // call the routine of LAPACK to get the expected result. High-end wrappers of
-  // LAPACK such as LAPACKE features function doing just that: take a look at
-  // the source of LAPACKE for function LAPACKE_dsyev()! It calls twice the
-  // function LAPACKE_dsyev_work, which calls LAPACK_dsyev (wrapping dsyev()).
+  // functions is to first perform a workspace query using LWORK = -1, then
+  // use the return value to allocate a WORK array of the correct size and
+  // finally call the routine of LAPACK to get the expected result. High-end
+  // wrappers of LAPACK such as LAPACKE features function doing just that:
+  // take a look at the source of LAPACKE for function LAPACKE_dsyev()! It
+  // calls twice the function LAPACKE_dsyev_work, which calls LAPACK_dsyev
+  // (wrapping dsyev()).
 
   // Wrappers still feature functions such as LAPACKE_dsyev_work(), where the
-  // arguments work and lwork are still required. The number of allocations can
-  // therefore be reduced if the routine is called multiple times on similar
-  // sizes by not deallocating WORK between calls, but the user must do that
-  // himself (see this example). In addition, the source of ILAENV, the function
-  // of LAPACK called to compute the optimzed size of WORK, features the
-  // following text:
+  // arguments work and lwork are still required. The number of allocations
+  // can therefore be reduced if the routine is called multiple times on
+  // similar sizes by not deallocating WORK between calls, but the user must
+  // do that himself (see this example). In addition, the source of ILAENV,
+  // the function of LAPACK called to compute the optimzed size of WORK,
+  // features the following text:
 
   //     This version provides a set of parameters which should give good, but
-  //     not optimal, performance on many of the currently available computers.
-  //     Users are encouraged to modify this subroutine to set the tuning
-  //     parameters for their particular machine using the option and problem
-  //     size information in the arguments.
+  //     not optimal, performance on many of the currently available
+  //     computers. Users are encouraged to modify this subroutine to set the
+  //     tuning parameters for their particular machine using the option and
+  //     problem size information in the arguments.
 
   // As a result, testing sizes of WORK larger than the size returned by the
   // workspace query could improve performances."
@@ -366,8 +440,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &info);
   // NOTE: The eigenvalues of A_x can computed very efficiently because A_x is
   // (when ordered correctly) a tridiagonal symmetric matrix, i.e. it is in
-  // Hessenberg-Form. At the moment it is not ordered correctly. The computation
-  // has only to be done once.
+  // Hessenberg-Form. At the moment it is not ordered correctly. The
+  // computation has only to be done once.
   Assert(info >= 0, dealii::ExcInternalError());
   if (info != 0)
     std::cerr << "The computation of the eigenvalues and eigenvectors of A_x "
@@ -433,8 +507,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
   // TODO: Rotate the eigenvectors of A_x to get the eigenvectors of A_y and
   // A_z, i.e. implement the rotation matrices e^{-i\Omega_x pi/2} and e^{-i
-  // \Omega_z pi/2} For now we will three times compute the same eigenvalues to
-  // get the eigenvectors of A_y and A_z
+  // \Omega_z pi/2} For now we will three times compute the same eigenvalues
+  // to get the eigenvectors of A_y and A_z
 }
 
 
