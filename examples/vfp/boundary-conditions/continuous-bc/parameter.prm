@@ -1,0 +1,41 @@
+subsection Output
+  set Results folder               = ./results
+  set Simulation identifier        = continuous-bc-small-domain-cont
+  set Number of digits for counter = 5
+  set Output frequency             = 10
+end
+subsection Physical parameters
+  set B0/2pi = 0.3
+  set sigma  = 1.
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 10
+    # set Expansion order = 3
+  end
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type             = Hypercube
+    set Number of cells       = 128
+    set Point 1               = -2.
+    set Point 2               = 2.
+    subsection Boundary conditions
+      set lower x = continuous
+      set upper x = continuous
+    end
+  end
+  subsection Particle properties
+    set Charge = 1.
+    set Mass   = 1.
+  end
+  subsection Time stepping
+    set Final time     = 20
+    set Method         = ERK4
+    set Time step size = 0.01
+  end
+  subsection TransportOnly
+    set Gamma = 3.
+  end
+end
