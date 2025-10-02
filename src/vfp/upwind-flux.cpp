@@ -291,14 +291,83 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
             *std::max_element(eigenvalues_advection_matrices.begin(),
                               eigenvalues_advection_matrices.end());
 
+          /** @todo Precompute max eigenvalue */
           max_eigenvalues[q_index] =
             particle_velocities[q_index] * max_eigenvalue_advection_matrices +
             std::abs(normal_velocity);
         }
     }
   else
-    {
-      // TODO: Momentum direction
+    { // Fluxes in the p direction
+      // NOTE: If momentum terms are included, then the last component of
+      // normals, points etc. are the ones corresponding to the momentum
+      // direction
+      std::vector<dealii::Vector<double>> material_derivative_vel(
+        q_points.size(), dealii::Vector<double>(3));
+      background_velocity_field.material_derivative_list(
+        q_points, material_derivative_vel);
+
+      std::vector<dealii::FullMatrix<double>> jacobians_vel(
+        q_points.size(), dealii::FullMatrix<double>(3));
+      background_velocity_field.jacobian_list(q_points, jacobians_vel);
+
+      std::vector<double> particle_gammas(q_points.size());
+      particle_gamma_func.value_list(q_points, particle_gammas);
+
+
+      for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
+        {
+          // compute the matrix sum at the point q at time t. Overwrites the
+          // member variable matrix_sum
+          compute_matrix_sum(normals[q_index][dim - 1],  // n_p
+                             q_points[q_index][dim - 1], // momentum
+                             particle_gammas[q_index],
+                             material_derivative[q_index],
+                             jacobian[q_index]);
+
+          // copy the flux matrices
+          for (unsigned int i = 0; i < matrix_size; ++i)
+            {
+              for (unsigned int j = 0; j < matrix_size; ++j)
+                {
+                  flux_matrices[q_index](i, j) =
+                    matrix_sum[i * matrix_size + j];
+                }
+            }
+
+          dealii::syevr('N', // compute eigenvalues only
+                        'I', // compute specified set of eigenvalues
+                        uplo,
+                        &matrix_size_blas,
+                        matrix_sum.data(),
+                        &matrix_size_blas,
+                        &double_dummy,
+                        &double_dummy,
+                        1,                 // smallest eigenvalue
+                        &matrix_size_blas, // largest eigenvalue
+                        &abstol,
+                        &num_eigenvalues,
+                        eigenvalues.data(),
+                        eigenvectors.data(),
+                        &matrix_size_blas,
+                        isuppz.data(),
+                        work.data(),
+                        &lwork,
+                        iwork.data(),
+                        &liwork,
+                        &info);
+          Assert(info >= 0, dealii::ExcInternalError());
+          if (info != 0)
+            std::cerr /** @todo Better error handling */
+              << "The computation of the eigenvalues and eigenvectors for the "
+                 "flux in p direction failed: LAPACK error in syevr"
+              << std::endl;
+
+          const double max_eigenvalue = eigenvalues[1];
+          const double min_eigenvalue = eigenvalues[0];
+          max_eigenvalues[q_index] =
+            std::max(std::abs(min_eigenvalue), std::abs(max_eigenvalue));
+        }
     }
 }
 
