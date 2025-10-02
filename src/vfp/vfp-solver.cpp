@@ -1409,12 +1409,25 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
       q_points.size(), FullMatrix<double>(pde_system.system_size));
     std::vector<FullMatrix<double>> negative_flux_matrices(
       q_points.size(), FullMatrix<double>(pde_system.system_size));
+    std::vector<FullMatrix<double>> lax_friedrichs_flux_matrices(
+      q_points.size(), FullMatrix<double>(pde_system.system_size));
+    std::vector<double> max_eigenvalues(q_points.size());
     // NOLINTEND(google-readability-casting)
 
-    upwind_flux.compute_upwind_fluxes(q_points,
-                                      normals,
-                                      positive_flux_matrices,
-                                      negative_flux_matrices);
+    const bool lax_friedrichs = true;
+
+    if (!lax_friedrichs)
+      {
+        upwind_flux.compute_upwind_fluxes(q_points,
+                                          normals,
+                                          positive_flux_matrices,
+                                          negative_flux_matrices);
+      }
+    else
+      {
+        upwind_flux.compute_local_lax_friedrichs_fluxes(
+          q_points, normals, lax_friedrichs_flux_matrices, max_eigenvalues);
+      }
 
     std::vector<Vector<double>> bc_values(
       q_points.size(), Vector<double>(pde_system.system_size));
@@ -1439,50 +1452,124 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                   {
                     case BoundaryConditions::continuous:
                       {
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          positive_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          negative_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        if (!lax_friedrichs)
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              positive_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              negative_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
+                        else
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              0.5 * fe_face_v.shape_value(i, q_index) *
+                              (lax_friedrichs_flux_matrices[q_index](
+                                 component_i, component_j) +
+                               ((component_i == component_j) ?
+                                  max_eigenvalues[q_index] :
+                                  0.)) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            copy_data.cell_matrix(i, j) +=
+                              0.5 * fe_face_v.shape_value(i, q_index) *
+                              (lax_friedrichs_flux_matrices[q_index](
+                                 component_i, component_j) -
+                               ((component_i == component_j) ?
+                                  max_eigenvalues[q_index] :
+                                  0.)) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
                         break;
                       }
                     case BoundaryConditions::zero_inflow:
                       {
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          positive_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        if (!lax_friedrichs)
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              positive_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
+                        else
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              0.5 * fe_face_v.shape_value(i, q_index) *
+                              (lax_friedrichs_flux_matrices[q_index](
+                                 component_i, component_j) +
+                               ((component_i == component_j) ?
+                                  max_eigenvalues[q_index] :
+                                  0.)) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
                         break;
                       }
                     case BoundaryConditions::reflective:
                       {
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          positive_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          negative_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          reflective_bc_signature[boundary_coordinate]
-                                                 [component_j] *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        if (!lax_friedrichs)
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              positive_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              negative_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              reflective_bc_signature[boundary_coordinate]
+                                                     [component_j] *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
+                        else
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              0.5 * fe_face_v.shape_value(i, q_index) *
+                              (lax_friedrichs_flux_matrices[q_index](
+                                 component_i, component_j) +
+                               ((component_i == component_j) ?
+                                  max_eigenvalues[q_index] :
+                                  0.)) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                            copy_data.cell_matrix(i, j) +=
+                              0.5 * fe_face_v.shape_value(i, q_index) *
+                              (lax_friedrichs_flux_matrices[q_index](
+                                 component_i, component_j) -
+                               ((component_i == component_j) ?
+                                  max_eigenvalues[q_index] :
+                                  0.)) *
+                              reflective_bc_signature[boundary_coordinate]
+                                                     [component_j] *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
                         break;
                       }
                     case BoundaryConditions::inflow:
                       {
-                        copy_data.cell_matrix(i, j) +=
-                          fe_face_v.shape_value(i, q_index) *
-                          positive_flux_matrices[q_index](component_i,
-                                                          component_j) *
-                          fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                        if (!lax_friedrichs)
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_face_v.shape_value(i, q_index) *
+                              positive_flux_matrices[q_index](component_i,
+                                                              component_j) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
+                        else
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              0.5 * fe_face_v.shape_value(i, q_index) *
+                              (lax_friedrichs_flux_matrices[q_index](
+                                 component_i, component_j) +
+                               ((component_i == component_j) ?
+                                  max_eigenvalues[q_index] :
+                                  0.)) *
+                              fe_face_v.shape_value(j, q_index) * JxW[q_index];
+                          }
                         break;
                       }
                     case BoundaryConditions::periodic:
@@ -1495,10 +1582,25 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
             if (boundary_condition == BoundaryConditions::inflow)
               {
                 for (unsigned int k = 0; k < pde_system.system_size; ++k)
-                  copy_data.cell_rhs(i) -=
-                    fe_face_v.shape_value(i, q_index) *
-                    negative_flux_matrices[q_index](component_i, k) *
-                    bc_values[q_index][k] * JxW[q_index];
+                  {
+                    if (!lax_friedrichs)
+                      {
+                        copy_data.cell_rhs(i) -=
+                          fe_face_v.shape_value(i, q_index) *
+                          negative_flux_matrices[q_index](component_i, k) *
+                          bc_values[q_index][k] * JxW[q_index];
+                      }
+                    else
+                      {
+                        copy_data.cell_rhs(i) -=
+                          0.5 * fe_face_v.shape_value(i, q_index) *
+                          (lax_friedrichs_flux_matrices[q_index](component_i,
+                                                                 k) -
+                           ((component_i == k) ? max_eigenvalues[q_index] :
+                                                 0.)) *
+                          bc_values[q_index][k] * JxW[q_index];
+                      }
+                  }
               }
           }
       }
