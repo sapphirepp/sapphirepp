@@ -12,7 +12,7 @@ subsection Physical parameters
 end
 subsection VFP
   subsection Expansion
-    set Expansion order = 10
+    set Expansion order = 3
   end
   subsection Finite element
     set Polynomial degree = 1

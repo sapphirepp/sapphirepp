@@ -120,7 +120,7 @@ namespace sapphirepp
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
     constexpr VFPFlags vfp_flags =
-      VFPFlags::spatial_advection | VFPFlags::collision;
+      VFPFlags::time_evolution | VFPFlags::spatial_advection;
     /** [VFP Flags] */
 
 
