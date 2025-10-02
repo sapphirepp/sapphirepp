@@ -287,9 +287,14 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
           for (unsigned int d = 0; d < dim_cs; ++d)
             normal_velocity += normals[q_index][d] * velocities[q_index][d];
 
+          // eigenvalues_advection_matrices are in ascending order,
+          // see LAPACK.dsyevr()
+          // https://www.netlib.org/lapack/explore-html/d1/d56/group__heevr_gaa334ac0c11113576db0fc37b7565e8b5.html#gaa334ac0c11113576db0fc37b7565e8b5
+          const double min_eigenvalue = eigenvalues_advection_matrices[0];
+          const double max_eigenvalue =
+            eigenvalues_advection_matrices[matrix_size - 1];
           const double max_eigenvalue_advection_matrices =
-            *std::max_element(eigenvalues_advection_matrices.begin(),
-                              eigenvalues_advection_matrices.end());
+            std::max(std::abs(min_eigenvalue), std::abs(max_eigenvalue));
 
           /** @todo Precompute max eigenvalue */
           max_eigenvalues[q_index] =
@@ -322,8 +327,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
           compute_matrix_sum(normals[q_index][dim - 1],  // n_p
                              q_points[q_index][dim - 1], // momentum
                              particle_gammas[q_index],
-                             material_derivative[q_index],
-                             jacobian[q_index]);
+                             material_derivative_vel[q_index],
+                             jacobians_vel[q_index]);
 
           // copy the flux matrices
           for (unsigned int i = 0; i < matrix_size; ++i)
@@ -335,16 +340,17 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 }
             }
 
-          dealii::syevr('N', // compute eigenvalues only
-                        'I', // compute specified set of eigenvalues
+
+          dealii::syevr(&dealii::LAPACKSupport::N, // compute eigenvalues only
+                        &dealii::LAPACKSupport::A, // compute all eigenvalues
                         uplo,
                         &matrix_size_blas,
                         matrix_sum.data(),
                         &matrix_size_blas,
                         &double_dummy,
                         &double_dummy,
-                        1,                 // smallest eigenvalue
-                        &matrix_size_blas, // largest eigenvalue
+                        int_dummy,
+                        int_dummy,
                         &abstol,
                         &num_eigenvalues,
                         eigenvalues.data(),
@@ -363,8 +369,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                  "flux in p direction failed: LAPACK error in syevr"
               << std::endl;
 
-          const double max_eigenvalue = eigenvalues[1];
           const double min_eigenvalue = eigenvalues[0];
+          const double max_eigenvalue = eigenvalues[matrix_size - 1];
           max_eigenvalues[q_index] =
             std::max(std::abs(min_eigenvalue), std::abs(max_eigenvalue));
         }
