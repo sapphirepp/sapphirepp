@@ -272,23 +272,24 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                     velocity);
         }
 
-      for (unsigned int q_index; q_index < q_points.size(); ++q_index)
+      for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
         {
           for (unsigned int d = 0; d < dim_cs; ++d)
-            for (unsigned int i = 0; i < matrix_size * matrix_size; ++i)
-              flux_matrices[q_index][i] +=
-                (normals[q_index][d] * particle_velocities[q_index] *
-                   advection_matrices[d][i] +
-                 ((i == i / matrix_size * (matrix_size + 1)) ?
-                    normals[q_index][d] * velocities[q_index][d] :
-                    0.)); // NOTE: integer divide is on purpose )
+            for (unsigned int i = 0; i < matrix_size; ++i)
+              for (unsigned int j = 0; j < matrix_size; ++j)
+                flux_matrices[q_index](i, j) +=
+                  (normals[q_index][d] * particle_velocities[q_index] *
+                     advection_matrices[d][i * matrix_size + j] +
+                   ((i == j) ? normals[q_index][d] * velocities[q_index][d] :
+                               0.)); // NOTE: integer divide is on purpose )
 
           double normal_velocity = 0;
           for (unsigned int d = 0; d < dim_cs; ++d)
             normal_velocity += normals[q_index][d] * velocities[q_index][d];
 
           const double max_eigenvalue_advection_matrices =
-            eigenvalues_advection_matrices[pde_system.system_size - 1];
+            *std::max_element(eigenvalues_advection_matrices.begin(),
+                              eigenvalues_advection_matrices.end());
 
           max_eigenvalues[q_index] =
             particle_velocities[q_index] * max_eigenvalue_advection_matrices +
@@ -297,7 +298,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
     }
   else
     {
-      continue;
+      // TODO: Momentum direction
     }
 }
 
