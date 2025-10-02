@@ -1576,8 +1576,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
           q_points, normals, lax_friedrichs_flux_matrices, max_eigenvalues);
       }
 
-    // TODO: Make the loop
-
     for (unsigned int q_index : fe_v_face.quadrature_point_indices())
       {
         // cell_dg_matrix_11
@@ -1589,10 +1587,19 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
-                copy_data_face.cell_dg_matrix_11(i, j) +=
-                  fe_v_face.shape_value(i, q_index) *
-                  positive_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                if (!lax_friedrichs)
+                  copy_data_face.cell_dg_matrix_11(i, j) +=
+                    fe_v_face.shape_value(i, q_index) *
+                    positive_flux_matrices[q_index](component_i, component_j) *
+                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                else
+                  copy_data_face.cell_dg_matrix_11(i, j) +=
+                    0.5 * fe_v_face.shape_value(i, q_index) *
+                    (lax_friedrichs_flux_matrices[q_index](component_i,
+                                                           component_j) +
+                     ((component_i == component_j) ? max_eigenvalues[q_index] :
+                                                     0.)) *
+                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
               }
           }
         // cell_dg_matrix_12
@@ -1605,10 +1612,19 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
-                copy_data_face.cell_dg_matrix_12(i, j) -=
-                  fe_v_face_neighbor.shape_value(i, q_index) *
-                  positive_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                if (!lax_friedrichs)
+                  copy_data_face.cell_dg_matrix_12(i, j) -=
+                    fe_v_face_neighbor.shape_value(i, q_index) *
+                    positive_flux_matrices[q_index](component_i, component_j) *
+                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
+                else
+                  copy_data_face.cell_dg_matrix_12(i, j) -=
+                    0.5 * fe_v_face_neighbor.shape_value(i, q_index) *
+                    (lax_friedrichs_flux_matrices[q_index](component_i,
+                                                           component_j) +
+                     ((component_i == component_j) ? max_eigenvalues[q_index] :
+                                                     0.)) *
+                    fe_v_face.shape_value(j, q_index) * JxW[q_index];
               }
           }
         // cell_dg_matrix_21
@@ -1620,10 +1636,19 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
-                copy_data_face.cell_dg_matrix_21(i, j) +=
-                  fe_v_face.shape_value(i, q_index) *
-                  negative_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                if (!lax_friedrichs)
+                  copy_data_face.cell_dg_matrix_21(i, j) +=
+                    fe_v_face.shape_value(i, q_index) *
+                    negative_flux_matrices[q_index](component_i, component_j) *
+                    fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                else
+                  copy_data_face.cell_dg_matrix_21(i, j) +=
+                    0.5 * fe_v_face.shape_value(i, q_index) *
+                    (lax_friedrichs_flux_matrices[q_index](component_i,
+                                                           component_j) -
+                     ((component_i == component_j) ? max_eigenvalues[q_index] :
+                                                     0.)) *
+                    fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
               }
           }
         // cell_dg_matrix_22
@@ -1636,10 +1661,19 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
-                copy_data_face.cell_dg_matrix_22(i, j) -=
-                  fe_v_face_neighbor.shape_value(i, q_index) *
-                  negative_flux_matrices[q_index](component_i, component_j) *
-                  fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                if (!lax_friedrichs)
+                  copy_data_face.cell_dg_matrix_22(i, j) -=
+                    fe_v_face_neighbor.shape_value(i, q_index) *
+                    negative_flux_matrices[q_index](component_i, component_j) *
+                    fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
+                else
+                  copy_data_face.cell_dg_matrix_22(i, j) -=
+                    0.5 * fe_v_face_neighbor.shape_value(i, q_index) *
+                    (lax_friedrichs_flux_matrices[q_index](component_i,
+                                                           component_j) -
+                     ((component_i == component_j) ? max_eigenvalues[q_index] :
+                                                     0.)) *
+                    fe_v_face_neighbor.shape_value(j, q_index) * JxW[q_index];
               }
           }
       }
