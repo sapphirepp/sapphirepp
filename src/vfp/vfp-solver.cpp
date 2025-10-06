@@ -208,7 +208,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , physical_parameters{physical_parameters}
   , output_parameters{output_parameters}
   , pde_system(vfp_parameters.expansion_order)
-  , upwind_flux(pde_system, vfp_parameters, physical_parameters)
+  , numerical_flux(pde_system, vfp_parameters, physical_parameters)
   , mpi_communicator{MPI_COMM_WORLD}
   , triangulation(mpi_communicator)
   , dof_handler(triangulation)
@@ -762,7 +762,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
   using namespace sapinternal::VFPSolverImplementation;
-  upwind_flux.set_time(time);
+  numerical_flux.set_time(time);
 
   const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
     pde_system.get_advection_matrices();
@@ -1430,14 +1430,14 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
     if constexpr ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
       {
-        upwind_flux.compute_upwind_fluxes(q_points,
-                                          normals,
-                                          positive_flux_matrices,
-                                          negative_flux_matrices);
+        numerical_flux.compute_upwind_fluxes(q_points,
+                                             normals,
+                                             positive_flux_matrices,
+                                             negative_flux_matrices);
       }
     else
       {
-        upwind_flux.compute_local_lax_friedrichs_fluxes(
+        numerical_flux.compute_local_lax_friedrichs_fluxes(
           q_points, normals, lax_friedrichs_flux_matrices, max_eigenvalues);
       }
 
@@ -1681,14 +1681,14 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
     if constexpr ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
       {
-        upwind_flux.compute_upwind_fluxes(q_points,
-                                          normals,
-                                          positive_flux_matrices,
-                                          negative_flux_matrices);
+        numerical_flux.compute_upwind_fluxes(q_points,
+                                             normals,
+                                             positive_flux_matrices,
+                                             negative_flux_matrices);
       }
     else
       {
-        upwind_flux.compute_local_lax_friedrichs_fluxes(
+        numerical_flux.compute_local_lax_friedrichs_fluxes(
           q_points, normals, lax_friedrichs_flux_matrices, max_eigenvalues);
       }
 

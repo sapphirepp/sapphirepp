@@ -20,13 +20,13 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file upwind-flux.cpp
+ * @file numerical-flux.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement @ref sapphirepp::VFP::UpwindFlux
+ * @brief Implement @ref sapphirepp::VFP::NumericalFlux
  */
 
-#include "upwind-flux.h"
+#include "numerical-flux.h"
 
 #include <deal.II/base/exceptions.h>
 
@@ -47,7 +47,7 @@
 
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   const PDESystem          &system,
   const VFPParameters<dim> &solver_control,
   const PhysicalParameters &physical_parameters)
@@ -118,7 +118,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::set_time(
   double time)
 {
   background_velocity_field.set_time(time);
@@ -128,7 +128,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_upwind_fluxes(
     const std::vector<dealii::Point<dim>>     &q_points,
     const std::vector<dealii::Tensor<1, dim>> &normals,
@@ -234,7 +234,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_local_lax_friedrichs_fluxes(
     const std::vector<dealii::Point<dim>>     &q_points,
     const std::vector<dealii::Tensor<1, dim>> &normals,
@@ -387,7 +387,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   prepare_work_arrays_for_lapack()
 {
   // Preparations for the eigenvalue and eigenvector computations
@@ -480,7 +480,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   prepare_upwind_fluxes()
 {
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
@@ -596,7 +596,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::test()
 {
   saplog << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
@@ -698,7 +698,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_space_directions(
     const unsigned int          component,
     const double                n_component,
@@ -764,7 +764,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_matrix_sum(const double                      n_p,
                      const double                      momentum,
                      const double                      gamma,
@@ -807,7 +807,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_p_direction(const double                  n_p,
                               const double                  momentum,
                               const double                  gamma,
@@ -888,15 +888,15 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 
 // explicit instantiation
-template class sapphirepp::VFP::UpwindFlux<1, true, true>;
-template class sapphirepp::VFP::UpwindFlux<1, true, false>;
-template class sapphirepp::VFP::UpwindFlux<1, false, true>;
-template class sapphirepp::VFP::UpwindFlux<1, false, false>;
-template class sapphirepp::VFP::UpwindFlux<2, true, true>;
-template class sapphirepp::VFP::UpwindFlux<2, true, false>;
-template class sapphirepp::VFP::UpwindFlux<2, false, true>;
-template class sapphirepp::VFP::UpwindFlux<2, false, false>;
-template class sapphirepp::VFP::UpwindFlux<3, true, true>;
-template class sapphirepp::VFP::UpwindFlux<3, true, false>;
-template class sapphirepp::VFP::UpwindFlux<3, false, true>;
-template class sapphirepp::VFP::UpwindFlux<3, false, false>;
+template class sapphirepp::VFP::NumericalFlux<1, true, true>;
+template class sapphirepp::VFP::NumericalFlux<1, true, false>;
+template class sapphirepp::VFP::NumericalFlux<1, false, true>;
+template class sapphirepp::VFP::NumericalFlux<1, false, false>;
+template class sapphirepp::VFP::NumericalFlux<2, true, true>;
+template class sapphirepp::VFP::NumericalFlux<2, true, false>;
+template class sapphirepp::VFP::NumericalFlux<2, false, true>;
+template class sapphirepp::VFP::NumericalFlux<2, false, false>;
+template class sapphirepp::VFP::NumericalFlux<3, true, true>;
+template class sapphirepp::VFP::NumericalFlux<3, true, false>;
+template class sapphirepp::VFP::NumericalFlux<3, false, true>;
+template class sapphirepp::VFP::NumericalFlux<3, false, false>;

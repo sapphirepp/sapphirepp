@@ -20,14 +20,14 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file upwind-flux.h
+ * @file numerical-flux.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Define @ref sapphirepp::VFP::UpwindFlux
+ * @brief Define @ref sapphirepp::VFP::NumericalFlux
  */
 
-#ifndef VFP_UPWINDFLUX_H
-#define VFP_UPWINDFLUX_H
+#ifndef VFP_NUMERICALFLUX_H
+#define VFP_NUMERICALFLUX_H
 
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
@@ -52,14 +52,14 @@ namespace sapphirepp
   {
 
     /**
-     * @brief Class to compute the upwind fluxes in the VFP equation
+     * @brief Class to compute the numerical fluxes in the VFP equation
      *
      * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$
      * @tparam has_momentum Is th momentum term activated?
      * @tparam logarithmic_p Do we use a logarithmic momentum variable?
      */
     template <unsigned int dim, bool has_momentum, bool logarithmic_p>
-    class UpwindFlux
+    class NumericalFlux
     {
     private:
       /** Dimension of the configuration space */
@@ -67,15 +67,15 @@ namespace sapphirepp
 
     public:
       /**
-       * @brief Construct a new Upwind Flux object an initialize the matrices.
+       * @brief Construct a new NumericalFlux object an initialize the matrices.
        *
        * @param system PDE system for the VFP equation
        * @param solver_control Parameters for the VFP solver
        * @param physical_parameters User defined runtime parameters
        */
-      UpwindFlux(const PDESystem          &system,
-                 const VFPParameters<dim> &solver_control,
-                 const PhysicalParameters &physical_parameters);
+      NumericalFlux(const PDESystem          &system,
+                    const VFPParameters<dim> &solver_control,
+                    const PhysicalParameters &physical_parameters);
 
 
       /**
