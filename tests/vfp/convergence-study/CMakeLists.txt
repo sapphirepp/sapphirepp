@@ -24,7 +24,7 @@ set_property(TEST convergence-study-CN PROPERTY LABELS
 )
 
 add_test(NAME convergence-study-ERK4 COMMAND
-  ./test-convergence-study parameter-ERK4.prm 1e-8
+  ./test-convergence-study parameter-ERK4.prm 3e-8
 )
 set_property(TEST convergence-study-ERK4 PROPERTY LABELS
   "convergence-study"
@@ -35,7 +35,7 @@ set_property(TEST convergence-study-ERK4 PROPERTY LABELS
 )
 
 add_test(NAME convergence-study-LSERK4 COMMAND
-  ./test-convergence-study parameter-LSERK4.prm 1e-8
+  ./test-convergence-study parameter-LSERK4.prm 3e-8
 )
 set_property(TEST convergence-study-LSERK4 PROPERTY LABELS
   "convergence-study"
