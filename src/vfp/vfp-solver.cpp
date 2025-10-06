@@ -1406,6 +1406,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     const std::vector<Tensor<1, dim_ps>> &normals =
       fe_face_v.get_normal_vectors();
     // NOLINTBEGIN(google-readability-casting)
+    /** @todo Maybe absorb into ScratchData */
     std::vector<FullMatrix<double>> positive_flux_matrices(
       q_points.size(), FullMatrix<double>(pde_system.system_size));
     std::vector<FullMatrix<double>> negative_flux_matrices(
@@ -1415,9 +1416,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     std::vector<double> max_eigenvalues(q_points.size(), 0.);
     // NOLINTEND(google-readability-casting)
 
-    const bool lax_friedrichs = true;
-
-    if (!lax_friedrichs)
+    if constexpr ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
       {
         upwind_flux.compute_upwind_fluxes(q_points,
                                           normals,
@@ -1449,7 +1448,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                   {
                     case BoundaryConditions::continuous:
                       {
-                        if (!lax_friedrichs)
+                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                                      VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
                               fe_face_v.shape_value(i, q_index) *
@@ -1485,7 +1485,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::zero_inflow:
                       {
-                        if (!lax_friedrichs)
+                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                                      VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
                               fe_face_v.shape_value(i, q_index) *
@@ -1508,7 +1509,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::reflective:
                       {
-                        if (!lax_friedrichs)
+                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                                      VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
                               fe_face_v.shape_value(i, q_index) *
@@ -1548,7 +1550,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::inflow:
                       {
-                        if (!lax_friedrichs)
+                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                                      VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
                               fe_face_v.shape_value(i, q_index) *
@@ -1580,7 +1583,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 for (unsigned int k = 0; k < pde_system.system_size; ++k)
                   {
-                    if (!lax_friedrichs)
+                    if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                                  VFPFlags::none)
                       {
                         copy_data.cell_rhs(i) -=
                           fe_face_v.shape_value(i, q_index) *
@@ -1653,6 +1657,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     // For every interior face there is an in- and outflow represented by
     // the corresponding flux matrices
     // NOLINTBEGIN(google-readability-casting)
+    /** @todo Maybe absorb into ScratchData */
     std::vector<FullMatrix<double>> positive_flux_matrices(
       q_points.size(), FullMatrix<double>(pde_system.system_size));
     std::vector<FullMatrix<double>> negative_flux_matrices(
@@ -1662,9 +1667,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     std::vector<double> max_eigenvalues(q_points.size(), 0.);
     // NOLINTEND(google-readability-casting)
 
-    const bool lax_friedrichs = true;
-
-    if (!lax_friedrichs)
+    if constexpr ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
       {
         upwind_flux.compute_upwind_fluxes(q_points,
                                           normals,
@@ -1688,7 +1691,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
-                if (!lax_friedrichs)
+                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                              VFPFlags::none)
                   copy_data_face.cell_dg_matrix_11(i, j) +=
                     fe_v_face.shape_value(i, q_index) *
                     positive_flux_matrices[q_index](component_i, component_j) *
@@ -1713,7 +1717,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
-                if (!lax_friedrichs)
+                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                              VFPFlags::none)
                   copy_data_face.cell_dg_matrix_12(i, j) -=
                     fe_v_face_neighbor.shape_value(i, q_index) *
                     positive_flux_matrices[q_index](component_i, component_j) *
@@ -1737,7 +1742,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
-                if (!lax_friedrichs)
+                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                              VFPFlags::none)
                   copy_data_face.cell_dg_matrix_21(i, j) +=
                     fe_v_face.shape_value(i, q_index) *
                     negative_flux_matrices[q_index](component_i, component_j) *
@@ -1762,7 +1768,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
-                if (!lax_friedrichs)
+                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                              VFPFlags::none)
                   copy_data_face.cell_dg_matrix_22(i, j) -=
                     fe_v_face_neighbor.shape_value(i, q_index) *
                     negative_flux_matrices[q_index](component_i, component_j) *
