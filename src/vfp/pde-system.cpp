@@ -28,6 +28,7 @@
 
 #include "pde-system.h"
 
+#include "sapphirepp-logstream.h"
 
 
 sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
@@ -107,6 +108,8 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
   AssertDimension(cell_integrals_mask.n_rows(), system_size);
   AssertDimension(face_integrals_mask.n_cols(), system_size);
   AssertDimension(face_integrals_mask.n_rows(), system_size);
+  dealii::LogStream::Prefix prefix_coupling("Coupling", saplog);
+
 
   cell_integrals_mask.fill(dealii::DoFTools::Coupling::none);
   face_integrals_mask.fill(dealii::DoFTools::Coupling::none);
@@ -184,6 +187,33 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
             face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
           }
       }
+
+
+  saplog << "Coupling table cells: \n";
+  for (unsigned int i = 0; i < system_size; ++i)
+    {
+      for (unsigned int j = 0; j < system_size; ++j)
+        {
+          saplog << cell_integrals_mask(i, j) << " ";
+        }
+      saplog << "\n";
+    }
+  saplog << std::endl;
+  saplog << "Coupling table faces: \n";
+  for (unsigned int i = 0; i < system_size; ++i)
+    {
+      for (unsigned int j = 0; j < system_size; ++j)
+        {
+          saplog << face_integrals_mask(i, j) << " ";
+        }
+      saplog << "\n";
+    }
+  saplog << std::endl;
+  saplog << "Couplings legend:"                                 //
+         << " none=" << dealii::DoFTools::Coupling::none        //
+         << ", always=" << dealii::DoFTools::Coupling::always   //
+         << ", nonzero=" << dealii::DoFTools::Coupling::nonzero //
+         << std::endl;
 }
 
 
