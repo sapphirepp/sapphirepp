@@ -29,6 +29,10 @@
 #ifndef VFP_PDESYSTEM_H
 #define VFP_PDESYSTEM_H
 
+#include <deal.II/base/table.h>
+
+#include <deal.II/dofs/dof_tools.h>
+
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/lac/vector.h>
 
@@ -36,6 +40,8 @@
 #include <ostream>
 #include <string>
 #include <vector>
+
+#include "vfp-flags.h"
 
 namespace sapphirepp
 {
@@ -104,6 +110,24 @@ namespace sapphirepp
       create_component_name_list(const unsigned int system_size,
                                  const std::string &prefix = "f_");
       /** @} */
+
+
+
+      /**
+       * @brief Compute the coupling tables.
+       *
+       * @param dim_cs Dimension of the configuration space
+       * @param vfp_flags VFP Flags
+       * @param cell_integrals_mask Coupling table for the cells
+       * @param face_integrals_mask Coupling table for the faces
+       */
+      void
+      compute_coupling_tables(
+        const unsigned int                            dim_cs,
+        const VFPFlags                                vfp_flags,
+        dealii::Table<2, dealii::DoFTools::Coupling> &cell_integrals_mask,
+        dealii::Table<2, dealii::DoFTools::Coupling> &face_integrals_mask)
+        const;
 
 
 

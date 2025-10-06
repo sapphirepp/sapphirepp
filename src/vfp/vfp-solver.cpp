@@ -659,9 +659,21 @@ sapphirepp::VFP::VFPSolver<dim>::setup_system()
   // TODO: add if to check if there are non-homogeneous bc
   locally_owned_current_bc.reinit(locally_owned_dofs, mpi_communicator);
 
-  DynamicSparsityPattern dsp(locally_relevant_dofs);
+  DynamicSparsityPattern       dsp(locally_relevant_dofs);
+  Table<2, DoFTools::Coupling> cell_integrals_mask(pde_system.system_size,
+                                                   pde_system.system_size);
+  Table<2, DoFTools::Coupling> face_integrals_mask(pde_system.system_size,
+                                                   pde_system.system_size);
+  pde_system.compute_coupling_tables(dim_cs,
+                                     vfp_flags,
+                                     cell_integrals_mask,
+                                     face_integrals_mask);
   // NON-PERIODIC
-  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+  DoFTools::make_flux_sparsity_pattern(dof_handler,
+                                       dsp,
+                                       cell_integrals_mask,
+                                       face_integrals_mask,
+                                       triangulation.locally_owned_subdomain());
   SparsityTools::distribute_sparsity_pattern(dsp,
                                              locally_owned_dofs,
                                              mpi_communicator,

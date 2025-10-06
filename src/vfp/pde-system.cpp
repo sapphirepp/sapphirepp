@@ -96,6 +96,98 @@ sapphirepp::VFP::PDESystem::create_component_name_list(
 
 
 
+void
+sapphirepp::VFP::PDESystem::compute_coupling_tables(
+  const unsigned int                            dim_cs,
+  const VFPFlags                                vfp_flags,
+  dealii::Table<2, dealii::DoFTools::Coupling> &cell_integrals_mask,
+  dealii::Table<2, dealii::DoFTools::Coupling> &face_integrals_mask) const
+{
+  AssertDimension(cell_integrals_mask.n_cols(), system_size);
+  AssertDimension(cell_integrals_mask.n_rows(), system_size);
+  AssertDimension(face_integrals_mask.n_cols(), system_size);
+  AssertDimension(face_integrals_mask.n_rows(), system_size);
+
+  cell_integrals_mask.fill(dealii::DoFTools::Coupling::none);
+  face_integrals_mask.fill(dealii::DoFTools::Coupling::none);
+  for (unsigned int i = 0; i < system_size; ++i)
+    for (unsigned int j = 0; j < system_size; ++j)
+      {
+        // Face coupling for local Lax-Friedrichs flux
+        if ((vfp_flags & VFPFlags::time_evolution) != VFPFlags::none)
+          {
+            if (i == j)
+              cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+          }
+        if ((vfp_flags & VFPFlags::spatial_advection) != VFPFlags::none)
+          {
+            for (unsigned int d = 0; d < dim_cs; ++d)
+              {
+                if (advection_matrices[d](i, j) != 0)
+                  {
+                    cell_integrals_mask(i, j) =
+                      dealii::DoFTools::Coupling::always;
+                    face_integrals_mask(i, j) =
+                      dealii::DoFTools::Coupling::nonzero;
+                  }
+              }
+            if (i == j)
+              {
+                cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+                face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+              }
+          }
+        if ((vfp_flags & VFPFlags::collision) != VFPFlags::none)
+          {
+            if (i == j)
+              cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+          }
+        if ((vfp_flags & VFPFlags::rotation) != VFPFlags::none)
+          {
+            for (const auto &generator_rotation_matrix :
+                 generator_rotation_matrices)
+              if (generator_rotation_matrix(i, j) != 0)
+                cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+          }
+        if ((vfp_flags & VFPFlags::momentum) != VFPFlags::none)
+          {
+            for (const auto &advection_matrix : advection_matrices)
+              if (advection_matrix(i, j) != 0)
+                {
+                  cell_integrals_mask(i, j) =
+                    dealii::DoFTools::Coupling::always;
+                  face_integrals_mask(i, j) =
+                    dealii::DoFTools::Coupling::nonzero;
+                }
+            for (const auto &adv_mat_product : adv_mat_products)
+              if (adv_mat_product(i, j) != 0)
+                {
+                  cell_integrals_mask(i, j) =
+                    dealii::DoFTools::Coupling::always;
+                  face_integrals_mask(i, j) =
+                    dealii::DoFTools::Coupling::nonzero;
+                }
+            for (const auto &adv_x_gen_matrix : adv_x_gen_matrices)
+              if (adv_x_gen_matrix(i, j) != 0)
+                cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+            for (const auto &t_matrix : t_matrices)
+              if (t_matrix(i, j) != 0)
+                cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+            if (i == j)
+              face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+          }
+
+        // For upwind flux we assume all nonzero shape functions on faces couple
+        // because we cannot compute the couplings a priori.
+        if ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
+          {
+            face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+          }
+      }
+}
+
+
+
 const std::vector<dealii::LAPACKFullMatrix<double>> &
 sapphirepp::VFP::PDESystem::get_advection_matrices() const
 {
