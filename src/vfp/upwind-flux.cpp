@@ -166,12 +166,13 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
       "When computing the flux through a cell surface, it was not possible to determine the normal of the cell interface."));
 
   // Fluxes in the spatial directions
-  //
-  // NOTE: If the spatial advection term is deactivated then then dim_cs is
-  // equal to zero and first branch of the if the statement is never entered,
-  // i.e. no fluxes in spatial directions are computed.
   if (component < dim_cs)
     {
+      // Return zero fluxes for case with no spatial advection term
+      // but dim_cs != 0
+      if constexpr ((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none)
+        return;
+
       // Background velocity field
       // Get the value of the velocity field at every quadrature point
       // TODO: Value list for a specific component would be faster.
@@ -250,6 +251,11 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
   if (space_direction)
     {
+      // Return zero fluxes for case with no spatial advection term
+      // but dim_cs != 0
+      if constexpr ((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none)
+        return;
+
       // Background velocity field
       // Get the value of the velocity field at every quadrature point
       // TODO: Value list for a specific component would be faster.
