@@ -131,13 +131,13 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
                     cell_integrals_mask(i, j) =
                       dealii::DoFTools::Coupling::always;
                     face_integrals_mask(i, j) =
-                      dealii::DoFTools::Coupling::nonzero;
+                      dealii::DoFTools::Coupling::always;
                   }
               }
             if (i == j)
               {
                 cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
-                face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+                face_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
               }
           }
         if ((vfp_flags & VFPFlags::collision) != VFPFlags::none)
@@ -160,7 +160,7 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
                   cell_integrals_mask(i, j) =
                     dealii::DoFTools::Coupling::always;
                   face_integrals_mask(i, j) =
-                    dealii::DoFTools::Coupling::nonzero;
+                    dealii::DoFTools::Coupling::always;
                 }
             for (const auto &adv_mat_product : adv_mat_products)
               if (adv_mat_product(i, j) != 0)
@@ -168,7 +168,7 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
                   cell_integrals_mask(i, j) =
                     dealii::DoFTools::Coupling::always;
                   face_integrals_mask(i, j) =
-                    dealii::DoFTools::Coupling::nonzero;
+                    dealii::DoFTools::Coupling::always;
                 }
             for (const auto &adv_x_gen_matrix : adv_x_gen_matrices)
               if (adv_x_gen_matrix(i, j) != 0)
@@ -177,14 +177,14 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
               if (t_matrix(i, j) != 0)
                 cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
             if (i == j)
-              face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+              face_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
           }
 
-        // For upwind flux we assume all nonzero shape functions on faces couple
+        // For upwind flux we assume all shape functions on faces couple
         // because we cannot compute the couplings a priori.
         if ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
           {
-            face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+            face_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
           }
       }
 
