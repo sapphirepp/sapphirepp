@@ -60,7 +60,7 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = VFPParameters<dim>::epsilon_d;
+      double max_L2_error = 0.;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 

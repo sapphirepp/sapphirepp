@@ -96,11 +96,11 @@ namespace sapphirepp
       saplog << "Parsing parameters" << std::endl;
       prm.enter_subsection("Physical parameters");
 
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
       B0    = prm.get_double("B0/2pi") * 2. * M_PI;
       u0    = prm.get_double("u0");
       sigma = prm.get_double("sigma");
-      /** [Parse runtime parameter]  */
+      /** [Parse runtime parameter] */
 
       prm.leave_subsection();
     }
@@ -119,9 +119,10 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution | VFPFlags::spatial_advection |
-      VFPFlags::rotation | VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |    //
+                                   VFPFlags::spatial_advection | //
+                                   VFPFlags::rotation |          //
+                                   VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -330,7 +331,6 @@ namespace sapphirepp
         AssertDimension(velocity.size(), this->n_components);
 
         /** [Background velocity value] */
-        // zero velocity field
         velocity[0] = prm.u0; // u_x
         velocity[1] = prm.u0; // u_y
         velocity[2] = 0.;     // u_z
@@ -368,7 +368,6 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
-            // zero velocity field
             material_derivatives[q_index][0] = 0.; // D/Dt u_x
             material_derivatives[q_index][1] = 0.; // D/Dt u_y
             material_derivatives[q_index][2] = 0.; // D/Dt u_z
@@ -389,7 +388,6 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
-            // zero velocity field
             jacobians[q_index][0][0] = 0.; // \partial u_x / \partial x
             jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
             jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z

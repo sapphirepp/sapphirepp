@@ -20,9 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/parallel-shock/config.h
+ * @file examples/vfp/scattering-only/config.h
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement physical setup for parallel-shock example
+ * @brief Implement physical setup for scattering-only example
  */
 
 /** [Includes] */

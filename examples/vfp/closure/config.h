@@ -112,8 +112,8 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |
-                                   VFPFlags::spatial_advection |
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |    //
+                                   VFPFlags::spatial_advection | //
                                    VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 

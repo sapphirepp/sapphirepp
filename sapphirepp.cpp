@@ -23,7 +23,7 @@
  * @file sapphirepp.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for @sapphire
+ * @brief Implement main function for @sapphire.
  */
 
 #include <deal.II/base/mpi.h>
@@ -44,7 +44,7 @@
  *
  * Usage:
  * ```shell
- * ./sapphirepp parameter-file.prm
+ * ./build/sapphirepp parameter-file.prm [--help/-h]
  * ```
  *
  * @param argc Number of commandline arguments

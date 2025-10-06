@@ -194,7 +194,7 @@ print(f"Save screenshot '{results_folder}/quick-start-2D.png'")
 SaveScreenshot(
     filename=results_folder + "/quick-start-2D.png",
     viewOrLayout=renderView1,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
 )
 
@@ -209,7 +209,7 @@ print(f"Save animation '{results_folder}/quick-start-2D.*.png'")
 SaveAnimation(
     filename=results_folder + "/quick-start-2D.png",
     viewOrLayout=renderView1,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
     FrameStride=1,
 )
@@ -314,7 +314,7 @@ print(f"Save screenshot '{results_folder}/quick-start-f-x.png'")
 SaveScreenshot(
     filename=results_folder + "/quick-start-f-x.png",
     viewOrLayout=layout_f_x,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
 )
 
@@ -329,7 +329,7 @@ print(f"Save data '{results_folder}/quick-start-f-x.csv'")
 SaveData(
     filename=results_folder + "/quick-start-f-x.csv",
     proxy=plotOverLine_f_x,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     ChooseArraysToWrite=1,
     PointDataArrays=["f_000", "f_100"],
     Precision=5,
@@ -446,7 +446,7 @@ print(f"Save screenshot '{results_folder}/quick-start-f-p.png'")
 SaveScreenshot(
     filename=results_folder + "/quick-start-f-p.png",
     viewOrLayout=layout_f_p,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
 )
 
@@ -461,7 +461,7 @@ print(f"Save data '{results_folder}/quick-start-f-p.csv'")
 SaveData(
     filename=results_folder + "/quick-start-f-p.csv",
     proxy=plotOverLine_f_p,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     ChooseArraysToWrite=1,
     PointDataArrays=["f_000", "f_100", "$p^4 f_{000}$"],
     Precision=5,

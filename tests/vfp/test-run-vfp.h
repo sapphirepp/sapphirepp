@@ -163,21 +163,21 @@ test_run_vfp_output(const sapphirepp::VFP::VFPSolver<dim>     &vfp_solver,
  * @param vfp_solver @ref sapphirepp::VFP::VFPSolver
  * @param exact_solution Exact solution to compare to
  * @param error_file Output stream to save the error
- * @param max_L2_error Maximum expected L2 error
+ * @param max_L2_error Maximum expected L2 error.
+ *        Do not compare for `max_L2_error = 0`.
  * @param weight Weights for the error
  * @param time_step_number Time step number
  * @param cur_time Simulation time
  */
 template <unsigned int dim>
 void
-test_run_vfp_error(
-  const sapphirepp::VFP::VFPSolver<dim> &vfp_solver,
-  dealii::Function<dim>                 &exact_solution,
-  std::ostream                          &error_file,
-  const double max_L2_error = sapphirepp::VFP::VFPParameters<dim>::epsilon_d,
-  const dealii::Function<dim, double> *weight           = nullptr,
-  const unsigned int                   time_step_number = 0,
-  const double                         cur_time         = 0.)
+test_run_vfp_error(const sapphirepp::VFP::VFPSolver<dim> &vfp_solver,
+                   dealii::Function<dim>                 &exact_solution,
+                   std::ostream                          &error_file,
+                   const double                           max_L2_error = 0.,
+                   const dealii::Function<dim, double>   *weight = nullptr,
+                   const unsigned int                     time_step_number = 0,
+                   const double                           cur_time         = 0.)
 {
   using namespace sapphirepp;
 
@@ -206,11 +206,12 @@ test_run_vfp_error(
              << L2_error / L2_norm << std::endl;
 
 
-  AssertThrow((L2_error / L2_norm) < max_L2_error,
-              dealii::ExcMessage(
-                "L2 error is too large! (" +
-                dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
-                dealii::Utilities::to_string(max_L2_error) + ")"));
+  if (max_L2_error > 0.)
+    AssertThrow((L2_error / L2_norm) < max_L2_error,
+                dealii::ExcMessage(
+                  "L2 error is too large! (" +
+                  dealii::Utilities::to_string(L2_error / L2_norm) + " > " +
+                  dealii::Utilities::to_string(max_L2_error) + ")"));
 }
 
 
@@ -224,20 +225,22 @@ test_run_vfp_error(
  * @param physical_parameters User defined parameters of the problem
  * @param output_parameters Parameters for the output
  * @param exact_solution Exact solution to compare to
- * @param max_L2_error Maximum expected L2 error
+ * @param max_L2_error Maximum expected L2 error.
+ *        Do not compare for `max_L2_error = 0`.
  * @param weight Weights for the error
+ * @param compare_each_time_step Compare against `max_L2_error` each time step?
  * @return Returns `0` on success,
  *         or `1` if an error or exception occurred during the test run.
  */
 template <unsigned int dim>
 int
-test_run_vfp(
-  const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
-  const sapphirepp::PhysicalParameters      &physical_parameters,
-  sapphirepp::Utils::OutputParameters       &output_parameters,
-  dealii::Function<dim>                     &exact_solution,
-  const double max_L2_error = sapphirepp::VFP::VFPParameters<dim>::epsilon_d,
-  const dealii::Function<dim, double> *weight = nullptr)
+test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
+             const sapphirepp::PhysicalParameters      &physical_parameters,
+             sapphirepp::Utils::OutputParameters       &output_parameters,
+             dealii::Function<dim>                     &exact_solution,
+             const double                               max_L2_error = 0.,
+             const dealii::Function<dim, double>       *weight       = nullptr,
+             const bool compare_each_time_step                       = true)
 {
   sapphirepp::saplog << "Start test run VFP" << std::endl;
   try
@@ -302,7 +305,8 @@ test_run_vfp(
               test_run_vfp_error<dim>(vfp_solver,
                                       exact_solution,
                                       error_file,
-                                      max_L2_error,
+                                      compare_each_time_step ? max_L2_error :
+                                                               0.,
                                       weight,
                                       discrete_time.get_step_number(),
                                       discrete_time.get_current_time());

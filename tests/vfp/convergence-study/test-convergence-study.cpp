@@ -25,20 +25,17 @@
  * @brief Implement tests for convergence-study example
  */
 
-#include <deal.II/base/discrete_time.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
 
 #include <mpi.h>
-
-#include <fstream>
-#include <iostream>
 
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
 #include "test-run-vfp.h"
 #include "vfp-parameters.h"
+#include "vfp-solver.h"
 
 
 
@@ -63,7 +60,7 @@ main(int argc, char *argv[])
       if (argc > 1)
         parameter_filename = argv[1];
 
-      double max_L2_error = VFPParameters<dim>::epsilon_d;
+      double max_L2_error = 0.;
       if (argc > 2)
         max_L2_error = std::stod(argv[2]);
 

@@ -215,7 +215,7 @@ print(f"Save screenshot '{results_folder}/parallel-shock-2D.png'")
 SaveScreenshot(
     filename=results_folder + "/parallel-shock-2D.png",
     viewOrLayout=renderView1,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
 )
 
@@ -229,7 +229,7 @@ print(f"Save animation '{results_folder}/parallel-shock-2D.*.png'")
 SaveAnimation(
     filename=results_folder + "/parallel-shock-2D.png",
     viewOrLayout=renderView1,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
     FrameStride=1,
 )
@@ -429,7 +429,7 @@ print(f"Save screenshot '{results_folder}/shock-region.png'")
 SaveScreenshot(
     filename=results_folder + "/shock-region.png",
     viewOrLayout=renderViewShock,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     TransparentBackground=1,
 )
 
@@ -575,7 +575,7 @@ print(f"Save screenshot '{results_folder}/particle-spectrum.png'")
 # save screenshot
 SaveScreenshot(
     filename=results_folder + "/particle-spectrum.png",
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     viewOrLayout=layout_f_p,
 )
 
@@ -589,7 +589,7 @@ print(f"Save data '{results_folder}/particle-spectrum.csv'")
 SaveData(
     filename=results_folder + "/particle-spectrum.csv",
     proxy=plotOverLine_f_p,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     ChooseArraysToWrite=2,
     PointDataArrays=["f_000", "f_000_ana_p"],
     Precision=6,
@@ -827,7 +827,7 @@ print(f"Save screenshot '{results_folder}/spatial-distribution.png'")
 # save screenshot
 SaveScreenshot(
     filename=results_folder + "/spatial-distribution.png",
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     viewOrLayout=layout_f_x,
 )
 
@@ -841,7 +841,7 @@ print(f"Save data '{results_folder}/spatial-distribution.csv'")
 SaveData(
     filename=results_folder + "/spatial-distribution.csv",
     proxy=plotOverLine_f_x,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     ChooseArraysToWrite=2,
     PointDataArrays=["f_000", "f_000_ana_x"],
     Precision=6,
@@ -1004,7 +1004,7 @@ print(f"Save screenshot '{results_folder}/temporal-evolution.png'")
 # save screenshot
 SaveScreenshot(
     filename=results_folder + "/temporal-evolution.png",
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     viewOrLayout=layout_f_t,
 )
 
@@ -1018,7 +1018,7 @@ print(f"Save data '{results_folder}/temporal-evolution.csv'")
 SaveData(
     filename=results_folder + "/temporal-evolution.csv",
     proxy=plotOverLine_f_t,
-    location=vtkPVSession.DATA_SERVER,
+    location=2,  # Save on DATA_SERVER
     Precision=6,
     UseScientificNotation=1,
 )
