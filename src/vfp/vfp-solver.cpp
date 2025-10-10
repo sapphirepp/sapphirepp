@@ -79,119 +79,121 @@
 /** @cond sapinternal */
 namespace sapinternal
 {
-  using namespace dealii;
-
-  // The mesh_loop function requires helper data types
-  template <unsigned int dim_ps>
-  class ScratchData
+  namespace VFPSolverImplementation
   {
-  public:
-    // Constructor
-    ScratchData(const Mapping<dim_ps>        &mapping,
-                const FiniteElement<dim_ps>  &fe,
-                const Quadrature<dim_ps>     &quadrature,
-                const Quadrature<dim_ps - 1> &quadrature_face,
-                const UpdateFlags             update_flags = update_values |
-                                                 update_gradients |
-                                                 update_quadrature_points |
-                                                 update_JxW_values,
-                const UpdateFlags face_update_flags = update_values |
-                                                      update_quadrature_points |
-                                                      update_JxW_values |
-                                                      update_normal_vectors,
-                const UpdateFlags neighbor_face_update_flags = update_values)
-      : fe_values(mapping, fe, quadrature, update_flags)
-      , fe_values_face(mapping, fe, quadrature_face, face_update_flags)
-      , fe_values_face_neighbor(mapping,
-                                fe,
-                                quadrature_face,
-                                neighbor_face_update_flags)
-      , fe_values_subface_neighbor(mapping,
-                                   fe,
-                                   quadrature_face,
-                                   neighbor_face_update_flags)
-    {}
+    using namespace dealii;
 
-    // Copy Constructor
-    ScratchData(const ScratchData<dim_ps> &scratch_data)
-      : fe_values(scratch_data.fe_values.get_mapping(),
-                  scratch_data.fe_values.get_fe(),
-                  scratch_data.fe_values.get_quadrature(),
-                  scratch_data.fe_values.get_update_flags())
-      , fe_values_face(scratch_data.fe_values_face.get_mapping(),
-                       scratch_data.fe_values_face.get_fe(),
-                       scratch_data.fe_values_face.get_quadrature(),
-                       scratch_data.fe_values_face.get_update_flags())
-      , fe_values_face_neighbor(
-          scratch_data.fe_values_face_neighbor.get_mapping(),
-          scratch_data.fe_values_face_neighbor.get_fe(),
-          scratch_data.fe_values_face_neighbor.get_quadrature(),
-          scratch_data.fe_values_face_neighbor.get_update_flags())
-      , fe_values_subface_neighbor(
-          scratch_data.fe_values_subface_neighbor.get_mapping(),
-          scratch_data.fe_values_subface_neighbor.get_fe(),
-          scratch_data.fe_values_subface_neighbor.get_quadrature(),
-          scratch_data.fe_values_subface_neighbor.get_update_flags())
-    {}
-
-    FEValues<dim_ps>        fe_values;
-    FEFaceValues<dim_ps>    fe_values_face;
-    FEFaceValues<dim_ps>    fe_values_face_neighbor;
-    FESubfaceValues<dim_ps> fe_values_subface_neighbor;
-  };
-
-
-
-  struct CopyDataFace
-  {
-    FullMatrix<double> cell_dg_matrix_11;
-    FullMatrix<double> cell_dg_matrix_12;
-    FullMatrix<double> cell_dg_matrix_21;
-    FullMatrix<double> cell_dg_matrix_22;
-
-    std::vector<types::global_dof_index> local_dof_indices;
-    std::vector<types::global_dof_index> local_dof_indices_neighbor;
-
-    template <typename Iterator>
-    void
-    reinit(const Iterator &cell,
-           const Iterator &neighbor_cell,
-           unsigned int    dofs_per_cell)
+    // The mesh_loop function requires helper data types
+    template <unsigned int dim_ps>
+    class ScratchData
     {
-      cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
-      cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
-      cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
-      cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+    public:
+      // Constructor
+      ScratchData(const Mapping<dim_ps>        &mapping,
+                  const FiniteElement<dim_ps>  &fe,
+                  const Quadrature<dim_ps>     &quadrature,
+                  const Quadrature<dim_ps - 1> &quadrature_face,
+                  const UpdateFlags             update_flags = update_values |
+                                                   update_gradients |
+                                                   update_quadrature_points |
+                                                   update_JxW_values,
+                  const UpdateFlags face_update_flags =
+                    update_values | update_quadrature_points |
+                    update_JxW_values | update_normal_vectors,
+                  const UpdateFlags neighbor_face_update_flags = update_values)
+        : fe_values(mapping, fe, quadrature, update_flags)
+        , fe_values_face(mapping, fe, quadrature_face, face_update_flags)
+        , fe_values_face_neighbor(mapping,
+                                  fe,
+                                  quadrature_face,
+                                  neighbor_face_update_flags)
+        , fe_values_subface_neighbor(mapping,
+                                     fe,
+                                     quadrature_face,
+                                     neighbor_face_update_flags)
+      {}
 
-      local_dof_indices.resize(dofs_per_cell);
-      cell->get_dof_indices(local_dof_indices);
+      // Copy Constructor
+      ScratchData(const ScratchData<dim_ps> &scratch_data)
+        : fe_values(scratch_data.fe_values.get_mapping(),
+                    scratch_data.fe_values.get_fe(),
+                    scratch_data.fe_values.get_quadrature(),
+                    scratch_data.fe_values.get_update_flags())
+        , fe_values_face(scratch_data.fe_values_face.get_mapping(),
+                         scratch_data.fe_values_face.get_fe(),
+                         scratch_data.fe_values_face.get_quadrature(),
+                         scratch_data.fe_values_face.get_update_flags())
+        , fe_values_face_neighbor(
+            scratch_data.fe_values_face_neighbor.get_mapping(),
+            scratch_data.fe_values_face_neighbor.get_fe(),
+            scratch_data.fe_values_face_neighbor.get_quadrature(),
+            scratch_data.fe_values_face_neighbor.get_update_flags())
+        , fe_values_subface_neighbor(
+            scratch_data.fe_values_subface_neighbor.get_mapping(),
+            scratch_data.fe_values_subface_neighbor.get_fe(),
+            scratch_data.fe_values_subface_neighbor.get_quadrature(),
+            scratch_data.fe_values_subface_neighbor.get_update_flags())
+      {}
 
-      local_dof_indices_neighbor.resize(dofs_per_cell);
-      neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
-    }
-  };
+      FEValues<dim_ps>        fe_values;
+      FEFaceValues<dim_ps>    fe_values_face;
+      FEFaceValues<dim_ps>    fe_values_face_neighbor;
+      FESubfaceValues<dim_ps> fe_values_subface_neighbor;
+    };
 
 
 
-  struct CopyData
-  {
-    FullMatrix<double>                   cell_matrix;
-    Vector<double>                       cell_rhs;
-    std::vector<types::global_dof_index> local_dof_indices;
-    std::vector<types::global_dof_index> local_dof_indices_neighbor;
-    std::vector<CopyDataFace>            face_data;
-
-    template <typename Iterator>
-    void
-    reinit(const Iterator &cell, unsigned int dofs_per_cell)
+    struct CopyDataFace
     {
-      cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
-      cell_rhs.reinit(dofs_per_cell);
+      FullMatrix<double> cell_dg_matrix_11;
+      FullMatrix<double> cell_dg_matrix_12;
+      FullMatrix<double> cell_dg_matrix_21;
+      FullMatrix<double> cell_dg_matrix_22;
 
-      local_dof_indices.resize(dofs_per_cell);
-      cell->get_dof_indices(local_dof_indices);
-    }
-  };
+      std::vector<types::global_dof_index> local_dof_indices;
+      std::vector<types::global_dof_index> local_dof_indices_neighbor;
+
+      template <typename Iterator>
+      void
+      reinit(const Iterator &cell,
+             const Iterator &neighbor_cell,
+             unsigned int    dofs_per_cell)
+      {
+        cell_dg_matrix_11.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix_12.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix_21.reinit(dofs_per_cell, dofs_per_cell);
+        cell_dg_matrix_22.reinit(dofs_per_cell, dofs_per_cell);
+
+        local_dof_indices.resize(dofs_per_cell);
+        cell->get_dof_indices(local_dof_indices);
+
+        local_dof_indices_neighbor.resize(dofs_per_cell);
+        neighbor_cell->get_dof_indices(local_dof_indices_neighbor);
+      }
+    };
+
+
+
+    struct CopyData
+    {
+      FullMatrix<double>                   cell_matrix;
+      Vector<double>                       cell_rhs;
+      std::vector<types::global_dof_index> local_dof_indices;
+      std::vector<types::global_dof_index> local_dof_indices_neighbor;
+      std::vector<CopyDataFace>            face_data;
+
+      template <typename Iterator>
+      void
+      reinit(const Iterator &cell, unsigned int dofs_per_cell)
+      {
+        cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
+        cell_rhs.reinit(dofs_per_cell);
+
+        local_dof_indices.resize(dofs_per_cell);
+        cell->get_dof_indices(local_dof_indices);
+      }
+    };
+  } // namespace VFPSolverImplementation
 } // namespace sapinternal
 /** @endcond */
 
@@ -747,7 +749,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     indices (l,m,s)
   */
   using Iterator = typename DoFHandler<dim_ps>::active_cell_iterator;
-  using namespace sapinternal;
+  using namespace sapinternal::VFPSolverImplementation;
   upwind_flux.set_time(time);
 
   const std::vector<LAPACKFullMatrix<double>> &advection_matrices =
