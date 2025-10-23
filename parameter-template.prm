@@ -111,6 +111,22 @@ subsection VFP
     set Polynomial degree = 1
   end
 
+  subsection Reference units
+    # Reference mass in kilogramm. The default is the proton mass.
+    set Mass                    = 1.672621923e-27
+
+    # Reference velocity in metres per second. The default is the speed of
+    # light.
+    set Velocity                = 299792458
+
+    # Reference magnetic field strength in Tesla. The default is 1e-10 Tesla,
+    # i.e. 1 microGauss.
+    set Magnetic field strength = 1.e-10
+
+    # Reference charge in Coulomb. The default is the elementary charge.
+    set Charge                  = 1.602176634e-19
+  end
+
   subsection Particle properties
     # Mass of the particles in dimensionless units.
     set Mass   = 1.

@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 
+#include "reference-values.h"
 #include "sapphirepp-logstream.h"
 #include "tools.h"
 #include "vfp-flags.h"
@@ -143,6 +144,10 @@ namespace sapphirepp
       unsigned int polynomial_degree;
       /** @} */
 
+      /** @{ */
+      /** The reference units to make the VFP equation dimensionless. */
+      ReferenceValues reference_units;
+      /** @} */
 
       /** @{ */
       /**

@@ -54,30 +54,37 @@ namespace sapphirepp
      */
     struct ReferenceValues
     {
-      /** \f$ m_{0} \f$ in kg (proton mass) */
-      const double mass = 1.672621923e-27;
+      /** Reference mass \f$ m_{0} \f$ in kg. The default is the proton mass,
+          i.e. \f$ m_{0} = 1.672621923e-27\f$ kg. */
+      double mass;
 
-      /** \f$ c \f$ in m/s (speed of light) */
-      const double velocity = 299792458;
+      /** Reference velocity \f$ v_{0} \f$ in m/s. The default is the speed of
+          light, i.e. \f$ v_{0} = 299792458 \f$ m/s .*/
+      double velocity;
 
-      /** \f$ B_{0} \f$ in Tesla (1 microGauss) */
-      const double magnetic_field_strength = 1.e-10;
+      /** Reference magnetic field strength \f$ B_{0} \f$ in Tesla. The default
+          is 1 microGauss, i.e. \f$ B_{0} = 10^{-10} \f$ T . */
+      double magnetic_field_strength;
 
-      /** \f$ q_{0} \f$ in Columb (elementary charge) */
-      const double charge = 1.602176634e-19;
+      /** Reference charge \f$ q_{0} \f$ in Columb. The default is the
+          elementary charge, i.e. \f$ q_{0} = 1.602176634e-19 \f$ C .*/
+      double charge;
 
-      /** \f$ r_{g,0} \f$ in m (gyro-radius) */
-      const double length =
-        mass * velocity / (charge * magnetic_field_strength);
+      /** The reference length \f$ r_{g,0} \f$ in m. The default is
+    \f$ r_{g,0} =  m_{0} c/q_{0} B_{0} \f$ . */
+      double length;
 
-      /** \f$ \omega_{g,0} \f$ in 1/s (gyro-frequency) */
-      const double frequency = charge * magnetic_field_strength / mass;
+      /** The reference frequency \f$ \omega_{g,0} \f$ in 1/s. The default is
+          the gyro-frequency, i.e. \f$ \omega_{g,0} = q_{0} B_{0}/ m_{0} \f$ .
+       */
+      double frequency;
 
-      /** Reference time in s */
-      const double time = 1. / frequency;
+      /** Reference time in s. The default is \f$ t_{0} = 1/\omega_{g,0} \f$*/
+      double time;
 
-      /** \f$ p_{0} \f$ in kg m/s */
-      const double momentum = mass * velocity;
+      /** Reference momentum \f$ p_{0} \f$ in kg m/s. The default is \f$p_{0} =
+          m_{0} v_{0} \f$ .*/
+      double momentum;
 
       /** Conversion of parsec to m */
       const double parsec_to_m = 3.0857e16;
