@@ -28,6 +28,10 @@ subsection VFP
       set upper p = continuous
     end
   end
+  subsection Numerical parameters
+    set solver_tolerance = 1e-06
+    set solver_max_iter  = 2000
+  end
 end
 
 subsection Physical parameters

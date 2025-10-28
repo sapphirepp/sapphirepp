@@ -222,9 +222,9 @@ iterative method requires termination criteria. These are the number of
 iterations, the magnitude of the relative (or absolute) preconditioned residual,
 i.e. $\| \mathbf{B}(\mathbf{b} - \mathbf{A}\mathbf{x})\|$ and the relative
 increase in the residual, see [PETSc
-documentation](https://petsc.org/main/manual/ksp/#convergence-tests) for more
-details. The number of iterations and the relative tolerance are currently
-hard-coded, i.e. $5000$ and $1 \times 10^{-8} * \|\mathbf{b}\|_2$ respectively.
+documentation](https://petsc.org/main/manual/ksp/#convergence-tests) for more details.
+The number of iterations and the relative tolerance can be set in the parameter file.
+Their default values are $1000$ and $1 \times 10^{-8} * \|\mathbf{b}\|_2$ respectively.
 This implies that if a user computes a distribution functions whose values are smaller than
 the tolerance, the solver will not convergence. This happens, for example, if
 the $p$-range covers many orders of magnitudes. This issue can be addressed with
@@ -238,6 +238,8 @@ number of processes, i.e. MPI ranks, used to solve the system of equations. Its
 quality, thus, is probably better for a low number of ranks. However, a single
 compute node does not have infinite memory, and it might be necessary to use
 many cores to actually solve a problem.
+This also the reason why we increased in maximum number of iterations for the example at hand.
+For a high number of MPI ranks, 1000 iterations are not enough.
 
 @note If you, by chance, have experience with preconditioners for advection-reaction
   systems (or Friedrichs' systems), please contact me. We are interested in
@@ -273,8 +275,7 @@ If this is the case, it is possible to scale the distribution function with the 
 decided to call $s$ the `scaling_spectral_index` and it is set to three, i.e. $s = 3$.
 Moreover, we define $g = p^3 f$.
 To scale the distribution function it is necessary to add an additional `VFPFlag`. We
-included a subfolder `scaled` in the `steady-state-parallel-shock` example
-folder.
+included a subfolder `scaled` in the `steady-state-parallel-shock` directory.
 
 It is only the `config.h` file that changes. The additional VFPFlag
 is called `scaled_distribution_function`. Hence the variable `vfp_flags` becomes
@@ -296,7 +297,9 @@ pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-
 
 @warning It seems that scaling the distribution function increases the condition
 number of the system of equations that we need to solve. This implies that the
-GMRES method may **not** converge or take very long to converge. It might be necessary to increase the number of allowed iterations.
+GMRES method may **not** converge or take very long to converge.
+It might be necessary to increase the number of allowed iterations
+and/or increase the solver tolerance.
 
 A result of the above simulation run is depicted in the following plot:
 
