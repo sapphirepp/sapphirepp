@@ -56,6 +56,15 @@ namespace sapphirepp
      *   & \text{(momentum term)} \\
      *   & + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)
      *   & \text{(rotation term)} \\
+     *   & - \nabla_{p} \cdot
+     *     \left(
+     *       \sigma \Big(
+     *         \mathbf{B}\,(\mathbf{B}\cdot\boldsymbol{\beta})
+     *         + \gamma^{2}\,\boldsymbol{\beta}\,
+     *           \big((\boldsymbol{\beta}\cdot\mathbf{B})^{2} - B^{2}\big)
+     *       \Big)\, f
+     *     \right)
+     *   & \text{(synchrotron term)} \\
      *   = & \frac{\nu}{2} \Delta_{\theta, \varphi} f
      *   & \text{(collision term)} \\
      *   & + S \,. & \text{(source term)} \\
@@ -133,7 +142,21 @@ namespace sapphirepp
        * The exponent is fixed to \f$ s = 3 \f$,
        * i.e. \f$ g = p^3 f \f$.
        */
-      scaled_distribution_function = 1 << 9
+      scaled_distribution_function = 1 << 9,
+
+      /**
+       * Activate the synchrotron radiation term
+       * \f$ - \nabla_{p} \cdot
+       *   \left(
+       *     \sigma \Big(
+       *       \mathbf{B}\,(\mathbf{B}\cdot\boldsymbol{\beta})
+       *       + \gamma^{2}\,\boldsymbol{\beta}
+       *         \left((\boldsymbol{\beta}\cdot\mathbf B)^{2} - B^{2}\right)
+       *     \Big)\, f
+       *   \right)
+       * \f$
+       */
+      synchrotron = 1 << 10
     };
 
 
@@ -211,6 +234,8 @@ namespace sapphirepp
         }
       if ((f & VFPFlags::scaled_distribution_function) != VFPFlags::none)
         os << "	 - Scaled distribution function\n";
+      if ((f & VFPFlags::synchrotron) != VFPFlags::none)
+        os << "	 - Synchrotron radiation term\n";
 
       return os;
     }

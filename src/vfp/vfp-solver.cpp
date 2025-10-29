@@ -739,6 +739,22 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 {
+  const auto &ref = vfp_parameters.reference_units;
+  const double m0  = ref.mass;
+  const double c0  = ref.velocity;
+  const double q0  = ref.charge;
+  const double t0  = ref.time;                  // = 1/omega_g
+  const double mu0 = 4.0 * dealii::numbers::PI * 1.0e-7; 
+
+  // τ_s in SI using your definition
+  const double tau_s_si =
+      (9.0 * dealii::numbers::PI * std::pow(m0,3) * c0)
+      / (std::pow(q0,4) * mu0);
+
+  // Dimensionless prefactor used everywhere in the PDE 
+  const double coeff =
+      1.5 * (t0 / tau_s_si)
+      * std::pow(vfp_parameters.charge, 4) / std::pow(vfp_parameters.mass, 3);
   TimerOutput::Scope timer_section(timer, "VFP - DG matrix");
   /*
     What kind of loops are there ?
@@ -1130,6 +1146,120 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               }
                           }
                       }
+                      if constexpr ((vfp_flags & VFPFlags::synchrotron) !=
+                                          VFPFlags::none)
+                        {
+                          // Precompute common coefficients at this quadrature point:
+                          const double p = std::exp(q_points[q_index][dim_ps - 1]);
+                          const double p_inv = 1 / std::exp(q_points[q_index][dim_ps - 1]);              
+                          const double beta   = particle_velocities[q_index];       
+                          const double gamma = particle_gammas[q_index];      
+                          
+                          // Weak form: -(A^a A^b B_a B_b - |B|^2 I) del_{ln p}(coeff * f) 
+                          // plus reaction from chain rule.
+                          // Volume term (derivative part):
+                          double B_sq = 0.0;
+                          for (unsigned int d = 0; d < 3; ++d) 
+                            {
+                              B_sq += magnetic_field_values[q_index][d] * magnetic_field_values[q_index][d];
+                            }
+                          for (unsigned int a = 0; a < 3; ++a) 
+                            {
+                              for (unsigned int b = a; b < 3; ++b) 
+                                {
+                                  // index for A^a A^b matrix
+                                  const unsigned int idx = 3 * a - a * (a + 1) / 2 + b;  
+                                  const double BaBb = magnetic_field_values[q_index][a] * magnetic_field_values[q_index][b];
+                                  // if (BaBb == 0.0) continue; 
+                                  // \grad_phi * coeff * beta * gamma /p * (A^a A^b B_a B_b)  \phi
+                                  copy_data.cell_matrix(i, j) -=
+                                    fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                                    coeff * gamma * BaBb * 
+                                    adv_mat_products[idx](component_i, component_j) * 
+                                    fe_v.shape_value(j, q_index) * JxW[q_index];
+                                  if (b != a) 
+                                    {
+                                      copy_data.cell_matrix(i, j) -=
+                                        fe_v.shape_grad(i, q_index)[dim_ps - 1] * 
+                                        coeff * gamma * BaBb * 
+                                        adv_mat_products[idx](component_i, component_j) * 
+                                        fe_v.shape_value(j, q_index) * JxW[q_index];
+                                    }
+                                }
+                            }
+                          // \grad_phi * coeff * gamma /p * (- |B|^2 I)  \phi
+                          copy_data.cell_matrix(i, j) +=
+                            fe_v.shape_grad(i, q_index)[dim_ps - 1] * 
+                            coeff * gamma * B_sq * ( component_i == component_j ? 1. : 0.) *
+                            fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                          for (unsigned int a = 0; a < 3; ++a) 
+                            {
+                              for (unsigned int b = a; b < 3; ++b) 
+                                {
+                                  // index for A^a A^b matrix
+                                  const unsigned int idx = 3 * a - a * (a + 1) / 2 + b;  
+                                  const double BaBb = magnetic_field_values[q_index][a] * magnetic_field_values[q_index][b];
+                                  if (BaBb == 0.0) continue; 
+                                  // \phi * 3 * coeff  * (gamma - 1 / gamma) * (A^a A^b B_a B_b)  \phi
+                                  copy_data.cell_matrix(i, j) +=
+                                    fe_v.shape_value(i, q_index) *
+                                    coeff * 3 * (gamma - 1 / gamma) * BaBb * 
+                                    adv_mat_products[idx](component_i, component_j) * 
+                                    fe_v.shape_value(j, q_index) * JxW[q_index];
+                                  if (b != a) 
+                                    {
+                                      copy_data.cell_matrix(i, j) +=
+                                        fe_v.shape_value(i, q_index) * 
+                                        coeff * 3 * (gamma - 1 / gamma) * BaBb * 
+                                        adv_mat_products[idx](component_i, component_j) * 
+                                        fe_v.shape_value(j, q_index) * JxW[q_index];
+                                    }
+                                }
+                            }
+                          // \phi * coeff * (3 * gamma - 1 / gamma) * (- |B|^2 I)  \phi
+                          copy_data.cell_matrix(i, j) -=
+                            fe_v.shape_value(i, q_index) * 
+                            coeff * (3 * gamma - 1 / gamma) * B_sq * ( component_i == component_j ? 1. : 0.) *
+                            fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                          if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                            {
+                              for (unsigned int a = 0; a < 3; ++a) 
+                                {
+                                  for (unsigned int b = a; b < 3; ++b) 
+                                    {
+                                      // index for A^a A^b matrix
+                                      const unsigned int idx = 3 * a - a * (a + 1) / 2 + b;  
+                                      const double BaBb = magnetic_field_values[q_index][a] * magnetic_field_values[q_index][b];
+                                      if (BaBb == 0.0) continue; 
+                                      // \phi * scaling_spectral_index * coeff * gamma * (A^a A^b B_a B_b)  \phi
+                                      copy_data.cell_matrix(i, j) -=
+                                        fe_v.shape_value(i, q_index) *
+                                        coeff * gamma * BaBb * scaling_spectral_index *
+                                        adv_mat_products[idx](component_i, component_j) * 
+                                        fe_v.shape_value(j, q_index) * JxW[q_index];
+                                      if (b != a) 
+                                        {
+                                          copy_data.cell_matrix(i, j) -=
+                                            fe_v.shape_value(i, q_index) * 
+                                            coeff * gamma * BaBb * scaling_spectral_index *
+                                            adv_mat_products[idx](component_i, component_j) * 
+                                            fe_v.shape_value(j, q_index) * JxW[q_index];
+                                        }
+                                    }
+                                }
+                              // \phi * scaling_spectral_index * coeff * gamma * (- |B|^2 I)  \phi
+                              copy_data.cell_matrix(i, j) +=
+                                fe_v.shape_value(i, q_index) * ( component_i == component_j ? 1. : 0.) *
+                                coeff * gamma * B_sq * scaling_spectral_index *
+                                fe_v.shape_value(j, q_index) * JxW[q_index];
+                            }
+                        }
                     else
                       {
                         // Momentum part
@@ -1372,6 +1502,121 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                                [coordinate_2] *
                                   t_matrices[coordinate_2 * 3 + coordinate_1](
                                     component_i, component_j) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
+                              }
+                          }
+                        if constexpr ((vfp_flags & VFPFlags::synchrotron) !=
+                                          VFPFlags::none) 
+                          {
+                            // Precompute common coefficients at this quadrature point:
+                            const double p = q_points[q_index][dim_ps - 1];
+                            const double p_inv = 1 / q_points[q_index][dim_ps - 1];              
+                            const double beta   = particle_velocities[q_index];       
+                            const double gamma = particle_gammas[q_index];      
+                            const double coeff  = vfp_parameters.synchrotron_sigma / vfp_parameters.mass;           
+                            
+                            // Weak form: -(A^a A^b B_a B_b - |B|^2 I) del_{p}(coeff * f) 
+                            // plus reaction from chain rule.
+                            // Volume term (derivative part):
+                            double B_sq = 0.0;
+                            for (unsigned int d = 0; d < 3; ++d) 
+                              {
+                                B_sq += magnetic_field_values[q_index][d] * magnetic_field_values[q_index][d];
+                              }
+                            for (unsigned int a = 0; a < 3; ++a) 
+                              {
+                                for (unsigned int b = a; b < 3; ++b) 
+                                  {
+                                    // index for A^a A^b matrix
+                                    const unsigned int idx = 3 * a - a * (a + 1) / 2 + b;  
+                                    const double BaBb = magnetic_field_values[q_index][a] * magnetic_field_values[q_index][b];
+                                    if (BaBb == 0.0) continue; 
+                                    // \grad_phi * coeff * gamma * p * (A^a A^b B_a B_b)  \phi
+                                    copy_data.cell_matrix(i, j) -=
+                                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                                      coeff * gamma * p * BaBb * 
+                                      adv_mat_products[idx](component_i, component_j) * 
+                                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                                    if (b != a) 
+                                      {
+                                        copy_data.cell_matrix(i, j) -=
+                                          fe_v.shape_grad(i, q_index)[dim_ps - 1] * 
+                                          coeff * gamma * p *BaBb * 
+                                          adv_mat_products[idx](component_i, component_j) * 
+                                          fe_v.shape_value(j, q_index) * JxW[q_index];
+                                      }
+                                  }
+                              }
+                            // \grad_phi * coeff * gamma * p * (- |B|^2 I)  \phi
+                            copy_data.cell_matrix(i, j) +=
+                              fe_v.shape_grad(i, q_index)[dim_ps - 1] * 
+                              coeff * gamma * p *B_sq * ( component_i == component_j ? 1. : 0.) *
+                              fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            for (unsigned int a = 0; a < 3; ++a) 
+                              {
+                                for (unsigned int b = a; b < 3; ++b) 
+                                  {
+                                    // index for A^a A^b matrix
+                                    const unsigned int idx = 3 * a - a * (a + 1) / 2 + b;  
+                                    const double BaBb = magnetic_field_values[q_index][a] * magnetic_field_values[q_index][b];
+                                    if (BaBb == 0.0) continue; 
+                                    // \phi *  coeff  * (2  * gamma - 3 / gamma) * (A^a A^b B_a B_b)  \phi
+                                    copy_data.cell_matrix(i, j) +=
+                                      fe_v.shape_value(i, q_index) *
+                                      coeff * (2 * gamma - 3 / gamma) * BaBb * 
+                                      adv_mat_products[idx](component_i, component_j) * 
+                                      fe_v.shape_value(j, q_index) * JxW[q_index];
+                                    if (b != a) 
+                                      {
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) * 
+                                          coeff * (2 * gamma - 3 / gamma) * BaBb * 
+                                          adv_mat_products[idx](component_i, component_j) * 
+                                          fe_v.shape_value(j, q_index) * JxW[q_index];
+                                      }
+                                  }
+                              }
+                            // \phi * coeff * (2 * gamma - 1 / gamma) * (- |B|^2 I)  \phi
+                            copy_data.cell_matrix(i, j) -=
+                              fe_v.shape_value(i, q_index) * 
+                              coeff * (2 * gamma - 1 / gamma) * B_sq * ( component_i == component_j ? 1. : 0.) *
+                              fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                              {
+                                for (unsigned int a = 0; a < 3; ++a) 
+                                  {
+                                    for (unsigned int b = a; b < 3; ++b) 
+                                      {
+                                        // index for A^a A^b matrix
+                                        const unsigned int idx = 3 * a - a * (a + 1) / 2 + b;  
+                                        const double BaBb = magnetic_field_values[q_index][a] * magnetic_field_values[q_index][b];
+                                        if (BaBb == 0.0) continue; 
+                                        // \phi * scaling_spectral_index * coeff * gamma * (A^a A^b B_a B_b)  \phi
+                                        copy_data.cell_matrix(i, j) -=
+                                          fe_v.shape_value(i, q_index) *
+                                          coeff * gamma * BaBb * scaling_spectral_index *
+                                          adv_mat_products[idx](component_i, component_j) * 
+                                          fe_v.shape_value(j, q_index) * JxW[q_index];
+                                        if (b != a) 
+                                          {
+                                            copy_data.cell_matrix(i, j) -=
+                                              fe_v.shape_value(i, q_index) * 
+                                              coeff * gamma * BaBb * scaling_spectral_index *
+                                              adv_mat_products[idx](component_i, component_j) * 
+                                              fe_v.shape_value(j, q_index) * JxW[q_index];
+                                          }
+                                      }
+                                  }
+                                // \phi * scaling_spectral_index * coeff * gamma * (- |B|^2 I)  \phi
+                                copy_data.cell_matrix(i, j) +=
+                                  fe_v.shape_value(i, q_index) * ( component_i == component_j ? 1. : 0.) *
+                                  coeff * gamma * B_sq * scaling_spectral_index *
                                   fe_v.shape_value(j, q_index) * JxW[q_index];
                               }
                           }
