@@ -67,6 +67,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#define _USE_MATH_DEFINES
 
 #include "config.h"
 #include "particle-functions.h"
@@ -218,6 +219,10 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , quadrature_face(fe.tensor_degree() + 1)
   , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
   , scaling_spectral_index{3.}
+  , tau_s((9.0 * M_PI * std::pow(vfp_parameters.reference_units.mass, 3) *
+           vfp_parameters.reference_units.velocity) /
+          (std::pow(vfp_parameters.reference_units.charge, 4) *
+           (4.0 * M_PI * 1.0e-7)))
   , reflective_bc_signature{{std::vector<double>(pde_system.system_size),
                              std::vector<double>(pde_system.system_size),
                              std::vector<double>(pde_system.system_size)}}
@@ -360,8 +365,8 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     {
       steady_state_solve();
       output_results(0, 0);
-      saplog << "Simulation ended. " << " \t\t["
-             << Utilities::System::get_time() << "]" << std::endl;
+      saplog << "Simulation ended. "
+             << " \t\t[" << Utilities::System::get_time() << "]" << std::endl;
     }
   else
     {
@@ -751,6 +756,10 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 {
+  // Dimensionless prefactor used everywhere in the PDE
+  const double coeff = 1.5 * (vfp_parameters.reference_units.time / tau_s) *
+                       std::pow(vfp_parameters.charge, 4) /
+                       std::pow(vfp_parameters.mass, 3);
   TimerOutput::Scope timer_section(timer, "VFP - DG matrix");
   /*
     What kind of loops are there ?
