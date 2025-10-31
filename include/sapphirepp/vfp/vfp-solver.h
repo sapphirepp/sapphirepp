@@ -473,6 +473,9 @@ namespace sapphirepp
           distribution function as \f$ p^{s} f\f$ */
       const double scaling_spectral_index;
 
+      /** Synchrotron characteristic time \f$\tau_s\f$ (SI seconds). */
+      const double tau_s;
+
       /** Sign changes used for reflective boundary conditions
           (y-z-plane, i.e. lower/upper x) */
       std::array<std::vector<double>, 3> reflective_bc_signature;
