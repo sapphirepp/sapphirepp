@@ -145,6 +145,13 @@ namespace sapphirepp
       scaled_distribution_function = 1 << 9,
 
       /**
+       * Use the Upwind flux instead of the default local Lax-Friedrichs flux.
+       * Note that the upwind flux is much more memory heavy
+       * then the default local Lax-Friedrichs flux.
+       */
+      upwind_flux = 1 << 10,
+
+      /**
        * Activate the synchrotron radiation term
        * \f$ + \nabla_{p} \cdot
        *   \left(
@@ -156,7 +163,7 @@ namespace sapphirepp
        *   \right)
        * \f$
        */
-      synchrotron = 1 << 10
+      synchrotron = 1 << 11
     };
 
 
