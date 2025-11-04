@@ -233,14 +233,9 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
 
       std::vector<double> particle_gammas(q_points.size());
       particle_gamma_func.value_list(q_points, particle_gammas);
-      std::vector<dealii::Point<dim_cs>> x_points(q_points.size());
-      for (unsigned int q = 0; q < q_points.size(); ++q)
-        for (unsigned int a = 0; a < dim_cs; ++a)
-          x_points[q][a] = q_points[q][a];
-      // Evaluate B at x-points
       std::vector<dealii::Vector<double>> B_vectors(q_points.size(),
                                                     dealii::Vector<double>(3));
-      magnetic_field.vector_value_list(x_points, B_vectors);
+      magnetic_field.vector_value_list(q_points, B_vectors);
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
         compute_flux_in_p_direction(normals[q_index][component],
                                     q_points[q_index][component],
@@ -348,14 +343,9 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
       std::vector<double> particle_gammas(q_points.size());
       particle_gamma_func.value_list(q_points, particle_gammas);
 
-      std::vector<dealii::Point<dim_cs>> x_points(q_points.size());
-      for (unsigned int q = 0; q < q_points.size(); ++q)
-        for (unsigned int a = 0; a < dim_cs; ++a)
-          x_points[q][a] = q_points[q][a];
-
       std::vector<dealii::Vector<double>> B_vectors(q_points.size(),
                                                     dealii::Vector<double>(3));
-      magnetic_field.vector_value_list(x_points, B_vectors);
+      magnetic_field.vector_value_list(q_points, B_vectors);
 
 
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
