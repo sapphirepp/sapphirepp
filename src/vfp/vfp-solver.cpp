@@ -1428,7 +1428,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     std::vector<double> max_eigenvalues(q_points.size(), 0.);
     // NOLINTEND(google-readability-casting)
 
-    if constexpr ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
+    if constexpr ((vfp_flags & VFPFlags::local_lax_friedrichs_flux) ==
+                  VFPFlags::none)
       {
         numerical_flux.compute_upwind_fluxes(q_points,
                                              normals,
@@ -1460,7 +1461,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                   {
                     case BoundaryConditions::continuous:
                       {
-                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                        if constexpr ((vfp_flags &
+                                       VFPFlags::local_lax_friedrichs_flux) ==
                                       VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
@@ -1497,7 +1499,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::zero_inflow:
                       {
-                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                        if constexpr ((vfp_flags &
+                                       VFPFlags::local_lax_friedrichs_flux) ==
                                       VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
@@ -1521,7 +1524,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::reflective:
                       {
-                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                        if constexpr ((vfp_flags &
+                                       VFPFlags::local_lax_friedrichs_flux) ==
                                       VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
@@ -1562,7 +1566,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                       }
                     case BoundaryConditions::inflow:
                       {
-                        if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                        if constexpr ((vfp_flags &
+                                       VFPFlags::local_lax_friedrichs_flux) ==
                                       VFPFlags::none)
                           {
                             copy_data.cell_matrix(i, j) +=
@@ -1595,7 +1600,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 for (unsigned int k = 0; k < pde_system.system_size; ++k)
                   {
-                    if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                    if constexpr ((vfp_flags &
+                                   VFPFlags::local_lax_friedrichs_flux) ==
                                   VFPFlags::none)
                       {
                         copy_data.cell_rhs(i) -=
@@ -1679,7 +1685,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     std::vector<double> max_eigenvalues(q_points.size(), 0.);
     // NOLINTEND(google-readability-casting)
 
-    if constexpr ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
+    if constexpr ((vfp_flags & VFPFlags::local_lax_friedrichs_flux) ==
+                  VFPFlags::none)
       {
         numerical_flux.compute_upwind_fluxes(q_points,
                                              normals,
@@ -1703,7 +1710,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
-                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                if constexpr ((vfp_flags &
+                               VFPFlags::local_lax_friedrichs_flux) ==
                               VFPFlags::none)
                   copy_data_face.cell_dg_matrix_11(i, j) +=
                     fe_v_face.shape_value(i, q_index) *
@@ -1729,7 +1737,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
-                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                if constexpr ((vfp_flags &
+                               VFPFlags::local_lax_friedrichs_flux) ==
                               VFPFlags::none)
                   copy_data_face.cell_dg_matrix_12(i, j) -=
                     fe_v_face_neighbor.shape_value(i, q_index) *
@@ -1754,7 +1763,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
               {
                 unsigned int component_j =
                   fe_v_face.get_fe().system_to_component_index(j).first;
-                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                if constexpr ((vfp_flags &
+                               VFPFlags::local_lax_friedrichs_flux) ==
                               VFPFlags::none)
                   copy_data_face.cell_dg_matrix_21(i, j) +=
                     fe_v_face.shape_value(i, q_index) *
@@ -1780,7 +1790,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                 unsigned int component_j = fe_v_face_neighbor.get_fe()
                                              .system_to_component_index(j)
                                              .first;
-                if constexpr ((vfp_flags & VFPFlags::upwind_flux) !=
+                if constexpr ((vfp_flags &
+                               VFPFlags::local_lax_friedrichs_flux) ==
                               VFPFlags::none)
                   copy_data_face.cell_dg_matrix_22(i, j) -=
                     fe_v_face_neighbor.shape_value(i, q_index) *

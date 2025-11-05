@@ -136,11 +136,11 @@ namespace sapphirepp
       scaled_distribution_function = 1 << 9,
 
       /**
-       * Use the Upwind flux instead of the default local Lax-Friedrichs flux.
-       * Note that the upwind flux is much more memory heavy
-       * then the default local Lax-Friedrichs flux.
+       * Use the local Lax-Friedrichs flux instead of the default Upwind flux.
+       * The Upwind flux is much more memory heavy but is more robust.
+       * The local Lax-Friedrichs flux is less robust but requires less memory.
        */
-      upwind_flux = 1 << 10,
+      local_lax_friedrichs_flux = 1 << 10,
     };
 
 
@@ -218,10 +218,10 @@ namespace sapphirepp
         }
       if ((f & VFPFlags::scaled_distribution_function) != VFPFlags::none)
         os << "	 - Scaled distribution function\n";
-      if ((f & VFPFlags::upwind_flux) != VFPFlags::none)
-        os << "	 - Upwind Flux\n";
-      else
+      if ((f & VFPFlags::local_lax_friedrichs_flux) != VFPFlags::none)
         os << "	 - Local Lax-Friedrichs Flux\n";
+      else
+        os << "	 - Upwind Flux\n";
 
       return os;
     }

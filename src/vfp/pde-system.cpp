@@ -179,7 +179,7 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
 
         // For upwind flux we assume all shape functions couple.
         // This leads to better preconditioning and convergence behaviour.
-        if ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
+        if ((vfp_flags & VFPFlags::local_lax_friedrichs_flux) == VFPFlags::none)
           {
             cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
             face_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
