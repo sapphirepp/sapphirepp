@@ -17,7 +17,7 @@ add_test(NAME parallel-shock COMMAND
 set_property(TEST parallel-shock PROPERTY LABELS
   "parallel-shock"
   "2d" "momentum" "spatial_advection" "source" "scattering"
-  "shock" "CN" "mpi"
+  "shock" "CN" "upwind-flux" "mpi"
   "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )

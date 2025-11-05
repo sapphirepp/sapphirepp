@@ -87,19 +87,23 @@ only](#scattering-only) example.
 
 #### VFP equation {#dimension-convergence-study}
 
-Given that the example considers a one-dimensional problem with decoupling of
-the momenta, we can set the dimensionality of the problem to `dim = dim_ps =
-dim_cs = 2`.
+Given that the example considers a one-dimensional problem with decoupling of the momenta,
+we can set the dimensionality of the problem to `dim = dim_ps = dim_cs = 2`.
 
 @snippet{lineno} examples/vfp/convergence-study/config.h Dimension
 
-In the VFP equation, we only have the @ref sapphirepp::VFP::VFPFlags::rotation
-"rotation", $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$,
+In the VFP equation, we only have the @ref sapphirepp::VFP::VFPFlags::rotation "rotation",
+$q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$,
 and @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
-$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, terms. For the latter, we are in
-the spatial case of a static background plasma, $\mathbf{u} = 0$. The magnetic
-field is time independent, hence we can use
+$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$,
+terms.
+For the latter, we are in the spatial case of a static background plasma,
+$\mathbf{u} = 0$.
+The magnetic field is time independent,
+hence we can use
 @ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent" flag.
+Furthermore, we use the
+@ref sapphirepp::VFP::VFPFlags::local_lax_friedrichs_flux "local Lax-Friedrichs flux".
 
 @snippet{lineno} examples/vfp/convergence-study/config.h VFP Flags
 

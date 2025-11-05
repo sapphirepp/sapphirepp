@@ -20,7 +20,7 @@ add_test(NAME scattering-only-1d-CN COMMAND
 set_property(TEST scattering-only-1d-CN PROPERTY LABELS
   "scattering-only"
   "1d" "scattering"
-  "CN" "periodic BC"
+  "CN" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Release" "full-suite-Debug"
 )
 
@@ -30,7 +30,7 @@ add_test(NAME scattering-only-1d-ERK4 COMMAND
 set_property(TEST scattering-only-1d-ERK4 PROPERTY LABELS
   "scattering-only"
   "1d" "scattering"
-  "ERK4" "periodic BC"
+  "ERK4" "periodic BC" "lax-friedrichs-flux"
   "fast" "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
@@ -41,7 +41,7 @@ add_test(NAME scattering-only-1d-LSERK4 COMMAND
 set_property(TEST scattering-only-1d-LSERK4 PROPERTY LABELS
   "scattering-only"
   "1d" "scattering"
-  "LSERK4" "periodic BC"
+  "LSERK4" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Debug" "full-suite-Release"
 )
 
@@ -51,7 +51,7 @@ add_test(NAME scattering-only-1d-FE COMMAND
 set_property(TEST scattering-only-1d-FE PROPERTY LABELS
   "scattering-only"
   "1d" "scattering"
-  "FE" "periodic BC"
+  "FE" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Debug" "full-suite-Release"
 )
 
@@ -61,7 +61,7 @@ add_test(NAME scattering-only-1d-BE COMMAND
 set_property(TEST scattering-only-1d-BE PROPERTY LABELS
   "scattering-only"
   "1d" "scattering"
-  "BE" "periodic BC"
+  "BE" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Debug" "full-suite-Release"
 )
 
@@ -80,7 +80,7 @@ add_test(NAME scattering-only-2d COMMAND
 set_property(TEST scattering-only-2d PROPERTY LABELS
   "scattering-only"
   "2d" "scattering"
-  "ERK4" "periodic BC"
+  "ERK4" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Release"
 )
 
@@ -99,7 +99,7 @@ add_test(NAME scattering-only-3d COMMAND
 set_property(TEST scattering-only-3d PROPERTY LABELS
   "scattering-only"
   "3d" "scattering"
-  "ERK4" "periodic BC"
+  "ERK4" "periodic BC" "lax-friedrichs-flux"
   "commit-Release"
   "full-suite-Release"
 )

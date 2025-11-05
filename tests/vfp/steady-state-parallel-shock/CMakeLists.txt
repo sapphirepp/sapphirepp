@@ -18,7 +18,7 @@ add_test(NAME steady-state-parallel-shock COMMAND
 set_property(TEST steady-state-parallel-shock PROPERTY LABELS
   "steady-state-parallel-shock"
   "2d" "momentum" "spatial_advection" "source" "scattering"
-  "steady_sate" "shock"
+  "steady_sate" "shock" "upwind-flux"
   "commit-Release" "commit-Debug"
   "full-suite-Release" "full-suite-Debug"
 )
@@ -39,7 +39,7 @@ add_test(NAME steady-state-parallel-shock-scaled COMMAND
 set_property(TEST steady-state-parallel-shock-scaled PROPERTY LABELS
   "steady-state-parallel-shock-scaled"
   "2d" "momentum" "spatial_advection" "source" "scattering"
-  "steady_sate" "scaled_distribution_function" "shock"
+  "steady_sate" "scaled_distribution_function" "shock" "upwind-flux"
   "commit-Release" "commit-Debug"
   "full-suite-Release" "full-suite-Debug"
 )

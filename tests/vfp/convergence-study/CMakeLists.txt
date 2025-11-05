@@ -18,29 +18,29 @@ add_test(NAME convergence-study-CN COMMAND
 set_property(TEST convergence-study-CN PROPERTY LABELS
   "convergence-study"
   "1d" "spatial_advection" "magnetic"
-  "CN" "periodic BC"
+  "CN" "periodic BC" "lax-friedrichs-flux"
   "fast" "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
 
 add_test(NAME convergence-study-ERK4 COMMAND
-  ./test-convergence-study parameter-ERK4.prm 1e-8
+  ./test-convergence-study parameter-ERK4.prm 3e-8
 )
 set_property(TEST convergence-study-ERK4 PROPERTY LABELS
   "convergence-study"
   "1d" "scattering"
-  "ERK4" "periodic BC"
+  "ERK4" "periodic BC" "lax-friedrichs-flux"
   "fast" "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
 
 add_test(NAME convergence-study-LSERK4 COMMAND
-  ./test-convergence-study parameter-LSERK4.prm 1e-8
+  ./test-convergence-study parameter-LSERK4.prm 3e-8
 )
 set_property(TEST convergence-study-LSERK4 PROPERTY LABELS
   "convergence-study"
   "1d" "scattering"
-  "LSERK4" "periodic BC"
+  "LSERK4" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Debug" "full-suite-Release"
 )
 
@@ -50,7 +50,7 @@ add_test(NAME convergence-study-FE COMMAND
 set_property(TEST convergence-study-FE PROPERTY LABELS
   "convergence-study"
   "1d" "scattering"
-  "FE" "periodic BC"
+  "FE" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Debug" "full-suite-Release"
 )
 
@@ -60,7 +60,7 @@ add_test(NAME convergence-study-BE COMMAND
 set_property(TEST convergence-study-BE PROPERTY LABELS
   "convergence-study"
   "1d" "scattering"
-  "BE" "periodic BC"
+  "BE" "periodic BC" "lax-friedrichs-flux"
   "full-suite-Debug" "full-suite-Release"
 )
 

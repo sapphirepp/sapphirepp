@@ -12,7 +12,7 @@ if(SAPPHIREPP_ALL_MODULES)
     "quick-start"
     "vfp"
     "2d" "momentum" "spatial_advection" "source" "scattering"
-    "shock" "CN"
+    "shock" "CN" "upwind-flux"
     "commit-Release" "commit-Debug"
     "full-suite-Release" "full-suite-Debug"
   )

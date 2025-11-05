@@ -113,10 +113,11 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |    //
-                                   VFPFlags::spatial_advection | //
-                                   VFPFlags::rotation |          //
-                                   VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |          //
+                                   VFPFlags::spatial_advection |       //
+                                   VFPFlags::rotation |                //
+                                   VFPFlags::time_independent_fields | //
+                                   VFPFlags::local_lax_friedrichs_flux;
     /** [VFP Flags] */
 
 
