@@ -177,11 +177,12 @@ sapphirepp::VFP::PDESystem::compute_coupling_tables(
               face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
           }
 
-        // For upwind flux we assume all nonzero shape functions on faces couple
-        // because we cannot compute the couplings a priori.
+        // For upwind flux we assume all shape functions couple.
+        // This leads to better preconditioning and convergence behaviour.
         if ((vfp_flags & VFPFlags::upwind_flux) != VFPFlags::none)
           {
-            face_integrals_mask(i, j) = dealii::DoFTools::Coupling::nonzero;
+            cell_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
+            face_integrals_mask(i, j) = dealii::DoFTools::Coupling::always;
           }
       }
 }
