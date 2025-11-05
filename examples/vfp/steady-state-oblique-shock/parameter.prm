@@ -1,0 +1,58 @@
+subsection Physical parameters
+  set u_sh                     = 0.1
+  set B0                       = 1.
+  set obliqueness              = 60.
+  set compression ratio        = 4.
+  set shock width              = 0.04
+  set alpha                    = -1.
+  set nu0                      = 1.
+  set enhanced scattering zone = true
+  set transition length        = 4.
+  set transition point 	       = -20.
+  set zeta one 	 	       = 0.03
+  set zeta two 		       = 0.3
+  set case identifier 	       = a
+  set Q                        = 1.
+  set p_inj                    = 2.
+  set x_inj                    = 0.0
+  set sig_p                    = 0.05
+  set sig_x                    = 0.05
+end
+
+subsection Output
+  set Base file name               = g
+  set Format                       = pvtu
+  set Number of digits for counter = 0
+  set Output frequency             = 1
+  set Results folder               = ./results
+  set Simulation identifier        = steady-state-oblique-shock
+  set Debug input functions        = true
+end
+
+subsection VFP
+  subsection Expansion
+    set Expansion order = 1
+  end
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type             = Shock grid
+    set Point 1               = -15000, -2.3
+    set Point 2               = 100, 4.6
+    set Number of cells       = 226, 256
+    set Shock width           = 0.04
+    set Number of shock cells = 10
+    set Scaling factor shock  = 1.1
+    subsection Boundary conditions
+      set lower x = zero inflow
+      set upper x = continuous
+      set lower p = continuous
+      set upper p = continuous
+    end
+  end
+  subsection Numerical parameters
+    set solver_tolerance = 1e-06
+    set solver_max_iter  = 2000
+  end
+end

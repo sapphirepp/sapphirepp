@@ -1,5 +1,6 @@
 add_subdirectory(parallel-shock)
 add_subdirectory(steady-state-parallel-shock)
+add_subdirectory(steady-state-oblique-shock)
 add_subdirectory(gyro-advection)
 add_subdirectory(scattering-only)
 add_subdirectory(convergence-study)
