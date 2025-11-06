@@ -120,8 +120,9 @@ namespace sapphirepp
     /** [VFP Flags] */
     // !!!EDIT HERE!!!
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution | VFPFlags::collision;
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution | //
+                                   VFPFlags::collision |      //
+                                   VFPFlags::local_lax_friedrichs_flux;
     /** [VFP Flags] */
 
 

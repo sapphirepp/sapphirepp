@@ -20,13 +20,13 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file upwind-flux.cpp
+ * @file numerical-flux.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement @ref sapphirepp::VFP::UpwindFlux
+ * @brief Implement @ref sapphirepp::VFP::NumericalFlux
  */
 
-#include "upwind-flux.h"
+#include "numerical-flux.h"
 
 #include <deal.II/base/exceptions.h>
 
@@ -47,7 +47,7 @@
 
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   const PDESystem          &system,
   const VFPParameters<dim> &solver_control,
   const PhysicalParameters &physical_parameters)
@@ -118,7 +118,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::UpwindFlux(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::set_time(
   double time)
 {
   background_velocity_field.set_time(time);
@@ -128,7 +128,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::set_time(
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_upwind_fluxes(
     const std::vector<dealii::Point<dim>>     &q_points,
     const std::vector<dealii::Tensor<1, dim>> &normals,
@@ -166,12 +166,13 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
       "When computing the flux through a cell surface, it was not possible to determine the normal of the cell interface."));
 
   // Fluxes in the spatial directions
-  //
-  // NOTE: If the spatial advection term is deactivated then then dim_cs is
-  // equal to zero and first branch of the if the statement is never entered,
-  // i.e. no fluxes in spatial directions are computed.
   if (component < dim_cs)
     {
+      // Return zero fluxes for case with no spatial advection term
+      // but dim_cs != 0
+      if constexpr ((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none)
+        return;
+
       // Background velocity field
       // Get the value of the velocity field at every quadrature point
       // TODO: Value list for a specific component would be faster.
@@ -233,7 +234,160 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
+  compute_local_lax_friedrichs_fluxes(
+    const std::vector<dealii::Point<dim>>     &q_points,
+    const std::vector<dealii::Tensor<1, dim>> &normals,
+    std::vector<dealii::FullMatrix<double>>   &flux_matrices,
+    std::vector<double>                       &max_eigenvalues)
+{
+  bool space_direction = true;
+  if constexpr (has_momentum)
+    {
+      if (std::abs(1. - std::abs(normals[0][dim - 1])) <
+          VFPParameters<dim>::epsilon_d)
+        space_direction = false;
+    }
+
+  if (space_direction)
+    {
+      // Return zero fluxes for case with no spatial advection term
+      // but dim_cs != 0
+      if constexpr ((vfp_flags & VFPFlags::spatial_advection) == VFPFlags::none)
+        return;
+
+      // Background velocity field
+      // Get the value of the velocity field at every quadrature point
+      // TODO: Value list for a specific component would be faster.
+      std::vector<dealii::Vector<double>> velocities(q_points.size(),
+                                                     dealii::Vector<double>(3));
+      background_velocity_field.vector_value_list(q_points, velocities);
+
+      // Particle
+      std::vector<double> particle_velocities(q_points.size());
+      if constexpr (has_momentum)
+        {
+          // if distribution functions depends on p, the particle velocity
+          // depends on the position in the phase space and needs to be computed
+          particle_velocity_func.value_list(q_points, particle_velocities);
+        }
+      else
+        {
+          std::fill(particle_velocities.begin(),
+                    particle_velocities.end(),
+                    velocity);
+        }
+
+      for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
+        {
+          for (unsigned int d = 0; d < dim_cs; ++d)
+            for (unsigned int i = 0; i < matrix_size; ++i)
+              for (unsigned int j = 0; j < matrix_size; ++j)
+                flux_matrices[q_index](i, j) +=
+                  (normals[q_index][d] * particle_velocities[q_index] *
+                     advection_matrices[d][i * matrix_size + j] +
+                   ((i == j) ? normals[q_index][d] * velocities[q_index][d] :
+                               0.)); // NOTE: integer divide is on purpose )
+
+          double normal_velocity = 0;
+          for (unsigned int d = 0; d < dim_cs; ++d)
+            normal_velocity += normals[q_index][d] * velocities[q_index][d];
+
+          // eigenvalues_advection_matrices are in ascending order,
+          // see LAPACK.dsyevr()
+          // https://www.netlib.org/lapack/explore-html/d1/d56/group__heevr_gaa334ac0c11113576db0fc37b7565e8b5.html#gaa334ac0c11113576db0fc37b7565e8b5
+          const double min_eigenvalue = eigenvalues_advection_matrices[0];
+          const double max_eigenvalue =
+            eigenvalues_advection_matrices[matrix_size - 1];
+          const double max_eigenvalue_advection_matrices =
+            std::max(std::abs(min_eigenvalue), std::abs(max_eigenvalue));
+
+          /** @todo Precompute max eigenvalue */
+          max_eigenvalues[q_index] =
+            particle_velocities[q_index] * max_eigenvalue_advection_matrices +
+            std::abs(normal_velocity);
+        }
+    }
+  else
+    { // Fluxes in the p direction
+      // NOTE: If momentum terms are included, then the last component of
+      // normals, points etc. are the ones corresponding to the momentum
+      // direction
+      std::vector<dealii::Vector<double>> material_derivative_vel(
+        q_points.size(), dealii::Vector<double>(3));
+      background_velocity_field.material_derivative_list(
+        q_points, material_derivative_vel);
+
+      std::vector<dealii::FullMatrix<double>> jacobians_vel(
+        q_points.size(), dealii::FullMatrix<double>(3));
+      background_velocity_field.jacobian_list(q_points, jacobians_vel);
+
+      std::vector<double> particle_gammas(q_points.size());
+      particle_gamma_func.value_list(q_points, particle_gammas);
+
+
+      for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
+        {
+          // compute the matrix sum at the point q at time t. Overwrites the
+          // member variable matrix_sum
+          compute_matrix_sum(normals[q_index][dim - 1],  // n_p
+                             q_points[q_index][dim - 1], // momentum
+                             particle_gammas[q_index],
+                             material_derivative_vel[q_index],
+                             jacobians_vel[q_index]);
+
+          // copy the flux matrices
+          for (unsigned int i = 0; i < matrix_size; ++i)
+            {
+              for (unsigned int j = 0; j < matrix_size; ++j)
+                {
+                  flux_matrices[q_index](i, j) =
+                    matrix_sum[i * matrix_size + j];
+                }
+            }
+
+
+          dealii::syevr(&dealii::LAPACKSupport::N, // compute eigenvalues only
+                        &dealii::LAPACKSupport::A, // compute all eigenvalues
+                        uplo,
+                        &matrix_size_blas,
+                        matrix_sum.data(),
+                        &matrix_size_blas,
+                        &double_dummy,
+                        &double_dummy,
+                        int_dummy,
+                        int_dummy,
+                        &abstol,
+                        &num_eigenvalues,
+                        eigenvalues.data(),
+                        eigenvectors.data(),
+                        &matrix_size_blas,
+                        isuppz.data(),
+                        work.data(),
+                        &lwork,
+                        iwork.data(),
+                        &liwork,
+                        &info);
+          Assert(info >= 0, dealii::ExcInternalError());
+          if (info != 0)
+            std::cerr /** @todo Better error handling */
+              << "The computation of the eigenvalues and eigenvectors for the "
+                 "flux in p direction failed: LAPACK error in syevr"
+              << std::endl;
+
+          const double min_eigenvalue = eigenvalues[0];
+          const double max_eigenvalue = eigenvalues[matrix_size - 1];
+          max_eigenvalues[q_index] =
+            std::max(std::abs(min_eigenvalue), std::abs(max_eigenvalue));
+        }
+    }
+}
+
+
+
+template <unsigned int dim, bool has_momentum, bool logarithmic_p>
+void
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   prepare_work_arrays_for_lapack()
 {
   // Preparations for the eigenvalue and eigenvector computations
@@ -242,31 +396,32 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
   // compute eigenvalues and eigenvectors for every face with n_p = 1 (or -1).
   // Lapack needs correctly sized work arrays to do these computations. It can
   // determine the sizes it needs with a specific call to the used eigenvalue
-  // routine. The work arrays will be allocated only once and then reused every
-  // time eigenvalues and eigenvectors are computed.
+  // routine. The work arrays will be allocated only once and then reused
+  // every time eigenvalues and eigenvectors are computed.
 
   // https://stackoverflow.com/questions/46618391/what-is-the-use-of-the-work-parameters-in-lapack-routines
   // Quote: "If dynamic allocation is available, the most common use of LAPACK
-  // functions is to first perform a workspace query using LWORK = -1, then use
-  // the return value to allocate a WORK array of the correct size and finally
-  // call the routine of LAPACK to get the expected result. High-end wrappers of
-  // LAPACK such as LAPACKE features function doing just that: take a look at
-  // the source of LAPACKE for function LAPACKE_dsyev()! It calls twice the
-  // function LAPACKE_dsyev_work, which calls LAPACK_dsyev (wrapping dsyev()).
+  // functions is to first perform a workspace query using LWORK = -1, then
+  // use the return value to allocate a WORK array of the correct size and
+  // finally call the routine of LAPACK to get the expected result. High-end
+  // wrappers of LAPACK such as LAPACKE features function doing just that:
+  // take a look at the source of LAPACKE for function LAPACKE_dsyev()! It
+  // calls twice the function LAPACKE_dsyev_work, which calls LAPACK_dsyev
+  // (wrapping dsyev()).
 
   // Wrappers still feature functions such as LAPACKE_dsyev_work(), where the
-  // arguments work and lwork are still required. The number of allocations can
-  // therefore be reduced if the routine is called multiple times on similar
-  // sizes by not deallocating WORK between calls, but the user must do that
-  // himself (see this example). In addition, the source of ILAENV, the function
-  // of LAPACK called to compute the optimzed size of WORK, features the
-  // following text:
+  // arguments work and lwork are still required. The number of allocations
+  // can therefore be reduced if the routine is called multiple times on
+  // similar sizes by not deallocating WORK between calls, but the user must
+  // do that himself (see this example). In addition, the source of ILAENV,
+  // the function of LAPACK called to compute the optimzed size of WORK,
+  // features the following text:
 
   //     This version provides a set of parameters which should give good, but
-  //     not optimal, performance on many of the currently available computers.
-  //     Users are encouraged to modify this subroutine to set the tuning
-  //     parameters for their particular machine using the option and problem
-  //     size information in the arguments.
+  //     not optimal, performance on many of the currently available
+  //     computers. Users are encouraged to modify this subroutine to set the
+  //     tuning parameters for their particular machine using the option and
+  //     problem size information in the arguments.
 
   // As a result, testing sizes of WORK larger than the size returned by the
   // workspace query could improve performances."
@@ -325,7 +480,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   prepare_upwind_fluxes()
 {
   // The eigenvalues of A_x are also the eigenvalues of A_y and A_z. The
@@ -366,8 +521,8 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
                 &info);
   // NOTE: The eigenvalues of A_x can computed very efficiently because A_x is
   // (when ordered correctly) a tridiagonal symmetric matrix, i.e. it is in
-  // Hessenberg-Form. At the moment it is not ordered correctly. The computation
-  // has only to be done once.
+  // Hessenberg-Form. At the moment it is not ordered correctly. The
+  // computation has only to be done once.
   Assert(info >= 0, dealii::ExcInternalError());
   if (info != 0)
     std::cerr << "The computation of the eigenvalues and eigenvectors of A_x "
@@ -433,15 +588,15 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
   // TODO: Rotate the eigenvectors of A_x to get the eigenvectors of A_y and
   // A_z, i.e. implement the rotation matrices e^{-i\Omega_x pi/2} and e^{-i
-  // \Omega_z pi/2} For now we will three times compute the same eigenvalues to
-  // get the eigenvectors of A_y and A_z
+  // \Omega_z pi/2} For now we will three times compute the same eigenvalues
+  // to get the eigenvectors of A_y and A_z
 }
 
 
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::test()
 {
   saplog << "Eigenvalues: \n";
   for (auto &lambda : eigenvalues_advection_matrices)
@@ -543,7 +698,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::test()
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_space_directions(
     const unsigned int          component,
     const double                n_component,
@@ -609,7 +764,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_matrix_sum(const double                      n_p,
                      const double                      momentum,
                      const double                      gamma,
@@ -652,7 +807,7 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 template <unsigned int dim, bool has_momentum, bool logarithmic_p>
 void
-sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
+sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   compute_flux_in_p_direction(const double                  n_p,
                               const double                  momentum,
                               const double                  gamma,
@@ -733,15 +888,15 @@ sapphirepp::VFP::UpwindFlux<dim, has_momentum, logarithmic_p>::
 
 
 // explicit instantiation
-template class sapphirepp::VFP::UpwindFlux<1, true, true>;
-template class sapphirepp::VFP::UpwindFlux<1, true, false>;
-template class sapphirepp::VFP::UpwindFlux<1, false, true>;
-template class sapphirepp::VFP::UpwindFlux<1, false, false>;
-template class sapphirepp::VFP::UpwindFlux<2, true, true>;
-template class sapphirepp::VFP::UpwindFlux<2, true, false>;
-template class sapphirepp::VFP::UpwindFlux<2, false, true>;
-template class sapphirepp::VFP::UpwindFlux<2, false, false>;
-template class sapphirepp::VFP::UpwindFlux<3, true, true>;
-template class sapphirepp::VFP::UpwindFlux<3, true, false>;
-template class sapphirepp::VFP::UpwindFlux<3, false, true>;
-template class sapphirepp::VFP::UpwindFlux<3, false, false>;
+template class sapphirepp::VFP::NumericalFlux<1, true, true>;
+template class sapphirepp::VFP::NumericalFlux<1, true, false>;
+template class sapphirepp::VFP::NumericalFlux<1, false, true>;
+template class sapphirepp::VFP::NumericalFlux<1, false, false>;
+template class sapphirepp::VFP::NumericalFlux<2, true, true>;
+template class sapphirepp::VFP::NumericalFlux<2, true, false>;
+template class sapphirepp::VFP::NumericalFlux<2, false, true>;
+template class sapphirepp::VFP::NumericalFlux<2, false, false>;
+template class sapphirepp::VFP::NumericalFlux<3, true, true>;
+template class sapphirepp::VFP::NumericalFlux<3, true, false>;
+template class sapphirepp::VFP::NumericalFlux<3, false, true>;
+template class sapphirepp::VFP::NumericalFlux<3, false, false>;

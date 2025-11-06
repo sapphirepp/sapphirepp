@@ -87,10 +87,12 @@ and are familiar with the basic concepts of @sapphire.
 
 ### VFP equation {#dimension-gyro-advection}
 
-As previously discussed, the motion is confined to the $x$-$y$-plane. Therefore,
-we use a 2d configuration space, $(x,y)$. Given that we're examining a
-discrete momentum $\mathbf{p} = \gamma m \mathbf{v}$, we can equate the reduced
-phase space to the configuration space, setting `dim = dim_ps = dim_cs = 2`.
+As previously discussed,
+the motion is confined to the $x$-$y$-plane.
+Therefore, we use a 2d configuration space, $(x,y)$.
+Given that we're examining a discrete momentum $\mathbf{p} = \gamma m \mathbf{v}$,
+we can equate the reduced phase space to the configuration space,
+setting `dim = dim_ps = dim_cs = 2`.
 
 @snippet{lineno} examples/vfp/gyro-advection/config.h Dimension
 
@@ -101,17 +103,20 @@ $$
   q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = 0 \,,
 $$
 
-we have the time derivative, included via the @ref
-sapphirepp::VFP::VFPFlags::time_evolution "time_evolution" flag,
-and two additional terms. The first term represents
+we have the time derivative,
+included via the @ref sapphirepp::VFP::VFPFlags::time_evolution "time_evolution" flag,
+and two additional terms.
+The first term represents
 @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
-$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$, while the second term denotes
-@ref sapphirepp::VFP::VFPFlags::rotation "rotation" due to magnetic
-interactions, $q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f
-\right)$. Moreover, the magnetic field is
-@ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent".
-Consequently, we activate these three @ref sapphirepp::VFP::VFPFlags
-"VFP flags":
+$(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$,
+while the second term denotes
+@ref sapphirepp::VFP::VFPFlags::rotation "rotation" due to magnetic interactions,
+$q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)$.
+Moreover, the magnetic field is
+@ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent"
+and we use the
+@ref sapphirepp::VFP::VFPFlags::local_lax_friedrichs_flux "local Lax-Friedrichs flux".
+Consequently, we activate these four @ref sapphirepp::VFP::VFPFlags "VFP flags":
 
 @snippet{lineno} examples/vfp/gyro-advection/config.h VFP Flags
 

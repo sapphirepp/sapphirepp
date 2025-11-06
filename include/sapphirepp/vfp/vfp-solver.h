@@ -62,10 +62,10 @@
 
 #include "config.h"
 #include "debug-input-functions.h"
+#include "numerical-flux.h"
 #include "output-parameters.h"
 #include "pde-system.h"
 #include "probe-location.h"
-#include "upwind-flux.h"
 #include "vfp-flags.h"
 #include "vfp-parameters.h"
 
@@ -389,8 +389,8 @@ namespace sapphirepp
       PDESystem pde_system;
       /** @} */
 
-      /** @ref UpwindFlux */
-      UpwindFlux<dim_ps, momentum, logarithmic_p> upwind_flux;
+      /** @ref NumericalFlux */
+      NumericalFlux<dim_ps, momentum, logarithmic_p> numerical_flux; // todo
 
       /** MPI communicator */
       const MPI_Comm mpi_communicator;

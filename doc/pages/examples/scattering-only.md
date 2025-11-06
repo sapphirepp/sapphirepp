@@ -124,27 +124,34 @@ Again, we use the @ref sapphirepp::saplog "saplog" stream to output debug inform
 #### VFP equation {#dimension-scattering-only}
 
 Next, we define static variables and functions related to the VFP equation.
-These are grouped together under the @ref sapphirepp::VFP "VFP" namespace for
-organization and ease of access.
+These are grouped together under the @ref sapphirepp::VFP "VFP" namespace
+for organization and ease of access.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Namespace VFP
 
-First, we specify the dimensionality of the problem. Given that the solution is
-independent of both $\mathbf{x}$ and $p$, we set `dim = 1` (since `dim = 0` is
-not allowed in the code). This corresponds to one space dimension `dim = dim_cs
-= 1` as the momentum dependence is not activated. This variable is defined as a
-`static constexpr` to ensure its value is known at compile time.
+First, we specify the dimensionality of the problem.
+Given that the solution is independent of both $\mathbf{x}$ and $p$,
+we set `dim = 1`
+(since `dim = 0` is not allowed in the code).
+This corresponds to one space dimension `dim = dim_cs = 1`
+as the momentum dependence is not activated.
+This variable is defined as a `static constexpr`
+to ensure its value is known at compile time.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Dimension
 
-Next, we specify the terms of the VFP equation to be used. The `vfp_flags`
-variable is also defined as `static constexpr`, enabling the compiler to
-determine the active terms of the VFP equation at compile time. Selecting only
-the relevant terms can significantly boost performance, even though setting the
-respective terms to zero at runtime would yield the same results. In this
-example, we only have a scattering term, @ref
-sapphirepp::VFP::VFPFlags::collision "collision". All other terms (and the $p$
-dependence) are deactivated by default.
+Next, we specify the terms of the VFP equation to be used.
+The `vfp_flags` variable is also defined as `static constexpr`,
+enabling the compiler to determine the active terms of the VFP equation at compile time.
+Selecting only the relevant terms can significantly boost performance,
+even though setting the respective terms to zero at runtime would yield the same results.
+In this example, we only have the time evolution,
+@ref sapphirepp::VFP::VFPFlags::time_evolution "time_evolution"
+a scattering term,
+@ref sapphirepp::VFP::VFPFlags::collision "collision",
+and use the local Lax-Friedrichs flux,
+@ref sapphirepp::VFP::VFPFlags::local_lax_friedrichs_flux "local_lax_friedrichs_flux".
+All other terms (and the $p$ dependence) are deactivated by default.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h VFP Flags
 

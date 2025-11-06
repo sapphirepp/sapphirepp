@@ -75,7 +75,7 @@ assuming that the reader already familiarised himself with @sapphire.
 ### VFP equation {#dimension-closure}
 
 The example is one dimensional in space,
-and uses mono-energetic particles  with momentum $\mathbf{p} = \gamma m \mathbf{v}$.
+and uses mono-energetic particles with momentum $\mathbf{p} = \gamma m \mathbf{v}$.
 The reduced phase space is therefore only 1 dimensional,
 `dim = dim_ps = dim_cs = 1`.
 
@@ -94,8 +94,10 @@ the @ref sapphirepp::VFP::VFPFlags::spatial_advection "spatial advection",
 $(\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f$,
 and @ref sapphirepp::VFP::VFPFlags::collision "collisions",
 $\frac{\nu}{2} \Delta_{\theta, \varphi} f$.
-Furthermore, to decrease the computation time we include
-@ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent fields" flag.
+Furthermore, to decrease computation time and memory usage we include the
+@ref sapphirepp::VFP::VFPFlags::time_independent_fields "time independent fields" flag
+and use the
+@ref sapphirepp::VFP::VFPFlags::local_lax_friedrichs_flux "local Lax-Friedrichs flux".
 
 @snippet{lineno} examples/vfp/closure/config.h VFP Flags
 

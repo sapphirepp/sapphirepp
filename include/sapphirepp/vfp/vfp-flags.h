@@ -133,7 +133,14 @@ namespace sapphirepp
        * The exponent is fixed to \f$ s = 3 \f$,
        * i.e. \f$ g = p^3 f \f$.
        */
-      scaled_distribution_function = 1 << 9
+      scaled_distribution_function = 1 << 9,
+
+      /**
+       * Use the local Lax-Friedrichs flux instead of the default Upwind flux.
+       * The Upwind flux is much more memory heavy but is more robust.
+       * The local Lax-Friedrichs flux is less robust but requires less memory.
+       */
+      local_lax_friedrichs_flux = 1 << 10,
     };
 
 
@@ -211,6 +218,10 @@ namespace sapphirepp
         }
       if ((f & VFPFlags::scaled_distribution_function) != VFPFlags::none)
         os << "	 - Scaled distribution function\n";
+      if ((f & VFPFlags::local_lax_friedrichs_flux) != VFPFlags::none)
+        os << "	 - Local Lax-Friedrichs Flux\n";
+      else
+        os << "	 - Upwind Flux\n";
 
       return os;
     }

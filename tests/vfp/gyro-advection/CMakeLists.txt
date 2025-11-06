@@ -17,7 +17,7 @@ add_test(NAME gyro-advection COMMAND
 set_property(TEST gyro-advection PROPERTY LABELS
   "gyro-advection"
   "2d" "spatial_advection" "magnetic"
-  "CN" "periodic BC"
+  "CN" "periodic BC" "lax-friedrichs-flux"
   "commit-Release" "commit-Debug"
   "full-suite-Release" "full-suite-Debug"
 )
@@ -28,7 +28,7 @@ add_test(NAME gyro-static COMMAND
 set_property(TEST gyro-static PROPERTY LABELS
   "gyro-advection"
   "2d" "spatial_advection" "magnetic"
-  "CN" "continuos gradients"
+  "CN" "continuos gradients" "lax-friedrichs-flux"
   "commit-Release" "commit-Debug"
   "full-suite-Release" "full-suite-Debug"
 )
