@@ -3,7 +3,7 @@ subsection Output
   set Debug input functions        = false
   set Format                       = pvtu
   set Number of digits for counter = 4
-  set Output frequency             = 1
+  set Output frequency             = 10
   set Results folder               = ./results
   set Simulation identifier        = synchrotron-test-run-constB
 end
@@ -58,9 +58,9 @@ subsection VFP
   #   set points                 =
   # end
   subsection Time stepping
-    set Final time     = 10e-6
+    set Final time     = 1e-4
     set Method         = ERK4
-    set Time step size = 0.1e-6
+    set Time step size = 0.5e-7
   end
   # subsection TransportOnly
   #   set Gamma = 3.
