@@ -91,11 +91,12 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   const double tau_s =
     (9.0 * M_PI * std::pow(solver_control.reference_units.mass, 3) *
      solver_control.reference_units.velocity) /
-    (std::pow(solver_control.reference_units.charge, 4) * 4.0 * M_PI * 1.0e-7);
+    (4.0 * M_PI * 1.0e-7 * std::pow(solver_control.reference_units.charge, 4) *
+     solver_control.reference_units.time *
+     std::pow(solver_control.reference_units.magnetic_field_strength, 2));
 
   // Dimensionless coefficient: (3/2)*(t0/tau_s)*(q^4/m^3)
-  coeff = 1.5 * (solver_control.reference_units.time / tau_s) *
-          std::pow(charge, 4) / std::pow(mass, 3);
+  coeff = 1.5 * (1.0 / tau_s) * std::pow(charge, 4) / std::pow(mass, 2);
 
   // NOTE: Since we very often call compute_matrix_sum and the matrices classes
   // of dealii do not allow unchecked access to there raw data, we create copies
@@ -465,9 +466,15 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   for (unsigned int i = 0; i < jacobian_dummy.m(); ++i)
     for (unsigned int j = 0; j < jacobian_dummy.n(); ++j)
       jacobian_dummy[i][j] = 1.;
+  dealii::Vector<double> B_dummy(3);
+  B_dummy = 0.0;
 
-  compute_matrix_sum(
-    n_p_dummy, p_dummy, gamma_dummy, material_derivative_dummy, jacobian_dummy);
+  compute_matrix_sum(n_p_dummy,
+                     p_dummy,
+                     gamma_dummy,
+                     material_derivative_dummy,
+                     jacobian_dummy,
+                     B_dummy);
   // call Lapack routine
   dealii::syevr(jobz,
                 range,
@@ -677,7 +684,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::test()
   for (unsigned int i = 0; i < test_jacobian.m(); ++i)
     for (unsigned int j = 0; j < test_jacobian.n(); ++j)
       test_jacobian[i][j] = rnd_number_generator();
-  dealii::Point<dim_cs>  x_test;
+  dealii::Point<dim>     x_test;
   dealii::Vector<double> B_vec(3);
   magnetic_field.vector_value(x_test, B_vec);
 
