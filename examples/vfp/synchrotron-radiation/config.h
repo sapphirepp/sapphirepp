@@ -134,7 +134,7 @@ namespace sapphirepp
     constexpr VFPFlags vfp_flags =
       VFPFlags::time_evolution | VFPFlags::momentum | VFPFlags::synchrotron |
       VFPFlags::spatial_advection | VFPFlags::scaled_distribution_function |
-      VFPFlags::time_independent_fields;
+      VFPFlags::upwind_flux | VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -208,13 +208,12 @@ namespace sapphirepp
         double p     = std::exp(point[0]) / 1e6;
         double p_max = (0.5 * 1e7) / 1e6;
         f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_000
-        // f[2] = 0.5 * 1/std::sqrt(3) * std::pow(p,3) * std::pow(p, -4) *
-        // std::exp(-p/p_max); // f_100
-        f[1] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
-               std::exp(-p / p_max); // f_110
-        // f[3] = 0.5 * 1/std::sqrt(3) * std::pow(p,3) * std::pow(p, -4) *
-        // std::exp(-p/p_max); // f_111 f[0] = 0; f[2] = 0; for (unsigned int i
-        // = 0; i < f.size(); ++i)
+        f[2] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
+               std::exp(-p / p_max); // f_100
+        // f[1] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
+        // std::exp(-p / p_max); // f_110 f[3] = 0.5 * 1/std::sqrt(3) *
+        // std::pow(p,3) * std::pow(p, -4) * std::exp(-p/p_max); // f_111 f[0] =
+        // 0; f[2] = 0; for (unsigned int i= 0; i < f.size(); ++i)
         //   {
         //     /** [Initial value] */
         //     // !!!EDIT HERE!!!

@@ -763,10 +763,6 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 {
-  // Dimensionless prefactor used everywhere in the PDE
-  const double coeff = 1.5 * (1.0 / tau_s) *
-                       std::pow(vfp_parameters.charge, 4) /
-                       std::pow(vfp_parameters.mass, 2);
   TimerOutput::Scope timer_section(timer, "VFP - DG matrix");
   /*
     What kind of loops are there ?
@@ -849,6 +845,11 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
     std::vector<double> particle_gammas(q_points.size());
     particle_gamma.value_list(q_points, particle_gammas);
+
+    // Dimensionless prefactor used for the synchrotron term
+    const double coeff = 1.5 * (1.0 / tau_s) *
+                         std::pow(vfp_parameters.charge, 4) /
+                         std::pow(vfp_parameters.mass, 2);
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         for (unsigned int i : fe_v.dof_indices())
