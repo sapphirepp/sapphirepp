@@ -134,7 +134,7 @@ namespace sapphirepp
     constexpr VFPFlags vfp_flags =
       VFPFlags::time_evolution | VFPFlags::momentum | VFPFlags::synchrotron |
       VFPFlags::spatial_advection | VFPFlags::scaled_distribution_function |
-      VFPFlags::upwind_flux | VFPFlags::time_independent_fields;
+      VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
