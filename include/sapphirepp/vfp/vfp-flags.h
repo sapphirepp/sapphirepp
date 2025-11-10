@@ -149,7 +149,7 @@ namespace sapphirepp
        * The Upwind flux is much more memory heavy but is more robust.
        * The local Lax-Friedrichs flux is less robust but requires less memory.
        */
-      upwind_flux = 1 << 10,
+      local_lax_friedrichs_flux = 1 << 10,
 
       /**
        * Activate the synchrotron radiation term
@@ -241,16 +241,12 @@ namespace sapphirepp
         }
       if ((f & VFPFlags::scaled_distribution_function) != VFPFlags::none)
         os << "	 - Scaled distribution function\n";
-<<<<<<< HEAD
       if ((f & VFPFlags::local_lax_friedrichs_flux) != VFPFlags::none)
         os << "	 - Local Lax-Friedrichs Flux\n";
       else
         os << "	 - Upwind Flux\n";
-=======
       if ((f & VFPFlags::synchrotron) != VFPFlags::none)
         os << "	 - Synchrotron radiation term\n";
->>>>>>> synchrotron-test-branch
-
       return os;
     }
 
