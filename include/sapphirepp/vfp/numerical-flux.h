@@ -199,10 +199,12 @@ namespace sapphirepp
       const double mass;
       const double charge;
       // TransportOnly
-      const double          velocity;
-      MagneticField<dim_cs> magnetic_field;
-      // Reference units and precomputed dimensionless synchrotron coefficient
-      sapphirepp::ReferenceValues ref_units_;
+      const double velocity;
+      // MagneticField<dim_cs> magnetic_field;
+      //  Reference units and precomputed dimensionless synchrotron coefficient
+      // sapphirepp::ReferenceValues ref_units_;
+      MagneticField<dim> magnetic_field;
+      // Precomputed dimensionless synchrotron coefficient (set in .cpp)
       double coeff; // dimensionless prefactor (3/2)*(t0/tau_s)*(q^4/m^3)
 
       // Arguments for the Lapack routine xsyevr
