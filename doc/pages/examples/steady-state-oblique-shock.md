@@ -15,7 +15,7 @@ The example focuses on the relevant aspects only.
 For a deeper understanding, a read of the [parallel shock](#parallel-shock) example
 and its [steady-state version](#steady-state-parallel-shock) may be useful.
 
-## Introduction {#introduction-steady-state-parallel-shock}
+## Introduction {#introduction-steady-state-oblique-shock}
 
 We study the acceleration of energetic particles at a collisionless shock with
 compression ratio $r$ that propagates with velocity $\mathbf{U}$ through an astrophysical plasma,
