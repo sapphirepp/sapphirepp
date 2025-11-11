@@ -77,8 +77,9 @@ Moreover, we use $\ln p$ instead of $p$, i.e. $g = g(x, \ln p)$.
 
 ### Magnetic field {#magnetic-field-steady-state-oblique-shock}
 
-We orient the magnetic field in the $x$-$z$ plane. The shock normal points into the $x$-direction.  For a strong shock, namely a shock whose Alfvén Mach number ($M_{A}$) is much greater than one, 
-the $\mathbf{B}$-field component tangential to the shock surface $B_{z}$, 
+We orient the magnetic field in the $x$-$z$ plane. The shock normal points into the $x$-direction.  
+For a strong shock, namely a shock whose Alfvén Mach number ($M_{A}$) is much greater than one,
+the $\mathbf{B}$-field component tangential to the shock surface $B_{z}$,
 is enhanced by the compression ratio $r = 4$.
 
 Note, the transition from its up- to its downstream value is _not_ discontinuous:
@@ -105,7 +106,9 @@ The implementation of the `MagneticField` function looks like
 
 @snippet{lineno} examples/vfp/steady-state-oblique-shock/config.h Magnetic field
 
-The parameter `obliqueness` is the angle between magnetic field and shock normal $\theta_n$ in degrees, the `compression ratio` is $r$ and the `shock_width` is $L_s$. The parameters can be changed in the `parameter.prm` file. 
+The parameter `obliqueness` is the angle between the magnetic field and the shock normal, i.e.  $\theta_n$ in degrees, 
+the `compression ratio` is $r$ and the `shock_width` is $L_s$. 
+The parameters can be changed in the `parameter.prm` file. 
 
 ### Scattering frequency {#scattering-frequency-steady-state-oblique-shock}
 
@@ -124,22 +127,72 @@ that is proportional to the gyro frequency of the particles, i.e. $\nu \propto \
 This scaling of the scattering frequency with momentum is called "Bohm scaling".
 $\nu = \omega_g$ is the Bohm limit and corresponds to $\nu_0 = 1$. 
 We note that a plasma in which particles are scattered more often is not magnetised anymore.
-The Bohm scaling case in the context of oblique shock was, for example, studied in @cite Bell2011 . No deviations from a power-law spectrum are expected.
+The Bohm scaling case in the context of oblique shock was, for example, studied in @cite Bell2011 .
+No deviations from a power-law spectrum are expected.
 
 In this example, we choose $\alpha$ to equal $-1/2$. 
 This corresponds to Iroshnikov–Kraichnan MHD turbulence of the background astrophysical plasma. 
+
+In a second step, we investigate a $x$- and $p$-dependent scattering frequency. 
+We choose the $x$-dependence such that it models an enhanced scattering zone in the precursor of the shock wave.
+The idea is to mimic the self-excitation of magnetic field perturbations ahead of the shock. 
+How these perturbations change when being advected through the shock is not trivial, 
+we therefore experiment with two cases:
+
+__Case (a)__:  
+The scattering frequency is 
+
+$$
+	\nu(x, p) = \nu_0 B \left[\frac{\zeta_1 + \zeta_2}{2} - \frac{\zeta_1 - \zeta_2}{2} 
+	\tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1}
+$$
+
+This choice implies that $\eta = \nu/\omega_g$ is constant across the shock.
+Note that we returned to $\alpha = -1$ to isolate the effects of the enhanced scattering zone.
+The spatial profile of the scattering frequency and of $\eta$
+are plotted in the vicinity of the shock (grey dashed line).
+
+<div style="text-align:center;">
+<img alt="Case A: The ratio of the scattering frequency to the gyro frequency, called eta, is constant across the shock."
+src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/scattering_regime_case_a.png">
+</div>
+
+
+__Case (b)__:  
+
+The scattering frequency is 
+$$
+	\nu(x, p) = \nu_0 B_0 \left[\frac{\zeta_1 + \zeta_2}{2} - \frac{\zeta_1 - \zeta_2}{2} 
+	\tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1}
+$$
+
+In contrast to case (a), it is the scattering frequency $\nu$ that does not jump at the shock. 
+
+<div style="text-align:center;">
+<img alt="Case B: The scattering frequency is constant across the shock."
+src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/scattering_regime_case_b.png">
+</div>
 
 The implementation looks like
 
 @snippet{lineno} examples/vfp/steady-state-oblique-shock/config.h Scattering frequency
 
-Note that we chose to work with $\ln p$ instead of $p$ and, hence,
-$\nu(\ln p) = \nu_0 * B_0 \exp(\alpha \ln p)$.
-We remember the user that the last component of `point` in reduced phase space
-is the magnitude of the momentum variable.
-Since the reduced phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
-Note, $\nu_0$ and $\alpha$ are parameters that are set in the supplied parameter
-file.
+Note, we use $\ln p$ instead of $p$ and, thus, $\nu(\ln p) = \nu_0 B \exp(\alpha \ln p)$.
+Furthermore, `points[q_index][1]` is $\ln p$.
+
+We introduced a set of parameters, namely `enhanced scattering zone`, `nu0`, `alpha`, 
+`case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
+
+If the `enhanced scattering zone` parameter is set to `true`,
+the scattering frequency depends on $x$ and $p$.
+The `case identifier` distinguishes between case (a) and case (b).
+The parameters `zeta one` and `zeta two` determine the final values of
+the scattering frequency (or $\eta$) in the up- and downstream respectively.
+The `transition point` determines where the transition between $\zeta_1$ and $zeta_2$ happens.
+It could be interpreted as the size of the enhanced scattering zone.
+The `transition length` determines the width of the used tanh-profile.
+If the `enhanced scattering zone` parameter is set to `false`,
+the scattering frequency only depends on $p$.
 
 
 ### Compile and run {#compile-steady-state-oblique-shock}
