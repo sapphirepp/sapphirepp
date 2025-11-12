@@ -24,8 +24,8 @@ subsection Output
   set Format                       = pvtu
   set Number of digits for counter = 0
   set Output frequency             = 1
-  set Results folder               = ./results
-  set Simulation identifier        = steady-state-oblique-shock
+  set Results folder               = ./results/steady-state-oblique-shock
+  set Simulation identifier        = kraichnan-turbulence
   set Debug input functions        = true
 end
 

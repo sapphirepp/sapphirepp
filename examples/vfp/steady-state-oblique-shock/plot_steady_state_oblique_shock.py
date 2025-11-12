@@ -1,7 +1,7 @@
 """Plot the oblique shock example."""
 
 import numpy as np
-from sapphireppplot import vfp, numpyify, utils
+from sapphireppplot import vfp, numpyify
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.dpi"] = 150
@@ -22,7 +22,7 @@ def main() -> dict:
 
     results_folder, prm, solution, animation_scene = vfp.load_solution(
         plot_properties,
-        path_prefix="$SAPPHIREPP_RESULTS/oblique-shock-example",
+        path_prefix="$SAPPHIREPP_RESULTS/steady-state-oblique-shock",
     )
 
     # ParaView Plots
@@ -200,6 +200,7 @@ def main() -> dict:
         )
 
         ax.legend()
+        ax.set_xlim(left=1.5 * p_inj)
         plt.savefig(
             results_folder
             + "/spectrum_enhanced_scattering_case_{case}.png".format(
