@@ -4,13 +4,13 @@ subsection Physical parameters
   set obliqueness              = 60.
   set compression ratio        = 4.
   set shock width              = 0.04
-  set alpha                    = -1.
-  set nu0                      = 1.
-  set enhanced scattering zone = true
+  set alpha                    = -0.5
+  set nu0                      = 0.01
+  set enhanced scattering zone = false
   set transition length        = 4.
   set transition point 	       = -20.
-  set zeta one 	 	       = 0.03
-  set zeta two 		       = 0.3
+  set zeta one       	 	       = 0.03
+  set zeta two 		             = 0.3
   set case identifier 	       = a
   set Q                        = 1.
   set p_inj                    = 2.
@@ -31,7 +31,7 @@ end
 
 subsection VFP
   subsection Expansion
-    set Expansion order = 1
+    set Expansion order = 6
   end
   subsection Finite element
     set Polynomial degree = 1
@@ -39,8 +39,8 @@ subsection VFP
   subsection Mesh
     set Grid type             = Shock grid
     set Point 1               = -15000, -2.3
-    set Point 2               = 100, 4.6
-    set Number of cells       = 226, 256
+    set Point 2               = 10000, 6.91
+    set Number of cells       = 274, 312
     set Shock width           = 0.04
     set Number of shock cells = 10
     set Scaling factor shock  = 1.1

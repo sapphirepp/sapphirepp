@@ -42,7 +42,7 @@ def main() -> dict:
     )
 
     # Spectrum far downstream
-    downstream_position = 50
+    downstream_position = 8000
     (
         plot_over_line_p_downstream,
         layout_p_downstream,
@@ -91,7 +91,10 @@ def main() -> dict:
 
     # Iroshnikov-Kraichnan MHD turbulence: Spectra at the shock and far
     # downstream
-    if not bool(prm["Physical parameters"]["enhanced scattering zone"]):
+    if (
+        prm["Physical parameters"]["enhanced scattering zone"].lower()
+        == "false"
+    ):
         fig, ax = plt.subplots(figsize=(8, 3))
         ax.loglog(
             p_coordinate,
@@ -107,7 +110,7 @@ def main() -> dict:
             linewidth=2,
         )
 
-        ax.legend(loc="upper right")
+        ax.legend(loc="upper left")
         ax.set_ylabel(r"$p^{4}f_{0}$")
         ax.set_xlabel(r"$p/mc$")
         ax.grid(True, which="both", alpha=0.5)
