@@ -513,8 +513,7 @@ namespace sapphirepp
                 // const double z      = (std::log(p) - mu) / sigma;
 
                 // source_values[i] = Q * (1.0 / (p * sigma * std::sqrt(2.0 *
-                // M_PI)))
-                //                     * std::exp(-0.5 * z * z);
+                // M_PI))) * std::exp(-0.5 * z * z);
               }
             // vanishing anisotropic part
             else
