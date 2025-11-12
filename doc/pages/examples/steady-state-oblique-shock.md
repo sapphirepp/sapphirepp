@@ -144,7 +144,7 @@ The scattering frequency is
 
 $$
 	\nu(x, p) = \nu_0 B \left[\frac{\zeta_1 + \zeta_2}{2} - \frac{\zeta_1 - \zeta_2}{2} 
-	\tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1}
+	\tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1} \equiv \nu_0 B \zeta(x) p^{-1}
 $$
 
 This choice implies that $\eta = \nu/\omega_g$ is constant across the shock.
@@ -162,8 +162,7 @@ __Case (b)__:
 
 The scattering frequency is 
 $$
-	\nu(x, p) = \nu_0 B_0 \left[\frac{\zeta_1 + \zeta_2}{2} - \frac{\zeta_1 - \zeta_2}{2} 
-	\tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1}
+	\nu(x, p) = \nu_0 B_0 \zeta(x) p^{-1}
 $$
 
 In contrast to case (a), it is the scattering frequency $\nu$ that does not jump at the shock. 
@@ -204,24 +203,55 @@ and the executable can be found in the
 `build/examples/vfp/steady-state-oblique-shock` folder.
 The executable is called `steady-state-oblique-shock`
 
-We supply the user with a physically reasonable set of parameters that are
-listed in the `examples/vfp/steady-state-oblique-shock/parameter.prm` file:
+The values used in the parameter file `examples/vfp/steady-state-oblique-shock/parameter.prm` are close to the ones used in @cite Shirin2025 .
 
 @include examples/vfp/steady-state-oblique-shock/parameter.prm
 
-Run the simulation with:
+However, the example comprises three runs with slight changes of the parameters:
 
+1. Iroshnikov–Kraichnan MHD turbulence: No changes of the parameter file required.
+2. Enhanced scattering zone: Change `enhanced scattring zone` to `true`
+   <ol style="list-style-type: lower-alpha;">
+     <li>Change `Simulation identifier` to `steady-state-oblique-shock/a` and `alpha` to `-1`</li>
+     <li>Change `Simulation identifier` to `steady-state-oblique-shock/b`, `case identifier` to `b`  and keep `alpha = -1`</li>
+   </ol>
+
+Each run can be started with 
 ```shell
-mpirun -n 6 ./build/examples/vfp/steady-state-oblique-shock/steady-state-oblique-shock examples/vfp/steady-state-oblique-shock/parameter.prm
+mpirun -n 192 ./build/examples/vfp/steady-state-oblique-shock/steady-state-oblique-shock examples/vfp/steady-state-oblique-shock/parameter.prm
 ```
+
+@note The size of the simulation is such that it requires the usage of many cores and a lot of memory, 
+typically only available on clusters. 
+
 
 The plots can be created with the command:
 
 ```shell
-pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-parallel-shock
+pvbatch examples/vfp/steady-state-oblique-shock/plot_steady_state_oblique_shock.py
 ```
 
+The plotting script assumes that the environment variable `SAPPHIREPP_RESULTS` is set. 
+Furthermore, when executing the plotting script you will be asked for a path.
+If you like to plot the results for the Iroshnikov–Kraichnan MHD turbulence, just type `./`.
+For case (a) of the enhanced scattering zone, type `a` and `b` for case (b).
+
+
 ## Results {#results-steady-state-oblique-shock}
+
+The result section is split into two parts: 
+Firstly, we show how the particle spectrum looks at the shock
+if the scattering frequencies' $p$-dependence is such
+that it models the effect Iroshnikov–Kraichnan MHD turbulence in the background plasma. 
+Second, we demonstrate that an enhanced scattering zone in the precursor of the shock
+may lead to breaks in the particle spectrum.
+
+### Iroshnikov–Kraichnan MHD turbulence
+
+
+$\nu_0 = 0.01$ , $p_{\text{Bohm}} = 10^{4}$
+
+### Enhanced scattering zone
 
 
 <div class="section_buttons">
@@ -235,4 +265,5 @@ pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-
 ---
 
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@date 2025-02-05
+@author Asma Shirin (<asma.shirin@mpi-hd.mpg.de>)
+@date 2025-11-12
