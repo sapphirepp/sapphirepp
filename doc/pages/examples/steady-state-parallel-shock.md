@@ -144,10 +144,12 @@ Run the simulation with:
 mpirun -n 6 ./build/examples/vfp/steady-state-parallel-shock/steady-state-parallel-shock examples/vfp/steady-state-parallel-shock/parameter.prm
 ```
 
-The plots can be created with the command:
+The plots can be created with a @sapplot script:
 
 ```shell
-pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-parallel-shock
+conda activate sapplot
+export SAPPHIREPP_RESULTS=$(pwd)/results
+python examples/vfp/steady-state-parallel-shock/plot_steady_state_parallel_shock.py
 ```
 
 ## Results {#results-steady-state-parallel-shock}
@@ -292,7 +294,7 @@ with
 
 ```shell
 mpirun -n 6 build/examples/vfp/steady-state-parallel-shock/scaled/steady-state-parallel-shock-scaled examples/vfp/steady-state-parallel-shock/scaled/parameter.prm &&
-pvbatch examples/vfp/steady-state-parallel-shock/pvplot.py results/steady-state-parallel-shock
+python examples/vfp/steady-state-parallel-shock/plot_steady_state_parallel_shock_scaled.py scaled
 ```
 
 @warning It seems that scaling the distribution function increases the condition

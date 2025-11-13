@@ -379,10 +379,12 @@ Run the simulation with:
 mpirun -n 4 ./build/examples/vfp/parallel-shock/parallel-shock examples/vfp/parallel-shock/parameter.prm
 ```
 
-We provide a [Paraview Python](#paraview-python) script to generate the plots:
+We provide a @sapplot script to generate the plots:
 
 ```shell
-pvbatch examples/vfp/parallel-shock/pvplot.py results/parallel-shock
+conda activate sapplot
+export SAPPHIREPP_RESULTS=$(pwd)/results
+python examples/vfp/parallel-shock/plot_parallel_shock.py
 ```
 
 ## Results {#results-parallel-shock}

@@ -292,6 +292,7 @@ TAB_SIZE               = 4
 
 # Note: We use the unicode word joiner (U+2060) between the plusses in Sapphire++
 ALIASES                = sapphire="Sapphire+⁠+" \
+                         sapplot="<A HREF=\"https://plot.sapphirepp.org\">sapphireppplot</A>" \
                          dealii="<A HREF=\"https://www.dealii.org\">deal.II</A>" \
                          dealref{2}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html\">\1</A>" \
                          dealref{3}="<A HREF=\"https://www.dealii.org/@DEAL_II_MIN_VERSION@/doxygen/deal.II/\2.html#\3\">\1</A>" \

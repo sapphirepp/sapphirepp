@@ -20,6 +20,10 @@ you can directly jump to the
 Here, we explain some caveats of results
 produced by the discontinuous Galerkin method utilized by @sapphire.
 
+We also want to highlight the @sapplot package
+which provides a Python plotting library for @sapphire results
+and is used in most [examples](#examples).
+
 @subpage paraview-tutorial
 
 @subpage paraview-python

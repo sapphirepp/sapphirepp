@@ -217,6 +217,16 @@ and
 The documentation for the Python interface of the @paraview filters can be found here:
 [`paraview.simple` documentation](https://www.paraview.org/paraview-docs/nightly/python/paraview.servermanager_proxies.html#).
 
+## Sapphire++ — Plot {#sapphireppplot}
+
+Since the ParaView Python interface can be quite cumbersome,
+we develop a Python plotting library to simplify the process,
+@sapplot.
+Most of the [examples](#examples) use this package to create the plots.
+For more information refer to the
+[Sapphire++ — Plot webpage](https://plot.sapphirepp.org)
+and the [GitHub repository](https://github.com/sapphirepp/sapphireppplot).
+
 <div class="section_buttons">
 
 | Previous                                |                                                     Next |
