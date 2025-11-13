@@ -1,0 +1,102 @@
+# Synchrotron radiation {#synchrotron-radiation}
+
+@tableofcontents
+
+This example adds synchrotron radiation reaction to the parallel-shock setup used in the @subpage parallel-shock and @subpage steady-state-parallel-shock examples.
+It demonstrates how the Landau–Lifshitz (LL) radiation–reaction term modifies the particle spectrum in a one-dimensional parallel shock, enabling a direct comparison between radiative and non-radiative cases.
+
+## Relation to the parallel-shock examples {#relation-parallel-shock}
+
+The synchrotron-radiation example is built on top of the parallel-shock configuration described in @subpage parallel-shock and in the steady-state formulation @subpage steady-state-parallel-shock.
+It reuses the same spatial shock setup and scattering physics, but adds an additional energy-loss channel via synchrotron cooling.
+This allows one to quantify radiative effects by comparing with the base examples using identical runtime parameters wherever possible.
+
+A detailed derivation and discussion of the weak formulation can be found on the implementation page @subpage synchrotron-radiation-implementation.
+
+## VFP equation with synchrotron cooling {#vfp-synchrotron-radiation}
+
+In @sapphire the synchrotron term is added directly to the Vlasov–Fokker–Planck equation.
+In compact vector notation the equation solved in this example reads
+
+$$
+\frac{\partial f}{\partial t} + (\mathbf{u} + \mathbf{v}) \cdot \nabla_{x} f - \gamma m \frac{\mathrm{D} \mathbf{u}}{\mathrm{D} t} \cdot \nabla_{p} f - \mathbf{p} : (\nabla_{x} \mathbf{u}) \, \nabla_{p} f - \left(\frac{\partial f}{\partial t}\right)_{\mathrm{sync}} + q \, \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right) = \frac{\nu}{2} \, \Delta_{\theta,\varphi} f + S \, .
+$$
+
+Here $f(t,\mathbf{x},\mathbf{p})$ is the phase-space distribution, $\mathbf{u}$ is the background plasma velocity, $\mathbf{v}$ the particle velocity, and $\mathbf{B}$ the magnetic field.
+The operator $\Delta_{\theta,\varphi}$ denotes the angular part of the Laplacian on the momentum sphere, and $S$ collects any additional source terms.
+The synchrotron contribution $(\partial f / \partial t)_{\mathrm{sync}}$ is implemented using the reduced Landau–Lifshitz (LL) radiation–reaction force and is treated as part of the left-hand side of the equation.
+This form is equivalent to the more detailed spherical-harmonic representation discussed in @subpage synchrotron-radiation-implementation .
+
+## Implementation overview {#implementation-synchrotron-radiation}
+
+The synchrotron-radiation example lives in the directory
+`examples/vfp/synchrotron-radiation`
+and consists of the following files:
+
+- `config.h` – defines the geometry, background velocity field, magnetic field, and scattering model used for the parallel shock, as well as enabling synchrotron cooling.
+- `synchrotron-radiation.cpp` – driver executable that sets up the VFP solver, reads the parameter file, and advances the solution in time.
+- `parameter.prm` – runtime parameter file (in deal.II `ParameterHandler` format) controlling mesh, time-stepping, output, and physical reference units.
+
+The actual synchrotron terms are implemented in the core VFP classes in the library and are activated via the VFP flags passed to the solver.
+In particular, the example uses a combination of flags defined in
+@ref sapphirepp::VFP::VFPFlags "VFP flags"
+to include advection, scattering, and synchrotron cooling in the momentum equation.
+
+The reduced phase space used in the example is the same as in the parallel-shock tests: one spatial dimension along the shock normal and one momentum dimension (here logarithmic momentum).
+The distribution function is expanded in spherical harmonics up to a configurable order $l_{\max}$.
+
+## Example parameter file {#example-parameter-synchrotron-radiation}
+
+A typical parameter file for this example is distributed with @sapphire and can be found at
+`examples/vfp/synchrotron-radiation/parameter.prm`.
+For convenience, we reproduce it here:
+
+@include{lineno} examples/vfp/synchrotron-radiation/parameter.prm
+
+This configuration uses a one-dimensional grid in logarithmic momentum with 64 cells, electron-based reference units, and a fourth-order explicit Runge–Kutta time integrator with a fixed time step.
+Output is written to the `./results` directory with base file name `solution` and simulation identifier `synchrotron-test-run-`.
+Boundary conditions are chosen to mimic an effectively isolated system in momentum space over the simulated time interval.
+
+## Running the example {#execute-synchrotron-radiation}
+
+After configuring and building @sapphire with examples enabled, the synchrotron-radiation example can be executed from the build directory with
+
+```shell
+mpirun -n 1 ./examples/vfp/synchrotron-radiation/synchrotron-radiation ../examples/vfp/synchrotron-radiation/parameter.prm
+```
+
+The simulation writes a sequence of solution files to the results folder specified in the parameter file.
+These can be inspected with ParaView; a simple workflow is described in @subpage paraview-tutorial and @subpage paraview-python .
+
+## Results and comparison to non-radiative runs {#results-synchrotron-radiation}
+
+Physically, synchrotron cooling introduces an energy-dependent loss term that steepens the high-momentum tail of the shock-accelerated distribution.
+In the absence of cooling, the parallel-shock example produces a power-law in momentum over a wide range, limited only by the finite simulation time and momentum grid.
+
+With synchrotron radiation enabled, particles at the highest momenta lose energy on a timescale comparable to, or shorter than, the acceleration time.
+The resulting spectrum develops a cooling break and an exponential-like cutoff whose position depends on the magnetic-field strength, the scattering rate, and the total runtime.
+
+By running the synchrotron-radiation example alongside the standard parallel-shock examples with otherwise identical parameters, one can directly compare:
+
+- The evolution of the momentum spectrum at fixed positions relative to the shock.
+- The spatial structure of the distribution upstream and downstream of the shock.
+- The dependence of the cutoff momentum on magnetic-field strength and runtime.
+
+A typical comparison of the isotropic spectrum at the shock, for simulations with and without synchrotron cooling, is shown below.
+
+![Steady-state spectra at the shock with and without synchrotron cooling](https://sapphirepp.org/img/examples/synchrotron-radiation/synchrotron-spectrum-comparison.png)
+
+These comparisons provide a convenient test of the synchrotron implementation and a starting point for more realistic applications, for example modelling synchrotron-cooled cosmic-ray populations in supernova remnants.
+
+<div class="section_buttons">
+
+| Previous              |
+|:----------------------|
+| [Examples](#examples) |
+
+</div>
+
+---
+
+@author Harsh Goyal (<harsh.goyal@mpi-hd.mpg.de>)
+@date 2025-11-13
