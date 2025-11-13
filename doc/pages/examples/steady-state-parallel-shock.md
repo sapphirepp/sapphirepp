@@ -74,7 +74,7 @@ $$
 $$
 
 where $\nu_0$ is a parameter which can be freely set. Because $h = \omega_g/\nu$, where $\omega_g = q B/\gamma m$ is the gyro frequency, is the hall parameter, $1/nu_0$  gives approximately the number of gyrations a particle performs before being scattered.
-$\nu_0 = 1$ is called the "Bohm limit" or "Bohm scaling".
+$\nu_0 = 1$ is called the "Bohm limit".
 We note that a plasma in which particles are scattered more often is not magnetised anymore.
 Furthermore, for the above choice of $\nu(p)$ the Hall parameter becomes independent of $p$.
 
@@ -83,7 +83,7 @@ The implementation looks like
 @snippet{lineno} examples/vfp/steady-state-parallel-shock/config.h Scattering frequency
 
 Note that we chose to work with $\ln p$ instead of $p$ and, hence,
-$\nu(\ln p) = \nu_0 * B_0 \exp(-1 \ln p)$.
+$\nu(\ln p) = \nu_0 B_0 \exp(-1 \ln p)$.
 We remember the user that the last component of `point` in reduced phase space
 is the magnitude of the momentum variable.
 Since the reduced phase space is $(x, \ln p)$, `points[q_index][1]` is $\ln p$.
