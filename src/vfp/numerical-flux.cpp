@@ -42,6 +42,9 @@
 #include <iomanip>
 #include <random>
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "config.h"
 
 
@@ -75,6 +78,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   , mass(solver_control.mass)
   , charge(solver_control.charge)
   , velocity(solver_control.velocity)
+  , magnetic_field{physical_parameters}
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}
@@ -84,6 +88,16 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   int_dummy{&dealii::LAPACKSupport::one}
   , double_dummy{1.}
 {
+  const double tau_s =
+    (9.0 * M_PI * std::pow(solver_control.reference_units.mass, 3) *
+     solver_control.reference_units.velocity) /
+    (4.0 * M_PI * 1.0e-7 * std::pow(solver_control.reference_units.charge, 4) *
+     solver_control.reference_units.time *
+     std::pow(solver_control.reference_units.magnetic_field_strength, 2));
+
+  // Dimensionless coefficient: (3/2)*(t0/tau_s)*(q^4/m^3)
+  coeff = 1.5 * (1.0 / tau_s) * std::pow(charge, 4) / std::pow(mass, 2);
+
   // NOTE: Since we very often call compute_matrix_sum and the matrices classes
   // of dealii do not allow unchecked access to there raw data, we create copies
   // of the matrices in the hope that this additional memory consumption is made
@@ -122,6 +136,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::set_time(
   double time)
 {
   background_velocity_field.set_time(time);
+  magnetic_field.set_time(time);
 }
 
 
@@ -219,12 +234,16 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
 
       std::vector<double> particle_gammas(q_points.size());
       particle_gamma_func.value_list(q_points, particle_gammas);
+      std::vector<dealii::Vector<double>> B_vectors(q_points.size(),
+                                                    dealii::Vector<double>(3));
+      magnetic_field.vector_value_list(q_points, B_vectors);
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
         compute_flux_in_p_direction(normals[q_index][component],
                                     q_points[q_index][component],
                                     particle_gammas[q_index],
                                     material_derivative_vel[q_index],
                                     jacobians_vel[q_index],
+                                    B_vectors[q_index],
                                     positive_flux_matrices[q_index],
                                     negative_flux_matrices[q_index]);
     }
@@ -325,6 +344,10 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
       std::vector<double> particle_gammas(q_points.size());
       particle_gamma_func.value_list(q_points, particle_gammas);
 
+      std::vector<dealii::Vector<double>> B_vectors(q_points.size(),
+                                                    dealii::Vector<double>(3));
+      magnetic_field.vector_value_list(q_points, B_vectors);
+
 
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
         {
@@ -334,7 +357,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                              q_points[q_index][dim - 1], // momentum
                              particle_gammas[q_index],
                              material_derivative_vel[q_index],
-                             jacobians_vel[q_index]);
+                             jacobians_vel[q_index],
+                             B_vectors[q_index]);
 
           // copy the flux matrices
           for (unsigned int i = 0; i < matrix_size; ++i)
@@ -442,9 +466,15 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
   for (unsigned int i = 0; i < jacobian_dummy.m(); ++i)
     for (unsigned int j = 0; j < jacobian_dummy.n(); ++j)
       jacobian_dummy[i][j] = 1.;
+  dealii::Vector<double> B_dummy(3);
+  B_dummy = 0.0;
 
-  compute_matrix_sum(
-    n_p_dummy, p_dummy, gamma_dummy, material_derivative_dummy, jacobian_dummy);
+  compute_matrix_sum(n_p_dummy,
+                     p_dummy,
+                     gamma_dummy,
+                     material_derivative_dummy,
+                     jacobian_dummy,
+                     B_dummy);
   // call Lapack routine
   dealii::syevr(jobz,
                 range,
@@ -654,6 +684,10 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::test()
   for (unsigned int i = 0; i < test_jacobian.m(); ++i)
     for (unsigned int j = 0; j < test_jacobian.n(); ++j)
       test_jacobian[i][j] = rnd_number_generator();
+  // dealii::Point<dim_cs>  x_test;
+  dealii::Point<dim>     x_test;
+  dealii::Vector<double> B_vec(3);
+  magnetic_field.vector_value(x_test, B_vec);
 
   // Print out the random values:
   saplog << "n_p: " << test_n_p << "\n";
@@ -685,6 +719,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::test()
                               test_gamma,
                               test_material_derivative,
                               test_jacobian,
+                              B_vec,
                               test_positive_flux_matrix,
                               test_negative_flux_matrix);
 
@@ -769,38 +804,78 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                      const double                      momentum,
                      const double                      gamma,
                      const dealii::Vector<double>     &material_derivative,
-                     const dealii::FullMatrix<double> &jacobian)
+                     const dealii::FullMatrix<double> &jacobian,
+                     const dealii::Vector<double>     &B_vec)
 {
   if (logarithmic_p)
     {
-      double p = std::exp(momentum);
-      for (unsigned int i = 0; i < matrix_size * matrix_size; ++i)
-        matrix_sum[i] =
-          -n_p * (gamma / p *
-                    (material_derivative[0] * advection_matrices[0][i] +
-                     material_derivative[1] * advection_matrices[1][i] +
-                     material_derivative[2] * advection_matrices[2][i]) +
-                  jacobian[0][0] * adv_mat_products[0][i] +
-                  jacobian[1][1] * adv_mat_products[3][i] +
-                  jacobian[2][2] * adv_mat_products[5][i] +
-                  (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][i] +
-                  (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
-                  (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]);
+      const double p = std::exp(momentum);
+      for (unsigned k = 0; k < matrix_size * matrix_size; ++k)
+        {
+          matrix_sum[k] =
+            -n_p *
+            ((gamma / p) * (material_derivative[0] * advection_matrices[0][k] +
+                            material_derivative[1] * advection_matrices[1][k] +
+                            material_derivative[2] * advection_matrices[2][k]) +
+             jacobian[0][0] * adv_mat_products[0][k] +
+             jacobian[1][1] * adv_mat_products[3][k] +
+             jacobian[2][2] * adv_mat_products[5][k] +
+             (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][k] +
+             (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][k] +
+             (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][k]);
+
+          if constexpr ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
+            {
+              double S = (B_vec[0] * B_vec[0]) * adv_mat_products[0][k] +
+                         2.0 * (B_vec[0] * B_vec[1]) * adv_mat_products[1][k] +
+                         2.0 * (B_vec[0] * B_vec[2]) * adv_mat_products[2][k] +
+                         (B_vec[1] * B_vec[1]) * adv_mat_products[3][k] +
+                         2.0 * (B_vec[1] * B_vec[2]) * adv_mat_products[4][k] +
+                         (B_vec[2] * B_vec[2]) * adv_mat_products[5][k];
+
+              if (k % (matrix_size + 1) == 0)
+                S -= (B_vec[0] * B_vec[0] + B_vec[1] * B_vec[1] +
+                      B_vec[2] * B_vec[2]);
+
+              matrix_sum[k] += n_p * coeff * gamma * S;
+            }
+        }
     }
   else
-    for (unsigned int i = 0; i < matrix_size * matrix_size; ++i)
-      matrix_sum[i] =
-        -n_p * (gamma * mass *
-                  (material_derivative[0] * advection_matrices[0][i] +
-                   material_derivative[1] * advection_matrices[1][i] +
-                   material_derivative[2] * advection_matrices[2][i]) +
-                momentum *
-                  (jacobian[0][0] * adv_mat_products[0][i] +
-                   jacobian[1][1] * adv_mat_products[3][i] +
-                   jacobian[2][2] * adv_mat_products[5][i] +
-                   (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][i] +
-                   (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
-                   (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
+    {
+      for (unsigned k = 0; k < matrix_size * matrix_size; ++k)
+        {
+          matrix_sum[k] =
+            -n_p *
+            (gamma * mass *
+               (material_derivative[0] * advection_matrices[0][k] +
+                material_derivative[1] * advection_matrices[1][k] +
+                material_derivative[2] * advection_matrices[2][k]) +
+             momentum *
+               (jacobian[0][0] * adv_mat_products[0][k] +
+                jacobian[1][1] * adv_mat_products[3][k] +
+                jacobian[2][2] * adv_mat_products[5][k] +
+                (jacobian[0][1] + jacobian[1][0]) * adv_mat_products[1][k] +
+                (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][k] +
+                (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][k]));
+
+          if constexpr ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
+            {
+              double S = (B_vec[0] * B_vec[0]) * adv_mat_products[0][k] +
+                         2.0 * (B_vec[0] * B_vec[1]) * adv_mat_products[1][k] +
+                         2.0 * (B_vec[0] * B_vec[2]) * adv_mat_products[2][k] +
+                         (B_vec[1] * B_vec[1]) * adv_mat_products[3][k] +
+                         2.0 * (B_vec[1] * B_vec[2]) * adv_mat_products[4][k] +
+                         (B_vec[2] * B_vec[2]) * adv_mat_products[5][k];
+
+              if (k % (matrix_size + 1) == 0)
+                S -= (B_vec[0] * B_vec[0] + B_vec[1] * B_vec[1] +
+                      B_vec[2] * B_vec[2]);
+
+              matrix_sum[k] += n_p * coeff * gamma * momentum * S;
+            }
+        }
+    }
 }
 
 
@@ -813,12 +888,14 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                               const double                  gamma,
                               const dealii::Vector<double> &material_derivative,
                               const dealii::FullMatrix<double> &jacobian,
+                              const dealii::Vector<double>     &B_vec,
                               dealii::FullMatrix<double> &positive_flux_matrix,
                               dealii::FullMatrix<double> &negative_flux_matrix)
 {
   // compute the matrix sum at the point q at time t. Overwrites the member
   // variable matrix_sum
-  compute_matrix_sum(n_p, momentum, gamma, material_derivative, jacobian);
+  compute_matrix_sum(
+    n_p, momentum, gamma, material_derivative, jacobian, B_vec);
   // compute eigenvalues and eigenvectors. Overwrites the member variables
   // eigenvalues and eigenvectors
   dealii::syevr(jobz,

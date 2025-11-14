@@ -56,6 +56,15 @@ namespace sapphirepp
      *   & \text{(momentum term)} \\
      *   & + q \mathbf{v} \cdot \left( \mathbf{B} \times \nabla_{p} f \right)
      *   & \text{(rotation term)} \\
+     *   & + \nabla_{p} \cdot
+     *     \left(
+     *       \sigma \Big(
+     *         \mathbf{B}\,(\mathbf{B}\cdot\boldsymbol{\beta})
+     *         + \gamma^{2}\,\boldsymbol{\beta}\,
+     *           \big((\boldsymbol{\beta}\cdot\mathbf{B})^{2} - B^{2}\big)
+     *       \Big)\, f
+     *     \right)
+     *   & \text{(synchrotron term)} \\
      *   = & \frac{\nu}{2} \Delta_{\theta, \varphi} f
      *   & \text{(collision term)} \\
      *   & + S \,. & \text{(source term)} \\
@@ -141,6 +150,20 @@ namespace sapphirepp
        * The local Lax-Friedrichs flux is less robust but requires less memory.
        */
       local_lax_friedrichs_flux = 1 << 10,
+
+      /**
+       * Activate the synchrotron radiation term
+       * \f$ + \nabla_{p} \cdot
+       *   \left(
+       *     \sigma \Big(
+       *       \mathbf{B}\,(\mathbf{B}\cdot\boldsymbol{\beta})
+       *       + \gamma^{2}\,\boldsymbol{\beta}
+       *         \left((\boldsymbol{\beta}\cdot\mathbf B)^{2} - B^{2}\right)
+       *     \Big)\, f
+       *   \right)
+       * \f$
+       */
+      synchrotron = 1 << 11
     };
 
 
@@ -222,6 +245,8 @@ namespace sapphirepp
         os << "	 - Local Lax-Friedrichs Flux\n";
       else
         os << "	 - Upwind Flux\n";
+      if ((f & VFPFlags::synchrotron) != VFPFlags::none)
+        os << "	 - Synchrotron radiation term\n";
 
       return os;
     }
