@@ -42,8 +42,32 @@ In particular, the example uses a combination of flags defined in
 @ref sapphirepp::VFP::VFPFlags "VFP flags"
 to include advection, scattering, and synchrotron cooling in the momentum equation.
 
-The reduced phase space used in the example is the same as in the parallel-shock tests: one spatial dimension along the shock normal and one momentum dimension (here logarithmic momentum).
-The distribution function is expanded in spherical harmonics up to a configurable order $l_{\max}$.
+Implementing parameters in @sapphire involves a two-step process:
+
+1. **Define the parameters**
+   within the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class
+   in the `config.h` file.
+   This step informs the compiler about their existence
+   and sets default values to be used
+   if the parameter is not specified in the parameter file.
+
+   @snippet{lineno} examples/vfp/synchrotron-radiation/config.h Define runtime parameter
+
+2. **Add the parameters to the parameter file**
+  to ensure that the parameter parser expects them
+  and automatically sets their values.
+  The @dealii class @dealref{ParameterHandler} `prm`
+  and its @dealref{add_parameter,classParameterHandler,a04b75c02037d19fd7fd781785fcefc79} method
+  are used for this purpose:
+
+   ```cpp
+   prm.add_parameter("entry", parameter, "Description of the parameter");
+   ```
+
+   The @ref sapphirepp::PhysicalParameters::declare_parameters() "declare_parameters()" method
+   is edited to include the following code:
+
+   @snippet{lineno} examples/vfp/synchrotron-radiation/config.h Declare runtime parameter
 
 ## Example parameter file {#example-parameter-synchrotron-radiation}
 
