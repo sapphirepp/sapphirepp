@@ -20,9 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/parallel-shock/parallel-shock.cpp
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for parallel-shock example
+ * @file examples/vfp/synchrotron-radiation/synchrotron-radiation.cpp
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
+ * @brief Implement main function for synchrotron-radiation example
  */
 
 #include <deal.II/base/mpi.h>
@@ -85,10 +86,8 @@ main(int argc, char *argv[])
       std::cerr << "\n"
                 << "----------------------------------------------------"
                 << "\n"
-                << "Unknown exception!"
-                << "\n"
-                << "Aborting!"
-                << "\n"
+                << "Unknown exception!" << "\n"
+                << "Aborting!" << "\n"
                 << "----------------------------------------------------"
                 << std::endl;
       return 1;
