@@ -192,29 +192,29 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   } // Finite element
   prm.leave_subsection();
 
+
   prm.enter_subsection("Reference units");
   {
-    prm.declare_entry(
-      "Mass",
-      "1.672621923e-27",
-      Patterns::Double(),
-      "Reference mass in kilogramm. The default is the proton mass.");
-    prm.declare_entry(
-      "Velocity",
-      "299792458",
-      Patterns::Double(),
-      "Reference velocity in metres per second. The default is the speed of light.");
-    prm.declare_entry(
-      "Magnetic field strength",
-      "1e-10",
-      Patterns::Double(),
-      "Reference magnetic field strength in Tesla. The default is 1e-10 Tesla, i.e. 1 microGauss.");
-    prm.declare_entry(
-      "Charge",
-      "1.602176634e-19",
-      Patterns::Double(),
-      "Reference charge in Coulomb. The default is the elementary charge.");
-
+    prm.declare_entry("Mass",
+                      "1.672621923e-27",
+                      Patterns::Double(),
+                      "Reference mass in kilogram. "
+                      "The default is the proton mass.");
+    prm.declare_entry("Velocity",
+                      "299792458.",
+                      Patterns::Double(),
+                      "Reference velocity in metres per second. "
+                      "The default is the speed of light.");
+    prm.declare_entry("Magnetic field strength",
+                      "1.e-10",
+                      Patterns::Double(),
+                      "Reference magnetic field strength in Tesla. "
+                      "The default is 1e-10 Tesla, i.e. 1 microGauss.");
+    prm.declare_entry("Charge",
+                      "1.602176634e-19",
+                      Patterns::Double(),
+                      "Reference charge in Coulomb. "
+                      "The default is the elementary charge.");
   } // Reference units
   prm.leave_subsection();
 
@@ -439,6 +439,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   } // Finite element
   prm.leave_subsection();
 
+
   prm.enter_subsection("Reference units");
   {
     reference_units.mass     = prm.get_double("Mass");
@@ -458,6 +459,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     reference_units.momentum = reference_units.mass * reference_units.velocity;
   } // Reference units
   prm.leave_subsection();
+
 
   prm.enter_subsection("Particle properties");
   {

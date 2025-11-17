@@ -35,11 +35,14 @@ namespace sapphirepp
   {
 
     /**
-     * @brief Reference values for the VFP equation
+     * @brief Reference values for the VFP equation.
      *
-     * @sapphire uses dimensionless units \f$ x^{*}, t^{*}, p^{*}, v^{*} \f$ to
-     * solve the VFP equation. These dimensionless are defined using reference
-     * values, \f$ m_{0}, q_{0}, c, B_{0} \f$, in the following way:
+     * @sapphire uses dimensionless units
+     * \f$ x^{*}, t^{*}, p^{*}, v^{*} \f$
+     * to solve the VFP equation.
+     * These dimensionless are defined using reference values,
+     * \f$ m_{0}, q_{0}, c, B_{0} \f$,
+     * in the following way:
      *
      * | Type     | Dimensionless unit             | Reference value                            |
      * |:---------|:-------------------------------|:-------------------------------------------|
@@ -49,44 +52,65 @@ namespace sapphirepp
      * | Velocity | \f$ v^{*} = v/v_{0} \f$        | \f$ v_0 = c\f$                             |
      *
      * Note the reference values are **not** used when solving the VFP equation.
-     * They are useful in post-processing the solution to produce physical
-     * results.
+     * They are useful in post-processing the solution
+     * to produce physical results.
      */
     struct ReferenceValues
     {
-      /** Reference mass \f$ m_{0} \f$ in kg. The default is the proton mass,
-          i.e. \f$ m_{0} = 1.672621923e-27\f$ kg. */
+      /**
+       * Reference mass \f$ m_{0} \f$ in kilogram.
+       * The default is the proton mass,
+       * i.e. \f$ m_{0} = 1.672621923 \times 10^{-27} \, \mathrm{kg}\f$.
+       */
       double mass;
 
-      /** Reference velocity \f$ v_{0} \f$ in m/s. The default is the speed of
-          light, i.e. \f$ v_{0} = 299792458 \f$ m/s .*/
+      /**
+       * Reference velocity \f$ v_{0} \f$ in meters per second.
+       * The default is the speed of light,
+       * i.e. \f$ v_{0} = 299792458 \, \frac{\mathrm{m}}{\mathrm{s}}\f$.
+       */
       double velocity;
 
-      /** Reference magnetic field strength \f$ B_{0} \f$ in Tesla. The default
-          is 1 microGauss, i.e. \f$ B_{0} = 10^{-10} \f$ T . */
+      /**
+       * Reference magnetic field strength \f$ B_{0} \f$ in Tesla.
+       * The default is 1 microGauss,
+       * i.e. \f$ B_{0} = 10^{-10} \, \mathrm{T}\f$.
+       */
       double magnetic_field_strength;
 
-      /** Reference charge \f$ q_{0} \f$ in Columb. The default is the
-          elementary charge, i.e. \f$ q_{0} = 1.602176634e-19 \f$ C .*/
+      /**
+       * Reference charge \f$ q_{0} \f$ in Columb.
+       * The default is the elementary charge,
+       * i.e. \f$ q_{0} = 1.602176634 \times 10^{-19} \, \mathrm{C}\f$.
+       */
       double charge;
 
-      /** The reference length \f$ r_{g,0} \f$ in m. The default is
-    \f$ r_{g,0} =  m_{0} c/q_{0} B_{0} \f$ . */
+      /**
+       * The reference length \f$ r_{g,0} \f$ in meter.
+       * The default is \f$ r_{g,0} =  m_{0} c/q_{0} B_{0} \f$ .
+       */
       double length;
 
-      /** The reference frequency \f$ \omega_{g,0} \f$ in 1/s. The default is
-          the gyro-frequency, i.e. \f$ \omega_{g,0} = q_{0} B_{0}/ m_{0} \f$ .
+      /**
+       * The reference frequency \f$ \omega_{g,0} \f$ in 1/s.
+       * The default is the gyro-frequency,
+       * i.e. \f$ \omega_{g,0} = q_{0} B_{0}/ m_{0} \f$ .
        */
       double frequency;
 
-      /** Reference time in s. The default is \f$ t_{0} = 1/\omega_{g,0} \f$*/
+      /**
+       * Reference time in seconds.
+       * The default is \f$ t_{0} = 1/\omega_{g,0} \f$.
+       */
       double time;
 
-      /** Reference momentum \f$ p_{0} \f$ in kg m/s. The default is \f$p_{0} =
-          m_{0} v_{0} \f$ .*/
+      /**
+       * Reference momentum \f$ p_{0} \f$ in kg m/s.
+       * The default is \f$ p_{0} = m_{0} v_{0} \f$.
+       */
       double momentum;
 
-      /** Conversion of parsec to m */
+      /** Conversion of parsec to meter. */
       const double parsec_to_m = 3.0857e16;
     };
 
