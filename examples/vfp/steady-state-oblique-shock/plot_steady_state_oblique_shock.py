@@ -1,8 +1,9 @@
 """Plot the oblique shock example."""
 
 import numpy as np
-from sapphireppplot import vfp, numpyify
 import matplotlib.pyplot as plt
+import paraview.servermanager
+from sapphireppplot import vfp, numpyify
 
 plt.rcParams["figure.dpi"] = 150
 plt.rcParams["figure.constrained_layout.use"] = True
@@ -11,6 +12,7 @@ plt.rcParams["figure.figsize"] = [8, 3]
 
 
 def main() -> dict:
+    """Plot the oblique shock example."""
     # ParaView setup and extraction of solution data
     plot_properties = vfp.PlotPropertiesVFP(
         dimension=2,
@@ -59,15 +61,21 @@ def main() -> dict:
 
     # Python plots
 
-    def p_crit(L_diff, eta):
+    # Skip numpy and matplotlib part for remote sessions
+    if paraview.servermanager.ActiveConnection.IsRemote():
+        return locals()
+
+    def p_crit(diffusion_length: float, eta: float) -> float:
         u_sh = float(prm["Physical parameters"]["u_sh"])  # shock velocity
-        B = float(prm["Physical parameters"]["B0"])  # upstream magnetic field
+        magnetic_field_0 = float(
+            prm["Physical parameters"]["B0"]
+        )  # upstream magnetic field
         obliqueness = (
             float(prm["Physical parameters"]["obliqueness"]) / 180.0 * np.pi
         )
         return (
-            L_diff
-            * (3 * eta * u_sh * B * (eta**2 + 1))
+            diffusion_length
+            * (3 * eta * u_sh * magnetic_field_0 * (eta**2 + 1))
             / (eta**2 + np.cos(obliqueness) ** 2)
         )
 
@@ -100,14 +108,12 @@ def main() -> dict:
             p_coordinate,
             p_coordinate * g_000_at_the_shock[0, :],
             label="x = 0",
-            linewidth=2,
         )
 
         ax.loglog(
             p_coordinate,
             p_coordinate * g_000_downstream[0, :],
-            label="x = {position:.2f}".format(position=downstream_position),
-            linewidth=2,
+            label=f"x = {downstream_position:.2f}",
         )
 
         ax.legend(loc="upper left")
@@ -118,6 +124,7 @@ def main() -> dict:
     else:
         # Plots of spectra in the case of an enhanced scattering zone
         # Scattering regimes (a) and (b)
+        case = prm["Physical parameters"]["case identifier"]
         x_min = -50
         x_max = 10
         p_value = 1
@@ -128,11 +135,10 @@ def main() -> dict:
             "spatial-profile",
             plot_properties,
             lms_indices=[[0, 0, 0], [1, 0, 0]],
-            direction=[
-                [x_min, np.log(p_value), 0],
-                [x_max, np.log(p_value), 0],
-            ],
-            x_label="arc length",
+            direction="x",
+            offset=[0, np.log(p_value), 0],
+            x_label=r"$x$",
+            x_range=[x_min, x_max],
         )
 
         x, data = numpyify.to_numpy_1d(
@@ -141,11 +147,15 @@ def main() -> dict:
             x_direction=0,
         )
 
-        B_mag = np.sqrt(data[0, :] ** 2 + data[1, :] ** 2)
-        eta = data[2, :] / B_mag * p_value
+        magnetic_field_magnitude = np.sqrt(data[0, :] ** 2 + data[1, :] ** 2)
+        eta = data[2, :] / magnetic_field_magnitude * p_value
         fig, axs = plt.subplots(1, 2)
 
-        axs[0].plot(x, data[2, :], label=r"$\nu(x, p = {p_value})$".format(p_value=p_value))
+        axs[0].plot(
+            x,
+            data[2, :],
+            label=r"$\nu(x, p = {p_value})$".format(p_value=p_value),
+        )
         axs[0].legend(loc="upper left")
         axs[0].axvline(0, color="grey", linestyle="dashed")
         axs[0].set_xlabel(r"$x$")
@@ -154,12 +164,7 @@ def main() -> dict:
         axs[1].legend(loc="upper left")
         axs[1].axvline(0, color="grey", linestyle="dashed")
         axs[1].set_xlabel(r"$x$")
-        plt.savefig(
-            results_folder
-            + "/scattering_regime_case_{case}.png".format(
-                case=prm["Physical parameters"]["case identifier"]
-            )
-        )
+        plt.savefig(results_folder + f"/scattering_regime_case_{case}.png")
 
         # The spectrum at the shock corresponding to either case (a) or case(b)
 
@@ -183,7 +188,7 @@ def main() -> dict:
             p_coordinate * g_000_at_the_shock[0, :],
             label=(
                 r"$\eta = \zeta$"
-                if prm["Physical parameters"]["case identifier"] == "a"
+                if case == "a"
                 else r"$\nu = \omega_{\mathrm{g, up}} \zeta$"
             ),
         )
@@ -202,10 +207,7 @@ def main() -> dict:
         ax.legend()
         ax.set_xlim(left=1.5 * p_inj)
         plt.savefig(
-            results_folder
-            + "/spectrum_enhanced_scattering_case_{case}.png".format(
-                case=prm["Physical parameters"]["case identifier"]
-            )
+            results_folder + f"/spectrum_enhanced_scattering_case_{case}.png"
         )
 
     return locals()

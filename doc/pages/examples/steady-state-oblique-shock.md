@@ -224,14 +224,15 @@ mpirun -n 192 ./build/examples/vfp/steady-state-oblique-shock/steady-state-obliq
 and a lot of memory,
 typically only available on clusters.
 
-The plots can be created with the command:
+The plots can be created with a @sapplot script:
 
 ```shell
-pvbatch examples/vfp/steady-state-oblique-shock/plot_steady_state_oblique_shock.py
+conda activate sapplot
+export SAPPHIREPP_RESULTS=$(pwd)/results
+python examples/vfp/steady-state-oblique-shock/plot_steady_state_oblique_shock.py
 ```
 
-The plotting script assumes that the environment variable `SAPPHIREPP_RESULTS` is set.
-Furthermore, when executing the plotting script you will be asked for a path.
+When executing the plotting script you will be asked for a path.
 If you like to plot the results for the Iroshnikov–Kraichnan MHD turbulence,
 just type `kraichnan-turbulence`.
 For case (a) of the enhanced scattering zone,
