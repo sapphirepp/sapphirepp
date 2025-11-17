@@ -51,7 +51,10 @@ namespace sapphirepp
      * | Momentum | \f$ p^{*} = p/p_{0} \f$        | \f$ p_{0} =  m_{0} c \f$                   |
      * | Velocity | \f$ v^{*} = v/v_{0} \f$        | \f$ v_0 = c\f$                             |
      *
-     * Note the reference values are **not** used when solving the VFP equation.
+     * Note the reference values are **only** used for the
+     * @ref VFPFlags::synchrotron "synchrotron radiation" term.
+     * If the synchrotron term is deactivated,
+     * they are **not** used when solving the VFP equation.
      * They are useful in post-processing the solution
      * to produce physical results.
      */
@@ -110,6 +113,25 @@ namespace sapphirepp
        */
       double momentum;
 
+      /**
+       * Vacuum permeability \f$ \mu_{0} \f$ in N/A^2.
+       * The default value is
+       * \f$
+       *    \mu_{0}
+       *    = 1.25663706127 \times 10^{-6} \, \frac{\mathrm{N}}{\mathrm{A}^2}
+       *    \approx 4 \pi \times 10^{-7} \, \frac{\mathrm{N}}{\mathrm{A}^2}
+       * \f$.
+       */
+      double vacuum_permeability;
+
+      /**
+       * Synchrotron characteristic time \f$ \tau_s \f$ in seconds,
+       * \f$
+       *    \tau_s = \frac{9 \pi m_{0}^3 v_{0}}{\mu_{0} q_{0}^4 t_{0} B_{0}^2}
+       * \f$.
+       */
+      double synchrotron_characteristic_time;
+
       /** Conversion of parsec to meter. */
       const double parsec_to_m = 3.0857e16;
     };
@@ -141,7 +163,11 @@ namespace sapphirepp
          << "	Frequency: " << reference_values.frequency << " 1/s \n"
          << "	Momentum: " << reference_values.momentum
          << " kg m/s = " << reference_values.momentum / reference_values.charge
-         << " eV/c \n";
+         << " eV/c \n"
+         << " Vacuum permeability: " << reference_values.vacuum_permeability
+         << " N/A^2 \n"
+         << " Synchrotron characteristic time: "
+         << reference_values.synchrotron_characteristic_time << " s \n";
       return os;
     }
   } // namespace VFP

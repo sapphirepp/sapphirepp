@@ -125,6 +125,10 @@ subsection VFP
 
     # Reference charge in Coulomb. The default is the elementary charge.
     set Charge                  = 1.602176634e-19
+
+    # Vacuum permeability in N/A^2. The default is 1.25663706127e-6 N/A^2,
+    # i.e. approximately 4*pi*1e-7
+    set Vacuum permeability     = 1.25663706127e-6
   end
 
   subsection Particle properties

@@ -215,6 +215,12 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       Patterns::Double(),
                       "Reference charge in Coulomb. "
                       "The default is the elementary charge.");
+    prm.declare_entry("Vacuum permeability",
+                      "1.25663706127e-6",
+                      Patterns::Double(),
+                      "Vacuum permeability in N/A^2. "
+                      "The default is 1.25663706127e-6 N/A^2, "
+                      "i.e. approximately 4*pi*1e-7");
   } // Reference units
   prm.leave_subsection();
 
@@ -446,7 +452,8 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     reference_units.velocity = prm.get_double("Velocity");
     reference_units.magnetic_field_strength =
       prm.get_double("Magnetic field strength");
-    reference_units.charge = prm.get_double("Charge");
+    reference_units.charge              = prm.get_double("Charge");
+    reference_units.vacuum_permeability = prm.get_double("Vacuum permeability");
 
     reference_units.length =
       reference_units.mass * reference_units.velocity /
@@ -457,6 +464,17 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
                                 reference_units.mass;
     reference_units.time     = 1. / reference_units.frequency;
     reference_units.momentum = reference_units.mass * reference_units.velocity;
+
+    reference_units.synchrotron_characteristic_time =
+      (9.0 * M_PI * std::pow(reference_units.mass, 3) *
+       reference_units.velocity) /
+      (reference_units.vacuum_permeability *
+       std::pow(reference_units.charge, 4) * reference_units.time *
+       std::pow(reference_units.magnetic_field_strength, 2));
+    AssertThrow(std::isfinite(
+                  reference_units.synchrotron_characteristic_time) &&
+                  reference_units.synchrotron_characteristic_time > 0.0,
+                dealii::ExcMessage("tau_s not finite/positive"));
   } // Reference units
   prm.leave_subsection();
 
