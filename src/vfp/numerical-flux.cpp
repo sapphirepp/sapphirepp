@@ -843,7 +843,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                    magnetic_field_vec[1] * magnetic_field_vec[1] +
                    magnetic_field_vec[2] * magnetic_field_vec[2]);
 
-              matrix_sum[i] += n_p * synchrotron_coeff * gamma * S;
+              matrix_sum[i] +=
+                n_p * synchrotron_coeff * gamma * magnetic_quadratic_form;
             }
         }
     }
@@ -887,7 +888,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                    magnetic_field_vec[1] * magnetic_field_vec[1] +
                    magnetic_field_vec[2] * magnetic_field_vec[2]);
 
-              matrix_sum[i] += n_p * synchrotron_coeff * gamma * momentum * S;
+              matrix_sum[i] += n_p * synchrotron_coeff * gamma * momentum *
+                               magnetic_quadratic_form;
             }
         }
     }
