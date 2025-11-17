@@ -93,7 +93,7 @@ namespace sapphirepp
       prm.add_parameter("B0", B0, "The magnetic field strength upstream.");
       prm.add_parameter(
         "obliqueness",
-        B0,
+        obliqueness,
         "The angle (in degree) between the upstream magnetic field and the shock normal. ");
       prm.add_parameter("compression ratio",
                         compression_ratio,
