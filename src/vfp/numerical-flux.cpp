@@ -823,24 +823,25 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
 
           if constexpr ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
             {
-              /** @todo Rename to more descriptive variable. Use snake_case */
-              double S = (magnetic_field_vec[0] * magnetic_field_vec[0]) *
-                           adv_mat_products[0][i] +
-                         2.0 * (magnetic_field_vec[0] * magnetic_field_vec[1]) *
-                           adv_mat_products[1][i] +
-                         2.0 * (magnetic_field_vec[0] * magnetic_field_vec[2]) *
-                           adv_mat_products[2][i] +
-                         (magnetic_field_vec[1] * magnetic_field_vec[1]) *
-                           adv_mat_products[3][i] +
-                         2.0 * (magnetic_field_vec[1] * magnetic_field_vec[2]) *
-                           adv_mat_products[4][i] +
-                         (magnetic_field_vec[2] * magnetic_field_vec[2]) *
-                           adv_mat_products[5][i];
+              double magnetic_quadratic_form =
+                (magnetic_field_vec[0] * magnetic_field_vec[0]) *
+                  adv_mat_products[0][i] +
+                2.0 * (magnetic_field_vec[0] * magnetic_field_vec[1]) *
+                  adv_mat_products[1][i] +
+                2.0 * (magnetic_field_vec[0] * magnetic_field_vec[2]) *
+                  adv_mat_products[2][i] +
+                (magnetic_field_vec[1] * magnetic_field_vec[1]) *
+                  adv_mat_products[3][i] +
+                2.0 * (magnetic_field_vec[1] * magnetic_field_vec[2]) *
+                  adv_mat_products[4][i] +
+                (magnetic_field_vec[2] * magnetic_field_vec[2]) *
+                  adv_mat_products[5][i];
 
               if (i % (matrix_size + 1) == 0)
-                S -= (magnetic_field_vec[0] * magnetic_field_vec[0] +
-                      magnetic_field_vec[1] * magnetic_field_vec[1] +
-                      magnetic_field_vec[2] * magnetic_field_vec[2]);
+                magnetic_quadratic_form -=
+                  (magnetic_field_vec[0] * magnetic_field_vec[0] +
+                   magnetic_field_vec[1] * magnetic_field_vec[1] +
+                   magnetic_field_vec[2] * magnetic_field_vec[2]);
 
               matrix_sum[i] += n_p * synchrotron_coeff * gamma * S;
             }
@@ -866,24 +867,25 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
 
           if constexpr ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
             {
-              /** @todo Rename to more descriptive variable. Use snake_case */
-              double S = (magnetic_field_vec[0] * magnetic_field_vec[0]) *
-                           adv_mat_products[0][i] +
-                         2.0 * (magnetic_field_vec[0] * magnetic_field_vec[1]) *
-                           adv_mat_products[1][i] +
-                         2.0 * (magnetic_field_vec[0] * magnetic_field_vec[2]) *
-                           adv_mat_products[2][i] +
-                         (magnetic_field_vec[1] * magnetic_field_vec[1]) *
-                           adv_mat_products[3][i] +
-                         2.0 * (magnetic_field_vec[1] * magnetic_field_vec[2]) *
-                           adv_mat_products[4][i] +
-                         (magnetic_field_vec[2] * magnetic_field_vec[2]) *
-                           adv_mat_products[5][i];
+              double magnetic_quadratic_form =
+                (magnetic_field_vec[0] * magnetic_field_vec[0]) *
+                  adv_mat_products[0][i] +
+                2.0 * (magnetic_field_vec[0] * magnetic_field_vec[1]) *
+                  adv_mat_products[1][i] +
+                2.0 * (magnetic_field_vec[0] * magnetic_field_vec[2]) *
+                  adv_mat_products[2][i] +
+                (magnetic_field_vec[1] * magnetic_field_vec[1]) *
+                  adv_mat_products[3][i] +
+                2.0 * (magnetic_field_vec[1] * magnetic_field_vec[2]) *
+                  adv_mat_products[4][i] +
+                (magnetic_field_vec[2] * magnetic_field_vec[2]) *
+                  adv_mat_products[5][i];
 
               if (i % (matrix_size + 1) == 0)
-                S -= (magnetic_field_vec[0] * magnetic_field_vec[0] +
-                      magnetic_field_vec[1] * magnetic_field_vec[1] +
-                      magnetic_field_vec[2] * magnetic_field_vec[2]);
+                magnetic_quadratic_form -=
+                  (magnetic_field_vec[0] * magnetic_field_vec[0] +
+                   magnetic_field_vec[1] * magnetic_field_vec[1] +
+                   magnetic_field_vec[2] * magnetic_field_vec[2]);
 
               matrix_sum[i] += n_p * synchrotron_coeff * gamma * momentum * S;
             }
