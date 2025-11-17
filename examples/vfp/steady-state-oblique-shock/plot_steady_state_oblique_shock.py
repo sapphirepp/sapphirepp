@@ -120,7 +120,7 @@ def main() -> dict:
         # Scattering regimes (a) and (b)
         x_min = -50
         x_max = 10
-        p_value = 20
+        p_value = 1
 
         plot_over_line_x, layout_x, line_chart_view_x = vfp.plot_f_lms_over_x(
             solution,
@@ -145,7 +145,7 @@ def main() -> dict:
         eta = data[2, :] / B_mag * p_value
         fig, axs = plt.subplots(1, 2)
 
-        axs[0].plot(x, data[2, :], label=r"$\nu(x, p = 20)$")
+        axs[0].plot(x, data[2, :], label=r"$\nu(x, p = {p_value})$".format(p_value=p_value))
         axs[0].legend(loc="upper left")
         axs[0].axvline(0, color="grey", linestyle="dashed")
         axs[0].set_xlabel(r"$x$")
