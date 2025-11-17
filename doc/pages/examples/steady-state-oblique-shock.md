@@ -127,7 +127,7 @@ that is proportional to the gyro frequency of the particles, i.e. $\nu \propto \
 This scaling of the scattering frequency with momentum is called "Bohm scaling".
 $\nu = \omega_g$ is the Bohm limit and corresponds to $\nu_0 = 1$. 
 We note that a plasma in which particles are scattered more often is not magnetised anymore.
-The Bohm scaling case in the context of oblique shock was, for example, studied in @cite Bell2011 .
+The Bohm scaling case in the context of oblique shocks was, for example, studied in @cite Bell2011 .
 No deviations from a power-law spectrum are expected.
 
 In this example, we choose $\alpha$ to equal $-1/2$. 
@@ -187,7 +187,7 @@ the scattering frequency depends on $x$ and $p$.
 The `case identifier` distinguishes between case (a) and case (b).
 The parameters `zeta one` and `zeta two` determine the final values of
 the scattering frequency (or $\eta$) in the up- and downstream respectively.
-The `transition point` determines where the transition between $\zeta_1$ and $zeta_2$ happens.
+The `transition point` determines where the transition between $\zeta_1$ and $\zeta_2$ happens.
 It could be interpreted as the size of the enhanced scattering zone.
 The `transition length` determines the width of the used tanh-profile.
 If the `enhanced scattering zone` parameter is set to `false`,
@@ -251,11 +251,52 @@ may lead to breaks in the particle spectrum.
 
 ### Iroshnikov–Kraichnan MHD turbulence
 
+Setting $\nu \propto p^{-1/2}$, as expected for Iroshnikov–Kraichnan MHD turbulence, leads
+to a _curved_ spectrum at and far downstream of the shock.
+This is visible in the plot below.
+The anisotropy of the particle distribution,
+due to the obliqueness of the shock
+and the different (compared to Bohm scaling) $p$-dependence of the scattering frequency,
+lead to the deviation from a straight power law of spectral index $-4$.
 
-$\nu_0 = 0.01$ , $p_{\text{Bohm}} = 10^{4}$
+<div style="text-align:center;">
+<img alt="Particle spectrum at the shock and far downstream for a scattering frequency in agreement with Iroshnikov–Kraichnan MHD turbulence."
+src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/spectra_kraichnan_turbulence.png">
+</div>
+
+Note, the the normalisation of $\nu$ is set to $\nu_0 = 0.01$.
+This implies that the critical momentum $p_{\text{Bohm}}$,
+i.e. the momentum for which the scattering frequency is below the the gyro frequency, is $10^{4}$.
+
+A more detailed discussion of this result can be found in @cite Shirin2025 ,
+see Fig. 1 in particular.
+
 
 ### Enhanced scattering zone
 
+If there is an enhanced scattering zone in the precursor of the shock wave,
+the particle spectrum at the shock also deviates from a straight power law. 
+This is true for case (a) and (b).
+The spectra are broken, however,  the slopes of the two parts of the spectra
+does depend on how the turbulence is changed on passing through the shock.
+Below we show the two cases describe in the Sec. [Scattring frequency](#scattering-frequency-steady-state-oblique-shock).
+
+<div style="text-align:center;">
+<img alt="Case A: The particle spectrum at the shock for eta constant across the shock."
+src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/spectrum_enhanced_scattering_case_a.png">
+</div>
+
+<div style="text-align:center;">
+<img alt="Case B: The particle spectrum at the shock for nu constant across the shock."
+src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/spectrum_enhanced_scattering_case_b.png">
+</div>
+
+Note, the obliqueness is 85 degrees and, for this example,
+we used the spherical harmonic expansion order $l_{max} = 6$.
+In @cite Shirin2025 we used $l_{max} = 11$.
+For reliable results, it is necessary to increase the expansion order.
+
+A thorough discussion of the above results can be found in @cite Shirin2025, see Fig. 3.
 
 <div class="section_buttons">
 
@@ -269,4 +310,4 @@ $\nu_0 = 0.01$ , $p_{\text{Bohm}} = 10^{4}$
 
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
 @author Asma Shirin (<asma.shirin@mpi-hd.mpg.de>)
-@date 2025-11-12
+@date 2025-11-17
