@@ -155,7 +155,7 @@ namespace sapphirepp
                          const double                      gamma,
                          const dealii::Vector<double>     &material_derivative,
                          const dealii::FullMatrix<double> &jacobian,
-                         const dealii::Vector<double>     &B_vec);
+                         const dealii::Vector<double>     &magnetic_field_vec);
 
       void
       compute_flux_in_p_direction(
@@ -164,7 +164,7 @@ namespace sapphirepp
         const double                      gamma,
         const dealii::Vector<double>     &material_derivative,
         const dealii::FullMatrix<double> &jacobian,
-        const dealii::Vector<double>     &B_vec,
+        const dealii::Vector<double>     &magnetic_field_vec,
         dealii::FullMatrix<double>       &positive_flux_matrix,
         dealii::FullMatrix<double>       &negative_flux_matrix);
 
@@ -191,6 +191,7 @@ namespace sapphirepp
       std::vector<std::vector<double>> eigenvectors_advection_matrices;
 
       // Physical input
+      MagneticField<dim>                   magnetic_field;
       BackgroundVelocityField<dim>         background_velocity_field;
       ParticleVelocity<dim, logarithmic_p> particle_velocity_func;
       ParticleGamma<dim, logarithmic_p>    particle_gamma_func;
@@ -200,12 +201,9 @@ namespace sapphirepp
       const double charge;
       // TransportOnly
       const double velocity;
-      // MagneticField<dim_cs> magnetic_field;
-      //  Reference units and precomputed dimensionless synchrotron coefficient
-      // sapphirepp::ReferenceValues ref_units_;
-      MagneticField<dim> magnetic_field;
-      // Precomputed dimensionless synchrotron coefficient (set in .cpp)
-      double coeff; // dimensionless prefactor (3/2)*(t0/tau_s)*(q^4/m^3)
+      // Precomputed dimensionless synchrotron coefficient
+      // (3/2)*(t0/tau_s)*(q^4/m^2)
+      double synchrotron_coeff; // TODO: Make const
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:
