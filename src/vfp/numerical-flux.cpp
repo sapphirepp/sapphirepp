@@ -76,6 +76,9 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   , mass(solver_control.mass)
   , charge(solver_control.charge)
   , velocity(solver_control.velocity)
+  , synchrotron_coeff(
+      1.5 / solver_control.reference_units.synchrotron_characteristic_time *
+      std::pow(charge, 4) / std::pow(mass, 2))
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}
@@ -85,17 +88,6 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   int_dummy{&dealii::LAPACKSupport::one}
   , double_dummy{1.}
 {
-  const double tau_s =
-    (9.0 * M_PI * std::pow(solver_control.reference_units.mass, 3) *
-     solver_control.reference_units.velocity) /
-    (4.0 * M_PI * 1.0e-7 * std::pow(solver_control.reference_units.charge, 4) *
-     solver_control.reference_units.time *
-     std::pow(solver_control.reference_units.magnetic_field_strength, 2));
-
-  // Dimensionless coefficient: (3/2)*(t0/tau_s)*(q^4/m^3)
-  synchrotron_coeff =
-    1.5 * (1.0 / tau_s) * std::pow(charge, 4) / std::pow(mass, 2);
-
   // NOTE: Since we very often call compute_matrix_sum and the matrices classes
   // of dealii do not allow unchecked access to there raw data, we create copies
   // of the matrices in the hope that this additional memory consumption is made

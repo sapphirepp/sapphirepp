@@ -218,12 +218,6 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , quadrature_face(fe.tensor_degree() + 1)
   , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
   , scaling_spectral_index{3.}
-  , tau_s((9.0 * M_PI * std::pow(vfp_parameters.reference_units.mass, 3) *
-           vfp_parameters.reference_units.velocity) /
-          ((4.0 * M_PI * 1.0e-7) *
-           std::pow(vfp_parameters.reference_units.charge, 4) *
-           vfp_parameters.reference_units.time *
-           std::pow(vfp_parameters.reference_units.magnetic_field_strength, 2)))
   , reflective_bc_signature{{std::vector<double>(pde_system.system_size),
                              std::vector<double>(pde_system.system_size),
                              std::vector<double>(pde_system.system_size)}}
@@ -295,14 +289,6 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
                   ExcMessage(
                     "The source term must be activated if the source is time "
                     "independent."));
-    }
-  if ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
-    {
-      saplog << "Synchrotron characteristic time: tau_s = "
-             // << std::scientific << std::setprecision(10) // TODO: Necessary?
-             << tau_s << std::endl;
-      AssertThrow(std::isfinite(tau_s) && tau_s > 0.0,
-                  dealii::ExcMessage("tau_s not finite/positive"));
     }
 }
 
@@ -849,9 +835,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     particle_gamma.value_list(q_points, particle_gammas);
 
     // Dimensionless prefactor used for the synchrotron term
-    const double synchrotron_coeff = 1.5 * (1.0 / tau_s) *
-                                     std::pow(vfp_parameters.charge, 4) /
-                                     std::pow(vfp_parameters.mass, 2);
+    const double synchrotron_coeff =
+      1.5 / vfp_parameters.reference_units.synchrotron_characteristic_time *
+      std::pow(vfp_parameters.charge, 4) / std::pow(vfp_parameters.mass, 2);
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         for (unsigned int i : fe_v.dof_indices())

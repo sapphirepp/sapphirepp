@@ -203,7 +203,7 @@ namespace sapphirepp
       const double velocity;
       // Precomputed dimensionless synchrotron coefficient
       // (3/2)*(t0/tau_s)*(q^4/m^2)
-      double synchrotron_coeff; // TODO: Make const
+      const double synchrotron_coeff;
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:
