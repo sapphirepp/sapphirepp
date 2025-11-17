@@ -3,15 +3,15 @@
 @tableofcontents
 
 In @cite Shirin2025 we suggest that curved or broken emission spectra of X- and gamma ray sources
-could be explained with a combination of a magnetic field, 
-which is inclined with respect to the shock normal, 
-and a $p$-dependence of the scattering frequency, 
+could be explained with a combination of a magnetic field,
+which is inclined with respect to the shock normal,
+and a $p$-dependence of the scattering frequency,
 that is in agreement with Iroshnikov–Kraichnan MHD turbulence,
 or an enhanced scattering zone in the precursor of the shock respectively.
 
-In this example, we provide the @sapphire setup 
-that we used to obtain the results presented in @cite Shirin2025 . 
-The example focuses on the relevant aspects only. 
+In this example, we provide the @sapphire setup
+that we used to obtain the results presented in @cite Shirin2025 .
+The example focuses on the relevant aspects only.
 For a deeper understanding, a read of the [parallel shock](#parallel-shock) example
 and its [steady-state version](#steady-state-parallel-shock) may be useful.
 
@@ -19,11 +19,11 @@ and its [steady-state version](#steady-state-parallel-shock) may be useful.
 
 We study the acceleration of energetic particles at a collisionless shock with
 compression ratio $r$ that propagates with velocity $\mathbf{U}$ through an astrophysical plasma,
-e.g. the interstellar medium. 
+e.g. the interstellar medium.
 The particles are injected at a constant rate $Q$ at the position of the shock wave.
 The injected particle distribution is mono-energetic and isotropic.
 The astrophysical plasma is permeated with a mean magnetic field $\mathbf{B}$.
-Furthermore it is turbulent, 
+Furthermore it is turbulent,
 which causes the energetic particles to frequently change their direction of motion;
 a process that we model with the scattering frequency $\nu$.
 
@@ -37,8 +37,8 @@ We summarise the physical scenario in the following table:
 | Source               | $$ S(x,p) = \frac{Q}{4\pi p^2} \frac{1}{2\pi \sigma_x \sigma_p}\exp\left[-\left(\frac{(x - x_{\text{inj}})^2}{2 \sigma^2_x} + \frac{(p -p_\text{inj})^2}{2\sigma^2_p}\right)\right]$$                         |
 </div>
 
-The shock velocity is $U_{\text{sh}}$. 
-The angle $\theta_n = \mathbf{n} \cdot \mathbf{B}/ B$ is the angle between 
+The shock velocity is $U_{\text{sh}}$.
+The angle $\theta_n = \mathbf{n} \cdot \mathbf{B}/ B$ is the angle between
 the magnetic field $\mathbf{B}$ and the normal $\mathbf{n}$ of the shock surface.
 The scattering frequency is normalised with $\nu_{0}$
 and its $p$-dependence is characterised by the parameter $\alpha$.
@@ -49,14 +49,14 @@ The `config.h` and the `parameter.prm` file of this example are stored in the
 directory `sapphirepp/examples/vfp/steady-state-oblique-shock`
 and can, for example, be used to explore specific X- or gamma ray sources.
 
-Considering that we are interested in the effects of an oblique magnetic field 
-in combination with a $p$- and $x$- dependent scattering frequency, 
-we restrict our discussion of the implementation to these functions. 
+Considering that we are interested in the effects of an oblique magnetic field
+in combination with a $p$- and $x$- dependent scattering frequency,
+we restrict our discussion of the implementation to these functions.
 
 ### VFP equation {#vfp-steady-state-oblique-shock}
 
 Though, before we look at the source code of the magnetic field and scattering frequency function,
-we state the VFP equation that we solve, i.e. 
+we state the VFP equation that we solve, i.e.
 
 $$
   (\mathbf{U} + \mathbf{v}) \cdot \nabla_{x} f -
@@ -73,7 +73,7 @@ Therefore, the list of `vfp_flags` is
 Note, we included the
 @ref sapphirepp::VFP::VFPFlags::scaled_distribution_function "scaled_distribution_function" flag.
 This means that we compute $g = p^{3} f$.
-Moreover, we use $\ln p$ instead of $p$, i.e. $g = g(x, \ln p)$. 
+Moreover, we use $\ln p$ instead of $p$, i.e. $g = g(x, \ln p)$.
 
 ### Magnetic field {#magnetic-field-steady-state-oblique-shock}
 
@@ -87,11 +87,11 @@ The Maxwell-Faraday equation implies for a time-independent $\mathbf{B}$-field t
 $$
  0 = \nabla \times \mathbf{E} = \begin{pmatrix}0 \\ 0 \\ - \partial_{x} (U_x B_z)\end{pmatrix}\,,
 $$
-where we used the ideal MHD approximation $\mathbf{E} = - \mathbf{U} \times \mathbf{B}$ 
+where we used the ideal MHD approximation $\mathbf{E} = - \mathbf{U} \times \mathbf{B}$
 and the assumption that $U_x$ and $B_z$ do not change along $z$-direction.
 Additionally, it is necessary to continuously vary the velocity $\mathbf{U}$ through the shock;
 the energy change of the particles due to the change of reference frames on shock crossings
-is reflected in the VFP equation in terms containing the derivative of $\mathbf{U}$, 
+is reflected in the VFP equation in terms containing the derivative of $\mathbf{U}$,
 which is not defined for a discontinuous velocity profile. We chose
 $$
 \mathbf{U} = \frac{U_{\text{sh}}}{2r}\left[ (r+1) - (r-1) \tanh\left(\frac{x}{L_s}\right) \right]\mathbf{e}_x \,.
@@ -102,19 +102,19 @@ $$
 B_z = B_{0} \sin\theta_{n} 2r \left[ (r+1) - (r-1) \tanh\left(\frac{x}{L_s}\right) \right]^{-1} \, .
 $$
 
-The implementation of the `MagneticField` function looks like 
+The implementation of the `MagneticField` function looks like
 
 @snippet{lineno} examples/vfp/steady-state-oblique-shock/config.h Magnetic field
 
-The parameter `obliqueness` is the angle between the magnetic field and the shock normal, i.e.  $\theta_n$ in degrees, 
-the `compression ratio` is $r$ and the `shock_width` is $L_s$. 
-The parameters can be changed in the `parameter.prm` file. 
+The parameter `obliqueness` is the angle between the magnetic field and the shock normal, i.e.  $\theta_n$ in degrees,
+the `compression ratio` is $r$ and the `shock_width` is $L_s$.
+The parameters can be changed in the `parameter.prm` file.
 
 ### Scattering frequency {#scattering-frequency-steady-state-oblique-shock}
 
-It is the interplay between the oblique magnetic field 
+It is the interplay between the oblique magnetic field
 and the $p$ and $x$ dependence of the scattering frequency $\nu$
-that produces a curved or broken spectrum. 
+that produces a curved or broken spectrum.
 
 We start with a $p$-dependent scattering frequency, namely
 $$
@@ -122,29 +122,29 @@ $$
 $$
 
 where $\nu_0$ is a parameter which can be freely set and $B$ is the magnitude of the magnetic field.
-The case $\alpha = -1$ corresponds to a scattering frequency 
-that is proportional to the gyro frequency of the particles, i.e. $\nu \propto \omega_g$. 
+The case $\alpha = -1$ corresponds to a scattering frequency
+that is proportional to the gyro frequency of the particles, i.e. $\nu \propto \omega_g$.
 This scaling of the scattering frequency with momentum is called "Bohm scaling".
-$\nu = \omega_g$ is the Bohm limit and corresponds to $\nu_0 = 1$. 
+$\nu = \omega_g$ is the Bohm limit and corresponds to $\nu_0 = 1$.
 We note that a plasma in which particles are scattered more often is not magnetised anymore.
 The Bohm scaling case in the context of oblique shocks was, for example, studied in @cite Bell2011 .
 No deviations from a power-law spectrum are expected.
 
-In this example, we choose $\alpha$ to equal $-1/2$. 
-This corresponds to Iroshnikov–Kraichnan MHD turbulence of the background astrophysical plasma. 
+In this example, we choose $\alpha$ to equal $-1/2$.
+This corresponds to Iroshnikov–Kraichnan MHD turbulence of the background astrophysical plasma.
 
-In a second step, we investigate a $x$- and $p$-dependent scattering frequency. 
+In a second step, we investigate a $x$- and $p$-dependent scattering frequency.
 We choose the $x$-dependence such that it models an enhanced scattering zone in the precursor of the shock wave.
-The idea is to mimic the self-excitation of magnetic field perturbations ahead of the shock. 
-How these perturbations change when being advected through the shock is not trivial, 
+The idea is to mimic the self-excitation of magnetic field perturbations ahead of the shock.
+How these perturbations change when being advected through the shock is not trivial,
 we therefore experiment with two cases:
 
 __Case (a)__:  
-The scattering frequency is 
+The scattering frequency is
 
 $$
-	\nu(x, p) = \nu_0 B \left[\frac{\zeta_1 + \zeta_2}{2} - \frac{\zeta_1 - \zeta_2}{2} 
-	\tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1} \equiv \nu_0 B \zeta(x) p^{-1}
+ \nu(x, p) = \nu_0 B \left[\frac{\zeta_1 + \zeta_2}{2} - \frac{\zeta_1 - \zeta_2}{2}
+ \tanh\left(\frac{x + x_{\text{pre}}}{L_T}\right)\right] p^{-1} \equiv \nu_0 B \zeta(x) p^{-1}
 $$
 
 This choice implies that $\eta = \nu/\omega_g$ is constant across the shock.
@@ -157,15 +157,14 @@ are plotted in the vicinity of the shock (grey dashed line).
 src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/scattering_regime_case_a.png">
 </div>
 
-
 __Case (b)__:  
 
-The scattering frequency is 
+The scattering frequency is
 $$
-	\nu(x, p) = \nu_0 B_0 \zeta(x) p^{-1}
+ \nu(x, p) = \nu_0 B_0 \zeta(x) p^{-1}
 $$
 
-In contrast to case (a), it is the scattering frequency $\nu$ that does not jump at the shock. 
+In contrast to case (a), it is the scattering frequency $\nu$ that does not jump at the shock.
 
 <div style="text-align:center;">
 <img alt="Case B: The scattering frequency is constant across the shock."
@@ -179,7 +178,7 @@ The implementation looks like
 Note, we use $\ln p$ instead of $p$ and, thus, $\nu(\ln p) = \nu_0 B \exp(\alpha \ln p)$.
 Furthermore, `points[q_index][1]` is $\ln p$.
 
-We introduced a set of parameters, namely `enhanced scattering zone`, `nu0`, `alpha`, 
+We introduced a set of parameters, namely `enhanced scattering zone`, `nu0`, `alpha`,
 `case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
 
 If the `enhanced scattering zone` parameter is set to `true`,
@@ -192,7 +191,6 @@ It could be interpreted as the size of the enhanced scattering zone.
 The `transition length` determines the width of the used tanh-profile.
 If the `enhanced scattering zone` parameter is set to `false`,
 the scattering frequency only depends on $p$.
-
 
 ### Compile and run {#compile-steady-state-oblique-shock}
 
@@ -216,15 +214,15 @@ However, the example comprises three runs with slight changes of the parameters:
      <li>Change `Simulation identifier` to `enhanced_scattering_zone_b`, `case identifier` to `b`  and keep `alpha = -1`</li>
    </ol>
 
-Each run can be started with 
+Each run can be started with
+
 ```shell
 mpirun -n 192 ./build/examples/vfp/steady-state-oblique-shock/steady-state-oblique-shock examples/vfp/steady-state-oblique-shock/parameter.prm
 ```
 
 @note The size of the simulation is such that it requires the usage of many cores
-and a lot of memory, 
-typically only available on clusters. 
-
+and a lot of memory,
+typically only available on clusters.
 
 The plots can be created with the command:
 
@@ -232,20 +230,19 @@ The plots can be created with the command:
 pvbatch examples/vfp/steady-state-oblique-shock/plot_steady_state_oblique_shock.py
 ```
 
-The plotting script assumes that the environment variable `SAPPHIREPP_RESULTS` is set. 
+The plotting script assumes that the environment variable `SAPPHIREPP_RESULTS` is set.
 Furthermore, when executing the plotting script you will be asked for a path.
 If you like to plot the results for the Iroshnikov–Kraichnan MHD turbulence,
 just type `kraichnan-turbulence`.
-For case (a) of the enhanced scattering zone, 
+For case (a) of the enhanced scattering zone,
 type `enhanced_scattering_zone_a` and `enhanced_scattering_zone_b` for case (b).
-
 
 ## Results {#results-steady-state-oblique-shock}
 
-The result section is split into two parts: 
+The result section is split into two parts:
 Firstly, we show how the particle spectrum looks at the shock
 if the scattering frequencies' $p$-dependence is such
-that it models the effect Iroshnikov–Kraichnan MHD turbulence in the background plasma. 
+that it models the effect Iroshnikov–Kraichnan MHD turbulence in the background plasma.
 Second, we demonstrate that an enhanced scattering zone in the precursor of the shock
 may lead to breaks in the particle spectrum.
 
@@ -271,13 +268,12 @@ i.e. the momentum for which the scattering frequency is below the the gyro frequ
 A more detailed discussion of this result can be found in @cite Shirin2025 ,
 see Fig. 1 in particular.
 
-
 ### Enhanced scattering zone
 
 If there is an enhanced scattering zone in the precursor of the shock wave,
-the particle spectrum at the shock also deviates from a straight power law. 
+the particle spectrum at the shock also deviates from a straight power law.
 This is true for case (a) and (b).
-The spectra are broken, however,  the slopes of the two parts of the spectra
+The spectra are broken, however, the slopes of the two parts of the spectra
 does depend on how the turbulence is changed on passing through the shock.
 Below we show the two cases describe in the Sec. [Scattring frequency](#scattering-frequency-steady-state-oblique-shock).
 
