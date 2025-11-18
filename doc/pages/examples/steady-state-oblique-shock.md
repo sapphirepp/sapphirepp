@@ -2,8 +2,8 @@
 
 @tableofcontents
 
-In @cite Shirin2025 we suggest that curved or broken emission spectra of X- and gamma ray sources
-could be explained with a combination of a magnetic field,
+In @cite Shirin2025 we suggest that curved or broken emission spectra of non-thermal sources
+with shocks could be explained with a combination of a magnetic field,
 which is inclined with respect to the shock normal,
 and a $p$-dependence of the scattering frequency,
 that is in agreement with Iroshnikov–Kraichnan MHD turbulence,
@@ -178,6 +178,8 @@ The implementation looks like
 Note, we use $\ln p$ instead of $p$ and, thus, $\nu(\ln p) = \nu_0 B \exp(\alpha \ln p)$.
 Furthermore, `points[q_index][1]` is $\ln p$.
 
+We recommend that the spatial grid extends at least 5 diffusion lengths upstream and 2 diffusion lengths downstream.
+
 We introduced a set of parameters, namely `enhanced scattering zone`, `nu0`, `alpha`,
 `case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
 
@@ -247,9 +249,9 @@ that it models the effect Iroshnikov–Kraichnan MHD turbulence in the backgroun
 Second, we demonstrate that an enhanced scattering zone in the precursor of the shock
 may lead to breaks in the particle spectrum.
 
-### Iroshnikov–Kraichnan MHD turbulence
+### Iroshnikov–Kraichnan MHD scaling on scattering rate
 
-Setting $\nu \propto p^{-1/2}$, as expected for Iroshnikov–Kraichnan MHD turbulence, leads
+Setting $\nu \propto p^{-1/2}$, as expected for Iroshnikov–Kraichnan scaling, leads
 to a _curved_ spectrum at and far downstream of the shock.
 This is visible in the plot below.
 The anisotropy of the particle distribution,
@@ -267,7 +269,7 @@ This implies that the critical momentum $p_{\text{Bohm}}$,
 i.e. the momentum for which the scattering frequency is below the the gyro frequency, is $10^{4}$.
 
 A more detailed discussion of this result can be found in @cite Shirin2025 ,
-see Fig. 1 in particular.
+see Figures 1 & 2 in particular.
 
 ### Enhanced scattering zone
 
