@@ -59,9 +59,22 @@ The salient point is that in the case of a system of equations, there will be in
 _and_ outflowing ($\boldsymbol{\Lambda}^{+}$) components,
 depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by the values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface and cannot be prescribed. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface and can be user defined. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary conditions.
 
+An alternative choice for the flux is the simpler (local) Lax-Friedrichs flux,
+see e.g.  @cite Cockburn_IntroductionToDGConvectionDominated p. 204
+or @cite Pietro_MathematicalAspectsDG eq. 2.35.
+It also implemented in @sapphire.
+	We note that the upwind (or Godunov) flux, as shown in the above equation,
+uses the characteristic variables on the boundary (see Sec. [Inflow](#inflow-bc)),
+whereas the Lax-Friedrich flux uses the expansion coefficients $f_{lms}$ itself.
+We think that this leads to a more diffusive flux,
+e.g. it allows information to propagate against the flow direction.
+An effect that may be relevant for inflow and/or outflow boundary conditions.
+A typical consequence is a "zig-zagging" solution at the boundary.
+Though, we believe that the solution's qualitative behaviour is correct.
+
 In the next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
 
-## Inflow and zero inflow (outflow) boundary conditions
+## Inflow and zero inflow (outflow) boundary conditions {#inflow-bc}
 
 Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$.
 For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant in space and time;
