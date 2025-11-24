@@ -172,15 +172,20 @@ def main() -> dict:
     # endregion
 
     # region Plot over time (time-dependent acceleration)
-    plot_over_time, plot_properties_t = transform.plot_over_time(
+    probe_location, plot_properties_t = transform.probe_location(
         solution,
         [0.001, np.log(p_hat), 0.0],
-        t_axes_scale=delta_t,
-        results_folder=results_folder,
-        filename="temporal-evolution",
         plot_properties_in=plot_properties.replace(
             legend_location="TopLeft", interpol=1
         ),
+    )
+
+    plot_over_time, plot_properties_t = transform.plot_over_time(
+        probe_location,
+        t_axes_scale=delta_t,
+        results_folder=results_folder,
+        filename="temporal-evolution",
+        plot_properties_in=plot_properties_t,
     )
 
     f_000_ana_t = ps.PythonCalculator(
