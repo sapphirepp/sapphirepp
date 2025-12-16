@@ -20,10 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/synchrotron-radiation/config.h
+ * @file examples/vfp/steady-state-oblique-shock/config.h
+ * @author Asma Shirin  (asma.shirin@mpi-hd.mpg.de)
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
- * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
- * @brief Implement physical setup for synchrotron-radiation example
+ * @brief Implement the physical setup for a steady-state oblique shock
  */
 
 #ifndef CONFIG_H
@@ -57,7 +57,7 @@ namespace sapphirepp
     double compression_ratio = 4.;
     double shock_width       = 0.04;
     double nu0               = 0.1;
-
+    double alpha             = -1.;
     // Source
     double Q     = 0.1;
     double p_inj = 2.;
@@ -87,7 +87,13 @@ namespace sapphirepp
                         compression_ratio,
                         "The compression ratio of the shock.");
       prm.add_parameter("shock width", shock_width, "The width of the shock.");
-      prm.add_parameter("nu0", nu0, "The scattering frequency.");
+      prm.add_parameter("nu0",
+                        nu0,
+                        "A scaling factor for the scattering frequency.");
+      prm.add_parameter(
+        "alpha",
+        alpha,
+        "The exponent of the p-dependence of the scattering frequency, e.g. alpha = -1 corresponds to Bohm scaling.");
 
       // Source
       prm.add_parameter("Q", Q, "The injection rate.");
@@ -115,7 +121,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      // Parameters are automatically parsed by add_parameter()
+
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -128,19 +134,20 @@ namespace sapphirepp
   {
     /** [Dimension] */
     /** Specify reduced phase space dimension \f$ (\mathbf{x}, p) \f$ */
-    constexpr unsigned int dimension = 1;
+    constexpr unsigned int dimension = 2;
     /** [Dimension] */
 
 
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |               //
-                                   VFPFlags::momentum |                     //
-                                   VFPFlags::synchrotron |                  //
-                                   VFPFlags::spatial_advection |            //
-                                   VFPFlags::scaled_distribution_function | //
-                                   VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection | //
+                                   VFPFlags::momentum |          //
+                                   VFPFlags::collision |         //
+                                   VFPFlags::rotation |          //
+                                   VFPFlags::source |            //
+                                   VFPFlags::synchrotron |
+                                   VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
 
@@ -164,16 +171,14 @@ namespace sapphirepp
       {
         AssertDimension(f.size(), this->n_components);
 
-        /** [Initial value] */
-        double p     = std::exp(point[0]) / 1e6;
-        double p_max = (0.5 * 1e7) / 1e6;
-        f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_000
-        f[2] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
-               std::exp(-p / p_max); // f_100
-        // f[1] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
-        //        std::exp(-p / p_max); // f_110 f[3] = 0.5 * 1/std::sqrt(3) *
-        // std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_111
-        /** [Initial value] */
+        // NOLINTNEXTLINE(modernize-loop-convert)
+        for (unsigned int i = 0; i < f.size(); ++i)
+          {
+            /** [Initial value] */
+            // No initial value
+            f[i] = 0.;
+            /** [Initial value] */
+          }
       }
 
 
@@ -225,6 +230,38 @@ namespace sapphirepp
 
 
     template <unsigned int dim>
+    class MagneticField : public dealii::Function<dim>
+    {
+    public:
+      MagneticField(const PhysicalParameters &physical_parameters)
+        : dealii::Function<dim>(3)
+        , prm{physical_parameters}
+      {}
+
+
+
+      void
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double> &magnetic_field) const override
+      {
+        AssertDimension(magnetic_field.size(), this->n_components);
+
+        /** [Magnetic field] */
+        magnetic_field[0] = prm.B0; // B_x
+        magnetic_field[1] = 0.;
+        magnetic_field[2] = 0.;
+        /** [Magnetic field] */
+      }
+
+
+
+    private:
+      const PhysicalParameters prm;
+    };
+
+
+
+    template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
@@ -242,11 +279,12 @@ namespace sapphirepp
         [[maybe_unused]] const unsigned int    component = 0) const override
       {
         AssertDimension(scattering_frequencies.size(), points.size());
-
+        dealii::Vector<double> B_value(3);
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
-            scattering_frequencies[q_index] = 100.;
+            scattering_frequencies[q_index] =
+              prm.nu0 * prm.B0 * std::exp(prm.alpha * points[q_index][1]);
             /** [Scattering frequency] */
           }
       }
@@ -282,43 +320,22 @@ namespace sapphirepp
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             /** [Source] */
-            // Define parameters
-            const double p0    = std::log(1e7);
-            const double Q     = 0.1;
-            const double sig_p = 0.1;
-            const double sig_x = 0.001;
-
-            // Get x and p value
-            const double x = point[0];
-            const double p = std::exp(point[1]); // point[1] = log(p)
-
-            // Convert i -> l, m, s
-            const unsigned int l = lms_indices[i][0];
-            const unsigned int m = lms_indices[i][1];
-            const unsigned int s = lms_indices[i][2];
-
-            // isotropic part
-            if (l == 0 && m == 0 && s == 0)
+            if (i == 0)
               {
-                // shifted Gaussian in x and p
-                // s_000 = sqrt(4 pi) * s
-                source_values[i] =
-                  Q / (std::sqrt(M_PI) * sig_p * sig_x) *
-                  std::exp(-(p - p0) * (p - p0) / (2. * sig_p * sig_p)) *
-                  std::exp(-x * x / (2. * sig_x * sig_x));
-                // const double mu    = p0;     //
-                // const double sigma = sig_p;            // std dev in ln p
+                const double p = std::exp(point[1]);
+                const double x = point[0];
 
-                // const double z      = (std::log(p) - mu) / sigma;
-
-                // source_values[i] = Q * (1.0 / (p * sigma * std::sqrt(2.0 *
-                // M_PI))) * std::exp(-0.5 * z * z);
+                // S_000 = sqrt(4 pi) * S
+                source_values[0] =
+                  std::pow(p, 3) * prm.Q /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
+                  std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
+                           (2. * prm.sig_p * prm.sig_p)) *
+                  std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
+                           (2. * prm.sig_x * prm.sig_x));
               }
-            // vanishing anisotropic part
             else
-              {
-                source_values[i] = 0.;
-              }
+              source_values[i] = 0.;
             /** [Source] */
           }
       }
@@ -328,38 +345,6 @@ namespace sapphirepp
     private:
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
-    };
-
-
-
-    template <unsigned int dim>
-    class MagneticField : public dealii::Function<dim>
-    {
-    public:
-      MagneticField(const PhysicalParameters &physical_parameters)
-        : dealii::Function<dim>(3)
-        , prm{physical_parameters}
-      {}
-
-
-
-      void
-      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
-                   dealii::Vector<double> &magnetic_field) const override
-      {
-        AssertDimension(magnetic_field.size(), this->n_components);
-
-        /** [Magnetic field] */
-        magnetic_field[0] = 1e10; // B_x
-        magnetic_field[1] = 0;    // B_y
-        magnetic_field[2] = 0;    // B_z = 1 µG
-        /** [Magnetic field] */
-      }
-
-
-
-    private:
-      const PhysicalParameters prm;
     };
 
 
@@ -382,9 +367,13 @@ namespace sapphirepp
         AssertDimension(velocity.size(), this->n_components);
 
         /** [Background velocity value] */
+        // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+
         // u_x
-        velocity[0] = 0.;
-        // u_sh / (2 * r) * ((1 - r) * std::tanh(point[0] / d_sh) + (1 + r));
+        velocity[0] =
+          prm.u_sh / (2 * prm.compression_ratio) *
+          ((1 - prm.compression_ratio) * std::tanh(point[0] / prm.shock_width) +
+           (1 + prm.compression_ratio));
         velocity[1] = 0.; // u_y
         velocity[2] = 0.; // u_z
         /** [Background velocity value] */
@@ -402,10 +391,15 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity divergence] */
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => d/dx u(x) = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+
             // div u
-            divergence[q_index] = 0.;
-            // u_sh / (2 * r) * (1 - r) / d_sh *
-            // (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            divergence[q_index] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             /** [Background velocity divergence] */
           }
       }
@@ -423,11 +417,21 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
+            // u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            // => D/Dt u(x) = d/dt u(x) + u d/dx u(x)
+            //     = (u_sh/2r)^2 * ((1-r)*tanh(x/x_s) + (1+r)) *
+            //        1/x_s (1-r) (1-tanh(x/x_s)^2)
+
             // D/Dt u_x
-            material_derivatives[q_index][0] = 0.;
-            // // u_sh * u_sh / (4 * r * r) / d_sh * (1 - r) *
-            // ((1 - r) * std::tanh(x / d_sh) + (1 + r)) *
-            // (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            material_derivatives[q_index][0] =
+              prm.u_sh * prm.u_sh /
+              (4 * prm.compression_ratio * prm.compression_ratio) /
+              prm.shock_width * (1 - prm.compression_ratio) *
+              ((1 - prm.compression_ratio) *
+                 std::tanh(points[q_index][0] / prm.shock_width) +
+               (1 + prm.compression_ratio)) *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             material_derivatives[q_index][1] = 0.; // D/Dt u_y
             material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
@@ -447,10 +451,15 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
+            //  u(x) = u_sh/2r * ((1-r)*tanh(x/x_s) + (1+r))
+            //  => u_00 = du/dx = u_sh/2r 1/x_s (1-r) (1-tanh(x/x_s)^2)
+
             // \partial u_x / \partial x
-            jacobians[q_index][0][0] = 0.;
-            // u_sh / (2 * r) * (1 - r) / d_sh *
-            // (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            jacobians[q_index][0][0] =
+              prm.u_sh / (2 * prm.compression_ratio) *
+              (1 - prm.compression_ratio) / prm.shock_width *
+              (1 - std::tanh(points[q_index][0] / prm.shock_width) *
+                     std::tanh(points[q_index][0] / prm.shock_width));
             jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
             jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
