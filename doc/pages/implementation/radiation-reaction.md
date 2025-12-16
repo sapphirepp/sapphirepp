@@ -60,32 +60,26 @@ $$
 
 where $\boldsymbol{n}$ denotes the unit vector in the direction of the particle velocity (i.e.\ $\boldsymbol{n} \equiv \boldsymbol{v}/|\boldsymbol{v}| = \boldsymbol{\beta}/|\boldsymbol{\beta}|$).
 
-Projecting the Landau–Lifshitz radiation–reaction term onto the isotropic($f_0$) and dipole($f_1$) sectors gives
+The same physics in the spherical–harmonic operator form reads (for each $(\ell,m)$) @cite Schween2024a 
 
 $$
-\left(\frac{\partial f_0}{\partial t}\right)_{\!\rm sync}
-=\frac{1}{p^2}\frac{\partial}{\partial p}\!\left[\frac{2\sigma B^2}{3}\,p^2\,\gamma^2\beta\,f_0\right].
+\nabla_p \cdot (\mathbf{F_R}f)
+= \frac{\sigma}{p^2}\,\mathbf{M}_1\,\partial_p\!\left(p^2\gamma^2\beta\, f_{\ell}^{m}\right)
+-\frac{\sigma}{p}\,\mathbf{M}_2\,(\beta\,f_{\ell}^{m}),
 \quad (10)
 $$
 
-$$
-\left(\frac{\partial f_{1i}}{\partial t}\right)_{\!\rm sync}
-= -\,\frac{\sigma}{5p^2}\frac{\partial}{\partial p}\!\left[ -4B^2p^2(\gamma^2\beta f_{1i})
-+2p^2 B_i B_j(\gamma^2\beta f_{1j})\right]
--\frac{\sigma}{5p}\!\left[-3B_iB_j(\beta f_{1j})+B^2(\beta f_{1i})\right].
-\quad (11)
-$$
+with $\mathbf{M}_1=\mathbf{A}^a\mathbf{A}^bB_aB_b-B^2\mathbf{1}$, $\mathbf{M}_2=\frac{3}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}. \quad (11)$  
 
-The same physics in the spherical–harmonic operator form gives an equivalent expression which reads (for each $(\ell,m)$)
+The following relations have been used to arrive at the above form of the radiation reaction equation
 
 $$
-\left(\partial_t f_{\ell}^{m}\right)_{\rm sync}
-= -\frac{\sigma}{p^2}\,\mathbf{M}_1\,\partial_p\!\left(p^2\gamma^2\beta\, f_{\ell}^{m}\right)
-+\frac{\sigma}{p}\,\mathbf{M}_2\,(\beta\,f_{\ell}^{m}),
-\quad (12)
+i\,\varepsilon_{abc}\,\mathbf{A}^b \boldsymbol{\Omega}^c \mathbf{A}^a \;=\; -2\,\mathbf{1}, \quad (12)
 $$
 
-with $\mathbf{M}_1=A^aA^bB_aB_b-B^2\mathbf{1}$, $\mathbf{M}_2=\frac{3}{2}A^aA^bB_aB_b-\frac{1}{2}B^2\mathbf{1}. \quad (13)$  
+$$
+i\,\varepsilon_{abc}\,B_{a}\,\mathbf{A}^{b}\boldsymbol{\Omega}^{c}\,B_{d}\,\mathbf{A}^{d} \;=\; -\frac{1}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}. \quad (13)
+$$
 
 Finally, @sapphire uses the **modified VFP equation** with the synchrotron term moved to the LHS, i.e.
 
@@ -111,7 +105,7 @@ and **distribution scaling** non-scaled (f) or scaled ($g=p^{\alpha}f$).
 
 $$
 \begin{split}
-& \text{coeff} \times \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -134,7 +128,7 @@ $$
 
 $$
 \begin{split}
-& \text{coeff} \times \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -157,7 +151,7 @@ $$
 
 $$
 \begin{split}
-& \text{coeff} \times \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -180,7 +174,7 @@ $$
 
 $$
 \begin{split}
-& \text{coeff} \times \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -199,16 +193,32 @@ $$
 \quad (18)
 $$
 
-With, $$\text{coeff} = \frac{\mu_0 q^4\underline{B}^2}{6\pi m^3 c \underline{\omega_g}} \quad (19)$$ 
+With, $\underline{\tau_R}$ being the dimensionless energy independent radiation-reaction timescale defined by $$\underline{\tau_R} = \frac{9\pi \underline{m}^3 c \underline{\omega_g}}{\mu_0 \underline{q}^4\underline{B}^2} \quad (19)$$ 
 
 here,
-$$ \mu_0 \: \text{is the permeability of free space,}\\ q \: \text{is the particle charge,}\\ m \:  \text{is the particle mass,}\\ c \:  \text{is the speed of light,}\\ \underline{B} \: \text{is the reference magnetic field,}\\ \underline{\omega_g} \:  \text{is the reference gyrofrequency.}
+$$ \mu_0 \: \text{is the permeability of free space,}\\ \underline{q} \: \text{is the particle reference charge,}\\ \underline{m} \:  \text{is the particle reference mass,}\\ c \:  \text{is the speed of light,}\\ \underline{B} \: \text{is the reference magnetic field,}\\ \underline{\omega_g} \:  \text{is the reference gyrofrequency.}
 $$
 
 
 ## Analytic checks
 
 ### Isotropic solution (ultra-relativistic)
+
+Projecting the Landau–Lifshitz radiation–reaction term onto the isotropic($f_0$) and dipole($f_1$) sectors gives
+
+$$
+\left(\frac{\partial f_0}{\partial t}\right)_{\!\rm sync}
+=\frac{1}{p^2}\frac{\partial}{\partial p}\!\left[\frac{2\sigma B^2}{3}\,p^2\,\gamma^2\beta\,f_0\right].
+\quad (10)
+$$
+
+$$
+\left(\frac{\partial f_{1i}}{\partial t}\right)_{\!\rm sync}
+= -\,\frac{\sigma}{5p^2}\frac{\partial}{\partial p}\!\left[ -4B^2p^2(\gamma^2\beta f_{1i})
++2p^2 B_i B_j(\gamma^2\beta f_{1j})\right]
+-\frac{\sigma}{5p}\!\left[-3B_iB_j(\beta f_{1j})+B^2(\beta f_{1i})\right].
+\quad (11)
+$$
 
 Let $g_0=p^3 f_0$. Using $\gamma^2\beta \simeq (p/mc)^2$, Eq. (10) reduces to an advection–reaction
 equation in $p$ with solution (characteristics)
