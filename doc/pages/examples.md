@@ -18,9 +18,9 @@
  6. @subpage synchrotron-cooling  
     This example illustrates the implementation of synchrotron cooling through the
     radiation–reaction term in the Vlasov–Fokker–Planck framework.
-    The effect of synchrotron losses on relativistic particles in a magnetic field 
-    is tested specifically for a steady-state parallel shock, allowing for a clear 
-    comparison between cases with and without radiative cooling.
+    The effect of synchrotron losses on relativistic particles in a magnetic field
+    is tested specifically for a steady-state parallel shock,
+    allowing for a clear comparison between cases with and without radiative cooling.
  7. @subpage scattering-only  
     Serving as a comprehensive guide to @sapphire, this example is highly
     recommended for new developers. It focuses on using scattering to reach a

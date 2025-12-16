@@ -2,16 +2,16 @@
 
 @tableofcontents
 
-This example adds synchrotron radiation reaction to the parallel-shock setup used in the @subpage parallel-shock and @subpage steady-state-parallel-shock examples.
+This example adds synchrotron radiation reaction to the parallel-shock setup used in the @ref parallel-shock and @ref steady-state-parallel-shock examples.
 It demonstrates how the Landau–Lifshitz (LL) radiation–reaction term modifies the particle spectrum in a one-dimensional parallel shock, enabling a direct comparison between radiative and non-radiative cases.
 
 ## Relation to the parallel-shock examples {#relation-parallel-shock}
 
-The synchrotron-radiation example is built on top of the parallel-shock configuration described in @subpage parallel-shock and in the steady-state formulation @subpage steady-state-parallel-shock.
-It reuses the same spatial shock setup and scattering physics, but adds an additional energy-loss channel via synchrotron cooling.
+The synchrotron-radiation example is built on top of the parallel-shock configuration described in @ref parallel-shock and in the steady-state formulation @ref steady-state-parallel-shock.
+It reuses the same spatial shock setup and scattering physics, but adds an energy-loss channel via synchrotron cooling.
 This allows one to quantify radiative effects by comparing with the base examples using identical runtime parameters wherever possible.
 
-A detailed derivation and discussion of the weak formulation can be found on the implementation page @subpage synchrotron-radiation-implementation.
+A detailed derivation and discussion of the weak formulation can be found on the implementation page @ref radiation-reaction.
 
 ## VFP equation with synchrotron cooling {#vfp-synchrotron-radiation}
 
@@ -25,7 +25,7 @@ $$
 Here $f(t,\mathbf{x},\mathbf{p})$ is the phase-space distribution, $\mathbf{u}$ is the background plasma velocity, $\mathbf{v}$ the particle velocity, and $\mathbf{B}$ the magnetic field.
 The operator $\Delta_{\theta,\varphi}$ denotes the angular part of the Laplacian on the momentum sphere, and $S$ collects any additional source terms.
 The synchrotron contribution $(\partial f / \partial t)_{\mathrm{sync}}$ is implemented using the reduced Landau–Lifshitz (LL) radiation–reaction force and is treated as part of the left-hand side of the equation.
-This form is equivalent to the more detailed spherical-harmonic representation discussed in @subpage synchrotron-radiation-implementation .
+This form is equivalent to the more detailed spherical-harmonic representation discussed in @ref radiation-reaction page.
 
 ## Implementation overview {#implementation-synchrotron-radiation}
 
@@ -86,11 +86,11 @@ Boundary conditions are chosen to mimic an effectively isolated system in moment
 After configuring and building @sapphire with examples enabled, the synchrotron-radiation example can be executed from the build directory with
 
 ```shell
-mpirun -n 1 ./examples/vfp/synchrotron-radiation/synchrotron-radiation ../examples/vfp/synchrotron-radiation/parameter.prm
+mpirun -n 1 ./build/examples/vfp/synchrotron-radiation/synchrotron-radiation ./examples/vfp/synchrotron-radiation/parameter.prm
 ```
 
 The simulation writes a sequence of solution files to the results folder specified in the parameter file.
-These can be inspected with ParaView; a simple workflow is described in @subpage paraview-tutorial and @subpage paraview-python .
+These can be inspected with @paraview; a simple workflow is described in @ref paraview-tutorial and @ref paraview-python.
 
 ## Results and comparison to non-radiative runs {#results-synchrotron-radiation}
 
