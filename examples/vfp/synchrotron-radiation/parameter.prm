@@ -5,7 +5,7 @@ subsection Output
   set Number of digits for counter = 4
   set Output frequency             = 10
   set Results folder               = ./results
-  set Simulation identifier        = synchrotron-test-run-constB-logp-scale-proton
+  set Simulation identifier        = synchrotron-test-run-constB-logp-scale-electron
 end
 subsection Physical parameters
 end
@@ -34,7 +34,7 @@ subsection VFP
   end
   subsection Reference units
     # Reference mass in kilogramm. The default is the proton mass.
-    set Mass                    = 1.67262192e-27
+    set Mass                    = 9.1093837e-31
 
     # Reference velocity in metres per second. The default is the speed of
     # light.
@@ -58,9 +58,9 @@ subsection VFP
   #   set points                 =
   # end
   subsection Time stepping
-    set Final time     = 1e2
+    set Final time     = 1e-5
     set Method         = ERK4
-    set Time step size = 0.5e-1
+    set Time step size = 0.5e-8
   end
   # subsection TransportOnly
   #   set Gamma = 3.

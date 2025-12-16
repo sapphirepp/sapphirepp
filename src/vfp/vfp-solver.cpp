@@ -837,7 +837,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
     // Dimensionless prefactor used for the synchrotron term
     const double synchrotron_coeff =
       1.5 / vfp_parameters.reference_units.synchrotron_characteristic_time *
-      std::pow(vfp_parameters.charge, 4) / std::pow(vfp_parameters.mass, 2);
+      std::pow(vfp_parameters.charge, 4) / std::pow(vfp_parameters.mass, 3);
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         for (unsigned int i : fe_v.dof_indices())
@@ -1151,14 +1151,13 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
 
-                                    // \phi * coeff * (3*gamma - 3/gamma) * (A^a
-                                    // A^b B_a B_b) * \phi
+                                    // \phi * coeff * (4*gamma - 2.5/gamma) *
+                                    // (A^a A^b B_a B_b) * \phi
                                     copy_data.cell_matrix(i, j) +=
                                       fe_v.shape_value(i, q_index) *
-                                      (synchrotron_coeff /
-                                       vfp_parameters.mass) *
-                                      (3.0 * particle_gammas[q_index] -
-                                       3.0 / particle_gammas[q_index]) *
+                                      synchrotron_coeff *
+                                      (4.0 * particle_gammas[q_index] -
+                                       2.5 / particle_gammas[q_index]) *
                                       (magnetic_field_values[q_index]
                                                             [coordinate_1] *
                                        magnetic_field_values[q_index]
@@ -1187,10 +1186,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
                                         copy_data.cell_matrix(i, j) +=
                                           fe_v.shape_value(i, q_index) *
-                                          (synchrotron_coeff /
-                                           vfp_parameters.mass) *
-                                          (3.0 * particle_gammas[q_index] -
-                                           3.0 / particle_gammas[q_index]) *
+                                          synchrotron_coeff *
+                                          (4.0 * particle_gammas[q_index] -
+                                           2.5 / particle_gammas[q_index]) *
                                           (magnetic_field_values[q_index]
                                                                 [coordinate_2] *
                                            magnetic_field_values
@@ -1212,8 +1210,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // B_a B_b) * \phi
                                         copy_data.cell_matrix(i, j) -=
                                           fe_v.shape_value(i, q_index) *
-                                          (synchrotron_coeff /
-                                           vfp_parameters.mass) *
+                                          synchrotron_coeff *
                                           scaling_spectral_index *
                                           particle_gammas[q_index] *
                                           (magnetic_field_values[q_index]
@@ -1229,8 +1226,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                           {
                                             copy_data.cell_matrix(i, j) -=
                                               fe_v.shape_value(i, q_index) *
-                                              (synchrotron_coeff /
-                                               vfp_parameters.mass) *
+                                              synchrotron_coeff *
                                               scaling_spectral_index *
                                               particle_gammas[q_index] *
                                               (magnetic_field_values
@@ -1249,7 +1245,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           }
 
                         // \grad_phi * coeff * gamma * (+ |B|^2 I) * \phi  and
-                        // \phi * coeff * (3*gamma - 1/gamma) * (- |B|^2 I) *
+                        // \phi * coeff * (4*gamma - 1.5/gamma) * (- |B|^2 I) *
                         // \phi
                         if constexpr ((vfp_flags & VFPFlags::synchrotron) !=
                                       VFPFlags::none)
@@ -1267,10 +1263,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               fe_v.shape_value(j, q_index) * JxW[q_index];
 
                             copy_data.cell_matrix(i, j) -=
-                              fe_v.shape_value(i, q_index) *
-                              (synchrotron_coeff / vfp_parameters.mass) *
-                              (3.0 * particle_gammas[q_index] -
-                               1.0 / particle_gammas[q_index]) *
+                              fe_v.shape_value(i, q_index) * synchrotron_coeff *
+                              (4.0 * particle_gammas[q_index] -
+                               1.5 / particle_gammas[q_index]) *
                               (magnetic_field_values[q_index][0] *
                                  magnetic_field_values[q_index][0] +
                                magnetic_field_values[q_index][1] *
@@ -1287,8 +1282,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               {
                                 copy_data.cell_matrix(i, j) +=
                                   fe_v.shape_value(i, q_index) *
-                                  (synchrotron_coeff / vfp_parameters.mass) *
-                                  scaling_spectral_index *
+                                  synchrotron_coeff * scaling_spectral_index *
                                   particle_gammas[q_index] *
                                   (magnetic_field_values[q_index][0] *
                                      magnetic_field_values[q_index][0] +
@@ -1570,14 +1564,13 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                       fe_v.shape_value(j, q_index) *
                                       JxW[q_index];
 
-                                    // \phi * coeff * (2*gamma - 3/gamma) * (A^a
-                                    // A^b B_a B_b) * \phi
+                                    // \phi * coeff * (4*gamma - 2.5/gamma) *
+                                    // (A^a A^b B_a B_b) * \phi
                                     copy_data.cell_matrix(i, j) +=
                                       fe_v.shape_value(i, q_index) *
-                                      (synchrotron_coeff /
-                                       vfp_parameters.mass) *
-                                      (2.0 * particle_gammas[q_index] -
-                                       3.0 / particle_gammas[q_index]) *
+                                      synchrotron_coeff *
+                                      (4.0 * particle_gammas[q_index] -
+                                       2.5 / particle_gammas[q_index]) *
                                       (magnetic_field_values[q_index]
                                                             [coordinate_1] *
                                        magnetic_field_values[q_index]
@@ -1607,10 +1600,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
                                         copy_data.cell_matrix(i, j) +=
                                           fe_v.shape_value(i, q_index) *
-                                          (synchrotron_coeff /
-                                           vfp_parameters.mass) *
-                                          (2.0 * particle_gammas[q_index] -
-                                           3.0 / particle_gammas[q_index]) *
+                                          synchrotron_coeff *
+                                          (4.0 * particle_gammas[q_index] -
+                                           2.5 / particle_gammas[q_index]) *
                                           (magnetic_field_values[q_index]
                                                                 [coordinate_2] *
                                            magnetic_field_values
@@ -1631,8 +1623,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                         // A^b B_a B_b) * \phi
                                         copy_data.cell_matrix(i, j) -=
                                           fe_v.shape_value(i, q_index) *
-                                          (synchrotron_coeff /
-                                           vfp_parameters.mass) *
+                                          synchrotron_coeff *
                                           scaling_spectral_index *
                                           particle_gammas[q_index] *
                                           (magnetic_field_values[q_index]
@@ -1648,8 +1639,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                           {
                                             copy_data.cell_matrix(i, j) -=
                                               fe_v.shape_value(i, q_index) *
-                                              (synchrotron_coeff /
-                                               vfp_parameters.mass) *
+                                              synchrotron_coeff *
                                               scaling_spectral_index *
                                               particle_gammas[q_index] *
                                               (magnetic_field_values
@@ -1668,7 +1658,8 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                           }
 
                         // \grad_phi * coeff * gamma * p * (- |B|^2 I) * \phi
-                        // and  \phi * coeff * (2*gamma - 1/gamma) * (- |B|^2 I)
+                        // and  \phi * coeff * (4*gamma - 1.5/gamma) * (- |B|^2
+                        // I)
                         // * \phi
                         if constexpr ((vfp_flags & VFPFlags::synchrotron) !=
                                       VFPFlags::none)
@@ -1687,10 +1678,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               fe_v.shape_value(j, q_index) * JxW[q_index];
 
                             copy_data.cell_matrix(i, j) -=
-                              fe_v.shape_value(i, q_index) *
-                              (synchrotron_coeff / vfp_parameters.mass) *
-                              (2.0 * particle_gammas[q_index] -
-                               1.0 / particle_gammas[q_index]) *
+                              fe_v.shape_value(i, q_index) * synchrotron_coeff *
+                              (4.0 * particle_gammas[q_index] -
+                               1.5 / particle_gammas[q_index]) *
                               (magnetic_field_values[q_index][0] *
                                  magnetic_field_values[q_index][0] +
                                magnetic_field_values[q_index][1] *
@@ -1707,8 +1697,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               {
                                 copy_data.cell_matrix(i, j) +=
                                   fe_v.shape_value(i, q_index) *
-                                  (synchrotron_coeff / vfp_parameters.mass) *
-                                  scaling_spectral_index *
+                                  synchrotron_coeff * scaling_spectral_index *
                                   particle_gammas[q_index] *
                                   (magnetic_field_values[q_index][0] *
                                      magnetic_field_values[q_index][0] +

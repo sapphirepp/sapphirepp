@@ -78,7 +78,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   , velocity(solver_control.velocity)
   , synchrotron_coeff(
       1.5 / solver_control.reference_units.synchrotron_characteristic_time *
-      std::pow(charge, 4) / std::pow(mass, 2))
+      std::pow(charge, 4) / std::pow(mass, 3))
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}
