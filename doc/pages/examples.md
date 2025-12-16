@@ -15,13 +15,12 @@
     in a magnetic field, while being advected by a background plasma flow.
  5. @subpage closure  
     In this example the effect of truncating the expansion at $l_{\rm max}$ is explored.
- 6. @subpage synchrotron-radiation  
-    This example demonstrates the implementation of synchrotron radiation losses
-    within the Vlasov–Fokker–Planck framework.
-    It introduces the Landau–Lifshitz radiation–reaction term
-    that accounts for energy loss of relativistic particles in a magnetic field.
-    The setup is used to simulate the *steady-state parallel shock* example,
-    enabling direct comparison between radiative and non-radiative cases.
+ 6. @subpage synchrotron-cooling  
+    This example illustrates the implementation of synchrotron cooling through the
+    radiation–reaction term in the Vlasov–Fokker–Planck framework.
+    The effect of synchrotron losses on relativistic particles in a magnetic field 
+    is tested specifically for a steady-state parallel shock, allowing for a clear 
+    comparison between cases with and without radiative cooling.
  7. @subpage scattering-only  
     Serving as a comprehensive guide to @sapphire, this example is highly
     recommended for new developers. It focuses on using scattering to reach a

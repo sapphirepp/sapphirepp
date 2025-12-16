@@ -1,4 +1,4 @@
-# Synchrotron radiation {#synchrotron-radiation}
+# Synchrotron cooling {#synchrotron-cooling}
 
 @tableofcontents
 
