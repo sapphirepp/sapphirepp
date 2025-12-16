@@ -20,10 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/steady-state-oblique-shock/config.h
- * @author Asma Shirin  (asma.shirin@mpi-hd.mpg.de)
+ * @file examples/vfp/synchrotron-radiation/config.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
- * @brief Implement the physical setup for a steady-state oblique shock
+ * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
+ * @brief Implement physical setup for synchrotron-radiation example
  */
 
 #ifndef CONFIG_H
@@ -121,7 +121,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-
+      // Parameters are automatically parsed by add_parameter()
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -146,7 +146,7 @@ namespace sapphirepp
                                    VFPFlags::collision |         //
                                    VFPFlags::rotation |          //
                                    VFPFlags::source |            //
-                                   VFPFlags::synchrotron |
+                                   VFPFlags::synchrotron |       //
                                    VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
@@ -230,38 +230,6 @@ namespace sapphirepp
 
 
     template <unsigned int dim>
-    class MagneticField : public dealii::Function<dim>
-    {
-    public:
-      MagneticField(const PhysicalParameters &physical_parameters)
-        : dealii::Function<dim>(3)
-        , prm{physical_parameters}
-      {}
-
-
-
-      void
-      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
-                   dealii::Vector<double> &magnetic_field) const override
-      {
-        AssertDimension(magnetic_field.size(), this->n_components);
-
-        /** [Magnetic field] */
-        magnetic_field[0] = prm.B0; // B_x
-        magnetic_field[1] = 0.;
-        magnetic_field[2] = 0.;
-        /** [Magnetic field] */
-      }
-
-
-
-    private:
-      const PhysicalParameters prm;
-    };
-
-
-
-    template <unsigned int dim>
     class ScatteringFrequency : public dealii::Function<dim>
     {
     public:
@@ -279,7 +247,7 @@ namespace sapphirepp
         [[maybe_unused]] const unsigned int    component = 0) const override
       {
         AssertDimension(scattering_frequencies.size(), points.size());
-        dealii::Vector<double> B_value(3);
+
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
@@ -345,6 +313,38 @@ namespace sapphirepp
     private:
       const PhysicalParameters                       prm;
       const std::vector<std::array<unsigned int, 3>> lms_indices;
+    };
+
+
+
+    template <unsigned int dim>
+    class MagneticField : public dealii::Function<dim>
+    {
+    public:
+      MagneticField(const PhysicalParameters &physical_parameters)
+        : dealii::Function<dim>(3)
+        , prm{physical_parameters}
+      {}
+
+
+
+      void
+      vector_value([[maybe_unused]] const dealii::Point<dim> &point,
+                   dealii::Vector<double> &magnetic_field) const override
+      {
+        AssertDimension(magnetic_field.size(), this->n_components);
+
+        /** [Magnetic field] */
+        magnetic_field[0] = prm.B0; // B_x
+        magnetic_field[1] = 0.;     // B_y
+        magnetic_field[2] = 0.;     // B_z
+        /** [Magnetic field] */
+      }
+
+
+
+    private:
+      const PhysicalParameters prm;
     };
 
 
