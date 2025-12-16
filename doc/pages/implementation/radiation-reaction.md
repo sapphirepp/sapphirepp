@@ -209,7 +209,7 @@ Projecting the Landau–Lifshitz radiation–reaction term onto the isotropic($f
 $$
 \left(\frac{\partial f_0}{\partial t}\right)_{\!\rm sync}
 =\frac{1}{p^2}\frac{\partial}{\partial p}\!\left[\frac{2\sigma B^2}{3}\,p^2\,\gamma^2\beta\,f_0\right].
-\quad (10)
+\quad (20)
 $$
 
 $$
@@ -217,7 +217,7 @@ $$
 = -\,\frac{\sigma}{5p^2}\frac{\partial}{\partial p}\!\left[ -4B^2p^2(\gamma^2\beta f_{1i})
 +2p^2 B_i B_j(\gamma^2\beta f_{1j})\right]
 -\frac{\sigma}{5p}\!\left[-3B_iB_j(\beta f_{1j})+B^2(\beta f_{1i})\right].
-\quad (11)
+\quad (21)
 $$
 
 Let $g_0=p^3 f_0$. Using $\gamma^2\beta \simeq (p/mc)^2$, Eq. (10) reduces to an advection–reaction
@@ -227,7 +227,7 @@ $$
 g_0(t,p)=k\!\left(\frac{p}{1-t/t_{\rm cool}}\right)\,\frac{1}{1-t/t_{\rm cool}},\qquad
 t_{\rm cool}=\frac{3(m c)^2}{2\sigma B^2 p}
 =\frac{9\pi m^3 c}{\mu_0 e^4 B^2\,\gamma}\ \text{(SI)}.
-\quad (5)
+\quad (22)
 $$
 
 ### l=1 anisotropy (no rotation)
