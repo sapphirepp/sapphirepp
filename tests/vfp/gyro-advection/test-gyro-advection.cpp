@@ -30,6 +30,8 @@
 
 #include <mpi.h>
 
+#include <numbers>
+
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
@@ -84,7 +86,8 @@ main(int argc, char *argv[])
       /** [Check parameters] */
       const double gyroperiod =
         vfp_parameters.gamma * vfp_parameters.mass /
-        (physical_parameters.B0 / (2 * M_PI) * vfp_parameters.charge);
+        (physical_parameters.B0 / (2 * std::numbers::pi) *
+         vfp_parameters.charge);
       const double gyroradius =
         vfp_parameters.gamma * vfp_parameters.mass * vfp_parameters.velocity /
         (vfp_parameters.charge * physical_parameters.B0);

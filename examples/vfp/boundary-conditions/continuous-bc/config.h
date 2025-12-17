@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -142,7 +143,7 @@ namespace sapphirepp
             /** [Initial value] */
             if (i == 0)
               f[0] =
-                std::sqrt(2) / prm.sigma *
+                std::numbers::sqrt2 / prm.sigma *
                 std::exp(-point.norm_square() / (2. * prm.sigma * prm.sigma));
             else
               f[i] = 0.;
@@ -290,9 +291,9 @@ namespace sapphirepp
         AssertDimension(magnetic_field.size(), this->n_components);
 
         /** [Magnetic field] */
-        magnetic_field[0] = 0.;                    // B_x
-        magnetic_field[1] = prm.B0_2pi * 2 * M_PI; // B_y
-        magnetic_field[2] = 0.;                    // B_z
+        magnetic_field[0] = 0.;                                // B_x
+        magnetic_field[1] = prm.B0_2pi * 2 * std::numbers::pi; // B_y
+        magnetic_field[2] = 0.;                                // B_z
         /** [Magnetic field] */
       }
 

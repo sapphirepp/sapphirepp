@@ -1816,7 +1816,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                            c.local_dof_indices,
                                            dg_matrix,
                                            locally_owned_current_bc);
-    for (auto &cdf : c.face_data)
+    for (const auto &cdf : c.face_data)
       {
         for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
           for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j)

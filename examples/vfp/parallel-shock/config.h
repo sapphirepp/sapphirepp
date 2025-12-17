@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -290,7 +291,8 @@ namespace sapphirepp
 
                 // s_000 = sqrt(4 pi) * s
                 source_values[0] =
-                  prm.Q / (std::sqrt(M_PI) * prm.sig_p * prm.sig_x) *
+                  prm.Q /
+                  (std::sqrt(std::numbers::pi) * prm.sig_p * prm.sig_x) *
                   std::exp(-p * p / (2. * prm.sig_p * prm.sig_p)) *
                   std::exp(-x * x / (2. * prm.sig_x * prm.sig_x));
               }

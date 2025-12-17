@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -177,7 +178,7 @@ namespace sapphirepp
           {
             /** [Boundary value] */
             if (boundary_id == 0)
-              bc_values[q_index][0] = std::sqrt(4 * M_PI);
+              bc_values[q_index][0] = std::sqrt(4 * std::numbers::pi);
             /** [Boundary value] */
           }
       }

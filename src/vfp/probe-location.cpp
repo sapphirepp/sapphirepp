@@ -40,9 +40,11 @@
 
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <numbers>
 
 #include "tools.h"
 
@@ -64,7 +66,7 @@ sapphirepp::VFP::ProbeLocation<dim>::ProbeLocation(
       1.,
       vfp_parameters.n_cos_theta)}
   , phi_values{Utils::Tools::create_linear_range(0,
-                                                 2 * M_PI,
+                                                 2 * std::numbers::pi,
                                                  vfp_parameters.n_phi)}
   , real_spherical_harmonics{compute_real_spherical_harmonics(cos_theta_values,
                                                               phi_values,
@@ -358,7 +360,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_expansion_coefficients(
                 << probe_location_points[point_index] << ")"
                 << "\n";
       data_file << "# time_step_number cur_time ";
-      for (auto &lms : lms_indices)
+      for (const auto &lms : lms_indices)
         data_file << function_symbol << "_" << lms[0] << lms[1] << lms[2]
                   << " ";
       data_file << "\n";
@@ -384,11 +386,9 @@ sapphirepp::VFP::ProbeLocation<dim>::compute_real_spherical_harmonics(
                                  lms_indices.size());
 
   std::vector<double> theta_values(cos_theta_values.size());
-  std::transform(cos_theta_values.begin(),
-                 cos_theta_values.end(),
-                 theta_values.begin(),
-                 static_cast<double (*)(double)>(std::acos));
-  // [](double cos_theta) { return std::acos(cos_theta); });
+  std::ranges::transform(cos_theta_values, theta_values.begin(), [](double x) {
+    return std::acos(x);
+  });
 
   for (unsigned int i = 0; i < lms_indices.size(); ++i)
     {

@@ -38,6 +38,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -141,7 +142,7 @@ namespace sapphirepp
 
         /** [Initial value] */
         // f_000(t = 0) = \sqrt(4 pi) * f(t=0)
-        f[0] = std::sqrt(2) / prm.standard_deviation *
+        f[0] = std::numbers::sqrt2 / prm.standard_deviation *
                std::exp(-(point[0] * point[0]) /
                         (2 * prm.standard_deviation * prm.standard_deviation));
         /** [Initial value] */

@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -141,7 +142,7 @@ namespace sapphirepp
             /** [Initial value] */
             if (i == 0)
               f[0] =
-                std::sqrt(2) / prm.sigma *
+                std::numbers::sqrt2 / prm.sigma *
                 std::exp(-point.norm_square() / (2. * prm.sigma * prm.sigma));
             else
               f[i] = 0.;

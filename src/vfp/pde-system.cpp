@@ -28,6 +28,7 @@
 
 #include "pde-system.h"
 
+#include <numbers>
 
 
 sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
@@ -409,14 +410,14 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
             advection_matrices[2].set(
               i,
               j,
-              0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+              0.5 * (m_prime == 0 ? 1 / std::numbers::sqrt2 : 1.) *
                 std::sqrt(((l + m + 1.) * (l + m + 2.)) /
                           ((2 * l + 3.) * (2 * l + 1.))));
           if (l + 1 == l_prime && m - 1 == m_prime && s == 1 && s_prime == 0)
             advection_matrices[2].set(
               i,
               j,
-              0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+              0.5 * (m_prime == 0 ? 1 / std::numbers::sqrt2 : 1.) *
                 std::sqrt(((l - m + 1.) * (l - m + 2.)) /
                           ((2 * l + 3.) * (2 * l + 1.))));
           // NOTE: The correction are now directly included (->
@@ -429,30 +430,30 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
           if (l + 1 == l_prime && m == 1 && m_prime == 0 && s == 1 &&
               s_prime == 0)
             advection_matrices[2](i, j) +=
-              0.5 * 1. / std::sqrt(2) *
+              0.5 * 1. / std::numbers::sqrt2 *
               std::sqrt(((l - m + 1.) * (l - m + 2.)) /
                         ((2 * l + 3.) * (2 * l + 1.)));
 
           // l+ 1 = l_prime and s = 0 and s_prime = 1
           if (l + 1 == l_prime && m + 1 == m_prime && s == 0 && s_prime == 1)
-            advection_matrices[2].set(i,
-                                      j,
-                                      -0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                                        std::sqrt(
-                                          ((l + m + 1.) * (l + m + 2.)) /
-                                          ((2 * l + 3.) * (2 * l + 1.))));
+            advection_matrices[2].set(
+              i,
+              j,
+              -0.5 * (m == 0 ? 1 / std::numbers::sqrt2 : 1.) *
+                std::sqrt(((l + m + 1.) * (l + m + 2.)) /
+                          ((2 * l + 3.) * (2 * l + 1.))));
           if (l + 1 == l_prime && m - 1 == m_prime && s == 0 && s_prime == 1)
-            advection_matrices[2].set(i,
-                                      j,
-                                      -0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                                        std::sqrt(
-                                          ((l - m + 1.) * (l - m + 2.)) /
-                                          ((2 * l + 3.) * (2 * l + 1.))));
+            advection_matrices[2].set(
+              i,
+              j,
+              -0.5 * (m == 0 ? 1 / std::numbers::sqrt2 : 1.) *
+                std::sqrt(((l - m + 1.) * (l - m + 2.)) /
+                          ((2 * l + 3.) * (2 * l + 1.))));
           // Corrections
           if (l + 1 == l_prime && m == 0 && m_prime == 1 && s == 0 &&
               s_prime == 1)
             advection_matrices[2](i, j) -=
-              0.5 * 1. / std::sqrt(2) *
+              0.5 * 1. / std::numbers::sqrt2 *
               std::sqrt(((l - m + 1.) * (l - m + 2.)) /
                         ((2 * l + 3.) * (2 * l + 1.)));
           if (l + 1 == l_prime && m == 1 && m_prime == 0 && s == 0 &&
@@ -466,14 +467,14 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
             advection_matrices[2].set(
               i,
               j,
-              -0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+              -0.5 * (m_prime == 0 ? 1 / std::numbers::sqrt2 : 1.) *
                 std::sqrt(((l - m - 1.) * (l - m)) /
                           ((2 * l + 1.) * (2 * l - 1.))));
           if (l - 1 == l_prime && m - 1 == m_prime && s == 1 && s_prime == 0)
             advection_matrices[2].set(
               i,
               j,
-              -0.5 * (m_prime == 0 ? 1 / std::sqrt(2) : 1.) *
+              -0.5 * (m_prime == 0 ? 1 / std::numbers::sqrt2 : 1.) *
                 std::sqrt(((l + m - 1.) * (l + m)) /
                           ((2 * l + 1.) * (2 * l - 1.))));
           // Corrections
@@ -485,30 +486,30 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
           if (l - 1 == l_prime && m == 1 && m_prime == 0 && s == 1 &&
               s_prime == 0)
             advection_matrices[2](i, j) -=
-              0.5 * 1. / std::sqrt(2) *
+              0.5 * 1. / std::numbers::sqrt2 *
               std::sqrt(((l + m - 1.) * (l + m)) /
                         ((2 * l + 1.) * (2 * l - 1.)));
 
           // l - 1 = l_prime and s = 0 and s_prime = 1
           if (l - 1 == l_prime && m + 1 == m_prime && s == 0 && s_prime == 1)
-            advection_matrices[2].set(i,
-                                      j,
-                                      0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                                        std::sqrt(
-                                          ((l - m - 1.) * (l - m)) /
-                                          ((2 * l + 1.) * (2 * l - 1.))));
+            advection_matrices[2].set(
+              i,
+              j,
+              0.5 * (m == 0 ? 1 / std::numbers::sqrt2 : 1.) *
+                std::sqrt(((l - m - 1.) * (l - m)) /
+                          ((2 * l + 1.) * (2 * l - 1.))));
           if (l - 1 == l_prime && m - 1 == m_prime && s == 0 && s_prime == 1)
-            advection_matrices[2].set(i,
-                                      j,
-                                      0.5 * (m == 0 ? 1 / std::sqrt(2) : 1.) *
-                                        std::sqrt(
-                                          ((l + m - 1.) * (l + m)) /
-                                          ((2 * l + 1.) * (2 * l - 1.))));
+            advection_matrices[2].set(
+              i,
+              j,
+              0.5 * (m == 0 ? 1 / std::numbers::sqrt2 : 1.) *
+                std::sqrt(((l + m - 1.) * (l + m)) /
+                          ((2 * l + 1.) * (2 * l - 1.))));
           // Corrections
           if (l - 1 == l_prime && m == 0 && m_prime == 1 && s == 0 &&
               s_prime == 1)
             advection_matrices[2](i, j) +=
-              0.5 * 1. / std::sqrt(2) *
+              0.5 * 1. / std::numbers::sqrt2 *
               std::sqrt(((l + m - 1.) * (l + m)) /
                         ((2 * l + 1.) * (2 * l - 1.)));
           if (l - 1 == l_prime && m == 1 && m_prime == 0 && s == 0 &&
@@ -527,22 +528,24 @@ sapphirepp::VFP::PDESystem::create_advection_matrices()
       // l + 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
       if (l != expansion_order + 1)
         advection_matrices[1](l * (l + 1), (l + 1) * (l + 2) - 1) =
-          std::sqrt(2) *
+          std::numbers::sqrt2 *
           advection_matrices[1](l * (l + 1), (l + 2) * (l + 1) - 1);
       // l + 1 = l_prime, m = 1, s = 0, and m_prime = 0, s_prime = 0
       if (l != 0 && l != expansion_order + 1)
         advection_matrices[1](l * (l + 1) - 1, (l + 1) * (l + 2)) =
-          std::sqrt(2) *
+          std::numbers::sqrt2 *
           advection_matrices[1](l * (l + 1) - 1, (l + 2) * (l + 1));
       // Below the diagonal
       // l - 1 = l_prime, m = 0, s = 0, and m_prime = 1, s_prime = 0
       if (l > 1)
         advection_matrices[1](l * (l + 1), l * (l - 1) - 1) =
-          std::sqrt(2) * advection_matrices[1](l * (l + 1), l * (l - 1) - 1);
+          std::numbers::sqrt2 *
+          advection_matrices[1](l * (l + 1), l * (l - 1) - 1);
       // l - 1 = l_prime , m = 1, s = 0 and m_prime = 0, s_prime = 0
       if (l != 0)
         advection_matrices[1](l * (l + 1) - 1, l * (l - 1)) =
-          std::sqrt(2) * advection_matrices[1](l * (l + 1) - 1, l * (l - 1));
+          std::numbers::sqrt2 *
+          advection_matrices[1](l * (l + 1) - 1, l * (l - 1));
     }
 }
 
@@ -620,19 +623,19 @@ sapphirepp::VFP::PDESystem::create_generator_rotation_matrices()
         {
           // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 1
           generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1) =
-            std::sqrt(2) *
+            std::numbers::sqrt2 *
             generator_rotation_matrices[1](l * (l + 1), l * (l + 1) + 1);
           // l == l_prime, m = 1, s = 1 and m_prime = 0 and s_prime = 0
           generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1)) =
-            std::sqrt(2) *
+            std::numbers::sqrt2 *
             generator_rotation_matrices[1](l * (l + 1) + 1, l * (l + 1));
           // l == l_prime, m = 0, s = 0 and m_prime = 1 and s_prime = 0
           generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1) =
-            std::sqrt(2) *
+            std::numbers::sqrt2 *
             generator_rotation_matrices[2](l * (l + 1), l * (l + 1) - 1);
           // // l == l_prime, m = 1, s = 0 and m_prime = 0 and s_prime = 0
           generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1)) =
-            std::sqrt(2) *
+            std::numbers::sqrt2 *
             generator_rotation_matrices[2](l * (l + 1) - 1, l * (l + 1));
         }
     }
