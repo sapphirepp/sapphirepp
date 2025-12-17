@@ -95,6 +95,18 @@ namespace sapphirepp
        * (only for @ref GridType::hypercube)
        */
       std::vector<unsigned int> n_cells;
+      /**
+       * Refine the grid after creation using
+       * @dealref{refine_global(),classTriangulation,a6ad0b3fb24aae17f4668427a433dea19}.
+       * The number of cells in each direction is
+       * \f$n_{i} = n_{i,\,\rm old} \times 2^{\rm global\_grid\_refinement}\f$,
+       * where \f$ n_{i,\,\rm old} \f$ is the unrefined number of cells,
+       * given by @ref n_cells.
+       *
+       * @note Refining the grid after creation is much faster
+       *       than directly creating large grids.
+       */
+      unsigned int global_grid_refinement = 0;
 
       /**
        * Number of cells in the shock region (only for @ref GridType::shock)

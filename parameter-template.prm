@@ -36,28 +36,37 @@ subsection VFP
   subsection Mesh
     # The type of the grid. Can either be created by the program or read from
     # a file
-    set Grid type             = Shock grid
+    set Grid type              = Shock grid
 
     # Two diagonally opposite corner points, Point 1 and  Point 2
-    set Point 1               = -2., -2.
+    set Point 1                = -2., -2.
 
     # Two diagonally opposite corner points, Point 1 and  Point 2
-    set Point 2               = 2., 2.
+    set Point 2                = 2., 2.
 
     # Number of cells in each coordinate direction
-    set Number of cells       = 40, 40
+    set Number of cells        = 40, 40
+
+    # Refine the grid after creation.
+    # The number of cells in each direction is
+    # $n_i = n_{i, old} x 2^{global_grid_refinement}$,
+    # where $n_{i, old}$ is the unrefined number of cells,
+    # given by 'Number of cells'.
+    # Note, refining the grid after creation is much faster than directly
+    # creating large grids.
+    set Global grid refinement = 0
 
     # Number of cells along x-direction in the shock (for Shock grid)
-    set Number of shock cells = 8
+    set Number of shock cells  = 8
 
     # Width of the shock in x-direction (for Shock grid)
-    set Shock width           = 0.01
+    set Shock width            = 0.01
 
     # Scaling factor for the cell width in x-direction (for Shock grid)
-    set Scaling factor shock  = 1.5
+    set Scaling factor shock   = 1.5
 
     # The file containing the grid (only for Grid type = File)
-    set File name             =
+    set File name              =
 
 
     subsection Boundary conditions
@@ -121,7 +130,7 @@ subsection VFP
 
     # Reference magnetic field strength in Tesla. The default is 1e-10 Tesla,
     # i.e. 1 microGauss.
-    set Magnetic field strength = 1.e-10
+    set Magnetic field strength = 1e-10
 
     # Reference charge in Coulomb. The default is the elementary charge.
     set Charge                  = 1.602176634e-19
