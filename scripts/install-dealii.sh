@@ -22,7 +22,7 @@ ASSIMP_VERSION="6.0.2"
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
 # Check here for new versions: https://gitlab.com/petsc/petsc/-/tags
-PETSC_VERSION="3.23.6"
+PETSC_VERSION="3.24.2"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
@@ -277,7 +277,7 @@ function install_deal_ii {
     # Set CMake flags for deal.II configuration
     tmp_deal_ii_flags=(
         "-DCMAKE_INSTALL_PREFIX=$DEAL_II_DIR"
-        "-DDEAL_II_CXX_FLAGS=-std=c++17"
+        "-DDEAL_II_CXX_FLAGS=-std=c++20"
         # "-DDEAL_II_WITH_TBB=ON"
         "-DDEAL_II_WITH_MPI=ON"
         "-DDEAL_II_WITH_HDF5=ON"
