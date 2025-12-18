@@ -6,31 +6,40 @@ It applies the discontinuous Galerkin method. This means that it computes a weak
 Consequently, the prescribed boundary conditions also only hold weakly,
 i.e. almost everywhere on the boundary of the computational domain.
 
-For example, the weak formulation of a steady-state advection-reaction equation, i.e.
+For example, consider a steady-state advection-reaction equation, i.e.
 
 $$
-\begin{split}
- \boldsymbol{\beta}(\mathbf{x}) \cdot \nabla f  + r(\mathbf{x}) f &= s(\mathbf{x}) \, ,\\
- f & = h \text{ on } \partial D^{-} \, ,
-\end{split}
+\begin{align*}
+ \boldsymbol{\beta}(\mathbf{x}) \cdot \nabla f  + r(\mathbf{x}) f &= s(\mathbf{x}) && \text{ in } D \, ,\\
+ f & = h && \text{ on } \partial D^{-} \, ,
+\end{align*}
 $$
 
-where $D^{-} \equiv \{x \in D \mid \boldsymbol{\beta} \cdot \nabla \mathbf{n} < 0 \}$ is the inflow boundary, is
+where
+$\partial D^{-} \equiv \{x \in \partial D \mid \boldsymbol{\beta} \cdot \mathbf{n} < 0 \}$
+is the inflow boundary.
+Its weak formulation of is
 
+@todo Comparing with (2.21) @cite Pietro_MathematicalAspectsDG, I am not sure if it's $+$ or $-$?
+  The same goes for equation for $a(f,w)$.
+  So maybe this cancels out?
 $$
- \text{Find f} \in V \text{ subject to } a(f,w) = \int_D s w \, \mathrm{d}^3 x - \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w \, \mathrm{d}A
+ \text{Find f} \in V \text{ subject to } \quad
+ a(f,w) = \int_D s w \, \mathrm{d}^3 x - \int_{\partial D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w \, \mathrm{d}A
  \quad \text{ for all } w \in V
 $$
 
 with
 
 $$
- a(f,w) \equiv \int_D \left( \boldsymbol{\beta} \cdot \nabla f \right) w \, \mathrm{d}^3 x + \int_D r \nabla f w \, \mathrm{d}^3 x - \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) f w \, \mathrm{d}A \,.
+ a(f,w) \equiv \int_D \left( \boldsymbol{\beta} \cdot \nabla f \right) w \, \mathrm{d}^3 x
+  + \int_D r f w \, \mathrm{d}^3 x
+  - \int_{\partial D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) f w \, \mathrm{d}A \,.
 $$
 
 Note the boundary condition enters the weak formulation, i.e. it enters as an integral,
 which implies that it holds almost everywhere,
-see equations (2.13) -- (2.16) and eq. (2.21) in @cite Pietro_MathematicalAspectsDG .
+see equations (2.13) -- (2.16) and eq. (2.21) in @cite Pietro_MathematicalAspectsDG.
 Moreover, the boundary condition prescribe the inflow,
 namely $(\boldsymbol{\beta} \cdot \mathbf{n} )f$, only.
 The outflow is a consequence of the problem itself, e.g. of the flow field $\boldsymbol{\beta}$,
@@ -63,7 +72,7 @@ An alternative choice for the flux is the simpler (local) Lax-Friedrichs flux,
 see e.g.  @cite Cockburn_IntroductionToDGConvectionDominated p. 204
 or @cite Pietro_MathematicalAspectsDG eq. 2.35.
 It also implemented in @sapphire.
-	We note that the upwind (or Godunov) flux, as shown in the above equation,
+We note that the upwind (or Godunov) flux, as shown in the above equation,
 uses the characteristic variables on the boundary (see Sec. [Inflow](#inflow-bc)),
 whereas the Lax-Friedrich flux uses the expansion coefficients $f_{lms}$ itself.
 We think that this leads to a more diffusive flux,
@@ -98,7 +107,9 @@ $$
 $$
 where $\mathbf{f}^{-}$ denotes the inflowing components of the expansion coefficients.
 
-To determine the inflow , namely the flux through the boundary at $x = -L$, we integrate
+@todo To me, it's not clear why the integration of $\epsilon$ is done here.
+
+To determine the inflow, namely the flux through the boundary at $x = -L$, we integrate
 over a small control volume, e.g. $[-L, -L + \epsilon]$, close to the boundary:
 
 $$
@@ -106,7 +117,7 @@ $$
  + v \mathbf{A}_x \mathbf{f} \Big |^{-L + \epsilon}_{-L} \,.
 $$
 
-At $x = -L$ , we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
+At $x = -L$, we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
 We emphasise that, in the case of a multidimensional problem,
 the minus is consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
 If we diagonalize $- v \mathbf{A}_x$, i.e.
@@ -221,13 +232,15 @@ Moreover, if there is no scattering
 a difference between odd and even $l_{\mathrm{max}}$ can be observed,
 for details see Sec. 2 in  @cite Garret2016.
 
-To conclude we look at the same example,
-but we include scattering, we directly compute the steady-state solution
+To conclude we look at the same example, but we include scattering.
+We directly compute the steady-state solution
 and use the zero inflow boundary condition.
-We solve
+The resulting system is
 
 $$
-  v \mathbf{A}_x \partial_x \mathbf{f} = \nu \mathbf{C} \quad \text{with } \mathbf{f}^{-}(x = -L) = \mathbf{h}^{-} \text{ and } \mathbf{f}^{-}(x = L) = \mathbf{0}  \,.
+  v \mathbf{A}_x \partial_x \mathbf{f} = \nu \mathbf{C}
+  \quad \text{with } \mathbf{f}^{-}(x = -L) = \mathbf{h}^{-}
+  \text{ and } \mathbf{f}^{-}(x = L) = \mathbf{0}  \,.
 $$
 
 For $l_{\mathrm{max}} = 1$, the explicit system of equations is
@@ -260,6 +273,11 @@ f_{111}  &= 0 \\
 $$
 
 For the boundary conditions, we again set $h_{0} = \sqrt{4 \pi}$ and use the eigenvectors $\mathbf{V}_{x}$ to see that
+
+@todo Notation: Do you want to use $f^-$ for both?
+  I know that you mean it w.r.t. to the normal orientation,
+  but I am not sure that this becomes clear in the example.
+  Especially here, since in this part we are not solving the discrete, but the continuous equation.
 
 $$
 \mathbf{f}^{-}(x = -L) = \frac{1}{2}
@@ -295,7 +313,10 @@ $$
 \end{pmatrix}
 $$
 
-This can be condensed into the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$, which determine the two constants $c_{0}$ and $c_{1}$.
+This can be condensed into the two boundary conditions
+$f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$
+and $f_{000} = f_{100}$ at $x = L$,
+which determine the two constants $c_{0}$ and $c_{1}$.
 The solution is
 
 $$
@@ -317,6 +338,11 @@ results in a negative distribution function, because $f_{000}$ and $f_{100}$ mus
 A higher expansion order $l_{\mathrm{max}}$ results in a positive distribution function.
 Additionally, the anisotropies resulting from an inflow produced by an isotropic distribution $f$
 are reduced by the included scattering. This is shown in the following plots:
+
+@todo Question 1: What $l_{\rm max}$ is the solid line?
+  Question 2: For the solid line it still looks like $f_{000}(L) = f_{100}(L)$.
+  But this does not result in a negative phase space distribution?
+  Question 3: Why not use same $L$? That should make it much easier to compare!
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-plus-scattering.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to twelve" width="60%"/>
@@ -390,7 +416,7 @@ $$
 
 is a diagonal matrix with ones and minus ones.
 For more details on representation matrices in the context of @sapphire,
-we refer the reader to @cite Schween2024a .
+we refer the reader to @cite Schween2024a.
 
 The boundary distribution function $\mathbf{h}$ is then computed via
 
@@ -509,7 +535,7 @@ which gyrate about an out-of-plane magnetic field.
 The corresponding set of partial differential equations is
 
 $$
- \frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \frac{\partial f}{\partial x}
+ \frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \frac{\partial \mathbf{f}}{\partial x}
  - \omega_y \boldsymbol{\Omega}_{y}\mathbf{f} = \mathbf{0}
  \quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right)
 $$
@@ -542,7 +568,7 @@ $$
 \mathbf{h}\big|_{x = - L} = \mathbf{f}_{h} \big |_{x = L} \,.
 $$
 
-A way to demonstrate the periodic boundary conditions is to led an initially isotropic
+A way to demonstrate the periodic boundary conditions is to let an initially isotropic
 and mono-energetic particle distribution evolve in a background plasma flow
 that advects the particles towards the boundaries of the computational domain.
 To this end, we solve
@@ -552,6 +578,9 @@ $$
  \quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right) \,,
 $$
 where chose a scattering frequency $\nu$ to such that the Gaussian distribution spreads slowly in comparison to the crossing time $2 L/u$.
+
+@todo Is scattering necessary in this example, or would it be easier without?
+  And, is it the picture that is repeated multiple times? Is it just to illustrate the periodic BC?
 
 The results are shown in the following animation:
 
