@@ -109,9 +109,10 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = //
-      VFPFlags::time_evolution |   // Can be deactivated for scattering example
-      VFPFlags::spatial_advection;
+    constexpr VFPFlags vfp_flags =
+      VFPFlags::time_evolution |    // Can be deactivated for scattering example
+      VFPFlags::spatial_advection | //
+      VFPFlags::collision;
     /** [VFP Flags] */
 
 
