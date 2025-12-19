@@ -18,11 +18,8 @@ $$
 where
 $\partial D^{-} \equiv \{x \in \partial D \mid \boldsymbol{\beta} \cdot \mathbf{n} < 0 \}$
 is the inflow boundary.
-Its weak formulation of is
+Its weak formulation is
 
-@todo Comparing with (2.21) @cite Pietro_MathematicalAspectsDG, I am not sure if it's $+$ or $-$?
-  The same goes for equation for $a(f,w)$.
-  So maybe this cancels out?
 $$
  \text{Find f} \in V \text{ subject to } \quad
  a(f,w) = \int_D s w \, \mathrm{d}^3 x - \int_{\partial D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w \, \mathrm{d}A
@@ -71,7 +68,7 @@ depending on the normal $\mathbf{n}$ of the boundary and the advection matrices 
 An alternative choice for the flux is the simpler (local) Lax-Friedrichs flux,
 see e.g.  @cite Cockburn_IntroductionToDGConvectionDominated p. 204
 or @cite Pietro_MathematicalAspectsDG eq. 2.35.
-It also implemented in @sapphire.
+It is also implemented in @sapphire.
 We note that the upwind (or Godunov) flux, as shown in the above equation,
 uses the characteristic variables on the boundary (see Sec. [Inflow](#inflow-bc)),
 whereas the Lax-Friedrich flux uses the expansion coefficients $f_{lms}$ itself.
@@ -81,7 +78,8 @@ An effect that may be relevant for inflow and/or outflow boundary conditions.
 A typical consequence is a "zig-zagging" solution at the boundary.
 Though, we believe that the solution's qualitative behaviour is correct.
 
-In the next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
+In the next sections, we go through possible choices for $\mathbf{h}$
+and illustrate their consequences by means of examples.
 
 ## Inflow and zero inflow (outflow) boundary conditions {#inflow-bc}
 
@@ -89,7 +87,7 @@ Inflow boundary conditions results from setting $\mathbf{h}$ independently from 
 For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant in space and time;
 setting $h_0 = \sqrt{4 \pi}$ at $x = -L$,
 enforces an inflow that stems from an isotropic distribution $f$ of value $1$
-at the left $x$ boundary located at $-L$.
+at the left $x$-boundary located at $-L$.
 Since the distribution function $f$ is isotropic at the boundary,
 we expect that half of the particles, namely all particles with $\theta < \pi/2$,
 enter the computational domain.
@@ -107,19 +105,18 @@ $$
 $$
 where $\mathbf{f}^{-}$ denotes the inflowing components of the expansion coefficients.
 
-@todo To me, it's not clear why the integration of $\epsilon$ is done here.
-
-To determine the inflow, namely the flux through the boundary at $x = -L$, we integrate
-over a small control volume, e.g. $[-L, -L + \epsilon]$, close to the boundary:
+To determine the inflow, namely the flux through the boundary at $x = -L$,
+we integrate the spatial advection term over a small control volume close to the boundary,
+e.g. $[-L, -L + \epsilon]$,:
 
 $$
- \frac{\partial }{\partial t} \int^{-L + \epsilon}_{-L} \mathbf{f} \, \mathrm{d} x
- + v \mathbf{A}_x \mathbf{f} \Big |^{-L + \epsilon}_{-L} \,.
+  \int^{-L + \epsilon}_{-L} v \mathbf{A}_x \partial_{x} \mathbf{f} \, \mathrm{d} x
+ =  v \mathbf{A}_x \mathbf{f} \Big |^{-L + \epsilon}_{-L} \,.
 $$
 
 At $x = -L$, we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
 We emphasise that, in the case of a multidimensional problem,
-the minus is consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
+the minus is a consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
 If we diagonalize $- v \mathbf{A}_x$, i.e.
 
 $$
@@ -127,11 +124,11 @@ $$
  = \mathbf{V}_x \left(\boldsymbol{\Lambda}^{+}_{x} + \boldsymbol{\Lambda}^{-}_x \right) \mathbf{V}^{T}_x \,,
 $$
 we can distinguish between inflowing components,
-i.e. the flow is in the opposite direction of $\mathbf{n}$
-and they correspond to the negative eigenvalues $\boldsymbol{\Lambda}^{-}_{x}$,
-and the outflowing component belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$.
+i.e. the flow is in the opposite direction of $\mathbf{n}$,
+corresponding to the negative eigenvalues $\boldsymbol{\Lambda}^{-}_{x}$
+and the outflowing components belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$.
 This distinction may become clearer
-when looking at the following transformation of the above system of PDEs
+when we look at the following transformation of the above system of PDEs
 
 $$
  \frac{\partial \tilde{\mathbf{f}}}{\partial t}
@@ -160,6 +157,12 @@ $$
 
 where $\boldsymbol{\mathbb{1}}^{-}$ is a matrix with ones on the diagonal
 where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero.
+We emphasise that $\mathbf{f}^{-}$ always denotes the inflowing components,
+because the computation of $\boldsymbol{\Lambda}^{-}$
+includes the normal $\mathbf{n}$ of the boundary surface.
+A fact that is hidden in the above computation, because of its restriction to one dimension.
+For, a multiple dimensional variant see eq. (29)
+and the paragraph before eq. (35) in @cite Schween2025
 
 We wrap up and use the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$ in @sapphire
 and compare it to the analytical solution.
@@ -216,10 +219,10 @@ This means that we would need an infinite angular resolution to capture it exact
 
 In applications, the last statement is crucial.
 If there is no scattering, the expansion order must be very high.
-A fact that becomes clear when we reconstruct phase space at some point $x$
-after steady state has been reached:
+A fact that becomes clear when we reconstruct the phase-space distribution $f$ at some point $x$
+after the steady state has been reached:
 
-The plot compares the phase space reconstruction for $l_{\mathrm{max}} = 9$
+The plot compares the phase-space reconstruction for $l_{\mathrm{max}} = 9$
 and $l_{\mathrm{max}} = 63$.
 
 <p float="left">
@@ -234,7 +237,7 @@ for details see Sec. 2 in  @cite Garret2016.
 
 To conclude we look at the same example, but we include scattering.
 We directly compute the steady-state solution
-and use the zero inflow boundary condition.
+and use the zero inflow boundary condition at the right boundary of the domain.
 The resulting system is
 
 $$
@@ -272,12 +275,8 @@ f_{111}  &= 0 \\
 \end{split}
 $$
 
-For the boundary conditions, we again set $h_{0} = \sqrt{4 \pi}$ and use the eigenvectors $\mathbf{V}_{x}$ to see that
-
-@todo Notation: Do you want to use $f^-$ for both?
-  I know that you mean it w.r.t. to the normal orientation,
-  but I am not sure that this becomes clear in the example.
-  Especially here, since in this part we are not solving the discrete, but the continuous equation.
+For the boundary conditions, we again set $h_{0} = \sqrt{4 \pi}$
+and use the eigenvectors $\mathbf{V}_{x}$ to see that
 
 $$
 \mathbf{f}^{-}(x = -L) = \frac{1}{2}
@@ -326,7 +325,8 @@ $$
 \end{split}
 $$
 
-The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt{8}/3$) and the analytical solution match, i.e.
+The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt{8}/3$)
+and the analytical solution match, i.e.
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc-steady-state-l1.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to one expansion" width="60%"/>
@@ -337,17 +337,14 @@ $f(x = L, \cos\theta) = f_{000}(x = L) Y_{000} + f_{100}(x=L) Y_{100}(\cos\theta
 results in a negative distribution function, because $f_{000}$ and $f_{100}$ must equal.
 A higher expansion order $l_{\mathrm{max}}$ results in a positive distribution function.
 Additionally, the anisotropies resulting from an inflow produced by an isotropic distribution $f$
-are reduced by the included scattering. This is shown in the following plots:
-
-@todo Question 1: What $l_{\rm max}$ is the solid line?
-  Question 2: For the solid line it still looks like $f_{000}(L) = f_{100}(L)$.
-  But this does not result in a negative phase space distribution?
-  Question 3: Why not use same $L$? That should make it much easier to compare!
+are reduced by the included scattering term.
+This is shown in the following plots:
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-plus-scattering.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to twelve" width="60%"/>
 </CENTER>
 
+The solid lines show the @sapphire solution using an expansion order $l_{\mathrm{max}} = 12$.
 Note that we enlarged the computational domain, namely $L = 10$.
 At the boundaries $x=-L$ and $x=L$,  the distribution function $f$ is
 
@@ -355,6 +352,10 @@ At the boundaries $x=-L$ and $x=L$,  the distribution function $f$ is
   <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-scattering-phase-space-left.png" width="48%" />
   <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-scattering-phase-space-right.png" width="48%" />
 </p>
+
+Note even though $f_{000}(L) = f_{100}(L)$ is still true for the $l_{\mathrm{max}}=12$ expansion,
+the reconstructed phase-space distribution $f$ is positive.
+This is possible, because the spherical harmonic expansion of $f$ now includes terms with $l > 1$.
 
 ## Reflecting boundary conditions
 
@@ -577,12 +578,11 @@ $$
  + \left(u \boldsymbol{\mathbb{1}} + v\mathbf{A}_x\right) \frac{\partial \mathbf{f}}{\partial x} = - \nu \mathbf{C} \mathbf{f}
  \quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right) \,,
 $$
-where chose a scattering frequency $\nu$ to such that the Gaussian distribution spreads slowly in comparison to the crossing time $2 L/u$.
+where chose a scattering frequency $\nu$
+such that the Gaussian distribution spreads slowly in comparison to the crossing time $2 L/u$.
 
-@todo Is scattering necessary in this example, or would it be easier without?
-  And, is it the picture that is repeated multiple times? Is it just to illustrate the periodic BC?
-
-The results are shown in the following animation:
+To demonstrate the effect of the periodic boundary conditions,
+we plot the temporal evolution of $f_{000}$ and $f_{100}$ repeatedly:
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/periodic-bc.gif" alt="Demonstration of the periodic boundary conditions." width="60%"/>
