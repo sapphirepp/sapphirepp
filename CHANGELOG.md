@@ -2,6 +2,41 @@
 
 @tableofcontents
 
+## Changes: 1.3.0
+
+- **Breaking change:** Change C++ standard from 17 to 20.  
+  A recompilation of Sapphire++ and deal.II may be required.
+- @sapphire can now be installed with Docker  
+  Find the installation instructions [here](https://sapphirepp.org/latest/index.html#docker).
+
+### VFP
+
+- Add the local Lax-Friedrichs flux  
+  Up to now users were restricted to the upwind flux.
+  They can use the more diffusive but faster local Lax-Friedrichs flux
+- Change the plotting scripts of the examples to use the [Sapphire++ — Plot library](https://plot.sapphirepp.org)
+- Add a grid option that allows users to first create the grid and then refine it  
+  This is much faster than creating a refined grid directly.
+  In particular, if periodic boundary conditions are used.
+- Add a steady-state oblique shock example
+- Add examples demonstrating the boundary conditions
+- Add VFP parameters that allow users to define the reference units  
+  Currently @sapphire uses, for example, the proton mass as a reference mass.
+  Now it is possible to change this to the electron mass or any other mass.
+  It is also possible to set the reference magnetic field strength, the velocity and the charge.
+- Add @ref numerical-parameters that control the solver tolerance and max. number of iterations
+- Add convenience functions that simplify the read in of physical functions from files
+- Fix: The matrices of the momentum term are now computed with $l_{\mathrm{max}} + 1$
+
+### Utils
+
+- Add a new output parameter `Debug input functions`  
+  If set to `true` the velocity field $\mathbf{U}$, its derivatives,
+  the magnetic field $\mathbf{B}$, the scattering frequency $\nu$
+  and the source $\mathbf{s}$ are included in the ParaView output
+
+**Full Changelog**: https://github.com/sapphirepp/sapphirepp/compare/v1.2.0...v1.3.0
+
 ## Changes: 1.2.0
 
 ### VFP
