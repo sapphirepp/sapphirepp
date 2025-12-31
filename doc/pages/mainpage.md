@@ -174,7 +174,12 @@ A pre-built [Docker](https://docs.docker.com/engine/) container is available on
 
    Results will be saved in your local `results` folder.
 
-   @note Any changes to source files in the container will be lost after closing the container.
+   @note We use the root user to be able to create new subfolders,
+         see [Docker and the host filesystem owner matching problem](https://www.joyfulbikeshedding.com/blog/2021-03-15-docker-and-the-host-filesystem-owner-matching-problem.html).
+         You might need to change the ownership of the result folder:
+         `sudo chown -R $USER: results`.
+
+   @warning Any changes to source files in the container will be lost after closing the container.
 
 3. **Start the container with persistent source access:**
 
