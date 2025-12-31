@@ -105,7 +105,7 @@ In order to compile and use @sapphire you need the following programs installed:
 - @dealii version @dealii_min_version or later
 - For generating the documentation:
  [Doxygen](https://www.doxygen.nl) version @doxygen_min_version or later with `dot`
-- For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/) or @paraview
+- For visualization we recommand to use [VisIt](http://www.llnl.gov/visit/), @paraview or @sapplot
 
 To install @dealii and all necessary prerequisites for @sapphire,
 we provide an
