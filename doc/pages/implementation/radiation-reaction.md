@@ -105,7 +105,7 @@ and **distribution scaling** non-scaled (f) or scaled ($g=p^{\alpha}f$).
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Big\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -119,7 +119,7 @@ $$
   \left(4 \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-4\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \Big\}.
 \end{split}
 \quad (15)
 $$
@@ -128,7 +128,7 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -142,7 +142,7 @@ $$
   \left(4 \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-4\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
 \end{split}
 \quad (16)
 $$
@@ -174,7 +174,7 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -188,7 +188,7 @@ $$
   \left((4-\alpha) \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-(4-\alpha)\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \}.
 \end{split}
 \quad (18)
 $$
