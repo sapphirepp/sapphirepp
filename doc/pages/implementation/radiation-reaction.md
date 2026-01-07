@@ -17,7 +17,7 @@ The following equation for the radiation damping force has been adapted from @ci
 
 $$
 \mathbf{F_R} = \frac{\mu_0q^{3}\gamma}{6\pi mc} 
- \Bigg\{ \left( \frac{\partial}{\partial t} + \mathbf{v} \cdot \nabla \right)(\mathbf{E}+\mathbf{v} \times \mathbf{B}) \Bigg\} + \frac{\mu_0q^{4}}{6\pi m^{2}c} \Bigg\{\frac{1}{c^2} \mathbf{E} (\mathbf{v} \cdot \mathbf{E}) - \mathbf{B} \times (\mathbf{E} +\mathbf{v} \times \mathbf{B}) \Bigg\} - \frac{\mu_0q^{4} \gamma^2}{6\pi m^{2}c^{3}} \Bigg[\left( \mathbf{E} + \mathbf{v} \times \mathbf{B} \right)^{2} - \frac{1}{c^{2}} (\mathbf{E} \cdot \mathbf{v})^{2} \Bigg] \mathbf{v} .
+ \left\{ \left( \frac{\partial}{\partial t} + \mathbf{v} \cdot \nabla \right)(\mathbf{E}+\mathbf{v} \times \mathbf{B}) \right\} + \frac{\mu_0q^{4}}{6\pi m^{2}c} \left\{\frac{1}{c^2} \mathbf{E} (\mathbf{v} \cdot \mathbf{E}) - \mathbf{B} \times (\mathbf{E} +\mathbf{v} \times \mathbf{B}) \right\} - \frac{\mu_0q^{4} \gamma^2}{6\pi m^{2}c^{3}} \left\{\left( \mathbf{E} + \mathbf{v} \times \mathbf{B} \right)^{2} - \frac{1}{c^{2}} (\mathbf{E} \cdot \mathbf{v})^{2} \right\} \mathbf{v} .
 \quad (1)
 $$
 
@@ -105,7 +105,7 @@ and **distribution scaling** non-scaled (f) or scaled ($g=p^{\alpha}f$).
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \left\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -119,7 +119,7 @@ $$
   \left(4 \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-4\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \right\}.
 \end{split}
 \quad (15)
 $$
@@ -128,7 +128,7 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \left\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -142,7 +142,7 @@ $$
   \left(4 \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-4\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \right\}.
 \end{split}
 \quad (16)
 $$
@@ -151,7 +151,7 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \left\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -165,7 +165,7 @@ $$
   \left((4-\alpha) \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-(4-\alpha)\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \right\}.
 \end{split}
 \quad (17)
 $$
@@ -174,7 +174,7 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
+& \frac{3}{2 \underline{\tau_R}} \frac{q^4}{m^3} \left\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
 \left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \!\right]\!
 \zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
@@ -188,7 +188,7 @@ $$
   \left((4-\alpha) \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   +\left(\frac{3}{2 \gamma}-(4-\alpha)\gamma\right)B^2\mathbf{1}
 \!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
+\zeta_{j}\boldsymbol{\Phi}_{j} \right\}.
 \end{split}
 \quad (18)
 $$
