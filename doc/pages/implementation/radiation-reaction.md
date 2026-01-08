@@ -220,11 +220,11 @@ $$
 \quad (21)
 $$
 
-Let $g_0=p^3 f_0$. Using $\gamma^2\beta \simeq (p/mc)^2$, Eq. (10) reduces to an advection–reaction
+Using $\gamma^2\beta \simeq (p/mc)^2$, Eq. (20) reduces to an advection–reaction
 equation in $p$ with solution (characteristics)
 
 $$
-g_0(t,p)=k\!\left(\frac{p}{1-t/t_{\rm cool}}\right)\,\frac{1}{1-t/t_{\rm cool}},\qquad
+p^3 f_0(t,p)=k\!\left(\frac{p}{1-t/t_{\rm cool}}\right)\,\frac{1}{1-t/t_{\rm cool}},\qquad
 t_{\rm cool}=\frac{3(m c)^2}{2\sigma B^2 p}
 =\frac{9\pi m^3 c}{\mu_0 e^4 B^2\,\gamma}\ \text{(SI)}.
 \quad (22)
@@ -233,14 +233,12 @@ $$
 ### l=1 anisotropy (no rotation)
 
 Writing $\mathbf{f}_1=(f_{1x},f_{1y},f_{1z})^\top$ and diagonalising $B\otimes B=\mathbf{V}\Lambda\mathbf{V}^\top$,
-the rotated components $\tilde{\mathbf{f}}_1=\mathbf{V}^\top\mathbf{f}_1$ decouple. Each component’s scaled
-variable $g_{1i}=p^3\tilde f_{1i}$ obeys a scalar advection–reaction equation with coefficients set by
-the eigenvalue $\lambda_i$.
+the rotated components $\tilde{\mathbf{f}}_1=\mathbf{V}^\top\mathbf{f}_1$ decouple.
 
 ### Including rotation (gyromotion) and complexification
 
 Rotation couples the real pair $(f_{110},f_{111})$ through $\omega_g=eB/(\gamma m)$.
-Defining $f_\perp=f_{110}+i f_{111}$ and $g_\perp=p^3 f_\perp$ yields a single complex advection–reaction
+Defining $f_\perp=f_{110}+i f_{111}$ yields a single complex advection–reaction
 equation with a $-i\omega_g f_\perp$ term; the cooled spectrum is modulated by phase rotation at
 $\omega_g$.
 
@@ -248,7 +246,7 @@ $\omega_g$.
 
 ### 1) Pure cooling, isotropic test
 
-We compare numerical $g_0(t,p)$ against Eq. (5) for uniform $B$, $p\in[p_{\min},p_{\max}]$,
+We compare numerical $f_0(t,p)$ against Eq. (22) for uniform $B$, $p\in[p_{\min},p_{\max}]$,
 and initial $k(p)=p^{-1}\exp(-p/p_{\max})$ (i.e. $f_0\propto p^{-4}$ with cutoff; scaling index $\alpha=3$).
 The numerical curve follows the analytic cooling trajectory exactly.
 
