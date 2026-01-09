@@ -100,9 +100,9 @@ namespace sapphirepp
        * @return std::string String representation of the list of tensors.
        */
       template <typename Container, unsigned int dim>
-      std::enable_if_t<std::is_same_v<typename Container::value_type,
-                                      dealii::Tensor<1, dim, double>>,
-                       std::string>
+        requires std::is_same_v<typename Container::value_type,
+                                dealii::Tensor<1, dim, double>>
+      std::string
       tensor_list_to_string(const Container &values)
       {
         std::string s;

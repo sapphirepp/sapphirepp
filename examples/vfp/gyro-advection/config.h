@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -97,7 +98,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      B0    = prm.get_double("B0/2pi") * 2. * M_PI;
+      B0    = prm.get_double("B0/2pi") * 2. * std::numbers::pi;
       u0    = prm.get_double("u0");
       sigma = prm.get_double("sigma");
       /** [Parse runtime parameter] */

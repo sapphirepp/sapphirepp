@@ -6,31 +6,37 @@ It applies the discontinuous Galerkin method. This means that it computes a weak
 Consequently, the prescribed boundary conditions also only hold weakly,
 i.e. almost everywhere on the boundary of the computational domain.
 
-For example, the weak formulation of a steady-state advection-reaction equation, i.e.
+For example, consider a steady-state advection-reaction equation, i.e.
 
 $$
-\begin{split}
- \boldsymbol{\beta}(\mathbf{x}) \cdot \nabla f  + r(\mathbf{x}) f &= s(\mathbf{x}) \, ,\\
- f & = h \text{ on } \partial D^{-} \, ,
-\end{split}
+\begin{align*}
+ \boldsymbol{\beta}(\mathbf{x}) \cdot \nabla f  + r(\mathbf{x}) f &= s(\mathbf{x}) && \text{ in } D \, ,\\
+ f & = h && \text{ on } \partial D^{-} \, ,
+\end{align*}
 $$
 
-where $D^{-} \equiv \{x \in D \mid \boldsymbol{\beta} \cdot \nabla \mathbf{n} < 0 \}$ is the inflow boundary, is
+where
+$\partial D^{-} \equiv \{x \in \partial D \mid \boldsymbol{\beta} \cdot \mathbf{n} < 0 \}$
+is the inflow boundary.
+Its weak formulation is
 
 $$
- \text{Find f} \in V \text{ subject to } a(f,w) = \int_D s w \, \mathrm{d}^3 x - \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w \, \mathrm{d}A
+ \text{Find f} \in V \text{ subject to } \quad
+ a(f,w) = \int_D s w \, \mathrm{d}^3 x - \int_{\partial D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) h w \, \mathrm{d}A
  \quad \text{ for all } w \in V
 $$
 
 with
 
 $$
- a(f,w) \equiv \int_D \left( \boldsymbol{\beta} \cdot \nabla f \right) w \, \mathrm{d}^3 x + \int_D r \nabla f w \, \mathrm{d}^3 x - \int_{D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) f w \, \mathrm{d}A \,.
+ a(f,w) \equiv \int_D \left( \boldsymbol{\beta} \cdot \nabla f \right) w \, \mathrm{d}^3 x
+  + \int_D r f w \, \mathrm{d}^3 x
+  - \int_{\partial D^-} \left(\boldsymbol{\beta} \cdot \mathbf{n} \right) f w \, \mathrm{d}A \,.
 $$
 
 Note the boundary condition enters the weak formulation, i.e. it enters as an integral,
 which implies that it holds almost everywhere,
-see equations (2.13) -- (2.16) and eq. (2.21) in @cite Pietro_MathematicalAspectsDG .
+see equations (2.13) -- (2.16) and eq. (2.21) in @cite Pietro_MathematicalAspectsDG.
 Moreover, the boundary condition prescribe the inflow,
 namely $(\boldsymbol{\beta} \cdot \mathbf{n} )f$, only.
 The outflow is a consequence of the problem itself, e.g. of the flow field $\boldsymbol{\beta}$,
@@ -59,15 +65,29 @@ The salient point is that in the case of a system of equations, there will be in
 _and_ outflowing ($\boldsymbol{\Lambda}^{+}$) components,
 depending on the normal $\mathbf{n}$ of the boundary and the advection matrices $\boldsymbol{\beta}$. The outflow is determined by the values of the expansion coefficients $\mathbf{f}$ on the "inner" side of the boundary surface and cannot be prescribed. The inflow is determined by the values of $\mathbf{h}$ on the "outer" side of the boundary surface and can be user defined. Different boundary conditions result from the different choices for $\mathbf{h}$ . For example, if $\mathbf{h} = 0$, we speak of a _zero inflow_ or _outflow_ boundary conditions.
 
-In the next sections, we go through possible choices for $\mathbf{h}$ and illustrate their consequences by means of examples.
+An alternative choice for the flux is the simpler (local) Lax-Friedrichs flux,
+see e.g.  @cite Cockburn_IntroductionToDGConvectionDominated p. 204
+or @cite Pietro_MathematicalAspectsDG eq. 2.35.
+It is also implemented in @sapphire.
+We note that the upwind (or Godunov) flux, as shown in the above equation,
+uses the characteristic variables on the boundary (see Sec. [Inflow](#inflow-bc)),
+whereas the Lax-Friedrich flux uses the expansion coefficients $f_{lms}$ itself.
+We think that this leads to a more diffusive flux,
+e.g. it allows information to propagate against the flow direction.
+An effect that may be relevant for inflow and/or outflow boundary conditions.
+A typical consequence is a "zig-zagging" solution at the boundary.
+Though, we believe that the solution's qualitative behaviour is correct.
 
-## Inflow and zero inflow (outflow) boundary conditions
+In the next sections, we go through possible choices for $\mathbf{h}$
+and illustrate their consequences by means of examples.
+
+## Inflow and zero inflow (outflow) boundary conditions {#inflow-bc}
 
 Inflow boundary conditions results from setting $\mathbf{h}$ independently from $\mathbf{f}$.
 For example, we may choose the zeroth component of $\mathbf{h}$ to be a constant in space and time;
 setting $h_0 = \sqrt{4 \pi}$ at $x = -L$,
 enforces an inflow that stems from an isotropic distribution $f$ of value $1$
-at the left $x$ boundary located at $-L$.
+at the left $x$-boundary located at $-L$.
 Since the distribution function $f$ is isotropic at the boundary,
 we expect that half of the particles, namely all particles with $\theta < \pi/2$,
 enter the computational domain.
@@ -85,17 +105,18 @@ $$
 $$
 where $\mathbf{f}^{-}$ denotes the inflowing components of the expansion coefficients.
 
-To determine the inflow , namely the flux through the boundary at $x = -L$, we integrate
-over a small control volume, e.g. $[-L, -L + \epsilon]$, close to the boundary:
+To determine the inflow, namely the flux through the boundary at $x = -L$,
+we integrate the spatial advection term over a small control volume close to the boundary,
+e.g. $[-L, -L + \epsilon]$,:
 
 $$
- \frac{\partial }{\partial t} \int^{-L + \epsilon}_{-L} \mathbf{f} \, \mathrm{d} x
- + v \mathbf{A}_x \mathbf{f} \Big |^{-L + \epsilon}_{-L} \,.
+  \int^{-L + \epsilon}_{-L} v \mathbf{A}_x \partial_{x} \mathbf{f} \, \mathrm{d} x
+ =  v \mathbf{A}_x \mathbf{f} \Big |^{-L + \epsilon}_{-L} \,.
 $$
 
-At $x = -L$ , we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
+At $x = -L$, we have $- v \mathbf{A}_x \mathbf{f}(t, x = -L)$.
 We emphasise that, in the case of a multidimensional problem,
-the minus is consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
+the minus is a consequence of the outward pointing normal $\mathbf{n}$ of the boundary surface.
 If we diagonalize $- v \mathbf{A}_x$, i.e.
 
 $$
@@ -103,11 +124,11 @@ $$
  = \mathbf{V}_x \left(\boldsymbol{\Lambda}^{+}_{x} + \boldsymbol{\Lambda}^{-}_x \right) \mathbf{V}^{T}_x \,,
 $$
 we can distinguish between inflowing components,
-i.e. the flow is in the opposite direction of $\mathbf{n}$
-and they correspond to the negative eigenvalues $\boldsymbol{\Lambda}^{-}_{x}$,
-and the outflowing component belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$.
+i.e. the flow is in the opposite direction of $\mathbf{n}$,
+corresponding to the negative eigenvalues $\boldsymbol{\Lambda}^{-}_{x}$
+and the outflowing components belonging to the positive eigenvalues $\boldsymbol{\Lambda}^{+}_{x}$.
 This distinction may become clearer
-when looking at the following transformation of the above system of PDEs
+when we look at the following transformation of the above system of PDEs
 
 $$
  \frac{\partial \tilde{\mathbf{f}}}{\partial t}
@@ -136,6 +157,12 @@ $$
 
 where $\boldsymbol{\mathbb{1}}^{-}$ is a matrix with ones on the diagonal
 where the diagonal elements of $\boldsymbol{\Lambda}^{-}_{x}$ are non-zero.
+We emphasise that $\mathbf{f}^{-}$ always denotes the inflowing components,
+because the computation of $\boldsymbol{\Lambda}^{-}$
+includes the normal $\mathbf{n}$ of the boundary surface.
+A fact that is hidden in the above computation, because of its restriction to one dimension.
+For, a multiple dimensional variant see eq. (29)
+and the paragraph before eq. (35) in @cite Schween2025
 
 We wrap up and use the boundary condition $h_0 = \sqrt{4 \pi}$ at $x = -L$ in @sapphire
 and compare it to the analytical solution.
@@ -192,10 +219,10 @@ This means that we would need an infinite angular resolution to capture it exact
 
 In applications, the last statement is crucial.
 If there is no scattering, the expansion order must be very high.
-A fact that becomes clear when we reconstruct phase space at some point $x$
-after steady state has been reached:
+A fact that becomes clear when we reconstruct the phase-space distribution $f$ at some point $x$
+after the steady state has been reached:
 
-The plot compares the phase space reconstruction for $l_{\mathrm{max}} = 9$
+The plot compares the phase-space reconstruction for $l_{\mathrm{max}} = 9$
 and $l_{\mathrm{max}} = 63$.
 
 <p float="left">
@@ -208,13 +235,15 @@ Moreover, if there is no scattering
 a difference between odd and even $l_{\mathrm{max}}$ can be observed,
 for details see Sec. 2 in  @cite Garret2016.
 
-To conclude we look at the same example,
-but we include scattering, we directly compute the steady-state solution
-and use the zero inflow boundary condition.
-We solve
+To conclude we look at the same example, but we include scattering.
+We directly compute the steady-state solution
+and use the zero inflow boundary condition at the right boundary of the domain.
+The resulting system is
 
 $$
-  v \mathbf{A}_x \partial_x \mathbf{f} = \nu \mathbf{C} \quad \text{with } \mathbf{f}^{-}(x = -L) = \mathbf{h}^{-} \text{ and } \mathbf{f}^{-}(x = L) = \mathbf{0}  \,.
+  v \mathbf{A}_x \partial_x \mathbf{f} = \nu \mathbf{C}
+  \quad \text{with } \mathbf{f}^{-}(x = -L) = \mathbf{h}^{-}
+  \text{ and } \mathbf{f}^{-}(x = L) = \mathbf{0}  \,.
 $$
 
 For $l_{\mathrm{max}} = 1$, the explicit system of equations is
@@ -246,7 +275,8 @@ f_{111}  &= 0 \\
 \end{split}
 $$
 
-For the boundary conditions, we again set $h_{0} = \sqrt{4 \pi}$ and use the eigenvectors $\mathbf{V}_{x}$ to see that
+For the boundary conditions, we again set $h_{0} = \sqrt{4 \pi}$
+and use the eigenvectors $\mathbf{V}_{x}$ to see that
 
 $$
 \mathbf{f}^{-}(x = -L) = \frac{1}{2}
@@ -282,7 +312,10 @@ $$
 \end{pmatrix}
 $$
 
-This can be condensed into the two boundary conditions $ f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$ and $f_{000} = f_{100}$ at $x = L$, which determine the two constants $c_{0}$ and $c_{1}$.
+This can be condensed into the two boundary conditions
+$f_{000} + f_{100} = 2\sqrt{\pi}$ at $x = -L$
+and $f_{000} = f_{100}$ at $x = L$,
+which determine the two constants $c_{0}$ and $c_{1}$.
 The solution is
 
 $$
@@ -292,7 +325,8 @@ $$
 \end{split}
 $$
 
-The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt{8}/3$) and the analytical solution match, i.e.
+The following plot shows that the @sapphire solution ($\nu = 0.1$ and $v = \sqrt{8}/3$)
+and the analytical solution match, i.e.
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-bc-steady-state-l1.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to one expansion" width="60%"/>
@@ -303,12 +337,14 @@ $f(x = L, \cos\theta) = f_{000}(x = L) Y_{000} + f_{100}(x=L) Y_{100}(\cos\theta
 results in a negative distribution function, because $f_{000}$ and $f_{100}$ must equal.
 A higher expansion order $l_{\mathrm{max}}$ results in a positive distribution function.
 Additionally, the anisotropies resulting from an inflow produced by an isotropic distribution $f$
-are reduced by the included scattering. This is shown in the following plots:
+are reduced by the included scattering term.
+This is shown in the following plots:
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-plus-scattering.png" alt="Inflow boundary conditions for a steady-state solution using an lmax equal to twelve" width="60%"/>
 </CENTER>
 
+The solid lines show the @sapphire solution using an expansion order $l_{\mathrm{max}} = 12$.
 Note that we enlarged the computational domain, namely $L = 10$.
 At the boundaries $x=-L$ and $x=L$,  the distribution function $f$ is
 
@@ -316,6 +352,10 @@ At the boundaries $x=-L$ and $x=L$,  the distribution function $f$ is
   <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-scattering-phase-space-left.png" width="48%" />
   <img src="https://sapphirepp.org/img/implementation/boundary-conditions/inflow-scattering-phase-space-right.png" width="48%" />
 </p>
+
+Note even though $f_{000}(L) = f_{100}(L)$ is still true for the $l_{\mathrm{max}}=12$ expansion,
+the reconstructed phase-space distribution $f$ is positive.
+This is possible, because the spherical harmonic expansion of $f$ now includes terms with $l > 1$.
 
 ## Reflecting boundary conditions
 
@@ -377,7 +417,7 @@ $$
 
 is a diagonal matrix with ones and minus ones.
 For more details on representation matrices in the context of @sapphire,
-we refer the reader to @cite Schween2024a .
+we refer the reader to @cite Schween2024a.
 
 The boundary distribution function $\mathbf{h}$ is then computed via
 
@@ -496,7 +536,7 @@ which gyrate about an out-of-plane magnetic field.
 The corresponding set of partial differential equations is
 
 $$
- \frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \frac{\partial f}{\partial x}
+ \frac{\partial \mathbf{f}}{\partial t} + v \mathbf{A}_x \frac{\partial \mathbf{f}}{\partial x}
  - \omega_y \boldsymbol{\Omega}_{y}\mathbf{f} = \mathbf{0}
  \quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right)
 $$
@@ -529,7 +569,7 @@ $$
 \mathbf{h}\big|_{x = - L} = \mathbf{f}_{h} \big |_{x = L} \,.
 $$
 
-A way to demonstrate the periodic boundary conditions is to led an initially isotropic
+A way to demonstrate the periodic boundary conditions is to let an initially isotropic
 and mono-energetic particle distribution evolve in a background plasma flow
 that advects the particles towards the boundaries of the computational domain.
 To this end, we solve
@@ -538,9 +578,11 @@ $$
  + \left(u \boldsymbol{\mathbb{1}} + v\mathbf{A}_x\right) \frac{\partial \mathbf{f}}{\partial x} = - \nu \mathbf{C} \mathbf{f}
  \quad \text{with } f_{000}(t = 0, x) = \frac{\sqrt{2}}{\sigma_{x}} \exp\left(-x^2 \right) \,,
 $$
-where chose a scattering frequency $\nu$ to such that the Gaussian distribution spreads slowly in comparison to the crossing time $2 L/u$.
+where chose a scattering frequency $\nu$
+such that the Gaussian distribution spreads slowly in comparison to the crossing time $2 L/u$.
 
-The results are shown in the following animation:
+To demonstrate the effect of the periodic boundary conditions,
+we plot the temporal evolution of $f_{000}$ and $f_{100}$ repeatedly:
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/boundary-conditions/periodic-bc.gif" alt="Demonstration of the periodic boundary conditions." width="60%"/>

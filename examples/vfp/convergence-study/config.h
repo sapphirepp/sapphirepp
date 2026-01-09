@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -93,7 +94,7 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Parse runtime parameter] */
-      B0 = prm.get_double("B0/2pi") * 2. * M_PI;
+      B0 = prm.get_double("B0/2pi") * 2. * std::numbers::pi;
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -155,8 +156,8 @@ namespace sapphirepp
         f = 0; // Initialize to zero
         for (unsigned int n = 0; n < 2; ++n)
           {
-            const double k_n = n * 2. * M_PI / prm.box_length;
-            const double c_n = prm.velocity / std::sqrt(3.) * k_n;
+            const double k_n = n * 2. * std::numbers::pi / prm.box_length;
+            const double c_n = prm.velocity / std::numbers::sqrt3 * k_n;
 
             // f_000
             f[0] +=

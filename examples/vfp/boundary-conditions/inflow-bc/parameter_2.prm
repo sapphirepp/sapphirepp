@@ -2,50 +2,43 @@ subsection Physical parameters
   set f0 = 1.
   set nu = 0.1
 end
-
 subsection Output
   set Results folder               = ./results
-  set Simulation identifier        = non-homogeneous-bc-steady-state-l12-larger-domain
+  set Simulation identifier        = inflow-bc-steady-state
   set Base file name               = solution
   set Format                       = vtu
-  set Output frequency             = 2	
+  set Output frequency             = 100
 end
-
 subsection VFP
   subsection Expansion
-    set Expansion order = 12
-    # set Expansion order = 5
+    set Expansion order = 1
+    # set Expansion order = 12
   end
-
   subsection Finite element
     set Polynomial degree = 1
   end
-
   subsection Mesh
-    set Grid type = Hypercube
+    set Grid type       = Hypercube
+    set Point 1         = -0.5
+    set Point 2         = 0.5
     set Number of cells = 256
-    set Point 1         = -10
-    set Point 2         = 10
     subsection Boundary conditions
       set lower x = inflow
       set upper x = zero inflow
     end
   end
-
   subsection Time stepping
     set Final time     = 10
     set Method         = ERK4
-    set Time step size = 0.005
+    set Time step size = 0.001
   end
-  
   subsection TransportOnly
     set Gamma = 3.
   end
-  
   subsection Probe location
    # List of points in the reduced phase space to probe.The points should be
    # provided as a semicolon-separated list, e.g., 1,1,1; 2,2,2.
-   set points                 = -10;10
+   set points                 = -0.5;0.5
    # Perform phase space reconstruction for f(cos theta, phi)?
    set Perform reconstruction = true
    # Number of cos theta points for phase space reconstruction.
@@ -54,4 +47,3 @@ subsection VFP
    set n_phi                  = 100
  end
 end
-

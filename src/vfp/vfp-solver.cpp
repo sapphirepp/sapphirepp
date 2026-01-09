@@ -472,13 +472,6 @@ sapphirepp::VFP::VFPSolver<dim>::make_grid()
         AssertThrow(false, ExcNotImplemented());
     }
 
-  // GridGenerator::hyper_cube(triangulation, -5., 5., colorize);
-  // triangulation.refine_global(6);
-  saplog << "The grid was created: "
-         << "	#cells=" << triangulation.n_cells()
-         << ",	#active cells=" << triangulation.n_global_active_cells()
-         << std::endl;
-
   // Periodic boundary conditions with MeshWorker. Mailing list
   // https://groups.google.com/g/dealii/c/WlOiww5UVxc/m/mtQJDUwiBQAJ
   //
@@ -507,6 +500,14 @@ sapphirepp::VFP::VFPSolver<dim>::make_grid()
         }
     }
   triangulation.add_periodicity(matched_pairs);
+
+
+  triangulation.refine_global(vfp_parameters.global_grid_refinement);
+
+  saplog << "The grid was created: "
+         << "	#cells=" << triangulation.n_cells()
+         << ",	#active cells=" << triangulation.n_global_active_cells()
+         << std::endl;
 }
 
 
@@ -2158,7 +2159,7 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                            c.local_dof_indices,
                                            dg_matrix,
                                            locally_owned_current_bc);
-    for (auto &cdf : c.face_data)
+    for (const auto &cdf : c.face_data)
       {
         for (unsigned int i = 0; i < cdf.local_dof_indices.size(); ++i)
           for (unsigned int j = 0; j < cdf.local_dof_indices.size(); ++j)

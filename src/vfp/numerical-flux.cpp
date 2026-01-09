@@ -196,9 +196,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
         }
       else
         {
-          std::fill(particle_velocities.begin(),
-                    particle_velocities.end(),
-                    velocity);
+          std::ranges::fill(particle_velocities, velocity);
         }
       // Compute flux at every quadrature point
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)
@@ -283,9 +281,7 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
         }
       else
         {
-          std::fill(particle_velocities.begin(),
-                    particle_velocities.end(),
-                    velocity);
+          std::ranges::fill(particle_velocities, velocity);
         }
 
       for (unsigned int q_index = 0; q_index < q_points.size(); ++q_index)

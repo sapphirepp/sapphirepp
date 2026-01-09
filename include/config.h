@@ -38,6 +38,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -499,7 +500,7 @@ namespace sapphirepp
                 // shifted Gaussian in x and p
                 // s_000 = sqrt(4 pi) * s
                 source_values[i] =
-                  Q / (std::sqrt(M_PI) * sig_p * sig_x) *
+                  Q / (std::sqrt(std::numbers::pi) * sig_p * sig_x) *
                   std::exp(-(p - p0) * (p - p0) / (2. * sig_p * sig_p)) *
                   std::exp(-x * x / (2. * sig_x * sig_x));
               }

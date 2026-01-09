@@ -37,6 +37,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -71,7 +72,7 @@ namespace sapphirepp
       prm.add_parameter("nu", nu, "Scattering frequency");
       prm.add_parameter("f0",
                         f0,
-                        "Initial value of the expansion coefficients");
+                        "Left hand boundary value of f_000, divided by 4pi");
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -108,8 +109,10 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution | //
-                                   VFPFlags::spatial_advection;
+    constexpr VFPFlags vfp_flags =
+      VFPFlags::time_evolution |    // Can be deactivated for scattering example
+      VFPFlags::spatial_advection | //
+      VFPFlags::collision;
     /** [VFP Flags] */
 
 
@@ -177,7 +180,7 @@ namespace sapphirepp
           {
             /** [Boundary value] */
             if (boundary_id == 0)
-              bc_values[q_index][0] = std::sqrt(4 * M_PI);
+              bc_values[q_index][0] = std::sqrt(4 * std::numbers::pi) * prm.f0;
             /** [Boundary value] */
           }
       }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 set(DEAL_II_MIN_VERSION "9.6.0")

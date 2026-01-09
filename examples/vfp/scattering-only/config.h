@@ -38,6 +38,7 @@
 #  include <deal.II/lac/vector.h>
 
 #  include <cmath>
+#  include <numbers>
 #  include <vector>
 
 #  include "pde-system.h"

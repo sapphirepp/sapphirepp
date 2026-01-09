@@ -31,6 +31,8 @@
 
 #include <mpi.h>
 
+#include <numbers>
+
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
@@ -86,14 +88,15 @@ namespace sapinternal
 
       f = 0;
 
-      f[0] = 3. * prm.Q / (std::sqrt(4 * M_PI) * u * p0 * p0 * p0) * r /
-             (r - 1.) * std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0))) *
+      f[0] = 3. * prm.Q / (std::sqrt(4 * std::numbers::pi) * u * p0 * p0 * p0) *
+             r / (r - 1.) *
+             std::exp(-3 * r / (r - 1.) * (log_p - std::log(p0))) *
              std::exp(3 * log_p);
 
       if (x < 0.)
         {
           f[0] *= std::exp(3 * u * nu / (v * v) * x);
-          f[2] = f[0] * (-3. * u / v) / std::sqrt(3);
+          f[2] = f[0] * (-3. * u / v) / std::numbers::sqrt3;
         }
     }
 

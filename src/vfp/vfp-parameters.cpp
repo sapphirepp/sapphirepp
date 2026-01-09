@@ -88,6 +88,15 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                                    "40, 40, 40",
                       Patterns::List(Patterns::Integer(1), dim, dim, ","),
                       "Number of cells in each coordinate direction");
+    prm.add_parameter("Global grid refinement",
+                      global_grid_refinement,
+                      "Refine the grid after creation. \n"
+                      "The number of cells in each direction is \n"
+                      "$n_i = n_{i, old} x 2^{global_grid_refinement}$, \n"
+                      "where $n_{i, old}$ is the unrefined number of cells, \n"
+                      "given by 'Number of cells'. \n"
+                      "Note, refining the grid after creation is much faster "
+                      "than directly creating large grids.");
 
     prm.declare_entry("Number of shock cells",
                       "8",
