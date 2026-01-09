@@ -1,2 +1,0 @@
-add_executable(synchrotron-radiation synchrotron-radiation.cpp)
-sapphirepp_setup_target_vfp(synchrotron-radiation)

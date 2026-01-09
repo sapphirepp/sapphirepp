@@ -64,7 +64,7 @@ namespace sapphirepp
      *           \big((\boldsymbol{\beta}\cdot\mathbf{B})^{2} - B^{2}\big)
      *       \Big)\, f
      *     \right)
-     *   & \text{(synchrotron term)} \\
+     *   & \text{(radiation reaction term)} \\
      *   = & \frac{\nu}{2} \Delta_{\theta, \varphi} f
      *   & \text{(collision term)} \\
      *   & + S \,. & \text{(source term)} \\
@@ -152,7 +152,7 @@ namespace sapphirepp
       local_lax_friedrichs_flux = 1 << 10,
 
       /**
-       * Activate the synchrotron radiation term
+       * Activate the radiation reaction term
        * \f$ + \nabla_{p} \cdot
        *   \left(
        *     \sigma \Big(
@@ -163,7 +163,7 @@ namespace sapphirepp
        *   \right)
        * \f$
        */
-      synchrotron = 1 << 11
+      radiation_reaction = 1 << 11
     };
 
 
@@ -245,8 +245,8 @@ namespace sapphirepp
         os << "	 - Local Lax-Friedrichs Flux\n";
       else
         os << "	 - Upwind Flux\n";
-      if ((f & VFPFlags::synchrotron) != VFPFlags::none)
-        os << "	 - Synchrotron radiation term\n";
+      if ((f & VFPFlags::radiation_reaction) != VFPFlags::none)
+        os << "	 - Radiation reaction term\n";
 
       return os;
     }

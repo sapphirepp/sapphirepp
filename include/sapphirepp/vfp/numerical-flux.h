@@ -201,9 +201,9 @@ namespace sapphirepp
       const double charge;
       // TransportOnly
       const double velocity;
-      // Precomputed dimensionless synchrotron coefficient
-      // (3/2)*(t0/tau_s)*(q^4/m^3)
-      const double synchrotron_coeff;
+      // Precomputed dimensionless radiation reaction coefficient
+      // (3/2)*(t0/tau_R)*(q^4/m^3)
+      const double radiation_reaction_coeff;
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:

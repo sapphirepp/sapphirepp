@@ -52,8 +52,8 @@ namespace sapphirepp
      * | Velocity | \f$ v^{*} = v/v_{0} \f$        | \f$ v_0 = c\f$                             |
      *
      * Note the reference values are **only** used for the
-     * @ref VFPFlags::synchrotron "synchrotron radiation" term.
-     * If the synchrotron term is deactivated,
+     * @ref VFPFlags::radiation_reaction "radiation reaction" term.
+     * If the radiation reaction term is deactivated,
      * they are **not** used when solving the VFP equation.
      * They are useful in post-processing the solution
      * to produce physical results.
@@ -125,12 +125,12 @@ namespace sapphirepp
       double vacuum_permeability;
 
       /**
-       * Synchrotron characteristic time \f$ \tau_s \f$ in seconds,
+       * Radiation reaction characteristic time \f$ \tau_R \f$ in seconds,
        * \f$
-       *    \tau_s = \frac{9 \pi m_{0}^3 v_{0}}{\mu_{0} q_{0}^4 t_{0} B_{0}^2}
+       *    \tau_R = \frac{9 \pi m_{0}^3 v_{0}}{\mu_{0} q_{0}^4 t_{0} B_{0}^2}
        * \f$.
        */
-      double synchrotron_characteristic_time;
+      double radiation_reaction_characteristic_time;
 
       /** Conversion of parsec to meter. */
       const double parsec_to_m = 3.0857e16;
@@ -166,8 +166,8 @@ namespace sapphirepp
          << " eV/c \n"
          << " Vacuum permeability: " << reference_values.vacuum_permeability
          << " N/A^2 \n"
-         << " Synchrotron characteristic time: "
-         << reference_values.synchrotron_characteristic_time << " s \n";
+         << " Radiation reaction characteristic time: "
+         << reference_values.radiation_reaction_characteristic_time << " s \n";
       return os;
     }
   } // namespace VFP

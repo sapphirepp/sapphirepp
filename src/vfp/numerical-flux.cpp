@@ -76,8 +76,9 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   , mass(solver_control.mass)
   , charge(solver_control.charge)
   , velocity(solver_control.velocity)
-  , synchrotron_coeff(
-      1.5 / solver_control.reference_units.synchrotron_characteristic_time *
+  , radiation_reaction_coeff(
+      1.5 /
+      solver_control.reference_units.radiation_reaction_characteristic_time *
       std::pow(charge, 4) / std::pow(mass, 3))
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
@@ -813,7 +814,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
              (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
              (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]);
 
-          if constexpr ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
+          if constexpr ((vfp_flags & VFPFlags::radiation_reaction) !=
+                        VFPFlags::none)
             {
               double magnetic_quadratic_form =
                 (magnetic_field_vec[0] * magnetic_field_vec[0]) *
@@ -835,8 +837,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                    magnetic_field_vec[1] * magnetic_field_vec[1] +
                    magnetic_field_vec[2] * magnetic_field_vec[2]);
 
-              matrix_sum[i] +=
-                n_p * synchrotron_coeff * gamma * magnetic_quadratic_form;
+              matrix_sum[i] += n_p * radiation_reaction_coeff * gamma *
+                               magnetic_quadratic_form;
             }
         }
     }
@@ -858,7 +860,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                 (jacobian[0][2] + jacobian[2][0]) * adv_mat_products[2][i] +
                 (jacobian[1][2] + jacobian[2][1]) * adv_mat_products[4][i]));
 
-          if constexpr ((vfp_flags & VFPFlags::synchrotron) != VFPFlags::none)
+          if constexpr ((vfp_flags & VFPFlags::radiation_reaction) !=
+                        VFPFlags::none)
             {
               double magnetic_quadratic_form =
                 (magnetic_field_vec[0] * magnetic_field_vec[0]) *
@@ -880,8 +883,8 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
                    magnetic_field_vec[1] * magnetic_field_vec[1] +
                    magnetic_field_vec[2] * magnetic_field_vec[2]);
 
-              matrix_sum[i] += n_p * synchrotron_coeff * gamma * momentum *
-                               magnetic_quadratic_form;
+              matrix_sum[i] += n_p * radiation_reaction_coeff * gamma *
+                               momentum * magnetic_quadratic_form;
             }
         }
     }

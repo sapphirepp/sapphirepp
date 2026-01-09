@@ -184,7 +184,7 @@ namespace sapphirepp
                                    VFPFlags::collision |         //
                                    VFPFlags::rotation |          //
                                    VFPFlags::source |            //
-                                   VFPFlags::synchrotron |
+                                   VFPFlags::radiation_reaction |
                                    VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 

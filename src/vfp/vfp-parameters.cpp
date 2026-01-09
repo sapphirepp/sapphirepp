@@ -465,16 +465,16 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
     reference_units.time     = 1. / reference_units.frequency;
     reference_units.momentum = reference_units.mass * reference_units.velocity;
 
-    reference_units.synchrotron_characteristic_time =
+    reference_units.radiation_reaction_characteristic_time =
       (9.0 * M_PI * std::pow(reference_units.mass, 3) *
        reference_units.velocity) /
       (reference_units.vacuum_permeability *
        std::pow(reference_units.charge, 4) * reference_units.time *
        std::pow(reference_units.magnetic_field_strength, 2));
     AssertThrow(std::isfinite(
-                  reference_units.synchrotron_characteristic_time) &&
-                  reference_units.synchrotron_characteristic_time > 0.0,
-                dealii::ExcMessage("tau_s not finite/positive"));
+                  reference_units.radiation_reaction_characteristic_time) &&
+                  reference_units.radiation_reaction_characteristic_time > 0.0,
+                dealii::ExcMessage("tau_R not finite/positive"));
   } // Reference units
   prm.leave_subsection();
 

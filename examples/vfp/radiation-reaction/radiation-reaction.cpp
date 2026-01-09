@@ -20,10 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/synchrotron-radiation/synchrotron-radiation.cpp
+ * @file examples/vfp/radiation-reaction/radiation-reaction.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
- * @brief Implement main function for synchrotron-radiation example
+ * @brief Implement main function for radiation-reaction example
  */
 
 #include <deal.II/base/mpi.h>

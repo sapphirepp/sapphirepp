@@ -20,10 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/synchrotron-radiation/config.h
+ * @file examples/vfp/radiation-reaction/config.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
- * @brief Implement physical setup for synchrotron-radiation example
+ * @brief Implement physical setup for radiation-reaction example
  */
 
 #ifndef CONFIG_H
@@ -137,9 +137,10 @@ namespace sapphirepp
     /** Specify which terms of the VFP equation should be active */
     constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |               //
                                    VFPFlags::momentum |                     //
-                                   VFPFlags::synchrotron |                  //
+                                   VFPFlags::radiation_reaction |           //
                                    VFPFlags::spatial_advection |            //
                                    VFPFlags::scaled_distribution_function | //
+                                   VFPFlags::rotation |                     //
                                    VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
@@ -167,12 +168,10 @@ namespace sapphirepp
         /** [Initial value] */
         double p     = std::exp(point[0]) / 1e6;
         double p_max = (0.5 * 1e7) / 1e6;
-        f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_000
-        f[2] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
-               std::exp(-p / p_max); // f_100
-        // f[1] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) *
-        //        std::exp(-p / p_max); // f_110 f[3] = 0.5 * 1/std::sqrt(3) *
-        // std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_111
+        // f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_000
+        // f[2] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_100
+        f[1] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_110 
+        f[3] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_111
         /** [Initial value] */
       }
 
