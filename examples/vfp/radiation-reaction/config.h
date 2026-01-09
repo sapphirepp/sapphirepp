@@ -38,6 +38,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include "pde-system.h"
@@ -168,10 +169,14 @@ namespace sapphirepp
         /** [Initial value] */
         double p     = std::exp(point[0]) / 1e6;
         double p_max = (0.5 * 1e7) / 1e6;
-        // f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_000
-        // f[2] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_100
-        f[1] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_110 
-        f[3] = 0.5 * 1 / std::sqrt(3) * std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max); // f_111
+        // f_000
+        // f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max);
+        // f[2] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
+        //        std::pow(p, -4) * std::exp(-p / p_max); // f_100
+        f[1] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
+               std::pow(p, -4) * std::exp(-p / p_max); // f_110
+        f[3] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
+               std::pow(p, -4) * std::exp(-p / p_max); // f_111
         /** [Initial value] */
       }
 
@@ -302,7 +307,7 @@ namespace sapphirepp
                 // shifted Gaussian in x and p
                 // s_000 = sqrt(4 pi) * s
                 source_values[i] =
-                  Q / (std::sqrt(M_PI) * sig_p * sig_x) *
+                  Q / (std::sqrt(std::numbers::pi) * sig_p * sig_x) *
                   std::exp(-(p - p0) * (p - p0) / (2. * sig_p * sig_p)) *
                   std::exp(-x * x / (2. * sig_x * sig_x));
                 // const double mu    = p0;     //
@@ -311,7 +316,7 @@ namespace sapphirepp
                 // const double z      = (std::log(p) - mu) / sigma;
 
                 // source_values[i] = Q * (1.0 / (p * sigma * std::sqrt(2.0 *
-                // M_PI))) * std::exp(-0.5 * z * z);
+                // std::numbers::pi))) * std::exp(-0.5 * z * z);
               }
             // vanishing anisotropic part
             else

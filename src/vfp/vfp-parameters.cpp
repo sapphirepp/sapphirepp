@@ -33,6 +33,7 @@
 #include <deal.II/base/utilities.h>
 
 #include <filesystem>
+#include <numbers>
 #include <sstream>
 
 #include "sapphirepp-logstream.h"
@@ -475,7 +476,7 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
       reference_units.mass * reference_units.speed_of_light;
 
     reference_units.radiation_reaction_characteristic_time =
-      (9.0 * M_PI * std::pow(reference_units.mass, 3) *
+      (9.0 * std::numbers::pi * std::pow(reference_units.mass, 3) *
        reference_units.speed_of_light * reference_units.frequency) /
       (reference_units.vacuum_permeability *
        std::pow(reference_units.charge, 4) *
