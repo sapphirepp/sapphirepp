@@ -141,7 +141,7 @@ namespace sapphirepp
                                    VFPFlags::radiation_reaction |           //
                                    VFPFlags::spatial_advection |            //
                                    VFPFlags::scaled_distribution_function | //
-                                   VFPFlags::rotation |                     //
+                                   //  VFPFlags::rotation |                  //
                                    VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
@@ -170,13 +170,13 @@ namespace sapphirepp
         double p     = std::exp(point[0]) / 1e6;
         double p_max = (0.5 * 1e7) / 1e6;
         // f_000
-        // f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max);
-        // f[2] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
-        //        std::pow(p, -4) * std::exp(-p / p_max); // f_100
-        f[1] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
-               std::pow(p, -4) * std::exp(-p / p_max); // f_110
-        f[3] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
-               std::pow(p, -4) * std::exp(-p / p_max); // f_111
+        f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max);
+        f[2] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
+               std::pow(p, -4) * std::exp(-p / p_max); // f_100
+        // f[1] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
+        //        std::pow(p, -4) * std::exp(-p / p_max); // f_110
+        // f[3] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
+        //        std::pow(p, -4) * std::exp(-p / p_max); // f_111
         /** [Initial value] */
       }
 

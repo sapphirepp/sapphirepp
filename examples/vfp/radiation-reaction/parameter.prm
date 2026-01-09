@@ -36,10 +36,9 @@ subsection VFP
     # Reference mass in kilogramm. The default is the proton mass.
     set Mass                    = 9.1093837e-31
 
-    # Reference velocity in metres per second. The default is the speed of
-    # light.
-    set Velocity                = 299792458
-
+    # Speed of light in metres per second.
+    set Speed of light          = 299792458.
+    
     # Reference magnetic field strength in Tesla. The default is 1e-10 Tesla,
     # i.e. 1 microGauss.
     set Magnetic field strength = 1.e-10
