@@ -67,11 +67,11 @@ namespace sapphirepp
     char   case_identifier          = 'a';
 
     // Source
-    double Q        = 0.1;
-    double ln_p_inj = 2.;
-    double x_inj    = 0.;
-    double sig_ln_p = 0.125;
-    double sig_x    = 0.125;
+    double Q     = 0.1;
+    double p_inj = 2.;
+    double x_inj = 0.;
+    double sig_p = 0.125;
+    double sig_x = 0.125;
     /** [Define runtime parameter] */
 
 
@@ -133,10 +133,10 @@ namespace sapphirepp
 
       // Source
       prm.add_parameter("Q", Q, "The injection rate.");
-      prm.add_parameter("ln_p_inj", ln_p_inj, "The injection momentum.");
+      prm.add_parameter("p_inj", p_inj, "The injection momentum.");
       prm.add_parameter("x_inj", x_inj, "The injection position.");
-      prm.add_parameter("sig_ln_p",
-                        sig_ln_p,
+      prm.add_parameter("sig_p",
+                        sig_p,
                         "The width of the source in momentum space.");
       prm.add_parameter("sig_x",
                         sig_x,
@@ -184,7 +184,6 @@ namespace sapphirepp
                                    VFPFlags::collision |         //
                                    VFPFlags::rotation |          //
                                    VFPFlags::source |            //
-                                   VFPFlags::radiation_reaction |
                                    VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
 
@@ -395,18 +394,15 @@ namespace sapphirepp
             /** [Source] */
             if (i == 0)
               {
-                // const double p = std::exp(point[1]);
-                const double ln_p = point[1];
-                const double x    = point[0];
+                const double p = std::exp(point[1]);
+                const double x = point[0];
 
                 // S_000 = sqrt(4 pi) * S
                 source_values[0] =
-                  // std::pow(p, 3) * prm.Q /
-                  // (4 * std::pow(M_PI, 1.5) * prm.sig_ln_p * prm.sig_x * p *
-                  // p) *
-                  prm.Q / (2 * M_PI * prm.sig_ln_p * prm.sig_x) *
-                  std::exp(-(ln_p - prm.ln_p_inj) * (ln_p - prm.ln_p_inj) /
-                           (2. * prm.sig_ln_p * prm.sig_ln_p)) *
+                  std::pow(p, 3) * prm.Q /
+                  (4 * std::pow(M_PI, 1.5) * prm.sig_p * prm.sig_x * p * p) *
+                  std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
+                           (2. * prm.sig_p * prm.sig_p)) *
                   std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
                            (2. * prm.sig_x * prm.sig_x));
               }
