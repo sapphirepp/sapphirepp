@@ -41,15 +41,15 @@ namespace sapphirepp
      * \f$ x^{*}, t^{*}, p^{*}, v^{*} \f$
      * to solve the VFP equation.
      * These dimensionless are defined using reference values,
-     * \f$ m_{0}, q_{0}, c, B_{0} \f$,
+     * \f$ \underline{m}, \underline{q}, c, \underline{B} \f$,
      * in the following way:
      *
-     * | Type     | Dimensionless unit             | Reference value                            |
-     * |:---------|:-------------------------------|:-------------------------------------------|
-     * | Length   | \f$ x^{*} = x/r_{g,0} \f$      | \f$ r_{g,0} =  m_{0} c/q_{0} B_{0} \f$     |
-     * | Time     | \f$ t^{*} = t \omega_{g,0} \f$ | \f$ \omega_{g,0} = q_{0} B_{0}/  m_{0} \f$ |
-     * | Momentum | \f$ p^{*} = p/p_{0} \f$        | \f$ p_{0} =  m_{0} c \f$                   |
-     * | Velocity | \f$ v^{*} = v/v_{0} \f$        | \f$ v_0 = c\f$                             |
+     * | Type     | Dimensionless unit                       | Reference value                                                              |
+     * |:---------|:-----------------------------------------|:-----------------------------------------------------------------------------|
+     * | Length   | \f$ x^{*} = x/\underline{r}_{g} \f$      | \f$ \underline{r}_{g} =  \underline{m} c/\underline{q} \underline{B} \f$     |
+     * | Time     | \f$ t^{*} = t \underline{\omega}_{g} \f$ | \f$ \underline{\omega}_{g} = \underline{q} \underline{B}/  \underline{m} \f$ |
+     * | Momentum | \f$ p^{*} = p/\underline{p} \f$          | \f$ \underline{p} =  \underline{m} c \f$                                     |
+     * | Velocity | \f$ v^{*} = v/c \f$                      | Speed of light \f$ c \f$                                                     |
      *
      * Note the reference values are **only** used for the
      * @ref VFPFlags::radiation_reaction "radiation reaction" term.
@@ -61,55 +61,59 @@ namespace sapphirepp
     struct ReferenceValues
     {
       /**
-       * Reference mass \f$ m_{0} \f$ in kilogram.
+       * Reference mass \f$ \underline{m} \f$ in kilogram.
        * The default is the proton mass,
-       * i.e. \f$ m_{0} = 1.672621923 \times 10^{-27} \, \mathrm{kg}\f$.
+       * i.e. \f$ \underline{m} = 1.672621923 \times 10^{-27} \, \mathrm{kg}\f$.
        */
       double mass;
 
       /**
-       * Reference velocity \f$ v_{0} \f$ in meters per second.
-       * The default is the speed of light,
-       * i.e. \f$ v_{0} = 299792458 \, \frac{\mathrm{m}}{\mathrm{s}}\f$.
+       * Speed of light \f$ c \f$ in meters per second.
+       * The default is \f$ c = 299792458 \, \frac{\mathrm{m}}{\mathrm{s}} \f$ .
        */
-      double velocity;
+      double speed_of_light;
 
       /**
-       * Reference magnetic field strength \f$ B_{0} \f$ in Tesla.
+       * Reference magnetic field strength \f$ \underline{B} \f$ in Tesla.
        * The default is 1 microGauss,
-       * i.e. \f$ B_{0} = 10^{-10} \, \mathrm{T}\f$.
+       * i.e. \f$ \underline{B} = 10^{-10} \, \mathrm{T}\f$.
        */
       double magnetic_field_strength;
 
       /**
-       * Reference charge \f$ q_{0} \f$ in Columb.
+       * Reference charge \f$ \underline{q} \f$ in Columb.
        * The default is the elementary charge,
-       * i.e. \f$ q_{0} = 1.602176634 \times 10^{-19} \, \mathrm{C}\f$.
+       * i.e. \f$ \underline{q} = 1.602176634 \times 10^{-19} \, \mathrm{C}\f$.
        */
       double charge;
 
       /**
-       * The reference length \f$ r_{g,0} \f$ in meter.
-       * The default is \f$ r_{g,0} =  m_{0} c/q_{0} B_{0} \f$ .
+       * The reference length \f$ \underline{r}_{g} \f$ in meter.
+       * The default is
+       * \f$
+       *    \underline{r}_{g} = \underline{m} c/\underline{q} \underline{B}
+       * \f$ .
        */
       double length;
 
       /**
-       * The reference frequency \f$ \omega_{g,0} \f$ in 1/s.
-       * The default is the gyro-frequency,
-       * i.e. \f$ \omega_{g,0} = q_{0} B_{0}/ m_{0} \f$ .
+       * The reference frequency \f$ \underline{\omega}_{g} \f$ in 1/s.
+       * The default is the gyro-frequency, i.e.
+       * \f$
+       *    \underline{\omega}_{g} = \underline{q} \underline{B}/ \underline{m}
+       * \f$ .
        */
       double frequency;
 
       /**
        * Reference time in seconds.
-       * The default is \f$ t_{0} = 1/\omega_{g,0} \f$.
+       * The default is \f$ \underline{t} = 1/\underline{\omega}_{g} \f$.
        */
       double time;
 
       /**
-       * Reference momentum \f$ p_{0} \f$ in kg m/s.
-       * The default is \f$ p_{0} = m_{0} v_{0} \f$.
+       * Reference momentum \f$ \underline{p} \f$ in kg m/s.
+       * The default is \f$ \underline{p} = \underline{m} c \f$.
        */
       double momentum;
 
@@ -125,10 +129,13 @@ namespace sapphirepp
       double vacuum_permeability;
 
       /**
-       * Radiation reaction characteristic time \f$ \tau_R \f$ in seconds,
+       * Radiation reaction characteristic time \f$ \underline{\tau}_R \f$
+       * in seconds,
        * \f$
-       *    \tau_R = \frac{9 \pi m_{0}^3 v_{0}}{\mu_{0} q_{0}^4 t_{0} B_{0}^2}
-       * \f$.
+       *    \underline{\tau}_R
+       *    = \frac{9 \pi \underline{m}^3 c \underline{\omega}_g}{
+       *      \mu_{0} \underline{q}^4 \underline{B}^2}
+       * \f$ .
        */
       double radiation_reaction_characteristic_time;
 
@@ -152,7 +159,7 @@ namespace sapphirepp
     {
       os << "Reference Values: \n"
          << "	Mass: " << reference_values.mass << " kg \n"
-         << "	Velocity: " << reference_values.velocity << " m/s \n"
+         << "	Speed of light: " << reference_values.speed_of_light << " m/s \n"
          << "	Magnetic field strength: "
          << reference_values.magnetic_field_strength << " T \n"
          << "	Charge: " << reference_values.charge << " C \n"

@@ -200,11 +200,10 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       Patterns::Double(),
                       "Reference mass in kilogram. "
                       "The default is the proton mass.");
-    prm.declare_entry("Velocity",
+    prm.declare_entry("Speed of light",
                       "299792458.",
                       Patterns::Double(),
-                      "Reference velocity in metres per second. "
-                      "The default is the speed of light.");
+                      "Speed of light in metres per second.");
     prm.declare_entry("Magnetic field strength",
                       "1.e-10",
                       Patterns::Double(),
@@ -448,28 +447,29 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 
   prm.enter_subsection("Reference units");
   {
-    reference_units.mass     = prm.get_double("Mass");
-    reference_units.velocity = prm.get_double("Velocity");
+    reference_units.mass           = prm.get_double("Mass");
+    reference_units.speed_of_light = prm.get_double("Speed of light");
     reference_units.magnetic_field_strength =
       prm.get_double("Magnetic field strength");
     reference_units.charge              = prm.get_double("Charge");
     reference_units.vacuum_permeability = prm.get_double("Vacuum permeability");
 
     reference_units.length =
-      reference_units.mass * reference_units.velocity /
+      reference_units.mass * reference_units.speed_of_light /
       (reference_units.charge * reference_units.magnetic_field_strength);
 
     reference_units.frequency = reference_units.charge *
                                 reference_units.magnetic_field_strength /
                                 reference_units.mass;
-    reference_units.time     = 1. / reference_units.frequency;
-    reference_units.momentum = reference_units.mass * reference_units.velocity;
+    reference_units.time = 1. / reference_units.frequency;
+    reference_units.momentum =
+      reference_units.mass * reference_units.speed_of_light;
 
     reference_units.radiation_reaction_characteristic_time =
       (9.0 * M_PI * std::pow(reference_units.mass, 3) *
-       reference_units.velocity) /
+       reference_units.speed_of_light * reference_units.frequency) /
       (reference_units.vacuum_permeability *
-       std::pow(reference_units.charge, 4) * reference_units.time *
+       std::pow(reference_units.charge, 4) *
        std::pow(reference_units.magnetic_field_strength, 2));
     AssertThrow(std::isfinite(
                   reference_units.radiation_reaction_characteristic_time) &&
