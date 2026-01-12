@@ -141,7 +141,7 @@ namespace sapphirepp
                                    VFPFlags::radiation_reaction |           //
                                    VFPFlags::spatial_advection |            //
                                    VFPFlags::scaled_distribution_function | //
-                                   //  VFPFlags::rotation |                  //
+                                   VFPFlags::rotation |                     //
                                    VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
@@ -167,16 +167,14 @@ namespace sapphirepp
         AssertDimension(f.size(), this->n_components);
 
         /** [Initial value] */
-        double p     = std::exp(point[0]) / 1e6;
-        double p_max = (0.5 * 1e7) / 1e6;
-        // f_000
-        f[0] = std::pow(p, 3) * std::pow(p, -4) * std::exp(-p / p_max);
-        f[2] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
-               std::pow(p, -4) * std::exp(-p / p_max); // f_100
-        // f[1] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
-        //        std::pow(p, -4) * std::exp(-p / p_max); // f_110
-        // f[3] = 0.5 * 1 / std::numbers::sqrt3 * std::pow(p, 3) *
-        //        std::pow(p, -4) * std::exp(-p / p_max); // f_111
+        double p     = std::exp(point[0]) / 1e7;
+        double p_max = (0.5 * 1e8) / 1e7;
+        f[0]         = 0; // f_000
+        f[2]         = 0; // f_100
+        f[1] = 0.5 * 1 / std::sqrt(6.0) * std::pow(p, 3) * std::pow(p, -4) *
+               std::exp(-p / p_max); // f_110
+        f[3] = 0.5 * 1 / std::sqrt(6.0) * std::pow(p, 3) * std::pow(p, -4) *
+               std::exp(-p / p_max); // f_111
         /** [Initial value] */
       }
 
@@ -354,9 +352,9 @@ namespace sapphirepp
         AssertDimension(magnetic_field.size(), this->n_components);
 
         /** [Magnetic field] */
-        magnetic_field[0] = 1e10; // B_x
-        magnetic_field[1] = 0;    // B_y
-        magnetic_field[2] = 0;    // B_z = 1 µG
+        magnetic_field[0] = 1e9; // B_x
+        magnetic_field[1] = 0;   // B_y
+        magnetic_field[2] = 0;   // B_z = 1 µG
         /** [Magnetic field] */
       }
 
