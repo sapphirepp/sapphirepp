@@ -53,98 +53,78 @@ namespace sapinternal
   class AnalyticSolution : public dealii::Function<dim>
   {
   public:
-    AnalyticSolution(const PhysicalParameters &physical_parameters,
-                     const unsigned int        system_size)
+    AnalyticSolution(const PhysicalParameters      &physical_parameters,
+                     const VFP::VFPParameters<dim> &vfp_parameters,
+                     const unsigned int             system_size)
       : Function<dim>(system_size)
       , prm{physical_parameters}
+      , vfp_parameters{vfp_parameters}
       , lms_indices{VFP::PDESystem::create_lms_indices(system_size)}
     {}
 
 
 
     void
-    vector_value(const Point<dim> &point, Vector<double> &f) const override
+    vector_value(const Point<dim> &point, Vector<double> &g) const override
     {
-      AssertDimension(f.size(), this->n_components);
+      AssertDimension(g.size(), this->n_components);
 
-      [[maybe_unused]] double p = std::exp(point[0]) / 1e6;
-      f                         = 0;
-      // TODO: Implement analytic solution
-      void vector_value(const Point<dim> &point, Vector<double> &f)
-        const override
-      {
-        AssertDimension(f.size(), this->n_components);
-        f = 0.0;
+      g = 0;
 
-        // Momentum coordinate
-        const double p = std::exp(point[0]) / 1e6;
+      // Time
+      const double t = this->get_time();
+      // Momentum coordinate
+      const double p      = std::exp(point[0]) / prm.p_min;
+      const double p_star = prm.p_max / prm.p_min;
+      // Radiation–reaction coefficient
+      const double rr =
+        1.5 /
+        vfp_parameters.reference_units.radiation_reaction_characteristic_time;
+      // Magnetic field magnitude
+      const double B2 = prm.B0 * prm.B0;
 
-        // Radiation–reaction coefficient
-        const double rr = prm.radiation_reaction_coeff;
+      // g_000
+      const double tau_s           = 1.0 / ((2.0 / 3.0) * rr * B2);
+      const double denominator_000 = 1.0 - p * t / tau_s;
 
-        // Magnetic field magnitude
-        Vector<double> Bvec(3);
-        prm.magnetic_field.vector_value(point, Bvec);
+      double g_000 = 0.0;
+      if (t <= tau_s && denominator_000 > 0.)
+        {
+          const double p_char = p / denominator_000;
 
-        const double B2 =
-          Bvec[0] * Bvec[0] + Bvec[1] * Bvec[1] + Bvec[2] * Bvec[2];
 
-        // Parameters
-        const double p_min = 1e6;
-        const double p_max = 0.5e7;
+          g_000 = std::pow(p_char, -1.0) * std::exp(-p_char / p_star) *
+                  (1.0 + (t / tau_s) * p_char);
+        }
 
-        const double t = prm.time;
+      // g_100
+      const double tau_s_100       = 1.0 / ((2.0 / 5.0) * rr * B2);
+      const double denominator_100 = 1.0 - p * t / tau_s_100;
 
-        // g_000
-        const double tau_s = 1.0 / ((2.0 / 3.0) * rr * B2);
-        const double den   = 1.0 - p * t / tau_s;
+      double g_100 = 0.0;
+      if (t <= tau_s_100 && denominator_100 > 0.0)
+        {
+          const double p_char_100 = p / denominator_100;
 
-        double g_000 = 0.0;
-        if (t <= tau_s && den > 0.0)
-          {
-            const double p_char = p / den;
+          // Initial condition
+          const double k_p_char_100 = 0.5 / std::numbers::sqrt3 *
+                                      std::pow(p_char_100, -4.0) *
+                                      std::exp(-p_char_100 / p_star);
 
-            g_000 = std::pow(p_char / p_min, -1.0) * std::exp(-p_char / p_max) *
-                    (1.0 + (t / tau_s) * p_char);
-          }
+          g_100 = k_p_char_100 * (1.0 / denominator_100) *
+                  std::exp((2.0 * rr * B2 / (5.0 * p)) * t *
+                           (1.0 - (rr * B2 * p * t) / 5.0));
+        }
 
-        // g_100
-        const double a_100  = (2.0 / 5.0) * rr * B2;
-        const double den100 = 1.0 - a_100 * p * t;
-
-        double g_100 = 0.0;
-        if (t <= 1.0 / a_100 && den100 > 0.0)
-          {
-            const double p_char100 = p / den100;
-
-            const double k_pchar100 =
-              std::pow(p_char100 / p_min, -1.0) * std::exp(-p_char100 / p_max);
-
-            const double exp_arg_100 =
-              (2.0 * rr * B2 / (5.0 * p)) * t * (1.0 - (rr * B2 * p * t) / 5.0);
-
-            g_100 = k_pchar100 * (1.0 / den100) * std::exp(exp_arg_100) * 0.5 /
-                    std::sqrt(3.0);
-          }
-
-        // Assign to (l,m,s) components
-        for (unsigned int c = 0; c < f.size(); ++c)
-          {
-            const auto &lms = lms_indices[c];
-
-            if (lms[0] == 0 && lms[1] == 0 && lms[2] == 0)
-              f[c] = g_000;
-
-            if (lms[0] == 1 && lms[1] == 0 && lms[2] == 0)
-              f[c] = g_100;
-          }
-      }
+      g[0] = g_000;
+      g[2] = g_100;
     }
 
 
 
   private:
     const PhysicalParameters                       prm;
+    const VFP::VFPParameters<dim>                  vfp_parameters;
     const std::vector<std::array<unsigned int, 3>> lms_indices;
   };
 } // namespace sapinternal
@@ -193,6 +173,7 @@ main(int argc, char *argv[])
       const unsigned int system_size = (vfp_parameters.expansion_order + 1) *
                                        (vfp_parameters.expansion_order + 1);
       sapinternal::AnalyticSolution<dim> exact_solution(physical_parameters,
+                                                        vfp_parameters,
                                                         system_size);
       const dealii::ComponentSelectFunction<dim> weight(0, system_size);
       /** [Setup exact solution] */

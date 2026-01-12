@@ -1,13 +1,14 @@
+subsection Physical parameters
+  set B0    = 1e+10
+  set p_min = 1e+06
+  set p_max = 5e+06
+end
 subsection Output
   set Base file name               = solution
-  set Debug input functions        = false
   set Format                       = pvtu
-  set Number of digits for counter = 4
   set Output frequency             = 10
   set Results folder               = ./results
-  set Simulation identifier        = synchrotron-test-run-rotation
-end
-subsection Physical parameters
+  set Simulation identifier        = radiation-reaction-without-rotation
 end
 subsection VFP
   subsection Expansion
@@ -17,51 +18,27 @@ subsection VFP
     set Polynomial degree = 2
   end
   subsection Mesh
-    set Grid type             = Hypercube
-    set Number of cells       = 64
-    set Number of shock cells = 1
-    set Point 1               = 13.815510558
-    set Point 2               = 18.420680744
+    set Grid type       = Hypercube
+    set Number of cells = 64
+    set Point 1         = 13.815510558 # ln(1e6)
+    set Point 2         = 18.420680744 # ln(1e8)
     subsection Boundary conditions
       set lower p = zero inflow
       set upper p = zero inflow 
     end
   end
-  subsection Numerical parameters
-    set rpe_tolerance    = 1e-08
-    set solver_max_iter  = 5000
-    set solver_tolerance = 1e-08
-  end
   subsection Reference units
-    # Reference mass in kilogramm. The default is the proton mass.
-    set Mass                    = 9.1093837e-31
-
-    # Speed of light in metres per second.
-    set Speed of light          = 299792458.
-    
-    # Reference magnetic field strength in Tesla. The default is 1e-10 Tesla,
-    # i.e. 1 microGauss.
-    set Magnetic field strength = 1.e-10
-
-    # Reference charge in Coulomb. The default is the elementary charge.
-    set Charge                  = 1.602176634e-19
+    set Charge = 1.602176634e-19 # Elementary charge.
+    set Mass   = 9.1093837e-31   # Election mass.
   end
   subsection Particle properties
-    set Charge            = -1
-    set Mass              = 1.
+    # Electron
+    set Charge = -1
+    set Mass   = 1.
   end
-  # subsection Probe location
-  #   set Perform reconstruction = false
-  #   set n_cos_theta            = 75
-  #   set n_phi                  = 75
-  #   set points                 =
-  # end
   subsection Time stepping
     set Final time     = 1e-5
     set Method         = ERK4
     set Time step size = 0.5e-8
   end
-  # subsection TransportOnly
-  #   set Gamma = 3.
-  # end
 end
