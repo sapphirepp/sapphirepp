@@ -53,18 +53,9 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double u_sh              = 0.1;
-    double B0                = 1.;
-    double compression_ratio = 4.;
-    double shock_width       = 0.04;
-    double nu0               = 0.1;
-
-    // Source
-    double Q     = 0.1;
-    double p_inj = 2.;
-    double x_inj = 0.;
-    double sig_p = 0.125;
-    double sig_x = 0.125;
+    double B0    = 1e10;
+    double p_min = 1e6;
+    double p_max = 5e6;
     /** [Define runtime parameter] */
 
 
@@ -82,24 +73,9 @@ namespace sapphirepp
       prm.enter_subsection("Physical parameters");
 
       /** [Declare runtime parameter] */
-      prm.add_parameter("u_sh", u_sh, "The shock velocity.");
-      prm.add_parameter("B0", B0, "The magnetic field strength upstream.");
-      prm.add_parameter("compression ratio",
-                        compression_ratio,
-                        "The compression ratio of the shock.");
-      prm.add_parameter("shock width", shock_width, "The width of the shock.");
-      prm.add_parameter("nu0", nu0, "The scattering frequency.");
-
-      // Source
-      prm.add_parameter("Q", Q, "The injection rate.");
-      prm.add_parameter("p_inj", p_inj, "The injection momentum.");
-      prm.add_parameter("x_inj", x_inj, "The injection position.");
-      prm.add_parameter("sig_p",
-                        sig_p,
-                        "The width of the source in momentum space.");
-      prm.add_parameter("sig_x",
-                        sig_x,
-                        "The width of the source in configuration space.");
+      prm.add_parameter("B0", B0, "The magnetic field strength.");
+      prm.add_parameter("p_min", p_min, "Initial minimum momentum.");
+      prm.add_parameter("p_max", p_max, "Initial maximum momentum.");
       /** [Declare runtime parameter] */
 
       prm.leave_subsection();
@@ -141,7 +117,6 @@ namespace sapphirepp
                                    VFPFlags::radiation_reaction |           //
                                    VFPFlags::spatial_advection |            //
                                    VFPFlags::scaled_distribution_function | //
-                                   VFPFlags::rotation |                     //
                                    VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
@@ -162,19 +137,19 @@ namespace sapphirepp
 
       void
       vector_value([[maybe_unused]] const dealii::Point<dim> &point,
-                   dealii::Vector<double>                    &f) const override
+                   dealii::Vector<double>                    &g) const override
       {
-        AssertDimension(f.size(), this->n_components);
+        AssertDimension(g.size(), this->n_components);
 
         /** [Initial value] */
-        double p     = std::exp(point[0]) / 1e7;
-        double p_max = (0.5 * 1e8) / 1e7;
-        f[0]         = 0; // f_000
-        f[2]         = 0; // f_100
-        f[1] = 0.5 * 1 / std::sqrt(6.0) * std::pow(p, 3) * std::pow(p, -4) *
-               std::exp(-p / p_max); // f_110
-        f[3] = 0.5 * 1 / std::sqrt(6.0) * std::pow(p, 3) * std::pow(p, -4) *
-               std::exp(-p / p_max); // f_111
+        const double p      = std::exp(point[0]) / prm.p_min;
+        const double p_star = prm.p_max / prm.p_min;
+
+        g[0] = std::pow(p, -4) * std::exp(-p / p_star); // g_000
+        g[2] = 0.5 / std::numbers::sqrt3 * std::pow(p, -4) *
+               std::exp(-p / p_star); // g_100
+        g[1] = 0.;                    // g_110
+        g[3] = 0.;                    // g_111
         /** [Initial value] */
       }
 
@@ -248,7 +223,8 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Scattering frequency] */
-            scattering_frequencies[q_index] = 100.;
+            // No scattering frequency
+            scattering_frequencies[q_index] = 0;
             /** [Scattering frequency] */
           }
       }
@@ -284,43 +260,8 @@ namespace sapphirepp
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             /** [Source] */
-            // Define parameters
-            const double p0    = std::log(1e7);
-            const double Q     = 0.1;
-            const double sig_p = 0.1;
-            const double sig_x = 0.001;
-
-            // Get x and p value
-            const double x = point[0];
-            const double p = std::exp(point[1]); // point[1] = log(p)
-
-            // Convert i -> l, m, s
-            const unsigned int l = lms_indices[i][0];
-            const unsigned int m = lms_indices[i][1];
-            const unsigned int s = lms_indices[i][2];
-
-            // isotropic part
-            if (l == 0 && m == 0 && s == 0)
-              {
-                // shifted Gaussian in x and p
-                // s_000 = sqrt(4 pi) * s
-                source_values[i] =
-                  Q / (std::sqrt(std::numbers::pi) * sig_p * sig_x) *
-                  std::exp(-(p - p0) * (p - p0) / (2. * sig_p * sig_p)) *
-                  std::exp(-x * x / (2. * sig_x * sig_x));
-                // const double mu    = p0;     //
-                // const double sigma = sig_p;            // std dev in ln p
-
-                // const double z      = (std::log(p) - mu) / sigma;
-
-                // source_values[i] = Q * (1.0 / (p * sigma * std::sqrt(2.0 *
-                // std::numbers::pi))) * std::exp(-0.5 * z * z);
-              }
-            // vanishing anisotropic part
-            else
-              {
-                source_values[i] = 0.;
-              }
+            // No Source
+            source_values[i] = 0.;
             /** [Source] */
           }
       }
@@ -352,9 +293,9 @@ namespace sapphirepp
         AssertDimension(magnetic_field.size(), this->n_components);
 
         /** [Magnetic field] */
-        magnetic_field[0] = 1e9; // B_x
-        magnetic_field[1] = 0;   // B_y
-        magnetic_field[2] = 0;   // B_z = 1 µG
+        magnetic_field[0] = prm.B0; // B_x
+        magnetic_field[1] = 0;      // B_y
+        magnetic_field[2] = 0;      // B_z
         /** [Magnetic field] */
       }
 
@@ -384,9 +325,7 @@ namespace sapphirepp
         AssertDimension(velocity.size(), this->n_components);
 
         /** [Background velocity value] */
-        // u_x
-        velocity[0] = 0.;
-        // u_sh / (2 * r) * ((1 - r) * std::tanh(point[0] / d_sh) + (1 + r));
+        velocity[0] = 0.; // u_x
         velocity[1] = 0.; // u_y
         velocity[2] = 0.; // u_z
         /** [Background velocity value] */
@@ -406,8 +345,6 @@ namespace sapphirepp
             /** [Background velocity divergence] */
             // div u
             divergence[q_index] = 0.;
-            // u_sh / (2 * r) * (1 - r) / d_sh *
-            // (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
             /** [Background velocity divergence] */
           }
       }
@@ -425,11 +362,7 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity material derivative] */
-            // D/Dt u_x
-            material_derivatives[q_index][0] = 0.;
-            // // u_sh * u_sh / (4 * r * r) / d_sh * (1 - r) *
-            // ((1 - r) * std::tanh(x / d_sh) + (1 + r)) *
-            // (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            material_derivatives[q_index][0] = 0.; // D/Dt u_x
             material_derivatives[q_index][1] = 0.; // D/Dt u_y
             material_derivatives[q_index][2] = 0.; // D/Dt u_z
             /** [Background velocity material derivative] */
@@ -449,10 +382,7 @@ namespace sapphirepp
         for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
           {
             /** [Background velocity Jacobian] */
-            // \partial u_x / \partial x
-            jacobians[q_index][0][0] = 0.;
-            // u_sh / (2 * r) * (1 - r) / d_sh *
-            // (1 - std::tanh(x / d_sh) * std::tanh(x / d_sh));
+            jacobians[q_index][0][0] = 0.; // \partial u_x / \partial x
             jacobians[q_index][0][1] = 0.; // \partial u_x / \partial y
             jacobians[q_index][0][2] = 0.; // \partial u_x / \partial z
 
