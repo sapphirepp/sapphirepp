@@ -74,8 +74,7 @@ namespace sapinternal
       // Time
       const double t = this->get_time();
       // Momentum coordinate
-      const double p      = std::exp(point[0]) / prm.p_min;
-      const double p_star = prm.p_max / prm.p_min;
+      const double p = std::exp(point[0]);
       // Radiation–reaction coefficient
       const double rr =
         1.5 /
@@ -88,13 +87,13 @@ namespace sapinternal
       const double denominator_000 = 1.0 - p * t / tau_s;
 
       double g_000 = 0.0;
-      if (t <= tau_s && denominator_000 > 0.)
+      if (denominator_000 > 0.)
         {
           const double p_char = p / denominator_000;
 
 
-          g_000 = std::pow(p_char, -1.0) * std::exp(-p_char / p_star) *
-                  (1.0 + (t / tau_s) * p_char);
+          g_000 = std::pow((p_char / prm.p_min), -1.0) *
+                  std::exp(-p_char / prm.p_max) * (1.0 + (t / tau_s) * p_char);
         }
 
       // g_100
@@ -102,14 +101,14 @@ namespace sapinternal
       const double denominator_100 = 1.0 - p * t / tau_s_100;
 
       double g_100 = 0.0;
-      if (t <= tau_s_100 && denominator_100 > 0.0)
+      if (denominator_100 > 0.0)
         {
           const double p_char_100 = p / denominator_100;
 
           // Initial condition
           const double k_p_char_100 = 0.5 / std::numbers::sqrt3 *
-                                      std::pow(p_char_100, -4.0) *
-                                      std::exp(-p_char_100 / p_star);
+                                      std::pow((p_char_100 / prm.p_min), -1.0) *
+                                      std::exp(-p_char_100 / prm.p_max);
 
           g_100 = k_p_char_100 * (1.0 / denominator_100) *
                   std::exp((2.0 * rr * B2 / (5.0 * p)) * t *
