@@ -105,8 +105,8 @@ $$
 \zeta_{j}\boldsymbol{\Phi}_{j} \\
 &{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
 \left[\!
-  \left(4 \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{3}{2 \gamma}-4\gamma\right)B^2\mathbf{1}
+  \left(2 \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  +\left(\frac{1}{\gamma}-2\gamma\right)B^2\mathbf{1}
 \!\right]
 \zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
 \end{split}
@@ -128,8 +128,8 @@ $$
 \zeta_{j}\boldsymbol{\Phi}_{j} \\
 &{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
 \left[\!
-  \left(4 \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{3}{2 \gamma}-4\gamma\right)B^2\mathbf{1}
+  \left(3 \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  +\left(\frac{1}{\gamma}-3\gamma\right)B^2\mathbf{1}
 \!\right]
 \zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
 \end{split}
@@ -151,8 +151,8 @@ $$
 \zeta_{j}\boldsymbol{\Phi}_{j} \\
 &{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
 \left[\!
-  \left((4-\alpha) \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{3}{2 \gamma}-(4-\alpha)\gamma\right)B^2\mathbf{1}
+  \left((2-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  +\left(\frac{1}{\gamma}-(2-\alpha)\gamma\right)B^2\mathbf{1}
 \!\right]
 \zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
 \end{split}
@@ -174,8 +174,8 @@ $$
 \zeta_{j}\boldsymbol{\Phi}_{j} \\
 &{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
 \left[\!
-  \left((4-\alpha) \gamma-\frac{5}{2 \gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{3}{2 \gamma}-(4-\alpha)\gamma\right)B^2\mathbf{1}
+  \left((3-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  +\left(\frac{1}{\gamma}-(3-\alpha)\gamma\right)B^2\mathbf{1}
 \!\right]
 \zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
 \end{split}
