@@ -1,6 +1,5 @@
 """Plot radiation-reaction example with rotation."""
 
-import numpy as np
 import paraview.simple as ps
 from sapphireppplot import vfp, pvplot, transform
 
@@ -12,13 +11,14 @@ def main() -> dict:
         momentum=True,
         lms_indices=[[1, 1, 0], [1, 1, 1]],
         scaled_distribution_function=True,
-        prefix_numeric=True,
-        project=True,
+        # For test runs with analytic solution:
+        # prefix_numeric=True,
+        # project=True,
     )
+    plot_properties.convert_lnp_to_p()
 
     results_folder, prm, solution, animation_scene = vfp.load_solution(
         plot_properties,
-        # path_prefix="$SAPPHIREPP_RESULTS/parallel-shock",
     )
 
     layout, line_chart_view = vfp.plot_f_lms_1d(
@@ -27,9 +27,7 @@ def main() -> dict:
         "radiation-reaction-with-rotation",
         plot_properties,
         value_range=[-0.3, 0.3],
-        log_x_scale=False,
-        log_y_scale=False,
-        # save_animation=True,
+        save_animation=True,
     )
 
     # region Plot over time
@@ -50,12 +48,12 @@ def main() -> dict:
         plot_over_time,
         layout_t,
         x_label=r"$t$",
-        y_label=r"$f_{lms}$",
+        y_label=r"$g_{lms}$",
         x_array_name="Time",
         visible_lines=[
             f"{name} (id=0)" for name in plot_properties.series_names
         ],
-        log_y_scale=False,
+        x_range=[0.0, 1e-5],  # TODO
         plot_properties=plot_properties_t,
     )
     pvplot.save_screenshot(

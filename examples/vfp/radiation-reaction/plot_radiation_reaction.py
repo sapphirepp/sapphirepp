@@ -1,6 +1,5 @@
 """Plot radiation-reaction example."""
 
-import numpy as np
 import paraview.simple as ps
 from sapphireppplot import vfp, pvplot, transform
 
@@ -12,13 +11,14 @@ def main() -> dict:
         momentum=True,
         lms_indices=[[0, 0, 0], [1, 0, 0]],
         scaled_distribution_function=True,
-        prefix_numeric=True,
-        project=True,
+        # For test runs with analytic solution:
+        # prefix_numeric=True,
+        # project=True,
     )
+    plot_properties.convert_lnp_to_p()
 
     results_folder, prm, solution, animation_scene = vfp.load_solution(
         plot_properties,
-        # path_prefix="$SAPPHIREPP_RESULTS/parallel-shock",
     )
 
     layout, line_chart_view = vfp.plot_f_lms_1d(
@@ -27,9 +27,8 @@ def main() -> dict:
         "radiation-reaction",
         plot_properties,
         value_range=[1e-6, 1],
-        log_x_scale=False,
         log_y_scale=True,
-        # save_animation=True,
+        save_animation=True,
     )
 
     # region Plot over time
@@ -50,11 +49,12 @@ def main() -> dict:
         plot_over_time,
         layout_t,
         x_label=r"$t$",
-        y_label=r"$f_{lms}$",
+        y_label=r"$g_{lms}$",
         x_array_name="Time",
         visible_lines=[
             f"{name} (id=0)" for name in plot_properties.series_names
         ],
+        x_range=[0.0, 1e-5],
         log_y_scale=True,
         plot_properties=plot_properties_t,
     )
