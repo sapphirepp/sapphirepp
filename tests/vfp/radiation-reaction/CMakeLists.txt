@@ -23,6 +23,30 @@ set_property(TEST radiation-reaction-without-rotation PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
+file(COPY parameter-with-rotation.prm
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+
+add_executable(test-radiation-reaction-with-rotation test-radiation-reaction-with-rotation.cpp)
+sapphirepp_setup_target_vfp(test-radiation-reaction-with-rotation
+  ${PROJECT_SOURCE_DIR}/examples/vfp/radiation-reaction/rotation
+)
+target_include_directories(test-radiation-reaction-with-rotation PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
+)
+
+add_test(NAME radiation-reaction-with-rotation COMMAND
+  ./test-radiation-reaction-with-rotation parameter-with-rotation.prm 0 # TODO
+)
+set_property(TEST radiation-reaction-with-rotation PROPERTY LABELS
+  "radiation-reaction-with-rotation"
+  "1d" "momentum" "spatial_advection" "radiation_reaction" "rotation"
+  "scaled_distribution_function"
+  "CN" "zero-inflow" "upwind-flux"
+  # "fast" "commit-Debug" "commit-Release" # TODO
+  "full-suite-Release" "full-suite-Debug"
+)
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
   "${CMAKE_CURRENT_BINARY_DIR}/results"
