@@ -6,7 +6,7 @@ end
 subsection Output
   set Base file name               = solution
   set Format                       = pvtu
-  set Output frequency             = 10
+  set Output frequency             = 1
   set Results folder               = ./results
   set Simulation identifier        = radiation-reaction-with-rotation
 end
@@ -19,7 +19,7 @@ subsection VFP
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 1024
+    set Number of cells = 128
     set Point 1         = 16.118095651 # ln(1e7)
     set Point 2         = 20.723265837 # ln(1e9)
     subsection Boundary conditions
@@ -39,6 +39,6 @@ subsection VFP
   subsection Time stepping
     set Final time     = 0.2
     set Method         = CN
-    set Time step size = 0.0001
+    set Time step size = 0.001
   end
 end
