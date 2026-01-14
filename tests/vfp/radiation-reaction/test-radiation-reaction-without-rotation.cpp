@@ -174,7 +174,6 @@ main(int argc, char *argv[])
       sapinternal::AnalyticSolution<dim> exact_solution(physical_parameters,
                                                         vfp_parameters,
                                                         system_size);
-      const dealii::ComponentSelectFunction<dim> weight(0, system_size);
       /** [Setup exact solution] */
 
       /** [Start test run] */
@@ -182,8 +181,7 @@ main(int argc, char *argv[])
                                physical_parameters,
                                output_parameters,
                                exact_solution,
-                               max_L2_error,
-                               &weight);
+                               max_L2_error);
       /** [Start test run] */
     }
   catch (std::exception &exc)

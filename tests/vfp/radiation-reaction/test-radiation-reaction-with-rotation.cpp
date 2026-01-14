@@ -77,42 +77,14 @@ namespace sapinternal
       const double t = this->get_time();
       // Momentum coordinate
       const double p = std::exp(point[0]);
-      // Radiation–reaction coefficient
-      const double rr =
-        1.5 /
-        vfp_parameters.reference_units.radiation_reaction_characteristic_time;
-      // Magnetic field magnitude
-      const double B2 = prm.B0 * prm.B0;
-
-      const double tau_s       = 1.0 / ((4.0 / 5.0) * rr * B2);
-      const double denominator = 1.0 - p * t / tau_s;
 
       // g_110
       double g_110 = (0.5 / std::sqrt(6.0)) * std::cos(prm.B0 * t / p) *
                      std::pow((p / prm.p_min), -1.0) * std::exp(-p / prm.p_max);
 
       // g_111
-      double g_111 = (0.5 / std::sqrt(6.0)) * std::sin(prm.B0 * t / p) *
+      double g_111 = -(0.5 / std::sqrt(6.0)) * std::sin(prm.B0 * t / p) *
                      std::pow((p / prm.p_min), -1.0) * std::exp(-p / prm.p_max);
-      // if (denominator > 0.)
-      //   {
-      //     const double p_char = p / denominator;
-
-      //     const double k_p_char = 0.5 / std::sqrt(6.0) *
-      //                                 std::pow((p_char / prm.p_min), -1.0) *
-      //                                 std::exp(-p_char / prm.p_max);
-
-
-      //     g_110 = k_p_char * (1.0 / denominator) * std::cos((prm.B0 * t /
-      //     p_char) + (2.0 / 5.0) * rr * B2 * prm.B0 * t * t) *
-      //             std::exp((rr * B2 / 5.0) * ((2.0 / 5.0) * rr * B2 * t * t -
-      //             t / p));
-
-      //     g_111 = k_p_char * (1.0 / denominator) * std::sin((prm.B0 * t /
-      //     p_char) + (2.0 / 5.0) * rr * B2 * prm.B0 * t * t) *
-      //             std::exp((rr * B2 / 5.0) * ((2.0 / 5.0) * rr * B2 * t * t -
-      //             t / p));
-      //   }
 
       g[1] = g_110;
       g[3] = g_111;
@@ -173,7 +145,6 @@ main(int argc, char *argv[])
       sapinternal::AnalyticSolution<dim> exact_solution(physical_parameters,
                                                         vfp_parameters,
                                                         system_size);
-      const dealii::ComponentSelectFunction<dim> weight(0, system_size);
       /** [Setup exact solution] */
 
       /** [Start test run] */
@@ -181,8 +152,7 @@ main(int argc, char *argv[])
                                physical_parameters,
                                output_parameters,
                                exact_solution,
-                               max_L2_error,
-                               &weight);
+                               max_L2_error);
       /** [Start test run] */
     }
   catch (std::exception &exc)

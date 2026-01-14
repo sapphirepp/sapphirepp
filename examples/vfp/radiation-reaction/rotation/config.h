@@ -143,9 +143,9 @@ namespace sapphirepp
         AssertDimension(g.size(), this->n_components);
 
         /** [Initial value] */
-        const double p = std::exp(point[0]) / prm.p_min;
+        const double p = std::exp(point[0]);
 
-        g[1] = 0.5 / std::sqrt(6.0) * std::pow(p, -1) *
+        g[1] = 0.5 / std::sqrt(6.0) * std::pow(p / prm.p_min, -1) *
                std::exp(-p / prm.p_max); // g_110
         g[3] = 0.;                       // g_111
         g[0] = 0.;                       // g_000
