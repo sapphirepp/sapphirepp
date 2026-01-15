@@ -1,4 +1,5 @@
-file(COPY parameter-without-rotation.prm
+file(COPY parameter-without-rotation.prm parameter-without-rotation-massratio.prm
+  parameter-with-rotation.prm
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -23,8 +24,16 @@ set_property(TEST radiation-reaction-without-rotation PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
-file(COPY parameter-with-rotation.prm
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+add_test(NAME radiation-reaction-without-rotation-massratio COMMAND
+  ./test-radiation-reaction-without-rotation parameter-without-rotation-massratio.prm 5e-6
+)
+set_property(TEST radiation-reaction-without-rotation-massratio PROPERTY LABELS
+  "radiation-reaction-without-rotation-massratio"
+  "1d" "momentum" "spatial_advection" "radiation_reaction"
+  "scaled_distribution_function"
+  "ERK4" "zero-inflow" "upwind-flux"
+  "commit-Debug" "commit-Release"
+  "full-suite-Release" "full-suite-Debug"
 )
 
 

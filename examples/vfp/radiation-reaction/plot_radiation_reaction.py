@@ -33,6 +33,7 @@ def main() -> dict:
 
     # region Plot over time
     ln_p_hat = 16.0
+    # ln_p_hat = 24  # for reference units in m_p
     probe_location, plot_properties_t = transform.probe_location(
         solution, [ln_p_hat, 0.0, 0.0], plot_properties
     )
