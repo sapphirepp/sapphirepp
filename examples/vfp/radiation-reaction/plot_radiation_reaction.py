@@ -26,7 +26,7 @@ def main() -> dict:
         results_folder,
         "radiation-reaction",
         plot_properties,
-        value_range=[1e-6, 1],
+        value_range=[1e-5, 1],
         log_y_scale=True,
         save_animation=True,
     )

@@ -12,14 +12,14 @@ target_include_directories(test-radiation-reaction-without-rotation PUBLIC
 )
 
 add_test(NAME radiation-reaction-without-rotation COMMAND
-  ./test-radiation-reaction-without-rotation parameter-without-rotation.prm 0 # TODO
+  ./test-radiation-reaction-without-rotation parameter-without-rotation.prm 5e-6
 )
 set_property(TEST radiation-reaction-without-rotation PROPERTY LABELS
   "radiation-reaction-without-rotation"
   "1d" "momentum" "spatial_advection" "radiation_reaction"
   "scaled_distribution_function"
   "ERK4" "zero-inflow" "upwind-flux"
-  # "fast" "commit-Debug" "commit-Release" # TODO
+  "fast" "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
 
@@ -37,14 +37,14 @@ target_include_directories(test-radiation-reaction-with-rotation PUBLIC
 )
 
 add_test(NAME radiation-reaction-with-rotation COMMAND
-  ./test-radiation-reaction-with-rotation parameter-with-rotation.prm 0 # TODO
+  ./test-radiation-reaction-with-rotation parameter-with-rotation.prm 0.01
 )
 set_property(TEST radiation-reaction-with-rotation PROPERTY LABELS
   "radiation-reaction-with-rotation"
   "1d" "momentum" "spatial_advection" "radiation_reaction" "rotation"
   "scaled_distribution_function"
   "CN" "zero-inflow" "upwind-flux"
-  # "fast" "commit-Debug" "commit-Release" # TODO
+  "commit-Debug" "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
 

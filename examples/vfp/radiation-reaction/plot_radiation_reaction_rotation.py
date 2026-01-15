@@ -31,7 +31,7 @@ def main() -> dict:
     )
 
     # region Plot over time
-    ln_p_hat = 14.5
+    ln_p_hat = 17.0
     probe_location, plot_properties_t = transform.probe_location(
         solution, [ln_p_hat, 0.0, 0.0], plot_properties
     )
@@ -53,7 +53,6 @@ def main() -> dict:
         visible_lines=[
             f"{name} (id=0)" for name in plot_properties.series_names
         ],
-        x_range=[0.0, 1e-5],  # TODO
         plot_properties=plot_properties_t,
     )
     pvplot.save_screenshot(

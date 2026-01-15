@@ -55,7 +55,7 @@ namespace sapphirepp
     /** [Define runtime parameter] */
     double B0    = 1e9;
     double p_min = 1e7;
-    double p_max = 5e7;
+    double p_max = 1e8;
     /** [Define runtime parameter] */
 
 
