@@ -4,6 +4,11 @@
 
 # Results folder
 results
+*.jpg
+*.png
+*.csv
+*.gif
+*.dat
 
 # Temporary files
 tmp*

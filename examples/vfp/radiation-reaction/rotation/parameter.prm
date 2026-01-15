@@ -1,0 +1,44 @@
+subsection Physical parameters
+  set B0    = 1e+9
+  set p_min = 1e+07
+  set p_max = 1e+08
+end
+subsection Output
+  set Base file name               = solution
+  set Format                       = pvtu
+  set Output frequency             = 2
+  set Results folder               = ./results
+  set Simulation identifier        = radiation-reaction-with-rotation
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 1
+  end
+  subsection Finite element
+    set Polynomial degree = 2
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 128
+    set Point 1         = 16.118095651 # ln(1e7)
+    set Point 2         = 20.723265837 # ln(1e9)
+    subsection Boundary conditions
+      set lower p = zero inflow
+      set upper p = zero inflow 
+    end
+  end
+  subsection Reference units
+    set Charge = 1.602176634e-19 # Elementary charge.
+    set Mass   = 1.67262192e-27  # Proton mass.
+  end
+  subsection Particle properties
+    # Proton
+    set Charge = 1
+    set Mass   = 1.
+  end
+  subsection Time stepping
+    set Final time     = 0.2
+    set Method         = CN
+    set Time step size = 0.001
+  end
+end
