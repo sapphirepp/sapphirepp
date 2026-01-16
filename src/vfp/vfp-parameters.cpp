@@ -210,10 +210,6 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       Patterns::Double(),
                       "Reference mass in kilogram. "
                       "The default is the proton mass.");
-    prm.declare_entry("Speed of light",
-                      "299792458.",
-                      Patterns::Double(),
-                      "Speed of light in metres per second.");
     prm.declare_entry("Magnetic field strength",
                       "1.e-10",
                       Patterns::Double(),
@@ -224,12 +220,6 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       Patterns::Double(),
                       "Reference charge in Coulomb. "
                       "The default is the elementary charge.");
-    prm.declare_entry("Vacuum permeability",
-                      "1.25663706127e-6",
-                      Patterns::Double(),
-                      "Vacuum permeability in N/A^2. "
-                      "The default is 1.25663706127e-6 N/A^2, "
-                      "i.e. approximately 4*pi*1e-7");
   } // Reference units
   prm.leave_subsection();
 
@@ -457,12 +447,10 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
 
   prm.enter_subsection("Reference units");
   {
-    reference_units.mass           = prm.get_double("Mass");
-    reference_units.speed_of_light = prm.get_double("Speed of light");
+    reference_units.mass = prm.get_double("Mass");
     reference_units.magnetic_field_strength =
       prm.get_double("Magnetic field strength");
-    reference_units.charge              = prm.get_double("Charge");
-    reference_units.vacuum_permeability = prm.get_double("Vacuum permeability");
+    reference_units.charge = prm.get_double("Charge");
 
     reference_units.length =
       reference_units.mass * reference_units.speed_of_light /

@@ -71,7 +71,7 @@ namespace sapphirepp
        * Speed of light \f$ c \f$ in meters per second.
        * The default is \f$ c = 299792458 \, \frac{\mathrm{m}}{\mathrm{s}} \f$ .
        */
-      double speed_of_light;
+      double speed_of_light = 299792458.;
 
       /**
        * Reference magnetic field strength \f$ \underline{B} \f$ in Tesla.
@@ -126,7 +126,7 @@ namespace sapphirepp
        *    \approx 4 \pi \times 10^{-7} \, \frac{\mathrm{N}}{\mathrm{A}^2}
        * \f$.
        */
-      double vacuum_permeability;
+      double vacuum_permeability = 1.25663706127e-6;
 
       /**
        * Radiation reaction characteristic time \f$ \underline{\tau}_R \f$
