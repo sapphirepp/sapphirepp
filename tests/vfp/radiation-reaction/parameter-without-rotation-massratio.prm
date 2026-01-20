@@ -1,0 +1,48 @@
+# m_e / m_p = 9.1093837e-31 / 1.67262192e-27 = 5.44617e-4
+# m_p / m_e = 1 / 5.44617e-4 = 1836.153
+subsection Physical parameters
+  set B0    = 1e+10
+  set p_min = 1836153000 # = 1e+06 * 1836.153
+  set p_max = 18361530000 # = 1e+07 * 1836.153
+end
+subsection Output
+  set Base file name               = solution
+  set Format                       = pvtu
+  set Output frequency             = 20
+  set Results folder               = ./results
+  set Simulation identifier        = radiation-reaction-without-rotation-massratio
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 1
+  end
+  subsection Finite element
+    set Polynomial degree = 2
+  end
+  subsection Mesh
+    set Grid type       = Hypercube
+    set Number of cells = 64
+    set Point 1         = 21.33093845904174 # = 13.815510558 + log(1836.153)
+    set Point 2         = 25.936108645041738 # = 18.420680744 + log(1836.153)
+    subsection Boundary conditions
+      set lower p = zero inflow
+      set upper p = zero inflow 
+    end
+  end
+  subsection Reference units
+    set Charge = 1.602176634e-19 # Elementary charge.
+    set Mass   = 1.67262192e-27  # Proton mass.
+
+  end
+  subsection Particle properties
+    # Electron
+    set Charge = -1
+    set Mass   = 1.836e3 # = m_e / m_p
+  end
+  subsection Time stepping
+    set Final time     = 1.6e8 # = 1e-5 
+    # set Method         = ERK4
+    set Method         = CN
+    set Time step size = 8e4 # = 0.5e-8 
+  end
+end

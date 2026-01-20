@@ -154,7 +154,8 @@ namespace sapphirepp
                          const double                      momentum,
                          const double                      gamma,
                          const dealii::Vector<double>     &material_derivative,
-                         const dealii::FullMatrix<double> &jacobian);
+                         const dealii::FullMatrix<double> &jacobian,
+                         const dealii::Vector<double>     &magnetic_field_vec);
 
       void
       compute_flux_in_p_direction(
@@ -163,6 +164,7 @@ namespace sapphirepp
         const double                      gamma,
         const dealii::Vector<double>     &material_derivative,
         const dealii::FullMatrix<double> &jacobian,
+        const dealii::Vector<double>     &magnetic_field_vec,
         dealii::FullMatrix<double>       &positive_flux_matrix,
         dealii::FullMatrix<double>       &negative_flux_matrix);
 
@@ -189,6 +191,7 @@ namespace sapphirepp
       std::vector<std::vector<double>> eigenvectors_advection_matrices;
 
       // Physical input
+      MagneticField<dim>                   magnetic_field;
       BackgroundVelocityField<dim>         background_velocity_field;
       ParticleVelocity<dim, logarithmic_p> particle_velocity_func;
       ParticleGamma<dim, logarithmic_p>    particle_gamma_func;
@@ -198,6 +201,9 @@ namespace sapphirepp
       const double charge;
       // TransportOnly
       const double velocity;
+      // Precomputed dimensionless radiation reaction coefficient
+      // (3/2)*(t0/tau_R)*(q^4/m^3)
+      const double radiation_reaction_coeff;
 
       // Arguments for the Lapack routine xsyevr
       // Documentation:

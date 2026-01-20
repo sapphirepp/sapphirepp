@@ -121,12 +121,11 @@ subsection VFP
   end
 
   subsection Reference units
-    # Reference mass in kilogramm. The default is the proton mass.
+    # Reference mass in kilogram. The default is the proton mass.
     set Mass                    = 1.672621923e-27
 
-    # Reference velocity in metres per second. The default is the speed of
-    # light.
-    set Velocity                = 299792458
+    # Speed of light in metres per second.
+    set Speed of light          = 299792458.
 
     # Reference magnetic field strength in Tesla. The default is 1e-10 Tesla,
     # i.e. 1 microGauss.
@@ -134,6 +133,10 @@ subsection VFP
 
     # Reference charge in Coulomb. The default is the elementary charge.
     set Charge                  = 1.602176634e-19
+
+    # Vacuum permeability in N/A^2. The default is 1.25663706127e-6 N/A^2,
+    # i.e. approximately 4*pi*1e-7
+    set Vacuum permeability     = 1.25663706127e-6
   end
 
   subsection Particle properties

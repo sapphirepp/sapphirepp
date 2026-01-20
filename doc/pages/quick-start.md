@@ -171,15 +171,21 @@ $$
   \nu = 100 \,.
 $$
 
-It is worth mentioning the units used in @sapphire. @sapphire employs
-dimensionless units throughout the code, meaning both the input (in terms of
-user-defined functions in `config.h`) and the output are dimensionless.
-Generally, length scales are defined in terms of the gyro-radius of a reference
-particle, $x^{*} = x/r_{g,0}$, and time is given in multiples of the reference
-gyro-frequency, $t^{*} = t \omega_{g,0}$. Momentum is defined in terms of the
-rest mass of a test particle, $p^{*} = p/m_{0} c$, while velocity is given as a
-fraction of $c$, $v^{*} = v/c$. An overview of the reference values can be found
-in @ref sapphirepp::VFP::ReferenceValues.
+It is worth mentioning the units used in @sapphire.
+@sapphire employs dimensionless units throughout the code,
+meaning both the input
+(in terms of user-defined functions in `config.h`)
+and the output are dimensionless.
+Generally,
+length scales are defined in terms of the gyro-radius of a reference particle,
+$x^{*} = x/\underline{r}_{g}$,
+and time is given in multiples of the reference gyro-frequency,
+$t^{*} = t \underline{\omega}_{g}$.
+Momentum is defined in terms of the rest mass of a test particle,
+$p^{*} = p/\underline{m} c$,
+while velocity is given as a fraction of $c$,
+$v^{*} = v/c$.
+An overview of the reference values can be found in @ref sapphirepp::VFP::ReferenceValues.
 
 We note again, that this setup serves as a technical demonstration. A more
 realistic setup with a momentum-depend scattering frequency is shown in the

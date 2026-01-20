@@ -360,8 +360,8 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     {
       steady_state_solve();
       output_results(0, 0);
-      saplog << "Simulation ended. " << " \t\t["
-             << Utilities::System::get_time() << "]" << std::endl;
+      saplog << "Simulation ended. "
+             << " \t\t[" << Utilities::System::get_time() << "]" << std::endl;
     }
   else
     {
@@ -834,6 +834,12 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
     std::vector<double> particle_gammas(q_points.size());
     particle_gamma.value_list(q_points, particle_gammas);
+
+    // Dimensionless prefactor used for the radiation reaction term
+    const double radiation_reaction_coeff =
+      1.5 * std::pow(vfp_parameters.charge, 4) /
+      (vfp_parameters.reference_units.radiation_reaction_characteristic_time *
+       std::pow(vfp_parameters.mass, 2));
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         for (unsigned int i : fe_v.dof_indices())
@@ -1122,6 +1128,173 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                           JxW[q_index];
                                       }
                                   }
+                                // --- Radiation reaction terms ---
+                                if constexpr ((vfp_flags &
+                                               VFPFlags::radiation_reaction) !=
+                                              VFPFlags::none)
+                                  {
+                                    const unsigned int idx =
+                                      3 * coordinate_1 -
+                                      coordinate_1 * (coordinate_1 + 1) / 2 +
+                                      coordinate_2;
+
+                                    // \grad_phi * (- coeff * gamma * A^a A^b
+                                    // B_a B_b) * \phi
+                                    copy_data.cell_matrix(i, j) -=
+                                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                                      radiation_reaction_coeff *
+                                      particle_gammas[q_index] *
+                                      (magnetic_field_values[q_index]
+                                                            [coordinate_1] *
+                                       magnetic_field_values[q_index]
+                                                            [coordinate_2]) *
+                                      adv_mat_products[idx](component_i,
+                                                            component_j) *
+                                      fe_v.shape_value(j, q_index) *
+                                      JxW[q_index];
+
+                                    // \phi * coeff * (3*gamma - 3/gamma) * (A^a
+                                    // A^b B_a B_b) * \phi
+                                    copy_data.cell_matrix(i, j) +=
+                                      fe_v.shape_value(i, q_index) *
+                                      (radiation_reaction_coeff) *
+                                      (3.0 * particle_gammas[q_index] -
+                                       3.0 / particle_gammas[q_index]) *
+                                      (magnetic_field_values[q_index]
+                                                            [coordinate_1] *
+                                       magnetic_field_values[q_index]
+                                                            [coordinate_2]) *
+                                      adv_mat_products[idx](component_i,
+                                                            component_j) *
+                                      fe_v.shape_value(j, q_index) *
+                                      JxW[q_index];
+
+                                    if (coordinate_2 != coordinate_1)
+                                      {
+                                        // symmetry duplicate
+                                        copy_data.cell_matrix(i, j) -=
+                                          fe_v.shape_grad(i,
+                                                          q_index)[dim_ps - 1] *
+                                          radiation_reaction_coeff *
+                                          particle_gammas[q_index] *
+                                          (magnetic_field_values[q_index]
+                                                                [coordinate_2] *
+                                           magnetic_field_values
+                                             [q_index][coordinate_1]) *
+                                          adv_mat_products[idx](component_i,
+                                                                component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          (radiation_reaction_coeff) *
+                                          (3.0 * particle_gammas[q_index] -
+                                           3.0 / particle_gammas[q_index]) *
+                                          (magnetic_field_values[q_index]
+                                                                [coordinate_2] *
+                                           magnetic_field_values
+                                             [q_index][coordinate_1]) *
+                                          adv_mat_products[idx](component_i,
+                                                                component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
+
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // \phi * (- coeff * gamma *
+                                        // scaling_spectral_index) * (A^a A^b
+                                        // B_a B_b) * \phi
+                                        copy_data.cell_matrix(i, j) -=
+                                          fe_v.shape_value(i, q_index) *
+                                          (radiation_reaction_coeff)*scaling_spectral_index *
+                                          particle_gammas[q_index] *
+                                          (magnetic_field_values[q_index]
+                                                                [coordinate_1] *
+                                           magnetic_field_values
+                                             [q_index][coordinate_2]) *
+                                          adv_mat_products[idx](component_i,
+                                                                component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        if (coordinate_2 != coordinate_1)
+                                          {
+                                            copy_data.cell_matrix(i, j) -=
+                                              fe_v.shape_value(i, q_index) *
+                                              (radiation_reaction_coeff)*scaling_spectral_index *
+                                              particle_gammas[q_index] *
+                                              (magnetic_field_values
+                                                 [q_index][coordinate_2] *
+                                               magnetic_field_values
+                                                 [q_index][coordinate_1]) *
+                                              adv_mat_products[idx](
+                                                component_i, component_j) *
+                                              fe_v.shape_value(j, q_index) *
+                                              JxW[q_index];
+                                          }
+                                      }
+                                  }
+                                // --- end Radiation reaction block ---
+                              }
+                          }
+
+                        // \grad_phi * coeff * gamma * (+ |B|^2 I) * \phi  and
+                        // \phi * coeff * (3*gamma - 1/gamma) * (- |B|^2 I) *
+                        // \phi
+                        if constexpr ((vfp_flags &
+                                       VFPFlags::radiation_reaction) !=
+                                      VFPFlags::none)
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                              radiation_reaction_coeff *
+                              particle_gammas[q_index] *
+                              (magnetic_field_values[q_index][0] *
+                                 magnetic_field_values[q_index][0] +
+                               magnetic_field_values[q_index][1] *
+                                 magnetic_field_values[q_index][1] +
+                               magnetic_field_values[q_index][2] *
+                                 magnetic_field_values[q_index][2]) *
+                              (component_i == component_j ? 1.0 : 0.0) *
+                              fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            copy_data.cell_matrix(i, j) -=
+                              fe_v.shape_value(i, q_index) *
+                              (radiation_reaction_coeff) *
+                              (3.0 * particle_gammas[q_index] -
+                               1.0 / particle_gammas[q_index]) *
+                              (magnetic_field_values[q_index][0] *
+                                 magnetic_field_values[q_index][0] +
+                               magnetic_field_values[q_index][1] *
+                                 magnetic_field_values[q_index][1] +
+                               magnetic_field_values[q_index][2] *
+                                 magnetic_field_values[q_index][2]) *
+                              (component_i == component_j ? 1.0 : 0.0) *
+                              fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                copy_data.cell_matrix(i, j) +=
+                                  fe_v.shape_value(i, q_index) *
+                                  (radiation_reaction_coeff)*scaling_spectral_index *
+                                  particle_gammas[q_index] *
+                                  (magnetic_field_values[q_index][0] *
+                                     magnetic_field_values[q_index][0] +
+                                   magnetic_field_values[q_index][1] *
+                                     magnetic_field_values[q_index][1] +
+                                   magnetic_field_values[q_index][2] *
+                                     magnetic_field_values[q_index][2]) *
+                                  (component_i == component_j ? 1.0 : 0.0) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
                               }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;
@@ -1368,6 +1541,175 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                           JxW[q_index];
                                       }
                                   }
+                                // --- Radiation reaction terms ---
+                                if constexpr ((vfp_flags &
+                                               VFPFlags::radiation_reaction) !=
+                                              VFPFlags::none)
+                                  {
+                                    const unsigned int idx =
+                                      3 * coordinate_1 -
+                                      coordinate_1 * (coordinate_1 + 1) / 2 +
+                                      coordinate_2;
+
+                                    // \grad_phi * (- coeff * gamma * p * A^a
+                                    // A^b B_a B_b) * \phi
+                                    copy_data.cell_matrix(i, j) -=
+                                      fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                                      radiation_reaction_coeff *
+                                      particle_gammas[q_index] *
+                                      q_points[q_index][dim_ps - 1] *
+                                      (magnetic_field_values[q_index]
+                                                            [coordinate_1] *
+                                       magnetic_field_values[q_index]
+                                                            [coordinate_2]) *
+                                      adv_mat_products[idx](component_i,
+                                                            component_j) *
+                                      fe_v.shape_value(j, q_index) *
+                                      JxW[q_index];
+
+                                    // \phi * coeff * (2*gamma - 3/gamma) * (A^a
+                                    // A^b B_a B_b) * \phi
+                                    copy_data.cell_matrix(i, j) +=
+                                      fe_v.shape_value(i, q_index) *
+                                      (radiation_reaction_coeff) *
+                                      (2.0 * particle_gammas[q_index] -
+                                       3.0 / particle_gammas[q_index]) *
+                                      (magnetic_field_values[q_index]
+                                                            [coordinate_1] *
+                                       magnetic_field_values[q_index]
+                                                            [coordinate_2]) *
+                                      adv_mat_products[idx](component_i,
+                                                            component_j) *
+                                      fe_v.shape_value(j, q_index) *
+                                      JxW[q_index];
+
+                                    if (coordinate_2 != coordinate_1)
+                                      {
+                                        // symmetry duplicate
+                                        copy_data.cell_matrix(i, j) -=
+                                          fe_v.shape_grad(i,
+                                                          q_index)[dim_ps - 1] *
+                                          radiation_reaction_coeff *
+                                          particle_gammas[q_index] *
+                                          q_points[q_index][dim_ps - 1] *
+                                          (magnetic_field_values[q_index]
+                                                                [coordinate_2] *
+                                           magnetic_field_values
+                                             [q_index][coordinate_1]) *
+                                          adv_mat_products[idx](component_i,
+                                                                component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        copy_data.cell_matrix(i, j) +=
+                                          fe_v.shape_value(i, q_index) *
+                                          (radiation_reaction_coeff) *
+                                          (2.0 * particle_gammas[q_index] -
+                                           3.0 / particle_gammas[q_index]) *
+                                          (magnetic_field_values[q_index]
+                                                                [coordinate_2] *
+                                           magnetic_field_values
+                                             [q_index][coordinate_1]) *
+                                          adv_mat_products[idx](component_i,
+                                                                component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+                                      }
+
+                                    if constexpr (
+                                      (vfp_flags &
+                                       VFPFlags::
+                                         scaled_distribution_function) !=
+                                      VFPFlags::none)
+                                      {
+                                        // \phi * (- coeff * gamma * s) * (A^a
+                                        // A^b B_a B_b) * \phi
+                                        copy_data.cell_matrix(i, j) -=
+                                          fe_v.shape_value(i, q_index) *
+                                          (radiation_reaction_coeff)*scaling_spectral_index *
+                                          particle_gammas[q_index] *
+                                          (magnetic_field_values[q_index]
+                                                                [coordinate_1] *
+                                           magnetic_field_values
+                                             [q_index][coordinate_2]) *
+                                          adv_mat_products[idx](component_i,
+                                                                component_j) *
+                                          fe_v.shape_value(j, q_index) *
+                                          JxW[q_index];
+
+                                        if (coordinate_2 != coordinate_1)
+                                          {
+                                            copy_data.cell_matrix(i, j) -=
+                                              fe_v.shape_value(i, q_index) *
+                                              (radiation_reaction_coeff)*scaling_spectral_index *
+                                              particle_gammas[q_index] *
+                                              (magnetic_field_values
+                                                 [q_index][coordinate_2] *
+                                               magnetic_field_values
+                                                 [q_index][coordinate_1]) *
+                                              adv_mat_products[idx](
+                                                component_i, component_j) *
+                                              fe_v.shape_value(j, q_index) *
+                                              JxW[q_index];
+                                          }
+                                      }
+                                  }
+                                // --- end Radiation reaction block ---
+                              }
+                          }
+
+                        // \grad_phi * coeff * gamma * p * (- |B|^2 I) * \phi
+                        // and  \phi * coeff * (2*gamma - 1/gamma) * (- |B|^2 I)
+                        // * \phi
+                        if constexpr ((vfp_flags &
+                                       VFPFlags::radiation_reaction) !=
+                                      VFPFlags::none)
+                          {
+                            copy_data.cell_matrix(i, j) +=
+                              fe_v.shape_grad(i, q_index)[dim_ps - 1] *
+                              radiation_reaction_coeff *
+                              particle_gammas[q_index] *
+                              q_points[q_index][dim_ps - 1] *
+                              (magnetic_field_values[q_index][0] *
+                                 magnetic_field_values[q_index][0] +
+                               magnetic_field_values[q_index][1] *
+                                 magnetic_field_values[q_index][1] +
+                               magnetic_field_values[q_index][2] *
+                                 magnetic_field_values[q_index][2]) *
+                              (component_i == component_j ? 1.0 : 0.0) *
+                              fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            copy_data.cell_matrix(i, j) -=
+                              fe_v.shape_value(i, q_index) *
+                              (radiation_reaction_coeff) *
+                              (2.0 * particle_gammas[q_index] -
+                               1.0 / particle_gammas[q_index]) *
+                              (magnetic_field_values[q_index][0] *
+                                 magnetic_field_values[q_index][0] +
+                               magnetic_field_values[q_index][1] *
+                                 magnetic_field_values[q_index][1] +
+                               magnetic_field_values[q_index][2] *
+                                 magnetic_field_values[q_index][2]) *
+                              (component_i == component_j ? 1.0 : 0.0) *
+                              fe_v.shape_value(j, q_index) * JxW[q_index];
+
+                            if constexpr ((vfp_flags &
+                                           VFPFlags::
+                                             scaled_distribution_function) !=
+                                          VFPFlags::none)
+                              {
+                                copy_data.cell_matrix(i, j) +=
+                                  fe_v.shape_value(i, q_index) *
+                                  (radiation_reaction_coeff)*scaling_spectral_index *
+                                  particle_gammas[q_index] *
+                                  (magnetic_field_values[q_index][0] *
+                                     magnetic_field_values[q_index][0] +
+                                   magnetic_field_values[q_index][1] *
+                                     magnetic_field_values[q_index][1] +
+                                   magnetic_field_values[q_index][2] *
+                                     magnetic_field_values[q_index][2]) *
+                                  (component_i == component_j ? 1.0 : 0.0) *
+                                  fe_v.shape_value(j, q_index) * JxW[q_index];
                               }
                           }
                         for (unsigned int coordinate_1 = 0; coordinate_1 < 3;

@@ -33,6 +33,7 @@
 #include <deal.II/base/utilities.h>
 
 #include <filesystem>
+#include <numbers>
 #include <sstream>
 
 #include "sapphirepp-logstream.h"
@@ -201,29 +202,34 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
   } // Finite element
   prm.leave_subsection();
 
+
   prm.enter_subsection("Reference units");
   {
-    prm.declare_entry(
-      "Mass",
-      "1.672621923e-27",
-      Patterns::Double(),
-      "Reference mass in kilogramm. The default is the proton mass.");
-    prm.declare_entry(
-      "Velocity",
-      "299792458",
-      Patterns::Double(),
-      "Reference velocity in metres per second. The default is the speed of light.");
-    prm.declare_entry(
-      "Magnetic field strength",
-      "1e-10",
-      Patterns::Double(),
-      "Reference magnetic field strength in Tesla. The default is 1e-10 Tesla, i.e. 1 microGauss.");
-    prm.declare_entry(
-      "Charge",
-      "1.602176634e-19",
-      Patterns::Double(),
-      "Reference charge in Coulomb. The default is the elementary charge.");
-
+    prm.declare_entry("Mass",
+                      "1.672621923e-27",
+                      Patterns::Double(),
+                      "Reference mass in kilogram. "
+                      "The default is the proton mass.");
+    prm.declare_entry("Speed of light",
+                      "299792458.",
+                      Patterns::Double(),
+                      "Speed of light in metres per second.");
+    prm.declare_entry("Magnetic field strength",
+                      "1.e-10",
+                      Patterns::Double(),
+                      "Reference magnetic field strength in Tesla. "
+                      "The default is 1e-10 Tesla, i.e. 1 microGauss.");
+    prm.declare_entry("Charge",
+                      "1.602176634e-19",
+                      Patterns::Double(),
+                      "Reference charge in Coulomb. "
+                      "The default is the elementary charge.");
+    prm.declare_entry("Vacuum permeability",
+                      "1.25663706127e-6",
+                      Patterns::Double(),
+                      "Vacuum permeability in N/A^2. "
+                      "The default is 1.25663706127e-6 N/A^2, "
+                      "i.e. approximately 4*pi*1e-7");
   } // Reference units
   prm.leave_subsection();
 
@@ -448,25 +454,40 @@ sapphirepp::VFP::VFPParameters<dim>::parse_parameters(ParameterHandler &prm)
   } // Finite element
   prm.leave_subsection();
 
+
   prm.enter_subsection("Reference units");
   {
-    reference_units.mass     = prm.get_double("Mass");
-    reference_units.velocity = prm.get_double("Velocity");
+    reference_units.mass           = prm.get_double("Mass");
+    reference_units.speed_of_light = prm.get_double("Speed of light");
     reference_units.magnetic_field_strength =
       prm.get_double("Magnetic field strength");
-    reference_units.charge = prm.get_double("Charge");
+    reference_units.charge              = prm.get_double("Charge");
+    reference_units.vacuum_permeability = prm.get_double("Vacuum permeability");
 
     reference_units.length =
-      reference_units.mass * reference_units.velocity /
+      reference_units.mass * reference_units.speed_of_light /
       (reference_units.charge * reference_units.magnetic_field_strength);
 
     reference_units.frequency = reference_units.charge *
                                 reference_units.magnetic_field_strength /
                                 reference_units.mass;
-    reference_units.time     = 1. / reference_units.frequency;
-    reference_units.momentum = reference_units.mass * reference_units.velocity;
+    reference_units.time = 1. / reference_units.frequency;
+    reference_units.momentum =
+      reference_units.mass * reference_units.speed_of_light;
+
+    reference_units.radiation_reaction_characteristic_time =
+      (9.0 * std::numbers::pi * std::pow(reference_units.mass, 3) *
+       reference_units.speed_of_light * reference_units.frequency) /
+      (reference_units.vacuum_permeability *
+       std::pow(reference_units.charge, 4) *
+       std::pow(reference_units.magnetic_field_strength, 2));
+    AssertThrow(std::isfinite(
+                  reference_units.radiation_reaction_characteristic_time) &&
+                  reference_units.radiation_reaction_characteristic_time > 0.0,
+                dealii::ExcMessage("tau_R not finite/positive"));
   } // Reference units
   prm.leave_subsection();
+
 
   prm.enter_subsection("Particle properties");
   {
