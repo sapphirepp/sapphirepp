@@ -37,12 +37,12 @@ subsection VFP
   subsection Particle properties
     # Electron
     set Charge = -1
-    set Mass   = 5.44617e-4 # = m_e / m_p
+    set Mass   = 1.836e3 # = m_e / m_p
   end
   subsection Time stepping
-    set Final time     = 0.01836153 # = 1e-5 * 1836.153
+    set Final time     = 1.6e8 # = 1e-5 
     # set Method         = ERK4
     set Method         = CN
-    set Time step size = 0.000009180765 # = 0.5e-8 * 1836.153
+    set Time step size = 8e4 # = 0.5e-8 
   end
 end

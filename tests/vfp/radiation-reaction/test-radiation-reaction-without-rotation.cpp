@@ -31,6 +31,8 @@
 
 #include <mpi.h>
 
+#include <iostream>
+
 #include "config.h"
 #include "output-parameters.h"
 #include "sapphirepp-logstream.h"
@@ -77,8 +79,11 @@ namespace sapinternal
       const double p = std::exp(point[0]);
       // Radiation–reaction coefficient
       const double rr =
-        1.5 /
+        1.5 * std::pow(vfp_parameters.mass, -3) *
+        std::pow(vfp_parameters.charge, 4) /
         vfp_parameters.reference_units.radiation_reaction_characteristic_time;
+      // Print rr
+      // std::cout << "Radiation-reaction coefficient rr = " << rr << std::endl;
       // Magnetic field magnitude
       const double B2 = prm.B0 * prm.B0;
 

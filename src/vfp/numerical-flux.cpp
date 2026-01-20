@@ -77,9 +77,9 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::NumericalFlux(
   , charge(solver_control.charge)
   , velocity(solver_control.velocity)
   , radiation_reaction_coeff(
-      1.5 /
-      solver_control.reference_units.radiation_reaction_characteristic_time *
-      std::pow(charge, 4) / std::pow(mass, 3))
+      1.5 * std::pow(charge, 4) /
+      (solver_control.reference_units.radiation_reaction_characteristic_time *
+       std::pow(mass, 2)))
   , isuppz(2 * matrix_size)
   , jobz{&dealii::LAPACKSupport::V}
   , range{&dealii::LAPACKSupport::A}

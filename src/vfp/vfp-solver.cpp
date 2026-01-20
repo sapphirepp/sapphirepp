@@ -837,9 +837,9 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
 
     // Dimensionless prefactor used for the radiation reaction term
     const double radiation_reaction_coeff =
-      1.5 /
-      vfp_parameters.reference_units.radiation_reaction_characteristic_time *
-      std::pow(vfp_parameters.charge, 4) / std::pow(vfp_parameters.mass, 3);
+      1.5 * std::pow(vfp_parameters.charge, 4) /
+      (vfp_parameters.reference_units.radiation_reaction_characteristic_time *
+       std::pow(vfp_parameters.mass, 2));
     for (const unsigned int q_index : fe_v.quadrature_point_indices())
       {
         for (unsigned int i : fe_v.dof_indices())
