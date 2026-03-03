@@ -39,7 +39,9 @@ def main() -> dict:
         axes_stretch=[1.0, 1.0, 1.0],
         text_color=[1.0, 1.0, 1.0],  # Changed color of label text of color bar
     )
-    clip_shock = transform.clip_area(solution, -6.0, 6.0, plot_properties_shock)
+    clip_shock = transform.clip_area(
+        solution, x_range=[-6.0, 6.0], plot_properties=plot_properties_shock
+    )
     layout_shock_region, render_view_shock_region = vfp.plot_f_lms_2d(
         clip_shock,
         results_folder,

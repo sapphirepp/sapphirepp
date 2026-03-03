@@ -15,7 +15,7 @@ target_include_directories(test-scattering-only-1d PUBLIC
 )
 
 add_test(NAME scattering-only-1d-CN COMMAND
-  ./test-scattering-only-1d parameter-1d-CN.prm 1e-2
+  ./test-scattering-only-1d parameter-1d-CN.prm 2e-3
 )
 set_property(TEST scattering-only-1d-CN PROPERTY LABELS
   "scattering-only"
@@ -25,7 +25,7 @@ set_property(TEST scattering-only-1d-CN PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-ERK4 COMMAND
-  ./test-scattering-only-1d parameter-1d-ERK4.prm 1e-4
+  ./test-scattering-only-1d parameter-1d-ERK4.prm 8e-6
 )
 set_property(TEST scattering-only-1d-ERK4 PROPERTY LABELS
   "scattering-only"
@@ -36,7 +36,7 @@ set_property(TEST scattering-only-1d-ERK4 PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-LSERK4 COMMAND
-  ./test-scattering-only-1d parameter-1d-LSERK4.prm 3e-3
+  ./test-scattering-only-1d parameter-1d-LSERK4.prm 6e-3
 )
 set_property(TEST scattering-only-1d-LSERK4 PROPERTY LABELS
   "scattering-only"
@@ -46,7 +46,7 @@ set_property(TEST scattering-only-1d-LSERK4 PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-FE COMMAND
-  ./test-scattering-only-1d parameter-1d-FE.prm 1e-1
+  ./test-scattering-only-1d parameter-1d-FE.prm 6e-2
 )
 set_property(TEST scattering-only-1d-FE PROPERTY LABELS
   "scattering-only"
@@ -56,7 +56,7 @@ set_property(TEST scattering-only-1d-FE PROPERTY LABELS
 )
 
 add_test(NAME scattering-only-1d-BE COMMAND
-  ./test-scattering-only-1d parameter-1d-BE.prm 1e-1
+  ./test-scattering-only-1d parameter-1d-BE.prm 5e-2
 )
 set_property(TEST scattering-only-1d-BE PROPERTY LABELS
   "scattering-only"
@@ -75,7 +75,7 @@ target_include_directories(test-scattering-only-2d PUBLIC
 )
 
 add_test(NAME scattering-only-2d COMMAND
-  ./test-scattering-only-2d parameter-2d-ERK4.prm 1e-4
+  ./test-scattering-only-2d parameter-2d-ERK4.prm 2e-4
 )
 set_property(TEST scattering-only-2d PROPERTY LABELS
   "scattering-only"
@@ -94,7 +94,7 @@ target_include_directories(test-scattering-only-3d PUBLIC
 )
 
 add_test(NAME scattering-only-3d COMMAND
-  ./test-scattering-only-3d parameter-3d-ERK4.prm 1e-4
+  ./test-scattering-only-3d parameter-3d-ERK4.prm 2e-4
 )
 set_property(TEST scattering-only-3d PROPERTY LABELS
   "scattering-only"

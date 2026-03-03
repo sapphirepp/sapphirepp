@@ -72,7 +72,13 @@ namespace sapinternal
           const unsigned int l = lms_indices[i][0];
           const double       t = this->get_time();
 
-          f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
+          double f0 = 0.;
+          if (i < prm.initial_values.size())
+            f0 = prm.initial_values[i];
+          if (prm.initial_values.size() == 0)
+            f0 = 1.;
+
+          f[i] = f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
         }
     }
 
@@ -125,35 +131,21 @@ main(int argc, char *argv[])
       /** [Main function setup] */
 
 
-      /** [Run simulation] */
-      VFPSolver<dim> vfp_solver(vfp_parameters,
-                                physical_parameters,
-                                output_parameters);
-      vfp_solver.run();
-      /** [Run simulation] */
+      /** [Setup exact solution] */
+      const unsigned int system_size = (vfp_parameters.expansion_order + 1) *
+                                       (vfp_parameters.expansion_order + 1);
+      sapinternal::AnalyticSolution<dim> exact_solution(physical_parameters,
+                                                        system_size,
+                                                        0.);
+      /** [Setup exact solution] */
 
-
-      /** [Compare to exact solution] */
-      saplog << "Compare to exact solution" << std::endl;
-
-      sapinternal::AnalyticSolution<dim> exact_solution(
-        physical_parameters,
-        vfp_solver.get_pde_system().system_size,
-        vfp_parameters.final_time);
-
-      test_run_vfp_output<dim>(vfp_solver,
-                               vfp_parameters,
+      /** [Start test run] */
+      return test_run_vfp<dim>(vfp_parameters,
+                               physical_parameters,
                                output_parameters,
                                exact_solution,
-                               0,
-                               vfp_parameters.final_time,
-                               "exact_solution");
-
-
-      test_run_vfp_error<dim>(vfp_solver, exact_solution, saplog, max_L2_error);
-
-      sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
-      /** [Compare to exact solution] */
+                               max_L2_error);
+      /** [Start test run] */
     }
   catch (std::exception &exc)
     {
