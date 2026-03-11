@@ -1,51 +1,96 @@
 # Radiation Reaction {#radiation-reaction}
 
-@sapphire solves the Vlasov–Fokker–Planck (VFP) system in a spherical–harmonic basis.
-This page documents how **radiation reaction** is derived, inserted
-into the DG weak formulation, and validated against analytic solutions. The implementation
-uses the Landau–Lifshitz formulation of the Lorentz-Abraham-Dirac radiation–reaction force and supports *linear/log*
-momentum coordinates and *unscaled/scaled* distributions.
+@sapphire simulates the evolution of charged particles in a background plasma. 
+The particles are modelled with a phase-space density called the distribution function, 
+which is denoted with $f(t, \mathbf{x}, \mathbf{p})$.
+Its evolution is computed by solving a Vlasov-Fokker-Planck (VFP) equation.
 
-## From Landau–Lifshitz to VFP
-
+This page documents what term we add to the VFP equation to include the **radiation reaction force**.
 An accelerated charged particle emits electromagnetic radiation and, as a consequence,
-experiences a recoil force due to the loss of energy and momentum carried away by the 
-emitted radiation. This back-reaction is described by the radiation reaction equation as discussed by Landau-Lifshitz,
-which supplements the Lorentz force law with an additional radiation reaction term.
+experiences a reaction force due to the loss of energy and momentum carried away by the emitted radiation.
+This force is called the radiation reaction force.
+We use the Landau-Lifshitz (LL) formulation of the Lorentz-Abraham-Dirac radiation–reaction force.
 
-The following equation for the radiation damping force has been adapted from @cite landau1975classical .
+Additionally, we write down how the radiation reaction force modifies the discontinuous Galerkin (dG) weak formulation used in @sapphire
+and we validate its implementation against analytical solutions.
 
-$$
-\mathbf{F_R} = \frac{\mu_0q^{3}\gamma}{6\pi mc} 
+## From the LL radiation reaction force to the VFP equation
+
+The back-reaction on the particles because of the emission of photons
+is described by the radiation reaction equation as discussed by Landau and Lifshitz
+@cite landau1975classical.
+It supplements the Lorentz force law with an additional damping force, namely
+
+$$ 
+\mathbf{F}_R = \frac{\mu_0q^{3}\gamma}{6\pi mc} 
  \Bigg\{ \left( \frac{\partial}{\partial t} + \mathbf{v} \cdot \nabla \right)(\mathbf{E}+\mathbf{v} \times \mathbf{B}) \Bigg\} + \frac{\mu_0q^{4}}{6\pi m^{2}c} \Bigg\{\frac{1}{c^2} \mathbf{E} (\mathbf{v} \cdot \mathbf{E}) - \mathbf{B} \times (\mathbf{E} +\mathbf{v} \times \mathbf{B}) \Bigg\} - \frac{\mu_0q^{4} \gamma^2}{6\pi m^{2}c^{3}} \Bigg\{\left( \mathbf{E} + \mathbf{v} \times \mathbf{B} \right)^{2} - \frac{1}{c^{2}} (\mathbf{E} \cdot \mathbf{v})^{2} \Bigg\} \mathbf{v} .
-\quad (1)
 $$
 
-Following @cite tamburini2010radiation , the first curly–bracketed term containing derivatives of the fields is dropped because, for ultra-relativistic electrons, its contribution is orders of magnitude smaller than the dominant quadratic terms. The remaining part of the force term therefore captures the principal radiation–reaction effects responsible for energy loss.
+Here, $\mu_0$ denotes the magnetic vacuum permeability, 
+$\mathbf{E}$ and $\mathbf{B}$ are the electromagnetic fields of the background plasma, 
+$q$ is the charge of the particle and $\mathbf{v}$ its velocity.
+Moreover, $\gamma = (1 - \beta^{2})^{-1/2}$ is its Lorentz factor 
+and $\beta = \| \boldsymbol{\beta} \| = \| \mathbf{v}\|/c$.
 
-We now derive the expression of the radiation reaction term relevant to the evolution of the particle distribution. The analysis is carried out in the fluid rest frame using the **ideal magnetohydrodynamic (MHD) approximation**, which assumes infinite plasma conductivity.
+Following @cite tamburini2010radiation , the first curly-bracketed term,
+containing derivatives of the electromagnetic fields, is dropped,
+whereas the second term of the radiation reaction force $\mathbf{F}_R$ is kept.
+We note that for ultra-relativistic electrons, 
+namely electrons with Lorentz factors $\gamma \gg 1$, 
+it is the third term that captures the dominant contribution the effects from the radiation reaction, in particular the energy loss.
 
-With the ideal-MHD condition in the fluid rest frame and neglecting the derivative term as justified above, the radiation reaction reduces to
+Before including the radiation reaction force in the VFP equation, we further simplify it.
+In @sapphire we use mixed-coordinates, 
+i.e we use a different coordinate system for the configuration and the momentum space. 
+For example, our $\mathbf{x}$-coordinates may refer to the rest frame of a shock wave that propagates through the background plasma 
+whereas the $\mathbf{p}$-coordinates always refer to particle momenta as given in the rest frame of the background plasma. 
+Furthermore, the background plasma is modelled using the **ideal magnetohydrodynamic (MHD) approximation**, 
+which assumes infinite plasma conductivity. The approximation implies that 
 
 $$
-\mathbf{F_R} = \sigma \Big( \mathbf{B} (\mathbf{B} \cdot \boldsymbol{\beta}) + \gamma^2 \boldsymbol{\beta} ((\boldsymbol{\beta}\cdot \mathbf{B})^2 - B^2) \Big),
-\quad (2)
+\mathbf{E} = - \mathbf{U} \times \mathbf{B} \, ,
+$$
+
+where $\mathbf{U}$ is the plasma velocity. 
+
+If we use an apostrophe to denote quantities in the rest frame of the plasma 
+(the fluid rest frame as we sometimes say), then $\mathbf{E}' = 0$ 
+and the radiation reaction force reduces to 
+(keeping in mind that we dropped the term in $\mathbf{F}_R$
+that contains the derivatives of the electromagnetic fields)
+
+$$
+\mathbf{F}'_R = \sigma \Big( \mathbf{B}' (\mathbf{B}' \cdot \boldsymbol{\beta}') + \gamma'^2 \boldsymbol{\beta}' ((\boldsymbol{\beta}'\cdot \mathbf{B}')^2 - B'^2) \Big),
 $$
 
 with the coefficient
-$$
-\sigma =  \frac{\mu_0q^4}{6\pi m^2} .
-\quad (3)
-$$
-Here, $$\gamma = (1 - \beta^{2})^{-1/2} \quad (4) $$ is the Lorentz factor, and $$\boldsymbol{\beta} = \mathbf{v}/c \quad (5) $$ is the dimensionless velocity vector of the charged particle. The first term in Eq.(2) represents the projection of the velocity along the magnetic field, while the second term accounts for the perpendicular component responsible for energy losses.
-
-Finally, the loss terms due to the radiation reaction are represented as
 
 $$
-\left(\frac{\partial f}{\partial t}\right)
-=-\nabla_p \cdot (\mathbf{F_R}f).
-\quad (6)
+\sigma =  \frac{\mu_0 q^4}{6\pi m^2} .
 $$
+
+Note that the first term in the expression for $\mathbf{F}'_R$ contains the projection of the velocity along the magnetic field, 
+i.e. it gives the rate at which the momentum component parallel to the $\mathbf{B}$-field changes, 
+while the second term accounts for the change of perpendicular momentum component
+responsible for energy losses.
+
+We, finally, add the radiation reaction force $\mathbf{F}'_R$ to the VFP equation used in @sapphire, i.e. the modified VFP equation is
+
+$$
+\frac{\partial f}{\partial t} + (\mathbf{U} + \mathbf{v}) \cdot \nabla_x f
+-\gamma m \frac{\mathrm{D} \mathbf{U}}{\mathrm{D} t} \cdot \nabla_p f
+- (\mathbf{p} \cdot \nabla_x) \mathbf{U} \cdot \nabla_p f
++\nabla_p \cdot (\mathbf{F}_R f)
++ q (\mathbf{v} \times \mathbf{B} ) \cdot \nabla_p f
+= \frac{\nu}{2}\,\Delta_{\theta \varphi} f + S.
+$$
+
+We emphasise that we dropped the apostrophe again; in @sapphire it is implicit that all quantities related to momentum are given in the fluid rest frame. For a more detailed discussion of the above equation see @cite Schween2024a , in particular Sec. 2. 
+
+## Spherical harmonic representation of the LL radiation reaction force
+
+We now derive the expression of the radiation reaction term relevant to the
+evolution of the particle distribution. 
 
 The same physics in the spherical–harmonic operator form reads @cite Schween2024a 
 
@@ -70,19 +115,6 @@ $$
 i\,\varepsilon_{abc}\,B_{a}\,\mathbf{A}^{b}\boldsymbol{\Omega}^{c}\,B_{d}\,\mathbf{A}^{d} \;=\; -\frac{1}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}. \quad (10)
 $$
 
-Finally, @sapphire uses the radiation reaction **modified VFP equation**, i.e.
-
-$$
-\frac{\partial f}{\partial t} + (u+v)\!\cdot\!\nabla_x f
--\gamma m\,\frac{D u}{D t}\!\cdot\nabla_p f
-- p.(\nabla_x u)\,\nabla_p f
-+\nabla_p \cdot (\mathbf{F_R}f)
-+ q\,\boldsymbol{v}\!\cdot\!(\boldsymbol{B}\times\nabla_p f)
-= \frac{\nu}{2}\,\Delta_{\theta,\varphi} f + S.
-\quad (11)
-$$
-
-This is the theoretical form implemented.
 
 ## Weak formulation in dimensionless units
 
@@ -192,6 +224,13 @@ For the case of an electron with the default reference magnetic field of $1\mu G
 
 
 ## Analytic Solutions
+
+We add the radiation reaction force straightforwardly to the momentum part of the VFP equation, i.e.
+
+$$
+\frac{\partial f}{\partial t}  + \dots = -\nabla_p \cdot (\mathbf{F}_R f).
+\quad (6)
+$$
 
 ### Isotropic and anisotropic solutions (ultra-relativistic)
 
