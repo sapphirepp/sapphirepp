@@ -82,146 +82,123 @@ $$
 - (\mathbf{p} \cdot \nabla_x) \mathbf{U} \cdot \nabla_p f
 +\nabla_p \cdot (\mathbf{F}_R f)
 + q (\mathbf{v} \times \mathbf{B} ) \cdot \nabla_p f
-= \frac{\nu}{2}\,\Delta_{\theta \varphi} f + S.
+= \frac{\nu}{2}\,\Delta_{\theta \varphi} f + S \, .
 $$
 
 We emphasise that we dropped the apostrophe again; in @sapphire it is implicit that all quantities related to momentum are given in the fluid rest frame. For a more detailed discussion of the above equation see @cite Schween2024a , in particular Sec. 2. 
 
 ## Spherical harmonic representation of the LL radiation reaction force
 
-We now derive the expression of the radiation reaction term relevant to the
-evolution of the particle distribution. 
-
-The same physics in the spherical–harmonic operator form reads @cite Schween2024a 
+In @sapphire we use a truncated (real) spherical harmonic expansion of the distribution function $f$
+, i.e.
 
 $$
-\nabla_p \cdot (\mathbf{F_R}f)
-= \frac{\sigma}{p^2}\,\mathbf{M}_1\,\partial_p\!\left(p^2\gamma^2\beta\, f_{\ell}^{m}\right)
--\frac{\sigma}{p}\,\mathbf{M}_2\,(\beta\,f_{\ell}^{m}),
-\quad (7)
+f(t,\mathbf{x}, p, \theta, \varphi) = \sum^{l_{\mathrm{max}}}_{l = 0} \sum^{1}_{s = 0} \sum^{l}_{m = s} f_{lms}(t, \mathbf{x}, p) Y_{lms}(\theta, \varphi) \,.
 $$
 
-with $\mathbf{M}_1=\mathbf{A}^a\mathbf{A}^bB_aB_b-B^2\mathbf{1}$, $\mathbf{M}_2=\frac{3}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}. \quad (8)$  
+Note that we use a spherical coordinate system for the momentum space coordinates.
+Our polar direction is the $x$-direction.
 
-Where, $\mathbf{1}$ is the identity matrix.
+This implies that it is necessary to derive partial differential equations (PDEs) for the expansion coefficients $f_{lms}$. This can be done with the operator-based method introduced in @cite Schween2024a . 
+The method boils to down to replacing the operators appearing in the VFP equation with their matrix representations in the space of spherical harmonics.
 
-The following relations have been used to arrive at the above form of the radiation reaction equation
-
-$$
--\frac{i}{2}\,\varepsilon_{abc}\,\mathbf{A}^b \boldsymbol{\Omega}^c \mathbf{A}^a \;=\,\mathbf{1}, \quad (9)
-$$
+For the LL radiation reaction force this results in the following replacement:
 
 $$
-i\,\varepsilon_{abc}\,B_{a}\,\mathbf{A}^{b}\boldsymbol{\Omega}^{c}\,B_{d}\,\mathbf{A}^{d} \;=\; -\frac{1}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}. \quad (10)
+\nabla_p \cdot (\mathbf{F}_R f)
+\longrightarrow \frac{\sigma}{p^2} \mathbf{M}_1 \partial_p \left(p^2 \gamma^2 \beta  \mathbf{f}\right)
+-\frac{\sigma \beta}{p} \mathbf{M}_2 \mathbf{f} \,,
 $$
 
+where $\mathbf{f} = \left(f_{000}, f_{110}, f_{100}, f_{111}, \dots \right)^{T}$ is a vector
+whose components are the expansion coefficients.
+Additionally, we introduced the matrices $\mathbf{M}_1=\mathbf{A}^a \mathbf{A}^b B_a B_b - B^2\mathbf{1}$ and $\mathbf{M}_2=\frac{3}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}$, 
+where $\mathbf{1}$ is the identity matrix. 
+Moreover, $\mathbf{A}^{i}$ are the representation matrices of the direction operators
+and $\boldsymbol{\Omega}^{i}$ are the ones of the angular momentum operator. 
 
-## Weak formulation in dimensionless units
+The following relations have been used to arrive at the above form
 
-The following weak forms show how the radiation reaction term enters the DG formulation for
-different combinations of **momentum coordinates** (linear or logarithmic)
-and **distribution scaling** non-scaled (f) or scaled ($g=p^{\alpha}f$).
+$$
+\varepsilon_{abc} \mathbf{A}^b \boldsymbol{\Omega}^c \mathbf{A}^a  = -2 \mathbf{1} \quad \text{and} \quad \varepsilon_{abc} B_{a}  B_{d} \mathbf{A}^{b} \boldsymbol{\Omega}^{c}\mathbf{A}^{d} = -\frac{1}{2}\mathbf{A}^a \mathbf{A}^b B_a B_b - \frac{1}{2}B^2 \mathbf{1}\, .
+$$
 
-### Linear, Non-Scaled
+The details of the derivation and a proof that the two identities hold can be found in @cite Harsh2026 .
+
+In the next section, we state which form the radiation reaction force term has in the weak formulation of the VFP equation. 
+Though before doing this, we rewrite it using the dimensionless units of @sapphire . This yields
+
+$$
+\frac{3}{2 \underline{\tau}^*_R} \frac{q^{*4}}{m^{*3}} \left[ \frac{1}{p^{*2}} \mathbf{M}^{*}_1 \partial_p \left(p^{*3} \gamma  \mathbf{f}\right)
+-\frac{1}{\gamma} \mathbf{M}^{*}_2 \mathbf{f} \right] \,,
+$$
+
+where the asterisk indicates that the physical quantities are dimensionless.
+The charge and the mass are expressed in terms of a reference charge $\underline{q}$ and a reference mass $\underline{m}$ respectively. 
+Furthermore, The reference momentum is $\underline{m}c$ 
+and the dimensionless _energy independent_ radiation-reaction timescale is defined by 
+$$
+\underline{\tau}_R = \frac{9\pi \underline{m}^3 c \underline{\omega}_g}{\mu_0 \underline{q}^4\underline{B}^2} \,,
+$$ 
+where the inverse of  $\underline{\omega}_g = \underline{q} \underline{B}/ \underline{m}$ is used as the reference time. For the case of an electron with the default reference magnetic field of $1\mu G$, the radiation-reaction timescale is $\underline{\tau}_R \approx 1.3619 \times 10^{22}$.
+
+Note that we drop the asterisk in the following equations;
+it is implicit that everything is done @sapphire units.
+
+## Weak formulation
+
+@sapphire uses the dG method for the spatial discretisation of the system of PDEs used to compute the expansion coefficients $\mathbf{h}$. 
+The heart of a dG method is the weak formulation of the PDEs. 
+Here we merely state it. For more details we refer the reader to @cite Schween2025 .
+
+Because we allow users of @sapphire to choose between a linear and logarithmic momentum variable ($p$ and $\ln p$ respectively),
+ there are variants of the weak formulation. 
+Additionally, it is possible to scale the distribution function, i.e. $\mathbf{g} = p^{\alpha} \mathbf{f}$, where $\alpha$ is the scaling exponent.
+
+### Linear momentum variable
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
-\left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
-&{}- \int_{T} \partial_{p}\boldsymbol{\Phi}_{i}\cdot
-\left[\!
+& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \mathbf{h} \cdot
+\left[\left( \mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
+\right]
+\mathbf{f} n_{p} \\
+&{}- \int_{T} \frac{\partial \mathbf{h}}{\partial p}\cdot
+\left[
   \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} \\
-&{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
-\left[\!
-  \left(2 \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{1}{\gamma}-2\gamma\right)B^2\mathbf{1}
-\!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
+\right]
+\mathbf{f}  \\
+&{}+ \int_{T} \mathbf{h}\cdot
+\left[
+  \left((2-\alpha) \gamma-\frac{3}{2\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  -\left((2-\alpha)\gamma - \frac{1}{2\gamma}\right)B^2\mathbf{1}
+ \right] 
+\mathbf{f}  \Bigg\}
 \end{split}
-\quad (12)
 $$
 
-### Logarithmic, Non-Scaled
+
+### Logarithmic momentum variable
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
-\left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
-&{}- \int_{T} \frac{\partial \boldsymbol{\Phi}_{i}}{\partial \ln p}\boldsymbol{\Phi}_{i}\cdot
-\left[\!
+& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \mathbf{h} \cdot
+\left[\left( \mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
+ \right]
+\mathbf{f} n_{p} \\
+&{}- \int_{T} \frac{\partial \mathbf{h}}{\partial \ln p} \cdot
+\left[
   \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} \\
-&{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
-\left[\!
-  \left(3 \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{1}{\gamma}-3\gamma\right)B^2\mathbf{1}
-\!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
+\right] 
+\mathbf{f}  \\
+&{}+ \int_{T} \mathbf{h}\cdot
+\left[
+  \left((3-\alpha) \gamma-\frac{3}{2\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  - \left((3-\alpha)\gamma - \frac{1}{2\gamma}\right)B^2\mathbf{1}
+\right] 
+\mathbf{f}  \Bigg\}
 \end{split}
-\quad (13)
 $$
-
-### Linear, Scaled
-
-$$
-\begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
-\left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
-&{}- \int_{T} \partial_{p}\boldsymbol{\Phi}_{i}\cdot
-\left[\!
-  \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} \\
-&{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
-\left[\!
-  \left((2-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{1}{\gamma}-(2-\alpha)\gamma\right)B^2\mathbf{1}
-\!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
-\end{split}
-\quad (14)
-$$
-
-### Logarithmic, Scaled
-
-$$
-\begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \boldsymbol{\Phi}_{i} \cdot
-\left[\left(\!\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} n_{p} \\
-&{}- \int_{T} \frac{\partial \boldsymbol{\Phi}_{i}}{\partial \ln p}\boldsymbol{\Phi}_{i}\cdot
-\left[\!
-  \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
-\!\right]\!
-\zeta_{j}\boldsymbol{\Phi}_{j} \\
-&{}+ \int_{T} \boldsymbol{\Phi}_{i}\cdot
-\left[\!
-  \left((3-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  +\left(\frac{1}{\gamma}-(3-\alpha)\gamma\right)B^2\mathbf{1}
-\!\right]
-\zeta_{j}\boldsymbol{\Phi}_{j} \Bigg\}.
-\end{split}
-\quad (15)
-$$
-
-With, $\underline{\tau}_R$ being the dimensionless energy independent radiation-reaction timescale defined by $$\underline{\tau}_R = \frac{9\pi \underline{m}^3 c \underline{\omega_g}}{\mu_0 \underline{q}^4\underline{B}^2} \quad (16)$$ 
-
-here,
-$$ \mu_0 \: \text{is the permeability of free space,}\\ \underline{q} \: \text{is the particle reference charge,}\\ \underline{m} \:  \text{is the particle reference mass,}\\ c \:  \text{is the speed of light,}\\ \underline{B} \: \text{is the reference magnetic field,}\\ \underline{\omega_g} \:  \text{is the reference gyrofrequency.}
-$$
-
-For the case of an electron with the default reference magnetic field of $1\mu G$, $$\underline{\tau}_R = 1.3619 \times 10^{22}$$ 
-
 
 ## Analytic Solutions
 
