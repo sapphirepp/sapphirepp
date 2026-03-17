@@ -1,5 +1,7 @@
 # Radiation Reaction {#radiation-reaction}
 
+@tableofcontents
+
 @sapphire simulates the evolution of charged particles in a background plasma. 
 The particles are modelled with a phase-space density called the distribution function, 
 which is denoted with $f(t, \mathbf{x}, \mathbf{p})$.
@@ -112,9 +114,15 @@ $$
 
 where $\mathbf{f} = \left(f_{000}, f_{110}, f_{100}, f_{111}, \dots \right)^{T}$ is a vector
 whose components are the expansion coefficients.
-Additionally, we introduced the matrices $\mathbf{M}_1=\mathbf{A}^a \mathbf{A}^b B_a B_b - B^2\mathbf{1}$ and $\mathbf{M}_2=\frac{3}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1}$, 
-where $\mathbf{1}$ is the identity matrix. 
-Moreover, $\mathbf{A}^{i}$ are the representation matrices of the direction operators
+Additionally, we introduced the matrices 
+
+$$ \mathbf{M}_1=\mathbf{A}^a \mathbf{A}^b B_a B_b - B^2\mathbf{1} 
+\quad \text{and} \quad 
+\mathbf{M}_2=\frac{3}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1} \,,
+$$ 
+
+where $\mathbf{1}$ is the identity matrix and where we implicitly sum over the indices $a$ and $b$. 
+Moreover, $\mathbf{A}^{i}$ are the (real) representation matrices of the direction operators
 and $\boldsymbol{\Omega}^{i}$ are the ones of the angular momentum operator. 
 
 The following relations have been used to arrive at the above form
@@ -126,7 +134,8 @@ $$
 The details of the derivation and a proof that the two identities hold can be found in @cite Harsh2026 .
 
 In the next section, we state which form the radiation reaction force term has in the weak formulation of the VFP equation. 
-Though before doing this, we rewrite it using the dimensionless units of @sapphire . This yields
+Though before doing this, we rewrite it using the dimensionless units of @sapphire, see @ref sapphirepp::VFP::ReferenceValues "Reference Values". 
+This yields
 
 $$
 \frac{3}{2 \underline{\tau}^*_R} \frac{q^{*4}}{m^{*3}} \left[ \frac{1}{p^{*2}} \mathbf{M}^{*}_1 \partial_p \left(p^{*3} \gamma  \mathbf{f}\right)
@@ -147,7 +156,7 @@ it is implicit that everything is done @sapphire units.
 
 ## Weak formulation
 
-@sapphire uses the dG method for the spatial discretisation of the system of PDEs used to compute the expansion coefficients $\mathbf{h}$. 
+@sapphire uses the dG method for the spatial discretisation of the system of PDEs used to compute the expansion coefficients $\mathbf{f}$. 
 The heart of a dG method is the weak formulation of the PDEs. 
 Here we merely state it. For more details we refer the reader to @cite Schween2025 .
 
@@ -200,75 +209,156 @@ $$
 \end{split}
 $$
 
-## Analytic Solutions
+## Validation
 
-We add the radiation reaction force straightforwardly to the momentum part of the VFP equation, i.e.
+To validate our implementation of the radiation reaction force, 
+we restrict ourselves to the synchrotron radiation of ultra-relativistic electrons, 
+namely electrons with $\gamma \in  \mathcal{O}(10^6)$.
+
+We distinguish two cases: 
+1. __Pure cooling__, i.e. we instruct @sapphire to solve
+$$
+\frac{\partial \mathbf{f}}{\partial t} + \frac{3}{2 \underline{\tau}_R} \frac{q^{4}}{m^{3}} \left[ \frac{1}{p^{2}} \mathbf{M}_1 \partial_p \left(p^{3} \gamma  \mathbf{f}\right)
+-\frac{1}{\gamma} \mathbf{M}_2 \mathbf{f} \right]  = \mathbf{S} \,,
+$$
+which models the evolution of a homogeneous ($\mathbf{x}$-independent) particle distribution that changes only because of the radiation reaction force.
+2. __Cooling and gyro motion__, i.e. we numerically solve
+$$
+\frac{\partial \mathbf{f}}{\partial t} - \omega_{a} \boldsymbol{\Omega}^{a} + \frac{3}{2 \underline{\tau}_R} \frac{q^{4}}{m^{3}} \left[ \frac{1}{p^{2}} \mathbf{M}_1 \partial_p \left(p^{3} \gamma  \mathbf{f}\right)
+-\frac{1}{\gamma} \mathbf{M}_2 \mathbf{f} \right]  = \mathbf{0} \,,
+$$
+where $\omega_a = q B_a / \gamma m $ is a gyro frequency 
+and the $\boldsymbol{\Omega}^{a}$ matrices introduce the magnetic force that causes the particles to gyrate about the $\mathbf{B}$-field.
+
+In both cases we choose the magnetic field of the background plasma to be aligned with the $x$-axis,
+i.e. $\mathbf{B} = B \mathbf{e}_x$ 
+and we truncate the spherical harmonic expansion of $f$ at $l_{\mathrm{max}} = 1$,
+i.e. we only include a dipole anisotropy. 
+The matrices $\mathbf{M}_1$ and $\mathbf{M}_2$ reduce to
 
 $$
-\frac{\partial f}{\partial t}  + \dots = -\nabla_p \cdot (\mathbf{F}_R f).
-\quad (6)
+\mathbf{M}_1 = B^2
+\begin{pmatrix}
+				-2/3		&  0   &  0				&  0   \\
+				0			& -4/5  &  0				&  0   \\
+				0			&  0   & -2/5				&  0   \\
+				0			&  0   &  0				& -4/5
+\end{pmatrix}
+\quad \text{and} \quad
+
+\mathbf{M}_2 = B^2
+\begin{pmatrix}
+				0		&  0   &  0				&  0   \\
+				0			& -1/5  &  0				&  0   \\
+				0			&  0   & 2/5				&  0   \\
+				0			&  0   &  0				& -1/5
+\end{pmatrix} \,.
 $$
 
-### Isotropic and anisotropic solutions (ultra-relativistic)
-
-To expose anisotropy at first order, we use the linear expansion
-$$
-f = f_0 + \boldsymbol{f_1} \cdot \boldsymbol{n}, \quad (17)
-$$
-
-where $\boldsymbol{n}$ denotes the unit vector in the direction of the particle velocity (i.e.\ $\boldsymbol{n} \equiv \boldsymbol{v}/|\boldsymbol{v}| = \boldsymbol{\beta}/|\boldsymbol{\beta}|$).
-
-Projecting the radiation reaction term onto the isotropic($f_0$) and dipole($f_1$) sectors gives
+The explicit form of the rotation generation matrix is 
 
 $$
-\left(\frac{\partial f_0}{\partial t}\right)_{\!\rm sync}
-=\frac{1}{p^2}\frac{\partial}{\partial p}\!\left[\frac{2\sigma B^2}{3}\,p^2\,\gamma^2\beta\,f_0\right].
-\quad (18)
+\boldsymbol{\Omega}_x
+=
+\begin{pmatrix}
+				0		&  0   &  0				&  0   \\
+				0			& 0  &  0				&  1   \\
+				0			&  0   & 0				&  0   \\
+				0			&  -1   &  0				& 0 
+\end{pmatrix} \,.
 $$
 
-$$
-\left(\frac{\partial f_{1i}}{\partial t}\right)_{\!\rm sync}
-= -\,\frac{\sigma}{5p^2}\frac{\partial}{\partial p}\!\left[ -4B^2p^2(\gamma^2\beta f_{1i})
-+2p^2 B_i B_j(\gamma^2\beta f_{1j})\right]
--\frac{\sigma}{5p}\!\left[-3B_iB_j(\beta f_{1j})+B^2(\beta f_{1i})\right].
-\quad (19)
-$$
+### Pure cooling
 
-Using $\gamma^2\beta \simeq (p/mc)^2$, Eq. (18) reduces to an advection–reaction
-equation in $p$ with solution (characteristics)
+If the electron mass $m_e$ and the elementary change $e$ are used as reference quantities, we can set $q = m = 1$. 
+Furthermore, for ultra-relativistic electrons $v \approx 1$ and $p \approx \gamma$.
+
+In this approximation, the equation for the isotropic part of the distribution function is 
 
 $$
-p^3 f_0(t,p)=k\!\left(\frac{p}{1-t/t_{\rm cool}}\right)\,\frac{1}{1-t/t_{\rm cool}},\qquad
-t_{\rm cool}=\frac{3(m c)^2}{2\sigma B^2 p}
-=\frac{9\pi m^3 c}{\mu_0 e^4 B^2\,\gamma}\ \text{(SI)}.
-\quad (20)
+\partial_t f_{000} - \frac{B^2}{\underline{\tau}_R p^2}
+\partial_p \left( p^4 f_{000} \right) = S_{000} \,.
 $$
 
-Similarly, writing $\mathbf{f}_1=(f_{1x},f_{1y},f_{1z})^\top$ and diagonalising $B\otimes B=\mathbf{V}\Lambda\mathbf{V}^\top$,
-the rotated components $\tilde{\mathbf{f}}_1=\mathbf{V}^\top\mathbf{f}_1$ decouple.
+This equation can be solved with the [methods of characteristics](https://en.wikipedia.org/wiki/Method_of_characteristics): Assuming no source, i.e. $S_{000} = 0$, and the initial condition $f_{000}(t = 0, p) = k_{000}(p)$ with $k_{000}(p)$ being an arbitrary function, the solution is 
 
-### Including rotation (gyromotion)
+$$
+g_{000}(t, p) = h_{000}\left(\frac{p}{1 - p B^2 t/\underline{\tau}_R}\right) \,,
+$$
 
-Rotation couples the real pair $(f_{110},f_{111})$ through $\omega_g=eB/(\gamma m)$.
-Defining $f_\perp=f_{110}+i f_{111}$ yields a single complex advection reaction
-equation with a $-i\omega_g f_\perp$ term.
+where $g_{000} = p^4 f_{000}$ and $h_{000} = p^4 k_{000}$, i.e. we scaled the distribution function 
+($\alpha = 4$).
 
-## Examples
+This shows that the cooling of the particles, namely the energy loss due to the radiation reaction force, happens at a different rate for particles with different energies.
+This is, as expected for the LL radiation reaction force, in agreement with [Larmor's formula](https://en.wikipedia.org/wiki/Larmor_formula);
+the radiated power is proportional to $\gamma^2$.
 
-### 1) Pure cooling, isotropic and anisotropic test
+This can be highlighted with the introduction of a cooling time scale. We define
+$$
+ \tau_{\mathrm{c}}(p) = \frac{\underline{\tau}_R}{p B^2} \,.
+$$
 
-We compare numerical $f_{000}(t,p)$ and  $f_{100}(t,p)$ against analytical results for uniform $B$, $p\in[p_{\min},p_{\max}]$,
-and initial $k(p)=p^{-1}\exp(-p/p_{\max})$ (i.e. $f_0\propto p^{-4}$ with cutoff; scaling index $\alpha=3$).
-The numerical curve follows the analytic cooling trajectory exactly.
+Note that if we had not included the factor $2/3$ in the definition of $\underline{\tau}_R$,
+it would have been explicit in $\tau_c$. 
+
+We proceed analogously with the equation for the dipole component $f_{100}$ 
+and only state that the procedure is the same for $f_{110}$ and $f_{111}$. 
+It is
+
+$$
+\partial_t f_{100} - \frac{3 B^2}{5 \underline{\tau}_R p^2}
+\partial_p \left( p^4 f_{100} \right) - \frac{3 B^2}{5 \underline{\tau}_R p} f_{100} = 0 \,.
+$$
+
+It differs structurally from the equation for the isotropic part $f_{000}$ in having an additional reaction term.
+Though, the methods of characteristics can be still be used to solve it.
+The solution is 
+
+$$
+	g_{100}(t, p) = h_{100}\left(\frac{p}{1 - 3 t/5 \tau_c}\right)
+	\exp\left(\frac{3}{5 p^2} \frac{t}{\tau_c} \left[1 - \frac{3}{10} \frac{t}{\tau_c}\right] \right) \,.
+$$
+
+We emphasise that the exponential correction factor is strongly suppressed.
+
+We now show the @sapphire and the analytic solutions for the initial conditions $k_{000}(p) = N p^{-4} \exp(-p/p_{\mathrm{max}})$, 
+i.e. a power-law with exponential cut-off and an arbitrary normalisation $N$ 
+and 
+$k_{100}(p) = \frac{N}{2 \sqrt{3}} p^{-4} \exp(-p/p_{\mathrm{max}})$ .
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/synchrotron/isotropic-cooling.gif"
 alt="Time-dependent isotropic synchrotron cooling vs analytic." width="60%"/>
 </CENTER>
 
+The numerical curve follows the analytic cooling trajectory exactly.
+
+At the end of the pure-cooling test case, we demonstrate that a continuous injection of mono-energetic particles, that are subsequently cooled, 
+results in a power-law energy spectrum with spectral index minus four. 
+
+We again solve the
+equation for the isotropic part $f_{000}$. This time there are no particles at
+$t = 0$, i.e. $k_{000} = 0$. However, there is a non-trivial source term, namely
+$s_{000} = \sqrt{4\pi} N \delta\left(p - p_{\mathrm{inj}}\right)$. Once more with an
+arbitrary normalisation $N$.
+Keeping in mind that the derivative of a [Heaviside step function](https://en.wikipedia.org/wiki/Heaviside_step_function) can be interpreted as a Delta distribution, 
+the method of characteristics gives
+
+$$
+g_{000}(t, p) = \frac{\sqrt{4\pi} N \underline{\tau}_R}{p^2_{\mathrm{inj}} B^2}
+H\left(2t - (\tau_c - \tau_{c, \mathrm{inj}})\right) \,.
+$$
+
+
 ### 2) l = 1 anisotropy with rotation enabled
 
 Turning on rotation couples $(f_{110},f_{111})$ and produces oscillatory exchange with amplitude damping at the cooling rate where, the phase follows $\omega_g$. @sapphire matches the analytic solution.
+
+### Including rotation (gyromotion)
+
+Rotation couples the real pair $(f_{110},f_{111})$ through $\omega_g=eB/(\gamma m)$.
+Defining $f_\perp=f_{110}+i f_{111}$ yields a single complex advection reaction
+equation with a $-i\omega_g f_\perp$ term.
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/synchrotron/anisotropy-rotation.gif"
@@ -286,4 +376,5 @@ alt="Anisotropic l=1 cooling with rotation: precession and damping." width="60%"
 ---
 
 @author Harsh Goyal (<harsh.goyal@mpi-hd.mpg.de>)
-@date 2025-11-13
+@author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
+@date 2026-03-17
