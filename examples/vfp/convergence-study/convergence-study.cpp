@@ -102,15 +102,11 @@ main(int argc, char *argv[])
       AssertThrow(!error_file.fail(),
                   dealii::ExcFileNotOpen(output_parameters.output_path /
                                          "error.csv"));
-      error_file << "timestep"
-                 << "; "
-                 << "time"
-                 << "; "
-                 << "L2_norm"
-                 << "; "
-                 << "L2_error"
-                 << "; "
-                 << "relative_error" << std::endl;
+      error_file << "time_step_number" << "," //
+                 << "time" << ","             //
+                 << "L2_norm" << ","          //
+                 << "L2_error" << ","         //
+                 << "relative_L2_error" << std::endl;
       /** [Create error file] */
 
 
@@ -192,7 +188,6 @@ main(int argc, char *argv[])
           {
             LogStream::Prefix prefix_error("Error", saplog);
             saplog << "Calculate error" << std::endl;
-
             const double L2_error =
               vfp_solver.compute_global_error(analytic_solution,
                                               dealii::VectorTools::L2_norm,
@@ -202,14 +197,14 @@ main(int argc, char *argv[])
               vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
                                                dealii::VectorTools::L2_norm,
                                                &weight);
-
             saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
                    << ", rel error = " << L2_error / L2_norm << std::endl;
 
-            error_file << discrete_time.get_step_number() << "; "
-                       << discrete_time.get_current_time() << "; " << L2_norm
-                       << "; " << L2_error << "; " << L2_error / L2_norm
-                       << std::endl;
+            error_file << discrete_time.get_step_number() << ","  //
+                       << discrete_time.get_current_time() << "," //
+                       << L2_norm << ","                          //
+                       << L2_error << ","                         //
+                       << L2_error / L2_norm << std::endl;
           }
           /** [Calculate error] */
 
@@ -279,7 +274,6 @@ main(int argc, char *argv[])
       {
         LogStream::Prefix prefix_error("Error", saplog);
         saplog << "Calculate L2 error" << std::endl;
-
         const double L2_error =
           vfp_solver.compute_global_error(analytic_solution,
                                           dealii::VectorTools::L2_norm,
@@ -289,14 +283,14 @@ main(int argc, char *argv[])
           vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
                                            dealii::VectorTools::L2_norm,
                                            &weight);
-
         saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
                << ", rel error = " << L2_error / L2_norm << std::endl;
 
-        error_file << discrete_time.get_step_number() << "; "
-                   << discrete_time.get_current_time() << "; " << L2_norm
-                   << "; " << L2_error << "; " << L2_error / L2_norm
-                   << std::endl;
+        error_file << discrete_time.get_step_number() << ","  //
+                   << discrete_time.get_current_time() << "," //
+                   << L2_norm << ","                          //
+                   << L2_error << ","                         //
+                   << L2_error / L2_norm << std::endl;
       }
       /** [Last time step] */
 

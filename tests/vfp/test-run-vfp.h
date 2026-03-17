@@ -185,7 +185,6 @@ test_run_vfp_error(const sapphirepp::VFP::VFPSolver<dim> &vfp_solver,
   //                                          "VFP - Error");
   dealii::LogStream::Prefix prefix_error("Error", saplog);
   saplog << "Calculate L2 error" << std::endl;
-
   const double L2_error =
     vfp_solver.compute_global_error(exact_solution,
                                     dealii::VectorTools::L2_norm,
@@ -195,16 +194,47 @@ test_run_vfp_error(const sapphirepp::VFP::VFPSolver<dim> &vfp_solver,
     vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
                                      dealii::VectorTools::L2_norm,
                                      weight);
-
   saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
          << ", rel error = " << L2_error / L2_norm << std::endl;
 
-  error_file << time_step_number << "; " //
-             << cur_time << "; "         //
-             << L2_norm << "; "          //
-             << L2_error << "; "         //
-             << L2_error / L2_norm << std::endl;
+  saplog << "Calculate L1 error" << std::endl;
+  const double L1_error =
+    vfp_solver.compute_global_error(exact_solution,
+                                    dealii::VectorTools::L1_norm,
+                                    dealii::VectorTools::L1_norm,
+                                    weight);
+  const double L1_norm =
+    vfp_solver.compute_weighted_norm(dealii::VectorTools::L1_norm,
+                                     dealii::VectorTools::L1_norm,
+                                     weight);
+  saplog << "L1_error = " << L1_error << ", L1_norm = " << L1_norm
+         << ", rel error = " << L1_error / L1_norm << std::endl;
 
+  saplog << "Calculate Linfty error" << std::endl;
+  const double Linfty_error =
+    vfp_solver.compute_global_error(exact_solution,
+                                    dealii::VectorTools::Linfty_norm,
+                                    dealii::VectorTools::Linfty_norm,
+                                    weight);
+  const double Linfty_norm =
+    vfp_solver.compute_weighted_norm(dealii::VectorTools::Linfty_norm,
+                                     dealii::VectorTools::Linfty_norm,
+                                     weight);
+  saplog << "Linfty_error = " << Linfty_error
+         << ", Linfty_norm = " << Linfty_norm
+         << ", rel error = " << Linfty_error / Linfty_norm << std::endl;
+
+  error_file << time_step_number << ","   //
+             << cur_time << ","           //
+             << L2_norm << ","            //
+             << L2_error << ","           //
+             << L2_error / L2_norm << "," //
+             << L1_norm << ","            //
+             << L1_error << ","           //
+             << L1_error / L1_norm << "," //
+             << Linfty_norm << ","        //
+             << Linfty_error << ","       //
+             << Linfty_error / Linfty_norm << std::endl;
 
   if (max_L2_error > 0.)
     AssertThrow((L2_error / L2_norm) < max_L2_error,
@@ -257,11 +287,17 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
       AssertThrow(!error_file.fail(),
                   dealii::ExcFileNotOpen(output_parameters.output_path /
                                          "error.csv"));
-      error_file << "timestep" << "; " //
-                 << "time" << "; "     //
-                 << "L2_norm" << "; "  //
-                 << "L2_error" << "; " //
-                 << "relative_error" << std::endl;
+      error_file << "time_step_number" << ","  //
+                 << "time" << ","              //
+                 << "L2_norm" << ","           //
+                 << "L2_error" << ","          //
+                 << "relative_L2_error" << "," //
+                 << "L1_norm" << ","           //
+                 << "L1_error" << ","          //
+                 << "relative_L1_error" << "," //
+                 << "Linfty_norm" << ","       //
+                 << "Linfty_error" << ","      //
+                 << "relative_Linfty_error" << std::endl;
       /** [Create error file] */
 
 
