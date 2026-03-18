@@ -222,7 +222,7 @@ $$
 -\frac{1}{\gamma} \mathbf{M}_2 \mathbf{f} \right]  = \mathbf{S} \,,
 $$
 which models the evolution of a homogeneous ($\mathbf{x}$-independent) particle distribution that changes only because of the radiation reaction force.
-2. __Cooling and gyro motion__, i.e. we numerically solve
+2. __Cooling and gyromotion__, i.e. we numerically solve
 $$
 \frac{\partial \mathbf{f}}{\partial t} - \omega_{a} \boldsymbol{\Omega}^{a} + \frac{3}{2 \underline{\tau}_R} \frac{q^{4}}{m^{3}} \left[ \frac{1}{p^{2}} \mathbf{M}_1 \partial_p \left(p^{3} \gamma  \mathbf{f}\right)
 -\frac{1}{\gamma} \mathbf{M}_2 \mathbf{f} \right]  = \mathbf{0} \,,
@@ -288,6 +288,7 @@ $$
 
 where $g_{000} = p^4 f_{000}$ and $h_{000} = p^4 k_{000}$, i.e. we scaled the distribution function 
 ($\alpha = 4$).
+Note in @sapphire the scaling exponent $\alpha$ is set to three. 
 
 This shows that the cooling of the particles, namely the energy loss due to the radiation reaction force, happens at a different rate for particles with different energies.
 This is, as expected for the LL radiation reaction force, in agreement with [Larmor's formula](https://en.wikipedia.org/wiki/Larmor_formula);
@@ -336,21 +337,36 @@ The numerical curve follows the analytic cooling trajectory exactly.
 At the end of the pure-cooling test case, we demonstrate that a continuous injection of mono-energetic particles, that are subsequently cooled, 
 results in a power-law energy spectrum with spectral index minus four. 
 
-We again solve the
-equation for the isotropic part $f_{000}$. This time there are no particles at
-$t = 0$, i.e. $k_{000} = 0$. However, there is a non-trivial source term, namely
-$s_{000} = \sqrt{4\pi} N \delta\left(p - p_{\mathrm{inj}}\right)$. Once more with an
-arbitrary normalisation $N$.
-Keeping in mind that the derivative of a [Heaviside step function](https://en.wikipedia.org/wiki/Heaviside_step_function) can be interpreted as a Delta distribution, 
+Therefore, we again solve the equation for the isotropic part $f_{000}$.
+This time there are no particles at $t = 0$, i.e. $k_{000} = 0$. 
+However, there is a non-trivial source term, namely
+
+$$
+S_{000}(t, p) = \frac{Q}{\sqrt{4 \pi} p^2_{\mathrm{inj}}} \delta\left(p - p_{\mathrm{inj}}\right) H(t)\, ,
+$$
+
+where $p_{\mathrm{inj}}$ is the injection energy of the particles, $Q$ is the injection rate 
+and $H(t)$ is a [Heaviside step function](https://en.wikipedia.org/wiki/Heaviside_step_function). 
+
+Keeping in mind that the (weak) derivative of a step function is a Delta distribution, 
+and that $\delta(f(x)) = \sum_i \delta(x - x_i)/|f'(x_i)|$, where $x_i$ are the roots of $f(x)$, 
 the method of characteristics gives
 
 $$
-g_{000}(t, p) = \frac{\sqrt{4\pi} N \underline{\tau}_R}{p^2_{\mathrm{inj}} B^2}
-H\left(2t - (\tau_c - \tau_{c, \mathrm{inj}})\right) \,.
+g_{000}(t, p)
+= \frac{Q}{\sqrt{4\pi}}  p_{\mathrm{inj}} \tau_{c,\mathrm{inj}}
+H\left(p - p_{\mathrm{inj}}\right)
+H\left(t - (\tau_c - \tau_{c, \mathrm{inj}})\right)\,.
 $$
 
+$\tau_{c,\mathrm{inj}}$ is the cooling time corresponding to the injection energy.
+The difference $\tau_c - \tau_{c, \mathrm{inj}}$ is the time it takes to decrease the energy of a particle from its injection energy to the energy $p$.
+The second Heaviside step function ensures that there are no particles with momenta smaller than $p$ at time $t$: If a particle has a momentum smaller $p$, 
+then the corresponding difference between its cooling time and the cooling time of the injection momentum is larger than the one for $p$ 
+and $t$ smaller than this difference 
+and, hence, the step function evaluates to zero.
 
-### 2) l = 1 anisotropy with rotation enabled
+### Cooling and gyromotion
 
 Turning on rotation couples $(f_{110},f_{111})$ and produces oscillatory exchange with amplitude damping at the cooling rate where, the phase follows $\omega_g$. @sapphire matches the analytic solution.
 

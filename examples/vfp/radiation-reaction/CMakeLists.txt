@@ -1,4 +1,3 @@
-add_executable(radiation-reaction radiation-reaction.cpp)
-sapphirepp_setup_target_vfp(radiation-reaction)
-
-add_subdirectory(rotation)
+add_subdirectory(cooling)
+add_subdirectory(cooling-source)
+add_subdirectory(cooling-rotation)
