@@ -366,20 +366,50 @@ then the corresponding difference between its cooling time and the cooling time 
 and $t$ smaller than this difference 
 and, hence, the step function evaluates to zero.
 
+Picture 
+
 ### Cooling and gyromotion
 
-Turning on rotation couples $(f_{110},f_{111})$ and produces oscillatory exchange with amplitude damping at the cooling rate where, the phase follows $\omega_g$. @sapphire matches the analytic solution.
+In this test case, we include the magnetic force in our computations. 
+This leads to the inclusion of the matrix $\boldsymbol{\Omega}_x$ in our system of PDEs
+that determines the expansion coefficients $\mathbf{f}$. 
+Physically, the particles now rotate about the magnetic field with angular frequency $\omega_x = B/\gamma$ 
+_and_ loose energy due to the back reaction of the synchrotron radiation that they emit.
 
-### Including rotation (gyromotion)
+The explicit form of $\boldsymbol{\Omega}_x$ shows that only the equations for the dipole components $f_{110}$ and $f_{111}$ change. 
+The evolution of isotropic part and the dipole component pointing into the $x$-direction is unaffected. 
 
-Rotation couples the real pair $(f_{110},f_{111})$ through $\omega_g=eB/(\gamma m)$.
-Defining $f_\perp=f_{110}+i f_{111}$ yields a single complex advection reaction
-equation with a $-i\omega_g f_\perp$ term.
+To derive an analytic expression for the dipole components perpendicular to the $\mathbf{B}$-field,
+we define 
+
+$$d_\perp = p^4 (f_{110}+ \mathrm{i} f_{111})$$
+
+and add up the equations for $f_{110}$ and $f_{111}$, 
+multiplied in agreement with the above definition.
+This yields
+
+$$
+\partial_t d_{\perp} - \frac{ 6 B^2 p^2}{ 5 \underline{\tau}_R} \partial_p d_{\perp}
+= \left(\frac{3 B^2}{10 \underline{\tau}_R p} -\mathrm{i} \omega_x\right) d_{\perp} \,.
+$$
+
+Its solution is 
+
+$$
+d_{\perp}(t, p) = d_{\perp,0}\left( \frac{p}{1 - 6 t/5 \tau_c}\right)
+\exp(-\mathrm{i} \omega_x t) 
+\exp\left(\frac{3}{10 p^2} \frac{t}{\tau_c} \left[\frac{3}{5} \frac{t}{\tau_c} - 1 \right]\right)
+\,,
+$$
+
+where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the initial conditions.
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/synchrotron/anisotropy-rotation.gif"
 alt="Anisotropic l=1 cooling with rotation: precession and damping." width="60%"/>
 </CENTER>
+
+Turning on rotation couples $(f_{110},f_{111})$ and produces oscillatory exchange with amplitude damping at the cooling rate where, the phase follows $\omega_g$. @sapphire matches the analytic solution.
 
 <div class="section_buttons">
 
@@ -393,4 +423,4 @@ alt="Anisotropic l=1 cooling with rotation: precession and damping." width="60%"
 
 @author Harsh Goyal (<harsh.goyal@mpi-hd.mpg.de>)
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@date 2026-03-17
+@date 2026-03-19
