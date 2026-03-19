@@ -107,6 +107,26 @@ namespace sapphirepp
       init(const int argc, const char *const argv[]);
 
 
+
+      /**
+       * @brief Initialize the log stream and parse command line options
+       *
+       * This function must only be called after MPI initialization.
+       * To show all options use the `--help/-h` flag.
+       *
+       * @param argc Number of commandline arguments
+       * @param argv Commandline arguments
+       * @param parameter_filename Parameter file name
+       * @param resume Resume simulation from checkpoint?
+       */
+      void
+      init_parse(const int         argc,
+                 const char *const argv[],
+                 std::string      &parameter_filename,
+                 bool             &resume);
+
+
+
       /**
        * @brief Attach a logfile to the stream
        *

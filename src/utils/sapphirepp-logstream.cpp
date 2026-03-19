@@ -178,6 +178,106 @@ sapphirepp::Utils::SapphireppLogStream::init(const int         argc,
 
 
 void
+sapphirepp::Utils::SapphireppLogStream::init_parse(
+  const int         argc,
+  const char *const argv[],
+  std::string      &parameter_filename,
+  bool             &resume)
+{
+  int is_initialized;
+  MPI_Initialized(&is_initialized);
+  Assert(is_initialized,
+         dealii::ExcMessage("saplog.init_parse() must be called after MPI "
+                            "initialization!"));
+
+  namespace po = boost::program_options;
+
+  po::options_description sapphirepp_options("Sapphire++ options");
+  sapphirepp_options.add_options()("parameter-file,p",
+                                   po::value<std::string>(&parameter_filename)
+                                     ->default_value(parameter_filename),
+                                   "Parameter file name")(
+    "resume,r", "Resume simulation from checkpoint?");
+  po::positional_options_description pos_args;
+  pos_args.add("parameter-file", 1);
+
+  po::options_description desc("saplog options");
+  desc.add_options()("help,h", "produce help message")(
+    "verbosity,v",
+    po::value<unsigned int>()->default_value(2),
+    "verbosity of the console output\n"
+    "  0 - silence the program\n"
+    "  1 - show only start-up message\n"
+    "  2 - show progress\n"
+    "  >2 - show different levels of debug messages")(
+    "verbose-mpi", "show output from all mpi processes")(
+    "logfile,l", po::value<std::string>(), "output to logfile")(
+    "logfile-verbosity",
+    po::value<unsigned int>()->default_value(
+      std::numeric_limits<unsigned int>::max()),
+    "verbosity of the logfile output")("deallog",
+                                       po::value<unsigned int>()->default_value(
+                                         0),
+                                       "verbosity of deallog");
+
+  po::options_description cmdline_options;
+  cmdline_options.add(sapphirepp_options).add(desc);
+  po::variables_map vm;
+  auto              parsed = po::command_line_parser(argc, argv)
+                  .options(cmdline_options)
+                  .positional(pos_args)
+                  .allow_unregistered()
+                  .run();
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  if (vm.count("help"))
+    {
+      std::cout << std::endl
+                << "Usage: " << argv[0] << " parameter.prm [--options]"
+                << std::endl
+                << cmdline_options << std::endl
+                << "  -help \t shows all MPI/PETSc options" << std::endl
+                << std::endl;
+      std::exit(1);
+    }
+
+  // RemoveOptions from PETSC options to avoid warnings
+  PetscOptionsClearValue(nullptr, "-p");
+  PetscOptionsClearValue(nullptr, "--parameter-file");
+  PetscOptionsClearValue(nullptr, "-r");
+  PetscOptionsClearValue(nullptr, "--resume");
+  PetscOptionsClearValue(nullptr, "-h");
+  PetscOptionsClearValue(nullptr, "--help");
+  PetscOptionsClearValue(nullptr, "-v");
+  PetscOptionsClearValue(nullptr, "--verbosity");
+  PetscOptionsClearValue(nullptr, "--verbose-mpi");
+  PetscOptionsClearValue(nullptr, "-l");
+  PetscOptionsClearValue(nullptr, "--logfile");
+  PetscOptionsClearValue(nullptr, "--logfile-verbosity");
+  PetscOptionsClearValue(nullptr, "--deallog");
+
+  if (vm.count("logfile"))
+    {
+      this->attach_file(vm["logfile"].as<std::string>(),
+                        vm["logfile-verbosity"].as<unsigned int>(),
+                        vm.count("verbose-mpi"));
+    }
+  this->init(vm["verbosity"].as<unsigned int>(), vm.count("verbose-mpi"));
+
+  dealii::deallog.depth_console(vm["deallog"].as<unsigned int>());
+  if (this->has_file())
+    {
+      dealii::deallog.attach(log_file, false);
+      dealii::deallog.depth_file(vm["deallog"].as<unsigned int>());
+    }
+
+  resume = vm.count("resume");
+}
+
+
+
+void
 sapphirepp::Utils::SapphireppLogStream::attach_file(
   const std::string &filepath,
   const unsigned int depth_file,
