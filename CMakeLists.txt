@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-set(DEAL_II_MIN_VERSION "9.6.0")
+set(DEAL_II_MIN_VERSION "9.7.1")
 set(DOXYGEN_MIN_VERSION "1.10.0")
 
 # The version is redefined on the webserver to git describe --tags, where as the
