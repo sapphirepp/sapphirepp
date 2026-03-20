@@ -29,7 +29,6 @@
 #include "vfp-solver.h"
 
 #include <deal.II/base/data_out_base.h>
-#include <deal.II/base/discrete_time.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
@@ -216,6 +215,8 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
+  , current_time{0.}
+  , current_time_step_number{0}
   , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
   , scaling_spectral_index{3.}
   , reflective_bc_signature{{std::vector<double>(pde_system.system_size),
@@ -359,54 +360,51 @@ sapphirepp::VFP::VFPSolver<dim>::run()
   if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
       steady_state_solve();
-      output_results(0, 0);
+      output_results();
       saplog << "Simulation ended. "
              << " \t\t[" << Utilities::System::get_time() << "]" << std::endl;
     }
   else
     {
-      DiscreteTime discrete_time(0,
-                                 vfp_parameters.final_time,
-                                 vfp_parameters.time_step);
-      for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+      while ((vfp_parameters.final_time - current_time) >
+             vfp_parameters.epsilon_d)
         {
           saplog << "Time step " << std::setw(6) << std::right
-                 << discrete_time.get_step_number()
-                 << " at t = " << discrete_time.get_current_time() << " \t["
-                 << Utilities::System::get_time() << "]" << std::endl;
+                 << current_time_step_number << " at t = " << current_time
+                 << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
-          if ((discrete_time.get_step_number() %
-               output_parameters.output_frequency) == 0)
-            output_results(discrete_time.get_step_number(),
-                           discrete_time.get_current_time());
+          if ((current_time_step_number % output_parameters.output_frequency) ==
+              0)
+            output_results();
 
+          const double max_time_step =
+            std::min(vfp_parameters.final_time - current_time,
+                     vfp_parameters.time_step);
           switch (vfp_parameters.time_stepping_method)
             {
               case TimeSteppingMethod::forward_euler:
               case TimeSteppingMethod::backward_euler:
               case TimeSteppingMethod::crank_nicolson:
-                theta_method(discrete_time.get_current_time(),
-                             discrete_time.get_next_step_size());
+                theta_method(current_time, max_time_step);
                 break;
               case TimeSteppingMethod::erk4:
-                explicit_runge_kutta(discrete_time.get_current_time(),
-                                     discrete_time.get_next_step_size());
+                explicit_runge_kutta(current_time, max_time_step);
                 break;
               case TimeSteppingMethod::lserk4:
-                low_storage_explicit_runge_kutta(
-                  discrete_time.get_current_time(),
-                  discrete_time.get_next_step_size());
+                low_storage_explicit_runge_kutta(current_time, max_time_step);
                 break;
               default:
                 AssertThrow(false, ExcNotImplemented());
             }
+
+          current_time += max_time_step;
+          current_time_step_number += 1;
         }
       // Output at the final result
-      output_results(discrete_time.get_step_number(),
-                     discrete_time.get_current_time());
+      output_results();
 
-      saplog << "Simulation ended at t = " << discrete_time.get_current_time()
-             << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+      saplog << "Simulation ended at t = " << current_time << " \t["
+             << Utilities::System::get_time() << "]" << std::endl;
     }
 
   {
@@ -2638,13 +2636,11 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::output_results(
-  const unsigned int time_step_number,
-  const double       cur_time)
+sapphirepp::VFP::VFPSolver<dim>::output_results()
 {
   TimerOutput::Scope timer_section(timer, "VFP - Output");
   LogStream::Prefix  prefix("Output", saplog);
-  saplog << "Output results at t = " << cur_time << std::endl;
+  saplog << "Output results at t = " << current_time << std::endl;
   DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(
@@ -2678,14 +2674,16 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);
-  output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
+  output_parameters.write_results<dim>(data_out,
+                                       current_time_step_number,
+                                       current_time);
 
   probe_location.probe_all_points(
     dof_handler,
     mapping,
     locally_relevant_current_solution,
-    time_step_number,
-    cur_time,
+    current_time_step_number,
+    current_time,
     ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
       "g" :
       "f");
@@ -2800,6 +2798,24 @@ const dealii::PETScWrappers::MPI::Vector &
 sapphirepp::VFP::VFPSolver<dim>::get_current_solution() const
 {
   return locally_relevant_current_solution;
+}
+
+
+
+template <unsigned int dim>
+double
+sapphirepp::VFP::VFPSolver<dim>::get_current_time() const
+{
+  return current_time;
+}
+
+
+
+template <unsigned int dim>
+unsigned int
+sapphirepp::VFP::VFPSolver<dim>::get_current_time_step_number() const
+{
+  return current_time_step_number;
 }
 
 

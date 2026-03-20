@@ -224,15 +224,11 @@ namespace sapphirepp
       /**
        * @brief Output the results
        *
-       * @param time_step_number time step number
-       * @param cur_time Simulation time
-       *
        * @note This function should be a const member, but HDF5 output requires
        *       non-const
        */
       void
-      output_results(const unsigned int time_step_number,
-                     const double       cur_time);
+      output_results();
 
 
 
@@ -360,6 +356,22 @@ namespace sapphirepp
       get_current_solution() const;
 
       /**
+       * @brief Get the current time.
+       *
+       * @return double
+       */
+      double
+      get_current_time() const;
+
+      /**
+       * @brief Get the current time step number.
+       *
+       * @return unsigned int
+       */
+      unsigned int
+      get_current_time_step_number() const;
+
+      /**
        * @brief Get the timer object
        *
        * @return const TimerOutput&
@@ -462,6 +474,13 @@ namespace sapphirepp
       PETScWrappers::MPI::Vector locally_owned_previous_solution;
       /** Current solution */
       PETScWrappers::MPI::Vector locally_relevant_current_solution;
+      /** @} */
+
+      /** @{ */
+      /** Current time. */
+      double current_time;
+      /** Current time step numer. */
+      unsigned int current_time_step_number;
       /** @} */
 
       /** @{ */
