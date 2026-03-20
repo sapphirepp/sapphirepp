@@ -210,8 +210,6 @@ main(int argc, char *argv[])
                                vfp_parameters,
                                output_parameters,
                                exact_solution,
-                               0,
-                               vfp_parameters.final_time,
                                "exact_solution");
 
 
