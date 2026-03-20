@@ -182,42 +182,13 @@ namespace sapphirepp
 
 
       /**
-       * @name Time stepping methods
-       * @{
-       */
-      /**
-       * @brief Calculate one time step with the theta method
+       * @brief Perform one time step and advance current time and time step.
        *
-       * @param time Current time
-       * @param time_step Time step size
+       * @param max_time_step Maximum time step
+       * @return double time_step_size used
        */
-      void
-      theta_method(const double time, const double time_step);
-
-      /**
-       * @brief Calculate one time step with the fourth order explicit
-       *        Runge-Kutta method
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       */
-      void
-      explicit_runge_kutta(const double time, const double time_step);
-
-      /**
-       * @brief Calculate one time step with the low-storage explicit
-       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
-       *	for details.
-       *
-       * @todo Do not reassemble the DG matrix in the first stage of the ERK
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       */
-      void
-      low_storage_explicit_runge_kutta(const double time,
-                                       const double time_step);
-      /** @} */
+      double
+      do_time_step(const double max_time_step);
 
 
 
@@ -580,6 +551,49 @@ namespace sapphirepp
        */
       void
       assemble_dg_matrix(const double time);
+      /** @} */
+
+
+
+      /**
+       * @name Time stepping methods
+       * @{
+       */
+      /**
+       * @brief Calculate one time step with the theta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       * @return double time_step_size used
+       */
+      double
+      theta_method(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the fourth order explicit
+       *        Runge-Kutta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       * @return double time_step_size used
+       */
+      double
+      explicit_runge_kutta(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the low-storage explicit
+       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
+       *	for details.
+       *
+       * @todo Do not reassemble the DG matrix in the first stage of the ERK
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       * @return double time_step_size used
+       */
+      double
+      low_storage_explicit_runge_kutta(const double time,
+                                       const double time_step);
       /** @} */
     };
 

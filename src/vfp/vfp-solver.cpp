@@ -380,25 +380,7 @@ sapphirepp::VFP::VFPSolver<dim>::run()
           const double max_time_step =
             std::min(vfp_parameters.final_time - current_time,
                      vfp_parameters.time_step);
-          switch (vfp_parameters.time_stepping_method)
-            {
-              case TimeSteppingMethod::forward_euler:
-              case TimeSteppingMethod::backward_euler:
-              case TimeSteppingMethod::crank_nicolson:
-                theta_method(current_time, max_time_step);
-                break;
-              case TimeSteppingMethod::erk4:
-                explicit_runge_kutta(current_time, max_time_step);
-                break;
-              case TimeSteppingMethod::lserk4:
-                low_storage_explicit_runge_kutta(current_time, max_time_step);
-                break;
-              default:
-                AssertThrow(false, ExcNotImplemented());
-            }
-
-          current_time += max_time_step;
-          current_time_step_number += 1;
+          do_time_step(max_time_step);
         }
       // Output at the final result
       output_results();
@@ -2247,7 +2229,38 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 
 
 template <unsigned int dim>
-void
+double
+sapphirepp::VFP::VFPSolver<dim>::do_time_step(const double max_time_step)
+{
+  double time_step_size = 0.;
+
+  switch (vfp_parameters.time_stepping_method)
+    {
+      case TimeSteppingMethod::forward_euler:
+      case TimeSteppingMethod::backward_euler:
+      case TimeSteppingMethod::crank_nicolson:
+        time_step_size = theta_method(current_time, max_time_step);
+        break;
+      case TimeSteppingMethod::erk4:
+        time_step_size = explicit_runge_kutta(current_time, max_time_step);
+        break;
+      case TimeSteppingMethod::lserk4:
+        time_step_size =
+          low_storage_explicit_runge_kutta(current_time, max_time_step);
+        break;
+      default:
+        AssertThrow(false, ExcNotImplemented());
+    }
+
+  current_time += max_time_step;
+  current_time_step_number += 1;
+  return time_step_size;
+}
+
+
+
+template <unsigned int dim>
+double
 sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
@@ -2339,12 +2352,14 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
 
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
+
+  return time_step;
 }
 
 
 
 template <unsigned int dim>
-void
+double
 sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
@@ -2525,12 +2540,14 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   temp = 0;
 
   locally_relevant_current_solution = locally_owned_current_solution;
+
+  return time_step;
 }
 
 
 
 template <unsigned int dim>
-void
+double
 sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
@@ -2630,6 +2647,8 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);
   locally_relevant_current_solution = locally_owned_previous_solution;
+
+  return time_step;
 }
 
 
