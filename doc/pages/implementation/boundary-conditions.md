@@ -1,5 +1,7 @@
 # Boundary conditions {#boundary-conditions}
 
+@tableofcontents
+
 @sapphire numerically solves a system of advection-reaction equations
 to obtain a solution to the Vlasov--Fokker--Planck equation.
 It applies the discontinuous Galerkin method. This means that it computes a weak solution.
@@ -442,9 +444,9 @@ $$
  \sin \theta \cos (\pi - \varphi) \\
  \sin \theta \sin (\pi - \varphi)
  \end{pmatrix}
-
- \quad \text{and} \quad
-
+$$
+and
+$$
  \mathbf{M}_{\mathbf{e}_z} \hat{\mathbf{p}}
  =
  \begin{pmatrix}
