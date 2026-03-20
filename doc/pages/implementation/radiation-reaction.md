@@ -402,7 +402,7 @@ d_{\perp}(t, p) = d_{\perp,0}\left( \frac{p}{1 - 6 t/5 \tau_c}\right)
 \,,
 $$
 
-where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the initial conditions.
+where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the scaled initial conditions.
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/synchrotron/anisotropy-rotation.gif"

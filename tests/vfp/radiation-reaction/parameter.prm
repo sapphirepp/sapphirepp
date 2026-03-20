@@ -8,7 +8,7 @@ subsection Output
   set Format                       = pvtu
   set Output frequency             = 20
   set Results folder               = ./results
-  set Simulation identifier        = radiation-reaction-without-rotation
+  set Simulation identifier        = radiation-reaction
 end
 subsection VFP
   subsection Expansion

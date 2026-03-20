@@ -1,3 +1,3 @@
-add_subdirectory(cooling)
-add_subdirectory(cooling-source)
-add_subdirectory(cooling-rotation)
+add_subdirectory(radiation-reaction)
+add_subdirectory(radiation-reaction-with-rotation)
+add_subdirectory(radiation-reaction-with-source)
