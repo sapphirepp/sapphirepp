@@ -165,9 +165,11 @@ namespace sapphirepp
        *
        * This method solves the VFP equation with the parameters given in the
        * constructor. It is the main method of this class.
+       *
+       * @param resume Resume simulation from checkpoint?
        */
       void
-      run();
+      run(const bool resume = false);
       /** @} */
 
 

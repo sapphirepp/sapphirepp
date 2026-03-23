@@ -357,10 +357,26 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::run()
+sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
 {
-  setup();
+  if (resume == false)
+    setup();
+  else
+    {
+      restart();
+      if ((vfp_parameters.final_time - current_time) <=
+          vfp_parameters.epsilon_d)
+        {
+          LogStream::Prefix prefix_vfp("VFP", saplog);
+          saplog << "Loaded simulation has already ended at t = "
+                 << current_time << " \t[" << Utilities::System::get_time()
+                 << "]" << std::endl;
+          return;
+        }
+    }
+
   LogStream::Prefix prefix_vfp("VFP", saplog);
+
   if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
       steady_state_solve();
@@ -370,6 +386,11 @@ sapphirepp::VFP::VFPSolver<dim>::run()
     }
   else
     {
+      // When resuming a simulation,
+      // we do not want to overwrite the checkpoint
+      // and output directly after restart.
+      // Likewise, we do need to create a checkpoint at t=0.
+      bool save_next_checkpoint = false;
       while ((vfp_parameters.final_time - current_time) >
              vfp_parameters.epsilon_d)
         {
@@ -380,14 +401,23 @@ sapphirepp::VFP::VFPSolver<dim>::run()
           if ((current_time_step_number % output_parameters.output_frequency) ==
               0)
             output_results();
+          if (save_next_checkpoint &&
+              (output_parameters.checkpoint_frequency > 0) &&
+              (current_time_step_number %
+                 output_parameters.checkpoint_frequency ==
+               0))
+            checkpoint();
 
           const double max_time_step =
             std::min(vfp_parameters.final_time - current_time,
                      vfp_parameters.time_step);
           do_time_step(max_time_step);
+          save_next_checkpoint = true;
         }
-      // Output at the final result
+      // Output and checkpoint at the final result
       output_results();
+      if (save_next_checkpoint && (output_parameters.checkpoint_frequency > 0))
+        checkpoint();
 
       saplog << "Simulation ended at t = " << current_time << " \t["
              << Utilities::System::get_time() << "]" << std::endl;
