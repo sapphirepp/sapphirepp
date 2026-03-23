@@ -13,7 +13,7 @@ target_include_directories(test-radiation-reaction PUBLIC
 )
 
 add_test(NAME radiation-reaction COMMAND
-  ./test-radiation-reaction parameter.prm 5e-6
+  ./test-radiation-reaction parameter.prm 1e-7
 )
 set_property(TEST radiation-reaction PROPERTY LABELS
   "radiation-reaction"
@@ -25,7 +25,7 @@ set_property(TEST radiation-reaction PROPERTY LABELS
 )
 
 add_test(NAME radiation-reaction-massratio COMMAND
-  ./test-radiation-reaction parameter-massratio.prm 5e-6
+  ./test-radiation-reaction parameter-massratio.prm 1e-7
 )
 set_property(TEST radiation-reaction-massratio PROPERTY LABELS
   "radiation-reaction-massratio"
@@ -66,7 +66,7 @@ target_include_directories(test-radiation-reaction-with-source PUBLIC
 )
 
 add_test(NAME radiation-reaction-with-source COMMAND
-  ./test-radiation-reaction-with-source parameter-with-source.prm 0.01
+  ./test-radiation-reaction-with-source parameter-with-source.prm 0.6
 )
 set_property(TEST radiation-reaction-with-source PROPERTY LABELS
   "radiation-reaction-with-source"

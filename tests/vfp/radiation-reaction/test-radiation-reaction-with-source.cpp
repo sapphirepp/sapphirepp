@@ -90,15 +90,8 @@ namespace sapinternal
       // std::cout << (t >= (tau_c - tau_inj))  << "\n";
       // t >= (tau_c - tau_inj)
       if (t >= (tau_c - tau_inj) and p <= prm.p_inj)
-        {
-          std::cout << "yes" << "\n";
-          g[0] = prm.injection_rate / (std::sqrt(4 * std::numbers::pi) * p) *
-                 prm.p_inj * tau_inj;
-        }
-      else
-        {
-          std::cout << "no" << "\n";
-        }
+        g[0] = prm.injection_rate / (std::sqrt(4 * std::numbers::pi) * p) *
+               prm.p_inj * tau_inj;
     }
 
 
@@ -162,7 +155,9 @@ main(int argc, char *argv[])
                                physical_parameters,
                                output_parameters,
                                exact_solution,
-                               max_L2_error);
+                               max_L2_error,
+                               nullptr,
+                               false);
       /** [Start test run] */
     }
   catch (std::exception &exc)
