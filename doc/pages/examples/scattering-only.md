@@ -417,19 +417,17 @@ only use one thread per process.
 
 @snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp MPI initialization
 
-The custom log stream @ref sapphirepp::saplog "saplog"
-is used to output status and debug information to the console and logfiles.
+Next the command-line arguments are parsed and
+the custom log stream @ref sapphirepp::saplog "saplog" is initialized.
+It is used to output status and debug information to the console and logfiles.
 The verbosity level and logfile can be specified via the command line,
-see @ref sapphirepp::Utils::SapphireppLogStream::init "saplog.init()".
+see @ref sapphirepp::Utils::SapphireppLogStream::init_parse "saplog.init_parse()".
 The default verbosity of `2` corresponds to progress information.
+Command-line arguments not related @ref sapphirepp::saplog "saplog"
+are the `parameter_filename` defaulting to `parameter.prm`
+and the `resume` flag (see @todo ref to resume section).
 
 @snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Saplog
-
-The parameter file is specified as a command-line argument. Therefore, the
-command-line arguments are processed, defaulting to the file `parameter.prm` if
-no argument is given.
-
-@snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Command line argument
 
 Next, all objects that declare runtime parameters are created. These include the
 @ref sapphirepp::VFP::VFPParameters "VFPParameters", @ref
@@ -449,8 +447,11 @@ of the objects are set.
 
 @snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Parse parameters
 
-Finally, we can create the VFP equation solver @ref sapphirepp::VFP::VFPSolver
-"VFPSolver" and run the simulation.
+Finally, we can create the VFP equation solver
+@ref sapphirepp::VFP::VFPSolver "VFPSolver"
+and run the simulation.
+The logic to resume a simulation from a checkpoint is handled by the
+@ref sapphirepp::VFP::VFPSolver::run "vfp_solver.run()" method.
 
 @snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp VFP Solver
 
