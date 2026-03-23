@@ -203,6 +203,7 @@ namespace sapphirepp
 
 
 
+      /** @{ */
       /**
        * @brief Write and read the (meta) data of this object from a archive.
        *
@@ -210,6 +211,7 @@ namespace sapphirepp
        * for the purpose of serialization using the BOOST serialization library.
        * Note that this does not serialize the grid
        * and thus does not write/read full checkpoints!
+       * For that refer to the @ref checkpoint() and @ref restart() methods.
        *
        * @tparam Archive BOOST input/outout archive.
        * @param ar Archive.
@@ -218,6 +220,26 @@ namespace sapphirepp
       template <class Archive>
       void
       serialize(Archive &ar, const unsigned int version);
+
+      /**
+       * @brief Create and save a checkpoint.
+       *
+       * The simulation can be resumed from a checkpoint
+       * using the @ref restart() method.
+       */
+      void
+      checkpoint();
+
+      /**
+       * @brief Resume the simulation from a checkpoint.
+       *
+       * Note, that the checkpoint must use the same dimension,
+       * @ref VFPFlags and Finite Elements.
+       * Other parameters can be changed on your own risk.
+       */
+      void
+      restart();
+      /** @} */
 
 
 

@@ -55,9 +55,13 @@
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools_integrate_difference.h>
 #include <deal.II/numerics/vector_tools_project.h>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 #include <algorithm>
 #include <array>
@@ -2740,6 +2744,122 @@ sapphirepp::VFP::VFPSolver<dim>::serialize(
 
   ar & current_time;
   ar & current_time_step_number;
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::checkpoint()
+{
+  TimerOutput::Scope timer_section(timer, "VFP - Checkpoint");
+  saplog << "Create checkpoint at t = " << current_time << " \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+  LogStream::Prefix prefix("Checkpoint", saplog);
+
+  const std::string checkpoint_basefile =
+    output_parameters.output_path / "tmp.checkpoint_vfp";
+  saplog << "Write checkpoint to files: " << checkpoint_basefile << std::endl;
+
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+    {
+      std::ofstream checkpoint_file(checkpoint_basefile + ".metadata");
+      AssertThrow(checkpoint_file,
+                  ExcMessage("Could not write to checkpoint file: " +
+                             checkpoint_basefile + ".metadata"));
+
+      boost::archive::binary_oarchive archive(checkpoint_file);
+
+      archive << *this;
+    }
+
+  SolutionTransfer<dim, PETScWrappers::MPI::Vector> solution_transfer(
+    dof_handler);
+  solution_transfer.prepare_for_serialization(
+    locally_relevant_current_solution);
+
+  triangulation.save(checkpoint_basefile);
+
+
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+    {
+      output_parameters.move_checkpoint(output_parameters.output_path,
+                                        "tmp.checkpoint_vfp",
+                                        "checkpoint_vfp");
+    }
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::restart()
+{
+  TimerOutput::Scope timer_section(timer, "VFP - Restart");
+  LogStream::Prefix  prefix_vfp("VFP", saplog);
+  saplog << "Restarting VFP equation solver. \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+  LogStream::Prefix prefix("Restart", saplog);
+
+  AssertThrow(dim != 1,
+              ExcMessage(
+                "Restart is currently not implemented for 1D simulations."));
+
+  const std::string checkpoint_basefile =
+    output_parameters.output_path / "checkpoint_vfp";
+  saplog << "Load checkpoint from files: " << checkpoint_basefile << std::endl;
+
+  {
+    saplog << "Load metadata" << std::endl;
+    std::ifstream checkpoint_file(checkpoint_basefile + ".metadata");
+    AssertThrow(checkpoint_file,
+                ExcMessage("Could not read from checkpoint file: " +
+                           checkpoint_basefile + ".metadata"));
+
+    boost::archive::binary_iarchive archive(checkpoint_file);
+    archive >> *this;
+  }
+
+  // Create (coarse) grid before loading triangulation
+  make_grid();
+  saplog << "Load triangulation" << std::endl;
+  triangulation.load(checkpoint_basefile);
+
+  setup_system();
+
+  saplog << "Load solution" << std::endl;
+  SolutionTransfer<dim, PETScWrappers::MPI::Vector> solution_transfer(
+    dof_handler);
+  solution_transfer.deserialize(locally_owned_previous_solution);
+  locally_relevant_current_solution = locally_owned_previous_solution;
+
+  {
+    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+      {
+        TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+        saplog << "Assemble mass matrix." << std::endl;
+        MatrixCreator::create_mass_matrix(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          mass_matrix);
+      }
+  }
+
+  // Assemble the dg matrix for t = current_time
+  assemble_dg_matrix(current_time);
+  // Source term at t = current_time;
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    {
+      TimerOutput::Scope timer_source(timer, "VFP - Source");
+      source_function.set_time(current_time);
+      VectorTools::create_right_hand_side(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          source_function,
+                                          locally_owned_current_source);
+    }
+
+  saplog << "Loaded checkpoint at t = " << current_time << std::endl;
 }
 
 
