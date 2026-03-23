@@ -20,10 +20,10 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/radiation-reaction/config.h
+ * @file examples/vfp/radiation-reaction/radiation-reaction-with-source/config.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
- * @brief Implement physical setup for radiation-reaction example
+ * @brief Implement physical setup for radiation-reaction with a point like injection of particles
  */
 
 #ifndef CONFIG_H
