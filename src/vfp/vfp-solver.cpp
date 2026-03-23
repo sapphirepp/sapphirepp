@@ -2711,6 +2711,40 @@ sapphirepp::VFP::VFPSolver<dim>::output_results()
 
 
 template <unsigned int dim>
+template <class Archive>
+inline void
+sapphirepp::VFP::VFPSolver<dim>::serialize(
+  Archive                            &ar,
+  [[maybe_unused]] const unsigned int version)
+{
+  // Check if dim, vfp_flags and FESystem are the same to ensure consistency
+  unsigned int saved_dim   = dim;
+  unsigned int saved_flags = static_cast<unsigned int>(vfp_flags);
+  std::string  saved_fe    = fe.get_name();
+  ar & saved_dim;
+  ar & saved_flags;
+  ar & saved_fe;
+  AssertThrow(saved_dim == dim,
+              ExcMessage("Dimension of saved archive does not match: " +
+                         Utilities::to_string(saved_dim) +
+                         " != " + Utilities::to_string(dim)));
+  std::stringstream error_message;
+  error_message << "VFPFlags of saved archive do not match!\n"            //
+                << "Saved " << static_cast<VFPFlags>(saved_flags) << "\n" //
+                << "Active " << vfp_flags;
+  AssertThrow(saved_flags == static_cast<unsigned int>(vfp_flags),
+              ExcMessage(error_message.str()));
+  AssertThrow(saved_fe == fe.get_name(),
+              ExcMessage("FESystem of saved archive do not match: " + saved_fe +
+                         " != " + fe.get_name()));
+
+  ar & current_time;
+  ar & current_time_step_number;
+}
+
+
+
+template <unsigned int dim>
 double
 sapphirepp::VFP::VFPSolver<dim>::compute_global_error(
   const Function<dim_ps>         &exact_solution,

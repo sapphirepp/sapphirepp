@@ -204,6 +204,24 @@ namespace sapphirepp
 
 
       /**
+       * @brief Write and read the (meta) data of this object from a archive.
+       *
+       * Write and read the data of this object from a stream
+       * for the purpose of serialization using the BOOST serialization library.
+       * Note that this does not serialize the grid
+       * and thus does not write/read full checkpoints!
+       *
+       * @tparam Archive BOOST input/outout archive.
+       * @param ar Archive.
+       * @param version Archive version.
+       */
+      template <class Archive>
+      void
+      serialize(Archive &ar, const unsigned int version);
+
+
+
+      /**
        * @name Utility functions
        * @{
        */
