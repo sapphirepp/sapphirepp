@@ -25,7 +25,6 @@
  * @brief Implement main function for convergence-study example
  */
 
-#include <deal.II/base/discrete_time.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
 
@@ -132,22 +131,20 @@ main(int argc, char *argv[])
 
 
       /** [Time loop] */
-      DiscreteTime discrete_time(0,
-                                 vfp_parameters.final_time,
-                                 vfp_parameters.time_step);
-      for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+      while ((vfp_parameters.final_time - vfp_solver.get_current_time()) >
+             vfp_parameters.epsilon_d)
         {
           saplog << "Time step " << std::setw(6) << std::right
-                 << discrete_time.get_step_number()
-                 << " at t = " << discrete_time.get_current_time() << " \t["
+                 << vfp_solver.get_current_time_step_number()
+                 << " at t = " << vfp_solver.get_current_time() << " \t["
                  << Utilities::System::get_time() << "]" << std::endl;
 
-          analytic_solution.set_time(discrete_time.get_current_time());
+          analytic_solution.set_time(vfp_solver.get_current_time());
           /** [Time loop] */
 
 
           /** [Output solution] */
-          if ((discrete_time.get_step_number() %
+          if ((vfp_solver.get_current_time_step_number() %
                output_parameters.output_frequency) == 0)
             {
               LogStream::Prefix prefix("Output", saplog);
@@ -159,7 +156,7 @@ main(int argc, char *argv[])
               // Output numeric solution
               data_out.add_data_vector(vfp_solver.get_current_solution(),
                                        PDESystem::create_component_name_list(
-                                         system_size));
+                                         system_size, "numeric_f_"));
 
               // Output projected analytic solution
               vfp_solver.project(analytic_solution, analytic_solution_vector);
@@ -178,8 +175,8 @@ main(int argc, char *argv[])
               data_out.build_patches(vfp_parameters.polynomial_degree);
               output_parameters.write_results<dimension>(
                 data_out,
-                discrete_time.get_step_number(),
-                discrete_time.get_current_time());
+                vfp_solver.get_current_time_step_number(),
+                vfp_solver.get_current_time());
             }
           /** [Output solution] */
 
@@ -200,43 +197,26 @@ main(int argc, char *argv[])
             saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
                    << ", rel error = " << L2_error / L2_norm << std::endl;
 
-            error_file << discrete_time.get_step_number() << ","  //
-                       << discrete_time.get_current_time() << "," //
-                       << L2_norm << ","                          //
-                       << L2_error << ","                         //
+            error_file << vfp_solver.get_current_time_step_number() << "," //
+                       << vfp_solver.get_current_time() << ","             //
+                       << L2_norm << ","                                   //
+                       << L2_error << ","                                  //
                        << L2_error / L2_norm << std::endl;
           }
           /** [Calculate error] */
 
 
           /** [Time step] */
-          switch (vfp_parameters.time_stepping_method)
-            {
-              case TimeSteppingMethod::forward_euler:
-              case TimeSteppingMethod::backward_euler:
-              case TimeSteppingMethod::crank_nicolson:
-                vfp_solver.theta_method(discrete_time.get_current_time(),
-                                        discrete_time.get_next_step_size());
-                break;
-              case TimeSteppingMethod::erk4:
-                vfp_solver.explicit_runge_kutta(
-                  discrete_time.get_current_time(),
-                  discrete_time.get_next_step_size());
-                break;
-              case TimeSteppingMethod::lserk4:
-                vfp_solver.low_storage_explicit_runge_kutta(
-                  discrete_time.get_current_time(),
-                  discrete_time.get_next_step_size());
-                break;
-              default:
-                AssertThrow(false, ExcNotImplemented());
-            }
+          const double max_time_step =
+            std::min(vfp_parameters.final_time - vfp_solver.get_current_time(),
+                     vfp_parameters.time_step);
+          vfp_solver.do_time_step(max_time_step);
         }
       /** [Time step] */
 
 
       /** [Last time step] */
-      analytic_solution.set_time(discrete_time.get_current_time());
+      analytic_solution.set_time(vfp_solver.get_current_time_step_number());
 
       {
         LogStream::Prefix prefix("Output", saplog);
@@ -246,9 +226,9 @@ main(int argc, char *argv[])
         data_out.attach_dof_handler(vfp_solver.get_dof_handler());
 
         // Output numeric solution
-        data_out.add_data_vector(vfp_solver.get_current_solution(),
-                                 PDESystem::create_component_name_list(
-                                   system_size));
+        data_out.add_data_vector(
+          vfp_solver.get_current_solution(),
+          PDESystem::create_component_name_list(system_size, "numeric_f_"));
 
         // Output projected analytic solution
         vfp_solver.project(analytic_solution, analytic_solution_vector);
@@ -267,8 +247,8 @@ main(int argc, char *argv[])
         data_out.build_patches(vfp_parameters.polynomial_degree);
         output_parameters.write_results<dimension>(
           data_out,
-          discrete_time.get_step_number(),
-          discrete_time.get_current_time());
+          vfp_solver.get_current_time_step_number(),
+          vfp_solver.get_current_time());
       }
 
       {
@@ -286,17 +266,17 @@ main(int argc, char *argv[])
         saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
                << ", rel error = " << L2_error / L2_norm << std::endl;
 
-        error_file << discrete_time.get_step_number() << ","  //
-                   << discrete_time.get_current_time() << "," //
-                   << L2_norm << ","                          //
-                   << L2_error << ","                         //
+        error_file << vfp_solver.get_current_time_step_number() << "," //
+                   << vfp_solver.get_current_time() << ","             //
+                   << L2_norm << ","                                   //
+                   << L2_error << ","                                  //
                    << L2_error / L2_norm << std::endl;
       }
       /** [Last time step] */
 
 
       /** [End simulation] */
-      saplog << "Simulation ended at t = " << discrete_time.get_current_time()
+      saplog << "Simulation ended at t = " << vfp_solver.get_current_time()
              << " \t[" << Utilities::System::get_time() << "]" << std::endl;
 
       error_file.close();

@@ -244,9 +244,12 @@ we have to perform the following steps:
 
 - Output the solution, numeric and analytic
 - Calculate the error
-- Advance the time, by performing an Euler or Runge-Kutta step
+- Advance the time, by performing an Euler or Runge-Kutta time step
 
-To keep track of the time steps, we use the @dealref{DiscreteTime} class.
+To keep track of the time steps, we use the member variables
+@ref sapphirepp::VFP::VFPSolver::get_current_time "current_time"
+and @ref sapphirepp::VFP::VFPSolver::get_current_time_step_number "current_time_step_number"
+via their respective getter functions.
 
 @snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Time loop
 
@@ -255,8 +258,11 @@ We only want to output the solution every Nth time steps, where N is the
 different vectors to the output:
 
 - the numeric solution
+  (prefixed with `numeric_f_`)
 - a projection of analytic solution onto the finite element DG space
+  (prefixed `project_f_`)
 - an interpolation of the analytic solution
+  (prefixed `interpol_f_`)
 
 @snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Output solution
 
@@ -275,9 +281,10 @@ We output this results and save them to the `csv` file.
 
 @snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Calculate error
 
-Finally, we advance the time by performing an Euler or Runge-Kutta step. We
-select the method according to the `time_stepping_method` runtime parameter, and
-use the methods implemented in the @ref sapphirepp::VFP::VFPSolver "VFPSolver".
+Finally, we advance the time by performing a time step.
+First we need to make sure not to overstep the `final_time`,
+the rest is handled by the
+@ref sapphirepp::VFP::VFPSolver::do_time_step "do_time_step()" function.
 
 @snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Time step
 
