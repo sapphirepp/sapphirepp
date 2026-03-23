@@ -1,78 +1,52 @@
 """Plot radiation-reaction example."""
 
-import paraview.simple as ps
-from sapphireppplot import vfp  # , pvplot, transform
+from sapphireppplot import vfp, utils
 
 
 def main() -> dict:
-        """Plot radiation-reaction example."""
-        plot_properties = vfp.PlotPropertiesVFP(
-                dimension=1,
-                momentum=True,
-                lms_indices=[[0, 0, 0], [1, 0, 0]],
-                scaled_distribution_function=True,
-                # For test runs with analytic solution:
-                prefix_numeric=True,
-                project=True,
-        )
-        plot_properties.convert_lnp_to_p()
+    """Plot radiation-reaction example."""
+    plot_properties = vfp.PlotPropertiesVFP(
+        dimension=1,
+        momentum=True,
+        lms_indices=[[0, 0, 0], [1, 0, 0]],
+        scaled_distribution_function=True,
+        line_colors={
+            "g_000": utils.sapphirepp_colors()[0],
+            "g_100": utils.sapphirepp_colors()[1],
+            "numeric_g_000": utils.sapphirepp_colors()[0],
+            "numeric_g_100": utils.sapphirepp_colors()[1],
+            "project_g_000": utils.sapphirepp_colors()[0],
+            "project_g_100": utils.sapphirepp_colors()[1],
+        },
+        # For test runs with analytic solution:
+        prefix_numeric=True,
+        project=True,
+    )
+    plot_properties.convert_lnp_to_p()
 
-        results_folder, prm, solution, animation_scene = vfp.load_solution(
-                plot_properties,
-                results_folder="$SAPPHIREPP_RESULTS/radiation-reaction/",
-        )
+    results_folder, prm, solution, animation_scene = vfp.load_solution(
+        plot_properties,
+        results_folder="$SAPPHIREPP_RESULTS/radiation-reaction/",
+    )
 
-        # solution_scaled, plot_properties_scaled = vfp.scale_distribution_function(
-        #     solution, plot_properties
-        # )
+    solution_scaled, plot_properties_scaled = vfp.scale_distribution_function(
+        solution, plot_properties
+    )
 
-        layout, line_chart_view = vfp.plot_f_lms_1d(
-                solution,
-                results_folder,
-                "radiation-reaction",
-                plot_properties,
-                value_range=[1e-5, 15],
-                log_y_scale=True,
-                save_animation=True,
-        )
+    layout, line_chart_view = vfp.plot_f_lms_1d(
+        solution_scaled,
+        results_folder,
+        "radiation-reaction",
+        plot_properties_scaled,
+        value_range=[1e-5, 15],
+        log_y_scale=True,
+        save_animation=True,
+    )
 
-        # region Plot over time
-        # ln_p_hat = 16.0
-        # # ln_p_hat = 24  # for reference units in m_p
-        # probe_location, plot_properties_t = transform.probe_location(
-        #     solution, [ln_p_hat, 0.0, 0.0], plot_properties
-        # )
-
-        # plot_over_time, plot_properties_t = transform.plot_over_time(
-        #     probe_location,
-        #     results_folder=results_folder,
-        #     filename="temporal-evolution",
-        #     plot_properties_in=plot_properties_t,
-        # )
-
-        # layout_t = ps.CreateLayout("temporal-evolution")
-        # line_chart_view_t = pvplot.plot_line_chart_view(
-        #     plot_over_time,
-        #     layout_t,
-        #     x_label=r"$t$",
-        #     y_label=r"$g_{lms}$",
-        #     x_array_name="Time",
-        #     visible_lines=[
-        #         f"{name} (id=0)" for name in plot_properties.series_names
-        #     ],
-        #     x_range=[0.0, 1e-5],
-        #     log_y_scale=True,
-        #     plot_properties=plot_properties_t,
-        # )
-        # pvplot.save_screenshot(
-        #     layout_t, results_folder, "temporal-evolution", plot_properties_t
-        # )
-        # endregion
-
-        return locals()
+    return locals()
 
 
 if __name__ in ["__main__", "__vtkconsole__"]:
-        results = main()
-        # Make all results available as global variables in a vtkconsole
-        globals().update(results)
+    results = main()
+    # Make all results available as global variables in a vtkconsole
+    globals().update(results)
