@@ -1,7 +1,7 @@
 subsection Physical parameters
   set B0    = 1e+10
   set p_min = 1e+06
-  set p_max = 1e+07
+  set p_max = 0.2e+07
 end
 subsection Output
   set Base file name               = solution
@@ -19,7 +19,7 @@ subsection VFP
   end
   subsection Mesh
     set Grid type       = Hypercube
-    set Number of cells = 64
+    set Number of cells = 256
     set Point 1         = 13.815510558 # ln(1e6)
     set Point 2         = 18.420680744 # ln(1e8)
     subsection Boundary conditions

@@ -23,6 +23,7 @@
  * @file
  * tests/vfp/radiation-reaction/test-radiation-reaction-without-rotation.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @brief Implement tests for radiation-reaction example without rotation
  */
 
@@ -73,55 +74,29 @@ namespace sapinternal
 
       g = 0;
 
-      // Time
-      const double t = this->get_time();
       // Momentum coordinate
       const double p = std::exp(point[0]);
-      // Radiation–reaction coefficient
-      const double rr =
-        1.5 * std::pow(vfp_parameters.mass, -3) *
-        std::pow(vfp_parameters.charge, 4) /
-        vfp_parameters.reference_units.radiation_reaction_characteristic_time;
-      // Print rr
-      // std::cout << "Radiation-reaction coefficient rr = " << rr << std::endl;
-      // Magnetic field magnitude
-      const double B2 = prm.B0 * prm.B0;
 
+      // Time
+      const double t = this->get_time();
+      const double tau_R =
+        vfp_parameters.reference_units.radiation_reaction_characteristic_time /
+        (std::pow(vfp_parameters.mass, -3) *
+         std::pow(vfp_parameters.charge, 4));
+
+      const double tau_c = tau_R / (prm.B0 * prm.B0 * p);
       // g_000
-      const double tau_s           = 1.0 / ((2.0 / 3.0) * rr * B2);
-      const double denominator_000 = 1.0 - p * t / tau_s;
-
-      double g_000 = 0.0;
-      if (denominator_000 > 0.)
-        {
-          const double p_char = p / denominator_000;
-
-
-          g_000 = std::pow((p_char / prm.p_min), -1.0) *
-                  std::exp(-p_char / prm.p_max) * (1.0 + (t / tau_s) * p_char);
-        }
-
+      // ensure that the characteristic momentum is larger or equal zero
+      double p_char_g000 = (p / (1 - t / tau_c));
+      if (p_char_g000 >= 0.)
+        g[0] = prm.p_min / p * std::exp(-p_char_g000 / prm.p_max);
       // g_100
-      const double tau_s_100       = 1.0 / ((2.0 / 5.0) * rr * B2);
-      const double denominator_100 = 1.0 - p * t / tau_s_100;
-
-      double g_100 = 0.0;
-      if (denominator_100 > 0.0)
-        {
-          const double p_char_100 = p / denominator_100;
-
-          // Initial condition
-          const double k_p_char_100 = 0.5 / std::numbers::sqrt3 *
-                                      std::pow((p_char_100 / prm.p_min), -1.0) *
-                                      std::exp(-p_char_100 / prm.p_max);
-
-          g_100 = k_p_char_100 * (1.0 / denominator_100) *
-                  std::exp((2.0 * rr * B2 / (5.0 * p)) * t *
-                           (1.0 - (rr * B2 * p * t) / 5.0));
-        }
-
-      g[0] = g_000;
-      g[2] = g_100;
+      double p_char_g100 = p / (1 - (3 * t) / (5 * tau_c));
+      if (p_char_g100 >= 0.)
+        g[2] =
+          0.5 / std::numbers::sqrt3 * prm.p_min / p *
+          std::exp(-p_char_g100 / prm.p_max) *
+          std::exp(3 / (5 * p * p) * t / tau_c * (1 - (3 * t) / (10 * tau_c)));
     }
 
 
