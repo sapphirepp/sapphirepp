@@ -22,8 +22,8 @@
 /**
  * @file
  * tests/vfp/radiation-reaction/test-radiation-reaction-with-rotation.cpp
- * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement tests for radiation-reaction example with rotation
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @brief Implement tests for radiation-reaction example with source
  */
 
 #include <deal.II/base/mpi.h>

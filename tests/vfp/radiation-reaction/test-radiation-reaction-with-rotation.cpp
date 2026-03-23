@@ -23,6 +23,7 @@
  * @file
  * tests/vfp/radiation-reaction/test-radiation-reaction-with-rotation.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
+ * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @brief Implement tests for radiation-reaction example with rotation
  */
 
@@ -72,22 +73,30 @@ namespace sapinternal
       AssertDimension(g.size(), this->n_components);
 
       g = 0;
-
-      // Time
-      const double t = this->get_time();
       // Momentum coordinate
       const double p = std::exp(point[0]);
 
+      // Time
+      const double t = this->get_time();
+      const double tau_R =
+        vfp_parameters.reference_units.radiation_reaction_characteristic_time /
+        (std::pow(vfp_parameters.mass, -3) *
+         std::pow(vfp_parameters.charge, 4));
+
+      const double tau_c = tau_R / (prm.B0 * prm.B0 * p);
+
+      const double p_char  = p / (1 - (6 * t) / (5 * tau_c));
+      const double omega_x = prm.B0 / p;
+
+      const double exponential_correction_factor =
+        std::exp(3 / (10 * p * p) * t / tau_c * ((3 * t) / (5 * tau_c) - 1));
+
       // g_110
-      double g_110 = (0.5 / std::sqrt(6.0)) * std::cos(prm.B0 * t / p) *
-                     std::pow((p / prm.p_min), -1.0) * std::exp(-p / prm.p_max);
-
+      g[1] = (0.5 / std::sqrt(6.0)) * std::cos(omega_x * t) * prm.p_min / p *
+             std::exp(-p_char / prm.p_max) * exponential_correction_factor;
       // g_111
-      double g_111 = -(0.5 / std::sqrt(6.0)) * std::sin(prm.B0 * t / p) *
-                     std::pow((p / prm.p_min), -1.0) * std::exp(-p / prm.p_max);
-
-      g[1] = g_110;
-      g[3] = g_111;
+      g[3] = -(0.5 / std::sqrt(6.0)) * std::sin(omega_x * t) * prm.p_min / p *
+             std::exp(-p_char / prm.p_max) * exponential_correction_factor;
     }
 
 
