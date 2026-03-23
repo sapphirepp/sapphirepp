@@ -24,8 +24,11 @@ is described by the radiation reaction equation as discussed by Landau and Lifsh
 It supplements the Lorentz force law with an additional damping force, namely
 
 $$ 
-\mathbf{F}_R = \frac{\mu_0q^{3}\gamma}{6\pi mc} 
- \Bigg\{ \left( \frac{\partial}{\partial t} + \mathbf{v} \cdot \nabla \right)(\mathbf{E}+\mathbf{v} \times \mathbf{B}) \Bigg\} + \frac{\mu_0q^{4}}{6\pi m^{2}c} \Bigg\{\frac{1}{c^2} \mathbf{E} (\mathbf{v} \cdot \mathbf{E}) - \mathbf{B} \times (\mathbf{E} +\mathbf{v} \times \mathbf{B}) \Bigg\} - \frac{\mu_0q^{4} \gamma^2}{6\pi m^{2}c^{3}} \Bigg\{\left( \mathbf{E} + \mathbf{v} \times \mathbf{B} \right)^{2} - \frac{1}{c^{2}} (\mathbf{E} \cdot \mathbf{v})^{2} \Bigg\} \mathbf{v} .
+\begin{align}
+\mathbf{F}_R &= \frac{\mu_0q^{3}\gamma}{6\pi mc} 
+ \Bigg\{ \left( \frac{\partial}{\partial t} + \mathbf{v} \cdot \nabla \right)(\mathbf{E}+\mathbf{v} \times \mathbf{B}) \Bigg\}\\
+ &\phantom{=} {}+ \frac{\mu_0q^{4}}{6\pi m^{2}c} \Bigg\{\frac{1}{c^2} \mathbf{E} (\mathbf{v} \cdot \mathbf{E}) - \mathbf{B} \times (\mathbf{E} +\mathbf{v} \times \mathbf{B}) \Bigg\} - \frac{\mu_0q^{4} \gamma^2}{6\pi m^{2}c^{3}} \Bigg\{\left( \mathbf{E} + \mathbf{v} \times \mathbf{B} \right)^{2} - \frac{1}{c^{2}} (\mathbf{E} \cdot \mathbf{v})^{2} \Bigg\} \mathbf{v} \,.
+ \end{align}
 $$
 
 Here, $\mu_0$ denotes the magnetic vacuum permeability, 
@@ -79,12 +82,14 @@ responsible for energy losses.
 We, finally, add the radiation reaction force $\mathbf{F}'_R$ to the VFP equation used in @sapphire, i.e. the modified VFP equation is
 
 $$
+\begin{multline}
 \frac{\partial f}{\partial t} + (\mathbf{U} + \mathbf{v}) \cdot \nabla_x f
 -\gamma m \frac{\mathrm{D} \mathbf{U}}{\mathrm{D} t} \cdot \nabla_p f
-- (\mathbf{p} \cdot \nabla_x) \mathbf{U} \cdot \nabla_p f
+- (\mathbf{p} \cdot \nabla_x) \mathbf{U} \cdot \nabla_p f \\
 +\nabla_p \cdot (\mathbf{F}_R f)
 + q (\mathbf{v} \times \mathbf{B} ) \cdot \nabla_p f
 = \frac{\nu}{2}\,\Delta_{\theta \varphi} f + S \, .
+\end{multline}
 $$
 
 We emphasise that we dropped the apostrophe again; in @sapphire it is implicit that all quantities related to momentum are given in the fluid rest frame. For a more detailed discussion of the above equation see @cite Schween2024a , in particular Sec. 2. 
@@ -328,8 +333,8 @@ and
 $k_{100}(p) = \frac{N}{2 \sqrt{3}} p^{-4} \exp(-p/p_{\mathrm{max}})$ .
 
 <CENTER>
-<img src="https://sapphirepp.org/img/implementation/synchrotron/isotropic-cooling.gif"
-alt="Time-dependent isotropic synchrotron cooling vs analytic." width="60%"/>
+<img src="https://sapphirepp.org/img/implementation/radiation-reaction/radiation-reaction.gif"
+alt="Time-dependent simulation of the radiation reaction force due to synchrotron emission. Its effect on the isotropic part and the dipole anisotropy of the distribution function is shown." width="80%"/>
 </CENTER>
 
 The numerical curve follows the analytic cooling trajectory exactly.
@@ -366,7 +371,14 @@ then the corresponding difference between its cooling time and the cooling time 
 and $t$ smaller than this difference 
 and, hence, the step function evaluates to zero.
 
-Picture 
+The next animation shows the result of @sapphire simulation using as narrow Gaussian distribution as a point-like injection:
+
+<CENTER>
+<img src="https://sapphirepp.org/img/implementation/radiation-reaction/radiation-reaction-with-source.gif"
+alt="A steady injection of mono-energetic ultra-relativistic electrons that loose energry due to synchrotron radiation results in p to the power of power power-law." width="80%"/>
+</CENTER>
+
+The peak at the edges results from interpolating a Heaviside step function.
 
 ### Cooling and gyromotion
 
@@ -404,12 +416,19 @@ $$
 
 where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the scaled initial conditions.
 
+Using the initial condition $h_{110}(p) =  0.5/\sqrt{6} * p_{min}  std::exp(-p / p_{max})$ and $h_{111}(p) = 0$,
+a @sapphire simulation yields
+
 <CENTER>
-<img src="https://sapphirepp.org/img/implementation/synchrotron/anisotropy-rotation.gif"
-alt="Anisotropic l=1 cooling with rotation: precession and damping." width="60%"/>
+<img src="https://sapphirepp.org/img/implementation/radiation-reaction/radiation-reaction-with-rotation.gif"
+alt="Radiation reaction force plus gyro motion. The particles gyrate about the magnetic field and loose energy due to the radiation reaction force." width="80%"/>
 </CENTER>
 
-Turning on rotation couples $(f_{110},f_{111})$ and produces oscillatory exchange with amplitude damping at the cooling rate where, the phase follows $\omega_g$. @sapphire matches the analytic solution.
+The inclusion of the magnetic force term in the VFP a equation leads to a shifted of oscillation, with angular frequency $\omega_x$,
+of the perpendicular dipole components $f_{110}$ and $f_{111}$. 
+This oscillatory exchange represents the gyro motion of the particles.
+Their perpendicular momentum is lost due to the radiation reaction force. 
+This leads to the shift of the initial condition $d_{\perp, 0}$ to lower momenta. 
 
 <div class="section_buttons">
 
@@ -423,4 +442,4 @@ Turning on rotation couples $(f_{110},f_{111})$ and produces oscillatory exchang
 
 @author Harsh Goyal (<harsh.goyal@mpi-hd.mpg.de>)
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@date 2026-03-19
+@date 2026-03-23
