@@ -228,6 +228,8 @@ namespace sapphirepp
        *
        * The simulation can be resumed from a checkpoint
        * using the @ref restart() method.
+       *
+       * @see @ref resume-parallel-shock
        */
       void
       checkpoint();
@@ -238,6 +240,8 @@ namespace sapphirepp
        * Note, that the checkpoint must use the same dimension,
        * @ref VFPFlags and Finite Elements.
        * Other parameters can be changed on your own risk.
+       *
+       * @see @ref resume-parallel-shock
        */
       void
       restart();

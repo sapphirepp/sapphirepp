@@ -131,11 +131,12 @@ primarily focusing on `Output` and `VFP` equation parameters.
 Key parameters are:
 
 | Parameter Name        | Category              | Description                                                    |
-|:----------------------|:----------------------|:---------------------------------------------------------------|
+| :-------------------- | :-------------------- | :------------------------------------------------------------- |
 | Results directory     | `Output`              | Specifies the directory for output files.                      |
 | Format                | `Output`              | Defines the output format (e.g., `vtu/pvtu/hdf5`).             |
 | Output frequency      | `Output`              | Determines the frequency of output.                            |
 | Simulation identifier | `Output`              | Name of the simulation run, i.e. subfolder for the simulation. |
+| Checkpoint frequency  | `Output`              | Time step frequency at which checkpoints are created.          |
 | Expansion order       | `VFP:Expansion`       | Sets the expansion order in spherical harmonics.               |
 | Polynomial degree     | `VFP:Finite Elements` | Indicates the polynomial degree of the finite element method.  |
 | Grid type             | `VFP:Mesh`            | Specifies the grid type (e.g., `Shock grid/Hypercube/File`).   |
@@ -231,7 +232,7 @@ that describe their physical setup.
 The example parameters include:
 
 | Name                 | Symbol        | Code                | Description                            |
-|:---------------------|:--------------|:--------------------|:---------------------------------------|
+| :------------------- | :------------ | :------------------ | :------------------------------------- |
 | Shock velocity       | $U_{\rm sh}$  | `u_sh`              | Velocity of the shock.                 |
 | Compression ratio    | $r$           | `compression_ratio` | Compression ratio of the shock.        |
 | Injection momentum   | $p_{\rm inj}$ | `p_inj`             | Momentum of the injected particles.    |
@@ -242,7 +243,7 @@ The example parameters include:
 Additionally, there are several numerical parameters that are not part of the physical setup:
 
 | Name                   | Symbol        | Code          | Description                                    |
-|:-----------------------|:--------------|:--------------|:-----------------------------------------------|
+| :--------------------- | :------------ | :------------ | :--------------------------------------------- |
 | Shock width            | $d_{\rm sh}$  | `shock_width` | Width of the shock.                            |
 | Injection width in $p$ | $\sigma_p$    | `sig_p`       | Width of the injection in momentum.            |
 | Injection width in $x$ | $\sigma_x$    | `sig_x`       | Width of the injection in configuration space. |
@@ -387,6 +388,75 @@ export SAPPHIREPP_RESULTS=$(pwd)/results
 python examples/vfp/parallel-shock/plot_parallel_shock.py
 ```
 
+### Resume simulation {#resume-parallel-shock}
+
+Sometimes simulations fail.
+This can be related to a bug -
+in that case you probably need to rerun the simulation from start after fixing it.
+But it can also be due to hardware failure
+or because of time limits for large simulations on HPC clusters.
+In this case it is imperative to be able to restart simulation from an earlier time step.
+For this special output files are needed, called `checkpoints`.
+(The normal output is processed so it can be easily visualized,
+but it looses information on the underlying discontinuous Galerkin (dG) degrees of freedom (DoFs).)
+
+To enable checkpointing, you need to set the `Checkpoint frequency` in the parameter file.
+In this example we use a `Checkpoint frequency = 50`,
+which means that a `checkpoint` will be created every 50 simulation time steps.
+This is quite excessive and chosen for educational purposes.
+A good checkpoint frequency is a compromise of how long it takes to run a time step,
+the expected failure rate/cluster time limit
+and the time it needs to write the checkpoints.
+See the
+[deal.II checkpoint/restart tutorial](https://dealii.org/current/doxygen/deal.II/step_83.html#step_83-Howoftentosaverestore)
+for more details.
+
+After running the simulation, you can find these `checkpoints` in the `results` folder:
+
+```shell
+ls results/parallel-shock
+```
+
+yields
+
+```text
+checkpoint_vfp
+checkpoint_vfp_fixed.data
+checkpoint_vfp.info
+checkpoint_vfp.metadata
+log.prm
+solution_0000.pvtu
+...
+```
+
+These `checkpoint` files save basic metadata, the grid and solution DoFs.
+Only the most recent `checkpoint` is kept to limit storage usage.
+
+Restarting a simulation is done with the `--resume` (or `-r`) command-line flag.
+Since the `checkpoint` does _not_ save the parameters used for the simulation,
+you also have to provide a parameter file to @sapphire.
+This allows you to change some parameters between restarts.
+But to keep parameters consistent, the `log.prm` file can be used:
+
+```shell
+mpirun -n 6 ./build/examples/vfp/parallel-shock/parallel-shock results/parallel-shock/log.prm --resume
+```
+
+Note, that the number of MPI processes can differ for the restart.
+In case of a successful restart, you should see the following message:
+
+```text
+Sapphire::Start Sapphire++ v1.3.0 with 6 MPI process(es)
+Sapphire:VFP::Restarting VFP equation solver.
+Sapphire:VFP::Time step     50 at t = 5000.00
+...
+```
+
+@note The restart currently only works for 2D and 3D simulations.
+      We assume most 1D simulations are fast and do not need checkpoints.
+      Furthermore, `checkpoints` are only available for time-dependent simulations.
+      In steady-state simulations there is no obvious point to save checkpoints.
+
 ## Results {#results-parallel-shock}
 
 Before we analyse the results,
@@ -431,7 +501,7 @@ In @cite Dann2025 it is demonstrated that @sapphire reproduces it accurately.
 <div class="section_buttons">
 
 | Previous              |
-|:----------------------|
+| :-------------------- |
 | [Examples](#examples) |
 
 </div>

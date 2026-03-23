@@ -425,7 +425,7 @@ see @ref sapphirepp::Utils::SapphireppLogStream::init_parse "saplog.init_parse()
 The default verbosity of `2` corresponds to progress information.
 Command-line arguments not related @ref sapphirepp::saplog "saplog"
 are the `parameter_filename` defaulting to `parameter.prm`
-and the `resume` flag (see @todo ref to resume section).
+and the `resume` flag (see @ref resume-parallel-shock).
 
 @snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp Saplog
 

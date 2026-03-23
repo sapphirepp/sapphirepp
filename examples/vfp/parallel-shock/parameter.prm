@@ -3,6 +3,7 @@ subsection Output
   set Simulation identifier        = parallel-shock
   set Format                       = pvtu
   set Output frequency             = 1
+  set Checkpoint frequency         = 50
 end
 subsection VFP
   subsection Expansion
