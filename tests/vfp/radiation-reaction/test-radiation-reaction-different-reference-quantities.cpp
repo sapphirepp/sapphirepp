@@ -89,7 +89,7 @@ namespace sapinternal
       // ensure that the characteristic momentum is larger or equal zero
       double p_char_g000 = (p / (1 - t / tau_c));
       if (p_char_g000 >= 0.)
-        g[0] = prm.p_min / p * std::exp(-p_char_g000 / prm.p_max) * 4;
+        g[0] = prm.p_min / p * std::exp(-p_char_g000 / prm.p_max) * 0.25;
       // g_100
       double p_char_g100 = p / (1 - (3 * t) / (5 * tau_c));
       if (p_char_g100 >= 0.)
@@ -97,7 +97,7 @@ namespace sapinternal
           0.5 / std::numbers::sqrt3 * prm.p_min / p *
           std::exp(-p_char_g100 / prm.p_max) *
           std::exp(3 / (5 * p * p) * t / tau_c * (1 - (3 * t) / (10 * tau_c))) *
-          4;
+          0.25;
     }
 
 

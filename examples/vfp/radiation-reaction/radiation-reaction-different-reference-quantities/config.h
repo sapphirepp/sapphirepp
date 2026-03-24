@@ -144,15 +144,15 @@ namespace sapphirepp
         /** [Initial value] */
         const double p = std::exp(point[0]);
 
-        g[0] =
-          std::pow(p / prm.p_min, -1) * std::exp(-p / prm.p_max) *
-          4; // g_000 (here the factor 4 appears because of teh change in the
-             // particle mass by a factor of 4 which appears in parameter.prm)
-        g[2] =
-          0.5 / std::numbers::sqrt3 * std::pow(p / prm.p_min, -1) *
-          std::exp(-p / prm.p_max) *
-          4; // g_100 (here the factor 4 appears because of teh change in the
-             // particle mass by a factor of 4 which appears in parameter.prm)
+        g[0] = std::pow(p / prm.p_min, -1) * std::exp(-p / prm.p_max) *
+               0.25; // g_000 (here the factor 0.25 appears because of the
+                     // change in the particle mass by a factor of 4 which
+                     // appears in parameter.prm)
+        g[2] = 0.5 / std::numbers::sqrt3 * std::pow(p / prm.p_min, -1) *
+               std::exp(-p / prm.p_max) *
+               0.25; // g_100 (here the factor 0.25 appears because of the
+                     // change in the particle mass by a factor of 4 which
+                     // appears in parameter.prm)
         g[1] = 0.; // g_110
         g[3] = 0.; // g_111
         /** [Initial value] */
