@@ -13,20 +13,15 @@ def main() -> dict:
         line_colors={
             "g_000": utils.sapphirepp_colors()[0],
             "g_100": utils.sapphirepp_colors()[1],
-            "numeric_g_000": utils.sapphirepp_colors()[0],
-            "numeric_g_100": utils.sapphirepp_colors()[1],
-            "project_g_000": utils.sapphirepp_colors()[0],
-            "project_g_100": utils.sapphirepp_colors()[1],
         },
         # For test runs with analytic solution:
-        prefix_numeric=True,
-        project=True,
+        # prefix_numeric=True,
+        # interpol=True,
     )
     plot_properties.convert_lnp_to_p()
 
     results_folder, prm, solution, animation_scene = vfp.load_solution(
         plot_properties,
-        results_folder="$SAPPHIREPP_RESULTS/radiation-reaction/",
     )
 
     solution_scaled, plot_properties_scaled = vfp.scale_distribution_function(
@@ -38,7 +33,7 @@ def main() -> dict:
         results_folder,
         "radiation-reaction",
         plot_properties_scaled,
-        value_range=[1e-5, 15],
+        value_range=[1e0, 1e6],
         log_y_scale=True,
         save_animation=True,
     )

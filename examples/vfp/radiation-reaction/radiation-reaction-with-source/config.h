@@ -115,13 +115,14 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags =
-      VFPFlags::time_evolution |     //
-      VFPFlags::momentum |           //
-      VFPFlags::radiation_reaction | //
-      VFPFlags::spatial_advection |  //
-      VFPFlags::scaled_distribution_function | VFPFlags::source |
-      VFPFlags::local_lax_friedrichs_flux | VFPFlags::time_independent_fields;
+    constexpr VFPFlags vfp_flags = VFPFlags::time_evolution |               //
+                                   VFPFlags::momentum |                     //
+                                   VFPFlags::radiation_reaction |           //
+                                   VFPFlags::spatial_advection |            //
+                                   VFPFlags::scaled_distribution_function | //
+                                   VFPFlags::source |                       //
+                                   VFPFlags::local_lax_friedrichs_flux |    //
+                                   VFPFlags::time_independent_fields;
     /** [VFP Flags] */
 
 
@@ -146,7 +147,7 @@ namespace sapphirepp
         AssertDimension(g.size(), this->n_components);
 
         /** [Initial value] */
-        std::ranges::fill(g, 0.);
+        g = 0.;
         /** [Initial value] */
       }
 
@@ -252,20 +253,17 @@ namespace sapphirepp
                    dealii::Vector<double> &source_values) const override
       {
         AssertDimension(source_values.size(), this->n_components);
+
+        /** [Source] */
+        source_values = 0.;
+
         const double p = std::exp(point[0]);
         source_values[0] =
           prm.injection_rate * p /
           (2 * std::numbers::sqrt2 * prm.sigma_p * std::numbers::pi) *
           std::exp(-(p - prm.p_inj) * (p - prm.p_inj) /
                    (2 * prm.sigma_p * prm.sigma_p));
-        // NOLINTNEXTLINE(modernize-loop-convert)
-        for (unsigned int i = 1; i < source_values.size(); ++i)
-          {
-            /** [Source] */
-            // No Source
-            source_values[i] = 0.;
-            /** [Source] */
-          }
+        /** [Source] */
       }
 
 
