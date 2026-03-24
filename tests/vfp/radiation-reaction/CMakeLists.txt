@@ -1,4 +1,4 @@
-file(COPY parameter.prm parameter-massratio.prm
+file(COPY parameter.prm parameter-different-reference-quantities.prm
   parameter-with-rotation.prm parameter-with-source.prm
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -24,11 +24,19 @@ set_property(TEST radiation-reaction PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
-add_test(NAME radiation-reaction-massratio COMMAND
-  ./test-radiation-reaction parameter-massratio.prm 1e-7
+add_executable(test-radiation-reaction-different-reference-quantities test-radiation-reaction-different-reference-quantities.cpp)
+sapphirepp_setup_target_vfp(test-radiation-reaction-different-reference-quantities
+  ${PROJECT_SOURCE_DIR}/examples/vfp/radiation-reaction/radiation-reaction-different-reference-quantities
 )
-set_property(TEST radiation-reaction-massratio PROPERTY LABELS
-  "radiation-reaction-massratio"
+target_include_directories(test-radiation-reaction-different-reference-quantities PUBLIC
+  ${PROJECT_SOURCE_DIR}/tests/vfp
+)
+
+add_test(NAME radiation-reaction-different-reference-quantities COMMAND
+  ./test-radiation-reaction-different-reference-quantities parameter-different-reference-quantities.prm 1e-7
+)
+set_property(TEST radiation-reaction-different-reference-quantities PROPERTY LABELS
+  "radiation-reaction-different-reference-quantities"
   "1d" "momentum" "spatial_advection" "radiation_reaction"
   "scaled_distribution_function"
   "ERK4" "zero-inflow" "upwind-flux"
