@@ -142,7 +142,7 @@ namespace sapphirepp
         AssertDimension(g.size(), this->n_components);
 
         /** [Initial value] */
-        const double p = std::exp(point[0]);
+        const double p = std::exp(point[0]) * 0.25;
 
         g[0] = std::pow(p / prm.p_min, -1) * std::exp(-p / prm.p_max) *
                0.25; // g_000 (here the factor 0.25 appears because of the
@@ -153,8 +153,8 @@ namespace sapphirepp
                0.25; // g_100 (here the factor 0.25 appears because of the
                      // change in the particle mass by a factor of 4 which
                      // appears in parameter.prm)
-        g[1] = 0.; // g_110
-        g[3] = 0.; // g_111
+        g[1] = 0.;   // g_110
+        g[3] = 0.;   // g_111
         /** [Initial value] */
       }
 

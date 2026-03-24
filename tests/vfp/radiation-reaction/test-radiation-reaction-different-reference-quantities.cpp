@@ -75,7 +75,7 @@ namespace sapinternal
       g = 0;
 
       // Momentum coordinate
-      const double p = std::exp(point[0]);
+      const double p = std::exp(point[0]) * 0.25;
 
       // Time
       const double t = this->get_time();
