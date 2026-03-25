@@ -10,12 +10,14 @@ USER root
 ENV OMPI_ALLOW_RUN_AS_ROOT=1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 ARG NJOBS=2      # Jobs used for building
-# Install editors, nodejs (for actions/checkout), clang-tidy and clang-format
-RUN apt-get update && apt-get install -y \
+# Install editors, nodejs (for actions/checkout), clang-tidy/format and doxygen dependencies
+RUN apt-get update \
+    && apt-get install -y \
     nano vim \
     nodejs \
-    clang-tidy-19 \
-    clang-format-19
+    clang-tidy-19 clang-format-19 \
+    graphviz texlive-bibtex-extra flex bison \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install doxygen-v1.15.0 (compile from source needed for arm64)
 RUN apt-get install -y graphviz texlive-bibtex-extra flex bison
