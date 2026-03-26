@@ -1,2 +1,0 @@
-add_executable(radiation-reaction-different-reference-quantities radiation-reaction-different-reference-quantities.cpp)
-sapphirepp_setup_target_vfp(radiation-reaction-different-reference-quantities)

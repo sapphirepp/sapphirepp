@@ -81,7 +81,7 @@ namespace sapinternal
       const double t = this->get_time();
       const double tau_R =
         vfp_parameters.reference_units.radiation_reaction_characteristic_time /
-        (std::pow(vfp_parameters.mass, -3) *
+        (std::pow(vfp_parameters.mass, -4) *
          std::pow(vfp_parameters.charge, 4));
 
       const double tau_c = tau_R / (prm.B0 * prm.B0 * p);

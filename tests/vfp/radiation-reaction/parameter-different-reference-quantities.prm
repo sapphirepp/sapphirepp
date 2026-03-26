@@ -1,7 +1,9 @@
 subsection Physical parameters
   set B0    = 1e+10
-  set p_min = 1e+06
-  set p_max = 0.2e+07
+  set p_min = 4e+06
+  set p_max = 0.8e+07
+  # set p_min = 1e+06
+  # set p_max = 0.2e+07
 end
 subsection Output
   set Base file name               = solution
@@ -20,25 +22,34 @@ subsection VFP
   subsection Mesh
     set Grid type       = Hypercube
     set Number of cells = 256
-    set Point 1         = 13.815510558 # ln(1e6)
-    set Point 2         = 18.420680744 # ln(1e8)
+    set Point 1         = 15.2018049191 # ln(4e6)
+    set Point 2         = 19.8069751051 # ln(4e8)
     subsection Boundary conditions
       set lower p = zero inflow
       set upper p = zero inflow 
     end
   end
   subsection Reference units
-    set Charge = 5.34058878e-20 # Elementary charge.
-    set Mass   = 2.277345925e-31   # Electron mass.
+    # set Charge = 5.34058878e-20  # 1/3 * Elementary charge.
+    set Charge = 1.602176634e-19
+    set Mass   = 2.277345925e-31 # 1/4 * Electron mass.
   end
   subsection Particle properties
     # Electron
-    set Charge = 3
+    set Charge = -1
     set Mass   = 4
   end
   subsection Time stepping
-    set Final time     = 1e-5
+     set Final time     = 4e-5
     set Method         = ERK4
-    set Time step size = 0.5e-8
+    set Time step size = 2e-8
+
+   # set Final time     = 1e-5
+   # set Method         = ERK4
+   # set Time step size = 0.5e-8
+
+#    set Final time     = 1.33333333333e-5
+ #   set Method         = ERK4
+  #  set Time step size = 0.666666666665e-8
   end
 end

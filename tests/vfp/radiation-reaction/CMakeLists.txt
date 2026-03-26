@@ -24,9 +24,9 @@ set_property(TEST radiation-reaction PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
-add_executable(test-radiation-reaction-different-reference-quantities test-radiation-reaction-different-reference-quantities.cpp)
+add_executable(test-radiation-reaction-different-reference-quantities test-radiation-reaction.cpp)
 sapphirepp_setup_target_vfp(test-radiation-reaction-different-reference-quantities
-  ${PROJECT_SOURCE_DIR}/examples/vfp/radiation-reaction/radiation-reaction-different-reference-quantities
+  ${PROJECT_SOURCE_DIR}/examples/vfp/radiation-reaction/radiation-reaction
 )
 target_include_directories(test-radiation-reaction-different-reference-quantities PUBLIC
   ${PROJECT_SOURCE_DIR}/tests/vfp
