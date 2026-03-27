@@ -24,16 +24,8 @@ set_property(TEST radiation-reaction PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
-add_executable(test-radiation-reaction-different-reference-quantities test-radiation-reaction.cpp)
-sapphirepp_setup_target_vfp(test-radiation-reaction-different-reference-quantities
-  ${PROJECT_SOURCE_DIR}/examples/vfp/radiation-reaction/radiation-reaction
-)
-target_include_directories(test-radiation-reaction-different-reference-quantities PUBLIC
-  ${PROJECT_SOURCE_DIR}/tests/vfp
-)
-
 add_test(NAME radiation-reaction-different-reference-quantities COMMAND
-  ./test-radiation-reaction-different-reference-quantities parameter-different-reference-quantities.prm 1e-7
+  ./test-radiation-reaction parameter-different-reference-quantities.prm 1e-7
 )
 set_property(TEST radiation-reaction-different-reference-quantities PROPERTY LABELS
   "radiation-reaction-different-reference-quantities"
@@ -65,6 +57,7 @@ set_property(TEST radiation-reaction-with-rotation PROPERTY LABELS
   "full-suite-Release" "full-suite-Debug"
 )
 
+
 add_executable(test-radiation-reaction-with-source test-radiation-reaction-with-source.cpp)
 sapphirepp_setup_target_vfp(test-radiation-reaction-with-source
   ${PROJECT_SOURCE_DIR}/examples/vfp/radiation-reaction/radiation-reaction-with-source
@@ -74,16 +67,17 @@ target_include_directories(test-radiation-reaction-with-source PUBLIC
 )
 
 add_test(NAME radiation-reaction-with-source COMMAND
-  ./test-radiation-reaction-with-source parameter-with-source.prm 0.6
+  ./test-radiation-reaction-with-source parameter-with-source.prm 0.06
 )
 set_property(TEST radiation-reaction-with-source PROPERTY LABELS
   "radiation-reaction-with-source"
   "1d" "momentum" "spatial_advection" "radiation_reaction" "source"
   "scaled_distribution_function"
   "LSERK4" "zero-inflow" "local_lax_friedrichs_flux"
-  "commit-Debug" "commit-Release"
+  "commit-Release"
   "full-suite-Release" "full-suite-Debug"
 )
+
 
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
   "${CMAKE_CURRENT_BINARY_DIR}/results"

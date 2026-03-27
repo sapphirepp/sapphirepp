@@ -21,7 +21,7 @@
 
 /**
  * @file
- * tests/vfp/radiation-reaction/test-radiation-reaction-with-rotation.cpp
+ * tests/vfp/radiation-reaction/test-radiation-reaction-with-source.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @brief Implement tests for radiation-reaction example with source
  */

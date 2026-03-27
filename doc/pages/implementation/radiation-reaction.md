@@ -276,7 +276,6 @@ $$
 
 ### Pure cooling
 
-
 We solve the pure cooling test case for ultra-relativistic electrons with $v \approx 1$ and $p \approx m \gamma$.
 In this approximation, the equation for the isotropic part of the distribution function is
 

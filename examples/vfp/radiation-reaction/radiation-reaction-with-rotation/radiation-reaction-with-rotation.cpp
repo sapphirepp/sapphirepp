@@ -21,10 +21,10 @@
 
 /**
  * @file
- * examples/vfp/radiation-reaction/rotation/radiation-reaction-with-rotation.cpp
+ * examples/vfp/radiation-reaction/radiation-reaction-with-rotation/radiation-reaction-with-rotation.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
- * @brief Implement main function for radiation-reaction example
+ * @brief Implement main function for radiation-reaction example with gyro motion
  */
 
 #include <deal.II/base/mpi.h>

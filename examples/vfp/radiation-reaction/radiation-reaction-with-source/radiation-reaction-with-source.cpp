@@ -20,10 +20,11 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file examples/vfp/radiation-reaction/radiation-reaction.cpp
+ * @file
+ * examples/vfp/radiation-reaction/radiation-reaction-with-source/radiation-reaction-with-source.cpp
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Harsh Goyal (harsh.goyal@mpi-hd.mpg.de)
- * @brief Implement main function for radiation-reaction example
+ * @brief Implement main function for radiation-reaction example with a point like injection of particles
  */
 
 #include <deal.II/base/mpi.h>
