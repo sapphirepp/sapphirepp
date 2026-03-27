@@ -1,6 +1,6 @@
 subsection Physical parameters
-  set f0 = 1.
-  set nu = 0.1
+  set nu             = 0.1
+  set initial_values =
 end
 
 subsection Output

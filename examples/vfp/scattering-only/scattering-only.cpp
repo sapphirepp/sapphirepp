@@ -73,7 +73,13 @@ namespace sapinternal
           const unsigned int l = lms_indices[i][0];
           const double       t = this->get_time();
 
-          f[i] = prm.f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
+          double f0 = 0.;
+          if (i < prm.initial_values.size())
+            f0 = prm.initial_values[i];
+          if (prm.initial_values.size() == 0)
+            f0 = 1.;
+
+          f[i] = f0 * std::exp(-prm.nu * l * (l + 1) / 2. * t);
         }
     }
 

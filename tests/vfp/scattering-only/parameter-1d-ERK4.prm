@@ -2,11 +2,12 @@ subsection Output
   set Format                       = vtu
   set Number of digits for counter = 4
   set Output frequency             = 1
+  set Simulation identifier        = 1d-ERK4
 end
 
 subsection Physical parameters
-  set f0 = 1.
-  set nu = 0.1
+  set nu             = 0.1
+  set initial_values = 
 end
 
 subsection VFP
@@ -32,6 +33,6 @@ subsection VFP
   subsection Time stepping
     set Final time     = 1
     set Method         = ERK4
-    set Time step size = 0.1
+    set Time step size = 0.05
   end
 end

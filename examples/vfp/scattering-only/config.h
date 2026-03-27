@@ -57,8 +57,8 @@ namespace sapphirepp
   {
   public:
     // !!!EDIT HERE!!!
-    double nu;
-    double f0;
+    double              nu;
+    std::vector<double> initial_values;
 
     PhysicalParameters() = default;
     /** [PhysicalParameters] */
@@ -76,10 +76,13 @@ namespace sapphirepp
                         "0.1",
                         dealii::Patterns::Double(),
                         "Scattering frequency");
-      prm.declare_entry("f0",
-                        "1.",
-                        dealii::Patterns::Double(),
-                        "Initial value of the expansion coefficients");
+      prm.declare_entry(
+        "initial_values",
+        "",
+        dealii::Patterns::List(dealii::Patterns::Double()),
+        "List of initial values for each f_{lms,0} coefficient: \n"
+        "f_000, f_110, f_100, f_111, f_220, f_210, f_220, f_211, f_221, ... \n"
+        "If the list is empty, all coefficients are set to 1.");
 
       prm.leave_subsection();
     }
@@ -96,7 +99,8 @@ namespace sapphirepp
 
       // !!!EDIT HERE!!!
       nu = prm.get_double("nu");
-      f0 = prm.get_double("f0");
+      dealii::Patterns::Tools::to_value(prm.get("initial_values"),
+                                        initial_values);
 
       prm.leave_subsection();
     }
@@ -154,7 +158,13 @@ namespace sapphirepp
         for (unsigned int i = 0; i < f.size(); ++i)
           {
             // !!!EDIT HERE!!!
-            f[i] = prm.f0;
+            double f0 = 0.;
+            if (i < prm.initial_values.size())
+              f0 = prm.initial_values[i];
+            if (prm.initial_values.size() == 0)
+              f0 = 1.;
+
+            f[i] = f0;
           }
       }
 

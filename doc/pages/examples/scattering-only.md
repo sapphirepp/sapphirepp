@@ -66,6 +66,7 @@ and in the `sapphirepp/examples/vfp/scattering-only` directory.
 First, we set up the include guard and import the necessary dependencies:
 
 - `cmath`: Provides access to mathematical functions like `std::exp()`.
+- `numbers`: Defines mathematical constants like `std::numbers::pi`.
 - `vector`: Enables use of the `std::vector` class.
 
 - `deal.II/base/exceptions.h`: Facilitates throwing exceptions.
@@ -96,8 +97,8 @@ In this example, we define two custom runtime parameters
 using the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class,
 as introduced in the [gyro motion with advection](#gyro-advection) example.
 These parameters are the scattering frequency $\nu$
-and the initial value of the expansion coefficients $f_0$
-(assuming the same initial value for all coefficients).
+and the initial values of the expansion coefficients $f_{lms, 0}$
+(as a vector).
 
 These parameters are defined as **public** variables
 at the start of the @ref sapphirepp::PhysicalParameters "PhysicalParameters" class:
@@ -118,6 +119,8 @@ with @dealref{LogStream::Prefix,classLogStream_1_1Prefix} controlling the verbos
 Finally, **parsing** the parameters is straightforward
 in the @ref sapphirepp::PhysicalParameters::parse_parameters() "parse_parameters()" function.
 Again, we use the @ref sapphirepp::saplog "saplog" stream to output debug information.
+For the `initial_values`, we can use automatic conversion with
+@dealref{dealii::Patterns::Tools::to_value(),structPatterns_1_1Tools_1_1Convert,aad1e7362c24708ef3a82171e4c59da13}.
 
 @snippet{lineno} examples/vfp/scattering-only/config.h Parse parameters
 
@@ -187,7 +190,8 @@ To catch implementation errors,
 we check that the size of the results vector `f` matches the number of components `system_size`,
 using the @dealref{Assert,group__Exceptions,ga70a0bb353656e704acf927945277bbc6} macro,
 which is only activated in debug mode.
-We then loop over all indices $i$ and set the result vector `f` to $f_{0}$.
+We then loop over all indices $i$ and set the result vector `f` to `initial_values[i]`,
+or alternatively if `initial_values` is empty we set all coefficients to one.
 
 Finally, we close the function definition, after defining the private variable
 `prm` and the mapping `lms_indices`.
@@ -386,7 +390,7 @@ the time via `t = this->get_time()`. To recall, the analytic solution is given
 by:
 
 $$
-  f_{lms}(t) = f_{0} \exp\left(-\nu \frac{l(l + 1)}{2} t \right) \,.
+  f_{lms}(t) = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t \right) \,.
 $$
 
 @snippet{lineno} examples/vfp/scattering-only/scattering-only.cpp AnalyticSolution value
@@ -632,7 +636,7 @@ When compared with the analytic solution at $t=1$, we expect the following
 values:
 
 $$
-  f_{lms}^{\rm analytic} = f_0 \exp\left(-\nu \frac{l(l + 1)}{2} t \right) \,.
+  f_{lms}^{\rm analytic} = f_{lms, 0} \exp\left(-\nu \frac{l(l + 1)}{2} t \right) \,.
 $$
 
 | $l$ | $f_{lms}(t=1)$ | $f_{lms}^{\rm analytic}$ |

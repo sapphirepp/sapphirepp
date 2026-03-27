@@ -2,11 +2,12 @@ subsection Output
   set Format                       = vtu
   set Number of digits for counter = 4
   set Output frequency             = 1
+  set Simulation identifier        = 3d-ERK4
 end
 
 subsection Physical parameters
-  set f0 = 1.
-  set nu = 0.1
+  set nu             = 0.1
+  set initial_values = 
 end
 
 subsection VFP
