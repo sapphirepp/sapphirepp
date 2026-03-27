@@ -276,13 +276,12 @@ $$
 
 ### Pure cooling
 
-If the electron mass $m_e$ and the elementary change $e$ are used as reference quantities, we can set $q = m = 1$.
-Furthermore, for ultra-relativistic electrons $v \approx 1$ and $p \approx \gamma$.
 
+We solve the pure cooling test case for ultra-relativistic electrons with $v \approx 1$ and $p \approx m \gamma$.
 In this approximation, the equation for the isotropic part of the distribution function is
 
 $$
-\partial_t f_{000} - \frac{B^2}{\underline{\tau}_R p^2}
+\partial_t f_{000} - \frac{B^2}{\underline{\tau}_R p^2} \frac{q^{4}}{m^{4}}
 \partial_p \left( p^4 f_{000} \right) = S_{000} \,.
 $$
 
@@ -292,8 +291,8 @@ $$
 g_{000}(t, p) = h_{000}\left(\frac{p}{1 - p B^2 t/\underline{\tau}_R}\right) \,,
 $$
 
-where $g_{000} = p^4 f_{000}$ and $h_{000} = p^4 k_{000}$, i.e. we scaled the distribution function
-($\alpha = 4$).
+where $g_{000} = p^4 f_{000}$ and $h_{000} = p^4 k_{000}$, i.e. we scaled the distribution function ($\alpha = 4$)
+and we used the electron mass $m_e$ and the elementary change $e$ as reference quantities, i.e. we set $q = m = 1$.
 Note in @sapphire the scaling exponent $\alpha$ is set to three.
 
 This shows that the cooling of the particles, namely the energy loss due to the radiation reaction force, happens at a different rate for particles with different energies.
