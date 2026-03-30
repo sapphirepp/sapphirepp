@@ -2260,41 +2260,6 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 
 template <unsigned int dim>
 double
-sapphirepp::VFP::VFPSolver<dim>::do_time_step(const double max_time_step)
-{
-  saplog << "Time step " << std::setw(6) << std::right
-         << current_time_step_number << " at t = " << current_time << " \t["
-         << Utilities::System::get_time() << "]" << std::endl;
-
-  double time_step_size = 0.;
-
-  switch (vfp_parameters.time_stepping_method)
-    {
-      case TimeSteppingMethod::forward_euler:
-      case TimeSteppingMethod::backward_euler:
-      case TimeSteppingMethod::crank_nicolson:
-        time_step_size = theta_method(current_time, max_time_step);
-        break;
-      case TimeSteppingMethod::erk4:
-        time_step_size = explicit_runge_kutta(current_time, max_time_step);
-        break;
-      case TimeSteppingMethod::lserk4:
-        time_step_size =
-          low_storage_explicit_runge_kutta(current_time, max_time_step);
-        break;
-      default:
-        AssertThrow(false, ExcNotImplemented());
-    }
-
-  current_time += max_time_step;
-  current_time_step_number += 1;
-  return time_step_size;
-}
-
-
-
-template <unsigned int dim>
-double
 sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
@@ -2745,40 +2710,6 @@ sapphirepp::VFP::VFPSolver<dim>::output_results()
 
 
 template <unsigned int dim>
-template <class Archive>
-inline void
-sapphirepp::VFP::VFPSolver<dim>::serialize(
-  Archive                            &ar,
-  [[maybe_unused]] const unsigned int version)
-{
-  // Check if dim, vfp_flags and FESystem are the same to ensure consistency
-  unsigned int saved_dim   = dim;
-  unsigned int saved_flags = static_cast<unsigned int>(vfp_flags);
-  std::string  saved_fe    = fe.get_name();
-  ar & saved_dim;
-  ar & saved_flags;
-  ar & saved_fe;
-  AssertThrow(saved_dim == dim,
-              ExcMessage("Dimension of saved archive does not match: " +
-                         Utilities::to_string(saved_dim) +
-                         " != " + Utilities::to_string(dim)));
-  std::stringstream error_message;
-  error_message << "VFPFlags of saved archive do not match!\n"            //
-                << "Saved " << static_cast<VFPFlags>(saved_flags) << "\n" //
-                << "Active " << vfp_flags;
-  AssertThrow(saved_flags == static_cast<unsigned int>(vfp_flags),
-              ExcMessage(error_message.str()));
-  AssertThrow(saved_fe == fe.get_name(),
-              ExcMessage("FESystem of saved archive do not match: " + saved_fe +
-                         " != " + fe.get_name()));
-
-  ar & current_time;
-  ar & current_time_step_number;
-}
-
-
-
-template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::checkpoint()
 {
@@ -2965,69 +2896,6 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
   saplog << "Global weighted norm: " << global_weighted_norm << std::endl;
 
   return global_weighted_norm;
-}
-
-
-
-template <unsigned int dim>
-const sapphirepp::VFP::PDESystem &
-sapphirepp::VFP::VFPSolver<dim>::get_pde_system() const
-{
-  return pde_system;
-}
-
-
-
-template <unsigned int dim>
-const typename sapphirepp::VFP::VFPSolver<dim>::Triangulation &
-sapphirepp::VFP::VFPSolver<dim>::get_triangulation() const
-{
-  return triangulation;
-}
-
-
-
-template <unsigned int dim>
-const dealii::DoFHandler<dim> &
-sapphirepp::VFP::VFPSolver<dim>::get_dof_handler() const
-{
-  return dof_handler;
-}
-
-
-
-template <unsigned int dim>
-const dealii::PETScWrappers::MPI::Vector &
-sapphirepp::VFP::VFPSolver<dim>::get_current_solution() const
-{
-  return locally_relevant_current_solution;
-}
-
-
-
-template <unsigned int dim>
-double
-sapphirepp::VFP::VFPSolver<dim>::get_current_time() const
-{
-  return current_time;
-}
-
-
-
-template <unsigned int dim>
-unsigned int
-sapphirepp::VFP::VFPSolver<dim>::get_current_time_step_number() const
-{
-  return current_time_step_number;
-}
-
-
-
-template <unsigned int dim>
-const dealii::TimerOutput &
-sapphirepp::VFP::VFPSolver<dim>::get_timer() const
-{
-  return timer;
 }
 
 

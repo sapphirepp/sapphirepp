@@ -30,6 +30,7 @@
 #define VFP_VFPSOLVER_H
 
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/mpi.h>
@@ -38,6 +39,7 @@
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/types.h>
+#include <deal.II/base/utilities.h>
 
 #include <deal.II/distributed/shared_tria.h>
 #include <deal.II/distributed/tria.h>
@@ -58,6 +60,7 @@
 
 #include <mpi.h>
 
+#include <sstream>
 #include <type_traits>
 
 #include "config.h"
@@ -645,4 +648,142 @@ namespace sapphirepp
 
   } // namespace VFP
 } // namespace sapphirepp
+
+
+
+// ---------------------- inline and template functions --------------------
+
+
+template <unsigned int dim>
+inline double
+sapphirepp::VFP::VFPSolver<dim>::do_time_step(const double max_time_step)
+{
+  saplog << "Time step " << std::setw(6) << std::right
+         << current_time_step_number << " at t = " << current_time << " \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+
+  double time_step_size = 0.;
+
+  switch (vfp_parameters.time_stepping_method)
+    {
+      case TimeSteppingMethod::forward_euler:
+      case TimeSteppingMethod::backward_euler:
+      case TimeSteppingMethod::crank_nicolson:
+        time_step_size = theta_method(current_time, max_time_step);
+        break;
+      case TimeSteppingMethod::erk4:
+        time_step_size = explicit_runge_kutta(current_time, max_time_step);
+        break;
+      case TimeSteppingMethod::lserk4:
+        time_step_size =
+          low_storage_explicit_runge_kutta(current_time, max_time_step);
+        break;
+      default:
+        AssertThrow(false, ExcNotImplemented());
+    }
+
+  current_time += max_time_step;
+  current_time_step_number += 1;
+  return time_step_size;
+}
+
+
+
+template <unsigned int dim>
+template <class Archive>
+inline void
+sapphirepp::VFP::VFPSolver<dim>::serialize(
+  Archive                            &ar,
+  [[maybe_unused]] const unsigned int version)
+{
+  // Check if dim, vfp_flags and FESystem are the same to ensure consistency
+  unsigned int saved_dim   = dim;
+  unsigned int saved_flags = static_cast<unsigned int>(vfp_flags);
+  std::string  saved_fe    = fe.get_name();
+  ar & saved_dim;
+  ar & saved_flags;
+  ar & saved_fe;
+  AssertThrow(saved_dim == dim,
+              ExcMessage("Dimension of saved archive does not match: " +
+                         Utilities::to_string(saved_dim) +
+                         " != " + Utilities::to_string(dim)));
+  std::stringstream error_message;
+  error_message << "VFPFlags of saved archive do not match!\n"            //
+                << "Saved " << static_cast<VFPFlags>(saved_flags) << "\n" //
+                << "Active " << vfp_flags;
+  AssertThrow(saved_flags == static_cast<unsigned int>(vfp_flags),
+              ExcMessage(error_message.str()));
+  AssertThrow(saved_fe == fe.get_name(),
+              ExcMessage("FESystem of saved archive do not match: " + saved_fe +
+                         " != " + fe.get_name()));
+
+  ar & current_time;
+  ar & current_time_step_number;
+}
+
+
+
+template <unsigned int dim>
+inline const sapphirepp::VFP::PDESystem &
+sapphirepp::VFP::VFPSolver<dim>::get_pde_system() const
+{
+  return pde_system;
+}
+
+
+
+template <unsigned int dim>
+inline const typename sapphirepp::VFP::VFPSolver<dim>::Triangulation &
+sapphirepp::VFP::VFPSolver<dim>::get_triangulation() const
+{
+  return triangulation;
+}
+
+
+
+template <unsigned int dim>
+inline const dealii::DoFHandler<dim> &
+sapphirepp::VFP::VFPSolver<dim>::get_dof_handler() const
+{
+  return dof_handler;
+}
+
+
+
+template <unsigned int dim>
+inline const dealii::PETScWrappers::MPI::Vector &
+sapphirepp::VFP::VFPSolver<dim>::get_current_solution() const
+{
+  return locally_relevant_current_solution;
+}
+
+
+
+template <unsigned int dim>
+inline double
+sapphirepp::VFP::VFPSolver<dim>::get_current_time() const
+{
+  return current_time;
+}
+
+
+
+template <unsigned int dim>
+inline unsigned int
+sapphirepp::VFP::VFPSolver<dim>::get_current_time_step_number() const
+{
+  return current_time_step_number;
+}
+
+
+
+template <unsigned int dim>
+inline const dealii::TimerOutput &
+sapphirepp::VFP::VFPSolver<dim>::get_timer() const
+{
+  return timer;
+}
+
+
+
 #endif
