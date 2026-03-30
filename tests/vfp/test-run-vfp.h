@@ -306,11 +306,6 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
       while ((vfp_parameters.final_time - vfp_solver.get_current_time()) >
              vfp_parameters.epsilon_d)
         {
-          saplog << "Time step " << std::setw(6) << std::right
-                 << vfp_solver.get_current_time_step_number()
-                 << " at t = " << vfp_solver.get_current_time() << " \t["
-                 << dealii::Utilities::System::get_time() << "]" << std::endl;
-
           exact_solution.set_time(vfp_solver.get_current_time());
           /** [Time loop] */
 

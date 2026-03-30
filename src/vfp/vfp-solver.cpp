@@ -394,10 +394,6 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
       while ((vfp_parameters.final_time - current_time) >
              vfp_parameters.epsilon_d)
         {
-          saplog << "Time step " << std::setw(6) << std::right
-                 << current_time_step_number << " at t = " << current_time
-                 << " \t[" << Utilities::System::get_time() << "]" << std::endl;
-
           if ((current_time_step_number % output_parameters.output_frequency) ==
               0)
             output_results();
@@ -2266,6 +2262,10 @@ template <unsigned int dim>
 double
 sapphirepp::VFP::VFPSolver<dim>::do_time_step(const double max_time_step)
 {
+  saplog << "Time step " << std::setw(6) << std::right
+         << current_time_step_number << " at t = " << current_time << " \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+
   double time_step_size = 0.;
 
   switch (vfp_parameters.time_stepping_method)
