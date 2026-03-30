@@ -311,32 +311,28 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   make_grid();
   setup_system();
 
-  {
-    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
-      {
-        TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
-        saplog << "Assemble mass matrix." << std::endl;
-        MatrixCreator::create_mass_matrix(mapping,
-                                          dof_handler,
-                                          quadrature,
-                                          mass_matrix);
-      }
-  }
+  if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+    {
+      TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+      saplog << "Assemble mass matrix." << std::endl;
+      MatrixCreator::create_mass_matrix(mapping,
+                                        dof_handler,
+                                        quadrature,
+                                        mass_matrix);
+    }
 
-  {
-    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
-      {
-        TimerOutput::Scope           timer_section(timer, "VFP - Project IC");
-        InitialValueFunction<dim_ps> initial_value_function(
-          physical_parameters, pde_system.system_size);
-        PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
-                                                     mpi_communicator);
-        project(initial_value_function, initial_condition);
-        // Here a non ghosted vector, is copied into a ghosted vector. I think
-        // that is the moment where the ghost cells are filled.
-        locally_relevant_current_solution = initial_condition;
-      }
-  }
+  if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+    {
+      TimerOutput::Scope           timer_section(timer, "VFP - Project IC");
+      InitialValueFunction<dim_ps> initial_value_function(
+        physical_parameters, pde_system.system_size);
+      PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
+                                                   mpi_communicator);
+      project(initial_value_function, initial_condition);
+      // Here a non ghosted vector, is copied into a ghosted vector. I think
+      // that is the moment where the ghost cells are filled.
+      locally_relevant_current_solution = initial_condition;
+    }
 
   // Assemble the dg matrix for t = 0
   assemble_dg_matrix(0);
@@ -2794,17 +2790,15 @@ sapphirepp::VFP::VFPSolver<dim>::restart()
   solution_transfer.deserialize(locally_owned_previous_solution);
   locally_relevant_current_solution = locally_owned_previous_solution;
 
-  {
-    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
-      {
-        TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
-        saplog << "Assemble mass matrix." << std::endl;
-        MatrixCreator::create_mass_matrix(mapping,
-                                          dof_handler,
-                                          quadrature,
-                                          mass_matrix);
-      }
-  }
+  if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+    {
+      TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+      saplog << "Assemble mass matrix." << std::endl;
+      MatrixCreator::create_mass_matrix(mapping,
+                                        dof_handler,
+                                        quadrature,
+                                        mass_matrix);
+    }
 
   // Assemble the dg matrix for t = current_time
   assemble_dg_matrix(current_time);
