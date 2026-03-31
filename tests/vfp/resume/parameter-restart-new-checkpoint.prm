@@ -1,0 +1,50 @@
+subsection Output
+  set Base file name               = solution
+  set Format                       = pvtu
+  set Number of digits for counter = 4
+  set Output frequency             = 1
+  set Results folder               = .
+  set Simulation identifier        = new-checkpoint
+  set Checkpoint frequency         = 5
+end
+subsection VFP
+  subsection Expansion
+    set Expansion order = 1
+  end
+  subsection Finite element
+    set Polynomial degree = 1
+  end
+  subsection Mesh
+    set Grid type              = Shock grid  
+    set Point 1                = -2., -2.
+    set Point 2                = 2., 2.
+    set Number of cells        = 40, 40
+    set Number of shock cells  = 8
+    set Shock width            = 0.01
+    set Scaling factor shock   = 1.5
+    subsection Boundary conditions
+      set lower x = continuous
+      set upper x = continuous
+      set lower p = continuous
+      set upper p = continuous
+    end
+  end
+  subsection Time stepping
+    set Final time     = 20
+    set Method         = CN
+    set Time step size = 1.0
+  end
+end
+
+subsection Physical parameters
+  set B0                = 1.
+  set nu0               = 100.
+  set compression ratio = 4.
+  set shock width       = 0.001
+  set u_sh              = 0.1
+  set Q                 = 0.1
+  set p_inj             = 1.
+  set x_inj             = 0.0
+  set sig_p             = 0.1
+  set sig_x             = 0.001
+end

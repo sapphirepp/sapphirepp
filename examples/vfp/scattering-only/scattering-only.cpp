@@ -110,16 +110,12 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
       /** [MPI initialization] */
-      /** [Saplog] */
 
-      saplog.init(argc, argv);
       /** [Saplog] */
-
-      /** [Command line argument] */
       std::string parameter_filename = "parameter.prm";
-      if (argc > 1)
-        parameter_filename = argv[1];
-      /** [Command line argument] */
+      bool        resume             = false;
+      saplog.init_parse(argc, argv, parameter_filename, resume);
+      /** [Saplog] */
 
       /** [Run time parameters] */
       dealii::ParameterHandler prm;
@@ -146,7 +142,7 @@ main(int argc, char *argv[])
       VFPSolver<dimension> vfp_solver(vfp_parameters,
                                       physical_parameters,
                                       output_parameters);
-      vfp_solver.run();
+      vfp_solver.run(resume);
       /** [VFP Solver] */
 
       /** [Create AnalyticSolution] */

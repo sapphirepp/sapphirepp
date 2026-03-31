@@ -84,6 +84,11 @@ namespace sapphirepp
       OutputFormat format;
       /** Append user defined input functions to output as debug information? */
       bool debug_input_functions = false;
+      /**
+       * Save a checkpoint every n-th time step.
+       * Use `0` to disable checkpoints.
+       */
+      unsigned int checkpoint_frequency = 0;
 
       /** @brief Constructor */
       OutputParameters();
@@ -135,6 +140,20 @@ namespace sapphirepp
       void
       write_grid(const Triangulation<dim> &triangulation,
                  const std::string        &filename = "grid.ucd") const;
+
+      /**
+       * @brief Rename temporary checkpoint files to final checkpoint.
+       *
+       * This operation can be considered atomic.
+       *
+       * @param checkpoint_folder Folder of the checkpoint files.
+       * @param old_filename Basefilename of the temporary checkpoint.
+       * @param new_filename Basefilename of the final checkpoint.
+       */
+      void
+      move_checkpoint(const std::filesystem::path &checkpoint_folder,
+                      const std::string &old_filename = "tmp.checkpoint",
+                      const std::string &new_filename = "checkpoint") const;
 
 
     private:

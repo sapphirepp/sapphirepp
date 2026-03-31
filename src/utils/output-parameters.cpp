@@ -83,6 +83,11 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
                     "Append the user defined input_functions "
                     "like magnetic field and scattering frequency "
                     "to the output as debug information.");
+  prm.add_parameter(
+    "Checkpoint frequency",
+    checkpoint_frequency,
+    "The time step frequency at which checkpoints are created. \n"
+    "Use '0' to disable checkpoints.");
 
   prm.leave_subsection();
 }
@@ -294,3 +299,33 @@ sapphirepp::Utils::OutputParameters::write_grid<2>(const Triangulation<2> &,
 template void
 sapphirepp::Utils::OutputParameters::write_grid<3>(const Triangulation<3> &,
                                                    const std::string &) const;
+
+
+
+void
+sapphirepp::Utils::OutputParameters::move_checkpoint(
+  const std::filesystem::path &checkpoint_folder,
+  const std::string           &old_filename,
+  const std::string           &new_filename) const
+{
+  saplog << "Move checkpoint files from " << checkpoint_folder / old_filename
+         << " to " << checkpoint_folder / new_filename << std::endl;
+
+  std::list<std::string> old_checkpoint_files;
+  for (const auto &dir_entry :
+       std::filesystem::directory_iterator(checkpoint_folder))
+    {
+      if (dir_entry.is_regular_file() &&
+          dir_entry.path().filename().string().starts_with(old_filename))
+        old_checkpoint_files.push_back(dir_entry.path().filename().string());
+    }
+
+  /** @todo Make this operation atomic. */
+  for (const std::string &old_file : old_checkpoint_files)
+    {
+      const std::string new_file =
+        new_filename + old_file.substr(old_filename.size());
+      std::filesystem::rename(checkpoint_folder / old_file,
+                              checkpoint_folder / new_file);
+    }
+}

@@ -50,11 +50,10 @@ main(int argc, char *argv[])
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc,
                                                                   argv,
                                                                   1);
-      saplog.init(argc, argv);
 
       std::string parameter_filename = "parameter.prm";
-      if (argc > 1)
-        parameter_filename = argv[1];
+      bool        resume             = false;
+      saplog.init_parse(argc, argv, parameter_filename, resume);
 
       dealii::ParameterHandler prm;
       PhysicalParameters       physical_parameters;
@@ -74,7 +73,7 @@ main(int argc, char *argv[])
       VFPSolver<dimension> vfp_solver(vfp_parameters,
                                       physical_parameters,
                                       output_parameters);
-      vfp_solver.run();
+      vfp_solver.run(resume);
     }
   catch (std::exception &exc)
     {

@@ -20,10 +20,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file sapphirepp.cpp
- * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
+ * @file tests/vfp/resume/test-resume-vfp.cpp
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
- * @brief Implement main function for @sapphire.
+ * @brief Test resume functionality in VFP module
  */
 
 #include <deal.II/base/mpi.h>
@@ -39,20 +38,6 @@
 
 
 
-/**
- * @brief Default main function for @sapphire.
- *
- * Usage:
- * ```shell
- * ./build/sapphirepp parameter-file.prm [--help/-h]
- * ```
- *
- * @param argc Number of commandline arguments
- * @param argv Commandline arguments
- * @return int Return code:
- *             - 0: Success
- *             - 1: Failure
- */
 int
 main(int argc, char *argv[])
 {
@@ -64,7 +49,7 @@ main(int argc, char *argv[])
                                                                   argv,
                                                                   1);
 
-      std::string parameter_filename = "parameter-template.prm";
+      std::string parameter_filename = "parameter.prm";
       bool        resume             = false;
       saplog.init_parse(argc, argv, parameter_filename, resume);
 
@@ -76,12 +61,6 @@ main(int argc, char *argv[])
       physical_parameters.declare_parameters(prm);
       output_parameters.declare_parameters(prm);
       vfp_parameters.declare_parameters(prm);
-
-      if ((dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) &&
-          (argc == 1))
-        prm.print_parameters("parameter-template.prm",
-                             ParameterHandler::PRM |
-                               ParameterHandler::KeepDeclarationOrder);
 
       prm.parse_input(parameter_filename);
 

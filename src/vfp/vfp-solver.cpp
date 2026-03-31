@@ -29,7 +29,6 @@
 #include "vfp-solver.h"
 
 #include <deal.II/base/data_out_base.h>
-#include <deal.II/base/discrete_time.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/vectorization.h>
@@ -56,9 +55,13 @@
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools_integrate_difference.h>
 #include <deal.II/numerics/vector_tools_project.h>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 #include <algorithm>
 #include <array>
@@ -216,6 +219,8 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , fe(FE_DGQ<dim_ps>(vfp_parameters.polynomial_degree), pde_system.system_size)
   , quadrature(fe.tensor_degree() + 1)
   , quadrature_face(fe.tensor_degree() + 1)
+  , current_time{0.}
+  , current_time_step_number{0}
   , probe_location(vfp_parameters, output_parameters, pde_system.lms_indices)
   , scaling_spectral_index{3.}
   , reflective_bc_signature{{std::vector<double>(pde_system.system_size),
@@ -306,32 +311,28 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   make_grid();
   setup_system();
 
-  {
-    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
-      {
-        TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
-        saplog << "Assemble mass matrix." << std::endl;
-        MatrixCreator::create_mass_matrix(mapping,
-                                          dof_handler,
-                                          quadrature,
-                                          mass_matrix);
-      }
-  }
+  if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+    {
+      TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+      saplog << "Assemble mass matrix." << std::endl;
+      MatrixCreator::create_mass_matrix(mapping,
+                                        dof_handler,
+                                        quadrature,
+                                        mass_matrix);
+    }
 
-  {
-    if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
-      {
-        TimerOutput::Scope           timer_section(timer, "VFP - Project IC");
-        InitialValueFunction<dim_ps> initial_value_function(
-          physical_parameters, pde_system.system_size);
-        PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
-                                                     mpi_communicator);
-        project(initial_value_function, initial_condition);
-        // Here a non ghosted vector, is copied into a ghosted vector. I think
-        // that is the moment where the ghost cells are filled.
-        locally_relevant_current_solution = initial_condition;
-      }
-  }
+  if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+    {
+      TimerOutput::Scope           timer_section(timer, "VFP - Project IC");
+      InitialValueFunction<dim_ps> initial_value_function(
+        physical_parameters, pde_system.system_size);
+      PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
+                                                   mpi_communicator);
+      project(initial_value_function, initial_condition);
+      // Here a non ghosted vector, is copied into a ghosted vector. I think
+      // that is the moment where the ghost cells are filled.
+      locally_relevant_current_solution = initial_condition;
+    }
 
   // Assemble the dg matrix for t = 0
   assemble_dg_matrix(0);
@@ -352,61 +353,66 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::run()
+sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
 {
-  setup();
+  if (resume == false)
+    setup();
+  else
+    {
+      restart();
+      if ((vfp_parameters.final_time - current_time) <=
+          vfp_parameters.epsilon_d)
+        {
+          LogStream::Prefix prefix_vfp("VFP", saplog);
+          saplog << "Loaded simulation has already ended at t = "
+                 << current_time << " \t[" << Utilities::System::get_time()
+                 << "]" << std::endl;
+          return;
+        }
+    }
+
   LogStream::Prefix prefix_vfp("VFP", saplog);
+
   if constexpr ((vfp_flags & VFPFlags::time_evolution) == VFPFlags::none)
     {
       steady_state_solve();
-      output_results(0, 0);
+      output_results();
       saplog << "Simulation ended. "
              << " \t\t[" << Utilities::System::get_time() << "]" << std::endl;
     }
   else
     {
-      DiscreteTime discrete_time(0,
-                                 vfp_parameters.final_time,
-                                 vfp_parameters.time_step);
-      for (; discrete_time.is_at_end() == false; discrete_time.advance_time())
+      // When resuming a simulation,
+      // we do not want to overwrite the checkpoint
+      // and output directly after restart.
+      // Likewise, we do need to create a checkpoint at t=0.
+      bool save_next_checkpoint = false;
+      while ((vfp_parameters.final_time - current_time) >
+             vfp_parameters.epsilon_d)
         {
-          saplog << "Time step " << std::setw(6) << std::right
-                 << discrete_time.get_step_number()
-                 << " at t = " << discrete_time.get_current_time() << " \t["
-                 << Utilities::System::get_time() << "]" << std::endl;
+          if ((current_time_step_number % output_parameters.output_frequency) ==
+              0)
+            output_results();
+          if (save_next_checkpoint &&
+              (output_parameters.checkpoint_frequency > 0) &&
+              (current_time_step_number %
+                 output_parameters.checkpoint_frequency ==
+               0))
+            checkpoint();
 
-          if ((discrete_time.get_step_number() %
-               output_parameters.output_frequency) == 0)
-            output_results(discrete_time.get_step_number(),
-                           discrete_time.get_current_time());
-
-          switch (vfp_parameters.time_stepping_method)
-            {
-              case TimeSteppingMethod::forward_euler:
-              case TimeSteppingMethod::backward_euler:
-              case TimeSteppingMethod::crank_nicolson:
-                theta_method(discrete_time.get_current_time(),
-                             discrete_time.get_next_step_size());
-                break;
-              case TimeSteppingMethod::erk4:
-                explicit_runge_kutta(discrete_time.get_current_time(),
-                                     discrete_time.get_next_step_size());
-                break;
-              case TimeSteppingMethod::lserk4:
-                low_storage_explicit_runge_kutta(
-                  discrete_time.get_current_time(),
-                  discrete_time.get_next_step_size());
-                break;
-              default:
-                AssertThrow(false, ExcNotImplemented());
-            }
+          const double max_time_step =
+            std::min(vfp_parameters.final_time - current_time,
+                     vfp_parameters.time_step);
+          do_time_step(max_time_step);
+          save_next_checkpoint = true;
         }
-      // Output at the final result
-      output_results(discrete_time.get_step_number(),
-                     discrete_time.get_current_time());
+      // Output and checkpoint at the final result
+      output_results();
+      if (save_next_checkpoint && (output_parameters.checkpoint_frequency > 0))
+        checkpoint();
 
-      saplog << "Simulation ended at t = " << discrete_time.get_current_time()
-             << " \t[" << Utilities::System::get_time() << "]" << std::endl;
+      saplog << "Simulation ended at t = " << current_time << " \t["
+             << Utilities::System::get_time() << "]" << std::endl;
     }
 
   {
@@ -2249,7 +2255,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 
 
 template <unsigned int dim>
-void
+double
 sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
@@ -2341,12 +2347,14 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
 
   saplog << "Solver converged in " << solver_control.last_step()
          << " iterations." << std::endl;
+
+  return time_step;
 }
 
 
 
 template <unsigned int dim>
-void
+double
 sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
@@ -2527,12 +2535,14 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
   temp = 0;
 
   locally_relevant_current_solution = locally_owned_current_solution;
+
+  return time_step;
 }
 
 
 
 template <unsigned int dim>
-void
+double
 sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
@@ -2632,19 +2642,19 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   // Currently I assume that there are no constraints
   // constraints.distribute(locally_relevant_current_solution);
   locally_relevant_current_solution = locally_owned_previous_solution;
+
+  return time_step;
 }
 
 
 
 template <unsigned int dim>
 void
-sapphirepp::VFP::VFPSolver<dim>::output_results(
-  const unsigned int time_step_number,
-  const double       cur_time)
+sapphirepp::VFP::VFPSolver<dim>::output_results()
 {
   TimerOutput::Scope timer_section(timer, "VFP - Output");
   LogStream::Prefix  prefix("Output", saplog);
-  saplog << "Output results at t = " << cur_time << std::endl;
+  saplog << "Output results at t = " << current_time << std::endl;
   DataOut<dim_ps> data_out;
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(
@@ -2678,17 +2688,133 @@ sapphirepp::VFP::VFPSolver<dim>::output_results(
 
   // Adapt the output to the polynomial degree of the shape functions
   data_out.build_patches(vfp_parameters.polynomial_degree);
-  output_parameters.write_results<dim>(data_out, time_step_number, cur_time);
+  output_parameters.write_results<dim>(data_out,
+                                       current_time_step_number,
+                                       current_time);
 
   probe_location.probe_all_points(
     dof_handler,
     mapping,
     locally_relevant_current_solution,
-    time_step_number,
-    cur_time,
+    current_time_step_number,
+    current_time,
     ((vfp_flags & VFPFlags::scaled_distribution_function) != VFPFlags::none) ?
       "g" :
       "f");
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::checkpoint()
+{
+  TimerOutput::Scope timer_section(timer, "VFP - Checkpoint");
+  saplog << "Create checkpoint at t = " << current_time << " \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+  LogStream::Prefix prefix("Checkpoint", saplog);
+
+  const std::string checkpoint_basefile =
+    output_parameters.output_path / "tmp.checkpoint_vfp";
+  saplog << "Write checkpoint to files: " << checkpoint_basefile << std::endl;
+
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+    {
+      std::ofstream checkpoint_file(checkpoint_basefile + ".metadata");
+      AssertThrow(checkpoint_file,
+                  ExcMessage("Could not write to checkpoint file: " +
+                             checkpoint_basefile + ".metadata"));
+
+      boost::archive::binary_oarchive archive(checkpoint_file);
+
+      archive << *this;
+    }
+
+  SolutionTransfer<dim, PETScWrappers::MPI::Vector> solution_transfer(
+    dof_handler);
+  solution_transfer.prepare_for_serialization(
+    locally_relevant_current_solution);
+
+  triangulation.save(checkpoint_basefile);
+
+
+  if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+    {
+      output_parameters.move_checkpoint(output_parameters.output_path,
+                                        "tmp.checkpoint_vfp",
+                                        "checkpoint_vfp");
+    }
+}
+
+
+
+template <unsigned int dim>
+void
+sapphirepp::VFP::VFPSolver<dim>::restart()
+{
+  TimerOutput::Scope timer_section(timer, "VFP - Restart");
+  LogStream::Prefix  prefix_vfp("VFP", saplog);
+  saplog << "Restarting VFP equation solver. \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+  LogStream::Prefix prefix("Restart", saplog);
+
+  AssertThrow(dim != 1,
+              ExcMessage(
+                "Restart is currently not implemented for 1D simulations."));
+
+  const std::string checkpoint_basefile =
+    output_parameters.output_path / "checkpoint_vfp";
+  saplog << "Load checkpoint from files: " << checkpoint_basefile << std::endl;
+
+  {
+    saplog << "Load metadata" << std::endl;
+    std::ifstream checkpoint_file(checkpoint_basefile + ".metadata");
+    AssertThrow(checkpoint_file,
+                ExcMessage("Could not read from checkpoint file: " +
+                           checkpoint_basefile + ".metadata"));
+
+    boost::archive::binary_iarchive archive(checkpoint_file);
+    archive >> *this;
+  }
+
+  // Create (coarse) grid before loading triangulation
+  make_grid();
+  saplog << "Load triangulation" << std::endl;
+  triangulation.load(checkpoint_basefile);
+
+  setup_system();
+
+  saplog << "Load solution" << std::endl;
+  SolutionTransfer<dim, PETScWrappers::MPI::Vector> solution_transfer(
+    dof_handler);
+  solution_transfer.deserialize(locally_owned_previous_solution);
+  locally_relevant_current_solution = locally_owned_previous_solution;
+
+  if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
+    {
+      TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+      saplog << "Assemble mass matrix." << std::endl;
+      MatrixCreator::create_mass_matrix(mapping,
+                                        dof_handler,
+                                        quadrature,
+                                        mass_matrix);
+    }
+
+  // Assemble the dg matrix for t = current_time
+  assemble_dg_matrix(current_time);
+  // Source term at t = current_time;
+  if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
+    {
+      TimerOutput::Scope timer_source(timer, "VFP - Source");
+      source_function.set_time(current_time);
+      VectorTools::create_right_hand_side(mapping,
+                                          dof_handler,
+                                          quadrature,
+                                          source_function,
+                                          locally_owned_current_source);
+    }
+
+  saplog << "Loaded checkpoint at t = " << current_time << std::endl;
 }
 
 
@@ -2764,51 +2890,6 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
   saplog << "Global weighted norm: " << global_weighted_norm << std::endl;
 
   return global_weighted_norm;
-}
-
-
-
-template <unsigned int dim>
-const sapphirepp::VFP::PDESystem &
-sapphirepp::VFP::VFPSolver<dim>::get_pde_system() const
-{
-  return pde_system;
-}
-
-
-
-template <unsigned int dim>
-const typename sapphirepp::VFP::VFPSolver<dim>::Triangulation &
-sapphirepp::VFP::VFPSolver<dim>::get_triangulation() const
-{
-  return triangulation;
-}
-
-
-
-template <unsigned int dim>
-const dealii::DoFHandler<dim> &
-sapphirepp::VFP::VFPSolver<dim>::get_dof_handler() const
-{
-  return dof_handler;
-}
-
-
-
-template <unsigned int dim>
-const dealii::PETScWrappers::MPI::Vector &
-sapphirepp::VFP::VFPSolver<dim>::get_current_solution() const
-{
-  return locally_relevant_current_solution;
-}
-
-
-
-template <unsigned int dim>
-const dealii::TimerOutput &
-sapphirepp::VFP::VFPSolver<dim>::get_timer() const
-{
-  return timer;
 }
 
 

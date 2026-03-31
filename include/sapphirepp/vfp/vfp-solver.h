@@ -30,6 +30,7 @@
 #define VFP_VFPSOLVER_H
 
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/mpi.h>
@@ -38,6 +39,7 @@
 #include <deal.II/base/tensor_function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/types.h>
+#include <deal.II/base/utilities.h>
 
 #include <deal.II/distributed/shared_tria.h>
 #include <deal.II/distributed/tria.h>
@@ -58,6 +60,7 @@
 
 #include <mpi.h>
 
+#include <sstream>
 #include <type_traits>
 
 #include "config.h"
@@ -165,9 +168,11 @@ namespace sapphirepp
        *
        * This method solves the VFP equation with the parameters given in the
        * constructor. It is the main method of this class.
+       *
+       * @param resume Resume simulation from checkpoint?
        */
       void
-      run();
+      run(const bool resume = false);
       /** @} */
 
 
@@ -182,57 +187,68 @@ namespace sapphirepp
 
 
       /**
-       * @name Time stepping methods
-       * @{
-       */
-      /**
-       * @brief Calculate one time step with the theta method
+       * @brief Perform one time step and advance current time and time step.
        *
-       * @param time Current time
-       * @param time_step Time step size
+       * @param max_time_step Maximum time step
+       * @return double time_step_size used
        */
-      void
-      theta_method(const double time, const double time_step);
-
-      /**
-       * @brief Calculate one time step with the fourth order explicit
-       *        Runge-Kutta method
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       */
-      void
-      explicit_runge_kutta(const double time, const double time_step);
-
-      /**
-       * @brief Calculate one time step with the low-storage explicit
-       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
-       *	for details.
-       *
-       * @todo Do not reassemble the DG matrix in the first stage of the ERK
-       *
-       * @param time Current time
-       * @param time_step Time step size
-       */
-      void
-      low_storage_explicit_runge_kutta(const double time,
-                                       const double time_step);
-      /** @} */
+      double
+      do_time_step(const double max_time_step);
 
 
 
       /**
        * @brief Output the results
        *
-       * @param time_step_number time step number
-       * @param cur_time Simulation time
-       *
        * @note This function should be a const member, but HDF5 output requires
        *       non-const
        */
       void
-      output_results(const unsigned int time_step_number,
-                     const double       cur_time);
+      output_results();
+
+
+
+      /** @{ */
+      /**
+       * @brief Write and read the (meta) data of this object from a archive.
+       *
+       * Write and read the data of this object from a stream
+       * for the purpose of serialization using the BOOST serialization library.
+       * Note that this does not serialize the grid
+       * and thus does not write/read full checkpoints!
+       * For that refer to the @ref checkpoint() and @ref restart() methods.
+       *
+       * @tparam Archive BOOST input/outout archive.
+       * @param ar Archive.
+       * @param version Archive version.
+       */
+      template <class Archive>
+      void
+      serialize(Archive &ar, const unsigned int version);
+
+      /**
+       * @brief Create and save a checkpoint.
+       *
+       * The simulation can be resumed from a checkpoint
+       * using the @ref restart() method.
+       *
+       * @see @ref resume-parallel-shock
+       */
+      void
+      checkpoint();
+
+      /**
+       * @brief Resume the simulation from a checkpoint.
+       *
+       * Note, that the checkpoint must use the same dimension,
+       * @ref VFPFlags and Finite Elements.
+       * Other parameters can be changed on your own risk.
+       *
+       * @see @ref resume-parallel-shock
+       */
+      void
+      restart();
+      /** @} */
 
 
 
@@ -360,6 +376,22 @@ namespace sapphirepp
       get_current_solution() const;
 
       /**
+       * @brief Get the current time.
+       *
+       * @return double
+       */
+      double
+      get_current_time() const;
+
+      /**
+       * @brief Get the current time step number.
+       *
+       * @return unsigned int
+       */
+      unsigned int
+      get_current_time_step_number() const;
+
+      /**
        * @brief Get the timer object
        *
        * @return const TimerOutput&
@@ -465,6 +497,13 @@ namespace sapphirepp
       /** @} */
 
       /** @{ */
+      /** Current time. */
+      double current_time;
+      /** Current time step numer. */
+      unsigned int current_time_step_number;
+      /** @} */
+
+      /** @{ */
       /** Postprocessor to probe points in phase space */
       ProbeLocation<dim_ps> probe_location;
       /** @} */
@@ -562,8 +601,189 @@ namespace sapphirepp
       void
       assemble_dg_matrix(const double time);
       /** @} */
+
+
+
+      /**
+       * @name Time stepping methods
+       * @{
+       */
+      /**
+       * @brief Calculate one time step with the theta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       * @return double time_step_size used
+       */
+      double
+      theta_method(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the fourth order explicit
+       *        Runge-Kutta method
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       * @return double time_step_size used
+       */
+      double
+      explicit_runge_kutta(const double time, const double time_step);
+
+      /**
+       * @brief Calculate one time step with the low-storage explicit
+       *        Runge-Kutta method. See p. 64 in @cite Hesthaven_NodalDG
+       *	for details.
+       *
+       * @todo Do not reassemble the DG matrix in the first stage of the ERK
+       *
+       * @param time Current time
+       * @param time_step Time step size
+       * @return double time_step_size used
+       */
+      double
+      low_storage_explicit_runge_kutta(const double time,
+                                       const double time_step);
+      /** @} */
     };
 
   } // namespace VFP
 } // namespace sapphirepp
+
+
+
+// ---------------------- inline and template functions --------------------
+
+
+template <unsigned int dim>
+inline double
+sapphirepp::VFP::VFPSolver<dim>::do_time_step(const double max_time_step)
+{
+  saplog << "Time step " << std::setw(6) << std::right
+         << current_time_step_number << " at t = " << current_time << " \t["
+         << Utilities::System::get_time() << "]" << std::endl;
+
+  double time_step_size = 0.;
+
+  switch (vfp_parameters.time_stepping_method)
+    {
+      case TimeSteppingMethod::forward_euler:
+      case TimeSteppingMethod::backward_euler:
+      case TimeSteppingMethod::crank_nicolson:
+        time_step_size = theta_method(current_time, max_time_step);
+        break;
+      case TimeSteppingMethod::erk4:
+        time_step_size = explicit_runge_kutta(current_time, max_time_step);
+        break;
+      case TimeSteppingMethod::lserk4:
+        time_step_size =
+          low_storage_explicit_runge_kutta(current_time, max_time_step);
+        break;
+      default:
+        AssertThrow(false, ExcNotImplemented());
+    }
+
+  current_time += max_time_step;
+  current_time_step_number += 1;
+  return time_step_size;
+}
+
+
+
+template <unsigned int dim>
+template <class Archive>
+inline void
+sapphirepp::VFP::VFPSolver<dim>::serialize(
+  Archive                            &ar,
+  [[maybe_unused]] const unsigned int version)
+{
+  // Check if dim, vfp_flags and FESystem are the same to ensure consistency
+  unsigned int saved_dim   = dim;
+  unsigned int saved_flags = static_cast<unsigned int>(vfp_flags);
+  std::string  saved_fe    = fe.get_name();
+  ar & saved_dim;
+  ar & saved_flags;
+  ar & saved_fe;
+  AssertThrow(saved_dim == dim,
+              ExcMessage("Dimension of saved archive does not match: " +
+                         Utilities::to_string(saved_dim) +
+                         " != " + Utilities::to_string(dim)));
+  std::stringstream error_message;
+  error_message << "VFPFlags of saved archive do not match!\n"            //
+                << "Saved " << static_cast<VFPFlags>(saved_flags) << "\n" //
+                << "Active " << vfp_flags;
+  AssertThrow(saved_flags == static_cast<unsigned int>(vfp_flags),
+              ExcMessage(error_message.str()));
+  AssertThrow(saved_fe == fe.get_name(),
+              ExcMessage("FESystem of saved archive do not match: " + saved_fe +
+                         " != " + fe.get_name()));
+
+  ar & current_time;
+  ar & current_time_step_number;
+}
+
+
+
+template <unsigned int dim>
+inline const sapphirepp::VFP::PDESystem &
+sapphirepp::VFP::VFPSolver<dim>::get_pde_system() const
+{
+  return pde_system;
+}
+
+
+
+template <unsigned int dim>
+inline const typename sapphirepp::VFP::VFPSolver<dim>::Triangulation &
+sapphirepp::VFP::VFPSolver<dim>::get_triangulation() const
+{
+  return triangulation;
+}
+
+
+
+template <unsigned int dim>
+inline const dealii::DoFHandler<dim> &
+sapphirepp::VFP::VFPSolver<dim>::get_dof_handler() const
+{
+  return dof_handler;
+}
+
+
+
+template <unsigned int dim>
+inline const dealii::PETScWrappers::MPI::Vector &
+sapphirepp::VFP::VFPSolver<dim>::get_current_solution() const
+{
+  return locally_relevant_current_solution;
+}
+
+
+
+template <unsigned int dim>
+inline double
+sapphirepp::VFP::VFPSolver<dim>::get_current_time() const
+{
+  return current_time;
+}
+
+
+
+template <unsigned int dim>
+inline unsigned int
+sapphirepp::VFP::VFPSolver<dim>::get_current_time_step_number() const
+{
+  return current_time_step_number;
+}
+
+
+
+template <unsigned int dim>
+inline const dealii::TimerOutput &
+sapphirepp::VFP::VFPSolver<dim>::get_timer() const
+{
+  return timer;
+}
+
+
+
 #endif
