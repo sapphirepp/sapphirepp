@@ -260,7 +260,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_data(
          << ") to file " << filename << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename);
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
-  data_file.precision(std::numeric_limits<double>::digits10);
+  data_file.precision(std::numeric_limits<double>::digits10 + 1);
 
   data_file << "# " + function_symbol +
                  "(t, x, p, cos theta, phi) at (x,|p|) = ("
@@ -303,7 +303,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_gnu_splot_spherical_density_map(
   saplog << "Write reconstruction at (" << probe_location_points[point_index]
          << ") to file " << filename << std::endl;
   std::ofstream data_file(output_parameters.output_path / filename);
-  data_file.precision(std::numeric_limits<double>::digits10);
+  data_file.precision(std::numeric_limits<double>::digits10 + 1);
 
   data_file << "# " + function_symbol + "(t, x, p) at (x,|p|) = ("
             << probe_location_points[point_index] << ") for t = " << cur_time
@@ -352,7 +352,7 @@ sapphirepp::VFP::ProbeLocation<dim>::output_expansion_coefficients(
                                                   std::ios_base::app);
 
   // See https://en.cppreference.com/w/cpp/types/numeric_limits/digits10
-  data_file.precision(std::numeric_limits<double>::digits10);
+  data_file.precision(std::numeric_limits<double>::digits10 + 1);
 
   if (time_step_number == 0)
     {
