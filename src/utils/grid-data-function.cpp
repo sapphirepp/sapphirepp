@@ -53,8 +53,7 @@ sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   const unsigned int           col_start_data,
   const bool                   last_coordinate_runs_fastest,
   const bool                   uniform_grid,
-  const bool                   periodic,
-  const bool                   athena_ordering)
+  const bool                   periodic)
   : Function<dim>(n_components, inital_time)
   , input_path{input_path}
   , base_filename{base_filename}
@@ -64,14 +63,13 @@ sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   , last_coordinate_runs_fastest{last_coordinate_runs_fastest}
   , uniform_grid{uniform_grid}
   , periodic{periodic}
-  , athena_ordering{athena_ordering}
   , time_series{read_hst_to_time_series(input_path / (base_filename + ".hst"))}
   , time_index{0}
   , grid_functions(n_components_data == 0 ? n_components : n_components_data)
 {
   LogStream::Prefix prefix_startup("Startup", saplog);
-  const std::string filename = base_filename + ".block0.out1." +
-                               Utilities::int_to_string(time_index, 5) + ".tab";
+  const std::string filename =
+    base_filename + "." + Utilities::int_to_string(time_index, 5) + ".dat";
   load_data_from_file(input_path / filename);
   set_time(inital_time);
 }
@@ -88,8 +86,7 @@ sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   const unsigned int           col_start_data,
   const bool                   last_coordinate_runs_fastest,
   const bool                   uniform_grid,
-  const bool                   periodic,
-  const bool                   athena_ordering)
+  const bool                   periodic)
   : Function<dim>(n_components)
   , input_path{filename}
   , base_filename{""}
@@ -99,7 +96,6 @@ sapphirepp::Utils::GridDataFunction<dim>::GridDataFunction(
   , last_coordinate_runs_fastest{last_coordinate_runs_fastest}
   , uniform_grid{uniform_grid}
   , periodic{periodic}
-  , athena_ordering{athena_ordering}
   , time_series(1, 0.)
   , time_index{0}
   , grid_functions(n_components_data == 0 ? n_components : n_components_data)
@@ -173,25 +169,29 @@ void
 sapphirepp::Utils::GridDataFunction<dim>::set_time(const double new_time)
 {
   Function<dim>::set_time(new_time);
+  // Always use next smallest available time - up to a precision of epsilon.
+  const double epsilon =
+    0.1 * (time_series[time_series.size() - 1] - time_series[0]) /
+    static_cast<double>(time_series.size());
 
   // Skip if in same time interval
   if (time_index == time_series.size() - 1)
     {
-      if (new_time >= time_series[time_index])
+      if (new_time >= time_series[time_index] - epsilon)
         return;
     }
   else
     {
       AssertIndexRange(time_index + 1, time_series.size());
-      if ((new_time >= time_series[time_index]) &&
-          (new_time < time_series[time_index + 1]))
+      if ((new_time >= time_series[time_index] - epsilon) &&
+          (new_time < time_series[time_index + 1] - epsilon))
         return;
     }
 
   // Find new index
   for (time_index = 0; time_index < time_series.size(); ++time_index)
     {
-      if (time_series[time_index] > new_time)
+      if (time_series[time_index] - epsilon > new_time)
         {
           time_index--;
           break;
@@ -202,8 +202,8 @@ sapphirepp::Utils::GridDataFunction<dim>::set_time(const double new_time)
   AssertIndexRange(time_index, time_series.size());
 
   // Load new data
-  const std::string filename = base_filename + ".block0.out1." +
-                               Utilities::int_to_string(time_index, 5) + ".tab";
+  const std::string filename =
+    base_filename + "." + Utilities::int_to_string(time_index, 5) + ".dat";
   load_data_from_file(input_path / filename);
 }
 
@@ -240,134 +240,27 @@ sapphirepp::Utils::GridDataFunction<dim>::load_data_from_file(
       interval_endpoints[d].second = coordinate_values[d][coords_size - 1];
     }
 
-  if (athena_ordering)
+  for (unsigned int c = 0; c < grid_functions.size(); c++)
     {
-      switch (grid_functions.size())
+      if (uniform_grid)
         {
-          case 8:
-            {
-              for (unsigned int d = 0; d < 3; ++d)
-                {
-                  // Magnetic field
-                  if (uniform_grid)
-                    {
-                      std::unique_ptr<dealii::Function<dim>> tmp(
-                        new dealii::Functions::InterpolatedUniformGridData<dim>(
-                          std::move(interval_endpoints),
-                          std::move(n_subintervals),
-                          std::move(data_values[5 + d])));
-                      grid_functions[5 + d].swap(tmp);
-                    }
-                  else
-                    {
-                      std::array<std::vector<double>, dim>
-                        coordinate_values_copy = coordinate_values;
-                      std::unique_ptr<dealii::Function<dim>> tmp(
-                        new dealii::Functions::
-                          InterpolatedTensorProductGridData<dim>(
-                            std::move(coordinate_values_copy),
-                            std::move(data_values[5 + d])));
-                      grid_functions[5 + d].swap(tmp);
-                    }
-                }
-              [[fallthrough]];
-            }
-          case 5:
-            {
-              // Density
-              if (uniform_grid)
-                {
-                  std::unique_ptr<dealii::Function<dim>> tmp(
-                    new dealii::Functions::InterpolatedUniformGridData<dim>(
-                      std::move(interval_endpoints),
-                      std::move(n_subintervals),
-                      std::move(data_values[0])));
-                  grid_functions[0].swap(tmp);
-                }
-              else
-                {
-                  std::array<std::vector<double>, dim> coordinate_values_copy =
-                    coordinate_values;
-                  std::unique_ptr<dealii::Function<dim>> tmp(
-                    new dealii::Functions::InterpolatedTensorProductGridData<
-                      dim>(std::move(coordinate_values_copy),
-                           std::move(data_values[0])));
-                  grid_functions[0].swap(tmp);
-                }
-              // Energy
-              if (uniform_grid)
-                {
-                  std::unique_ptr<dealii::Function<dim>> tmp(
-                    new dealii::Functions::InterpolatedUniformGridData<dim>(
-                      std::move(interval_endpoints),
-                      std::move(n_subintervals),
-                      std::move(data_values[1])));
-                  grid_functions[4].swap(tmp);
-                }
-              else
-                {
-                  std::array<std::vector<double>, dim> coordinate_values_copy =
-                    coordinate_values;
-                  std::unique_ptr<dealii::Function<dim>> tmp(
-                    new dealii::Functions::InterpolatedTensorProductGridData<
-                      dim>(std::move(coordinate_values_copy),
-                           std::move(data_values[1])));
-                  grid_functions[4].swap(tmp);
-                }
-              for (unsigned int d = 0; d < 3; ++d)
-                {
-                  // Momentum
-                  if (uniform_grid)
-                    {
-                      std::unique_ptr<dealii::Function<dim>> tmp(
-                        new dealii::Functions::InterpolatedUniformGridData<dim>(
-                          std::move(interval_endpoints),
-                          std::move(n_subintervals),
-                          std::move(data_values[2 + d])));
-                      grid_functions[1 + d].swap(tmp);
-                    }
-                  else
-                    {
-                      std::array<std::vector<double>, dim>
-                        coordinate_values_copy = coordinate_values;
-                      std::unique_ptr<dealii::Function<dim>> tmp(
-                        new dealii::Functions::
-                          InterpolatedTensorProductGridData<dim>(
-                            std::move(coordinate_values_copy),
-                            std::move(data_values[2 + d])));
-                      grid_functions[1 + d].swap(tmp);
-                    }
-                }
-              break;
-            }
-          default:
-            Assert(false,
-                   ExcMessage(
-                     "Expect either 5 or 8 components for Athena++ ordering."));
+          std::unique_ptr<dealii::Function<dim>> tmp(
+            new dealii::Functions::InterpolatedUniformGridData<dim>(
+              std::move(interval_endpoints),
+              std::move(n_subintervals),
+              std::move(data_values[c])));
+          grid_functions[c].swap(tmp);
+        }
+      else
+        {
+          std::array<std::vector<double>, dim> coordinate_values_copy =
+            coordinate_values;
+          std::unique_ptr<dealii::Function<dim>> tmp(
+            new dealii::Functions::InterpolatedTensorProductGridData<dim>(
+              std::move(coordinate_values_copy), std::move(data_values[c])));
+          grid_functions[c].swap(tmp);
         }
     }
-  else
-    for (unsigned int c = 0; c < grid_functions.size(); c++)
-      {
-        if (uniform_grid)
-          {
-            std::unique_ptr<dealii::Function<dim>> tmp(
-              new dealii::Functions::InterpolatedUniformGridData<dim>(
-                std::move(interval_endpoints),
-                std::move(n_subintervals),
-                std::move(data_values[c])));
-            grid_functions[c].swap(tmp);
-          }
-        else
-          {
-            std::array<std::vector<double>, dim> coordinate_values_copy =
-              coordinate_values;
-            std::unique_ptr<dealii::Function<dim>> tmp(
-              new dealii::Functions::InterpolatedTensorProductGridData<dim>(
-                std::move(coordinate_values_copy), std::move(data_values[c])));
-            grid_functions[c].swap(tmp);
-          }
-      }
 }
 
 
@@ -380,7 +273,7 @@ sapphirepp::Utils::GridDataFunction<dim>::read_hst_to_time_series(
   LogStream::Prefix prefix_startup("Startup", saplog);
   LogStream::Prefix prefix("GridDataFunction", saplog);
   saplog << "Load time series from file: " << filename << std::endl;
-  const unsigned int               n_columns = 13;
+  const unsigned int               n_columns = 1;
   std::vector<std::vector<double>> data_vector(n_columns);
 
   Tools::read_dat_to_vector(filename, n_columns, data_vector, " ");

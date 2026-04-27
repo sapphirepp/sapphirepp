@@ -83,7 +83,6 @@ namespace sapphirepp
        *        runs fastest?
        * @param uniform_grid Assume uniform grid?
        * @param periodic Extend the grid periodically?
-       * @param athena_ordering Data files use Athena++ ordering of components?
        */
       GridDataFunction(const std::filesystem::path &input_path,
                        const std::string           &base_filename,
@@ -95,8 +94,7 @@ namespace sapphirepp
                        const unsigned int           col_start_data        = dim,
                        const bool last_coordinate_runs_fastest = false,
                        const bool uniform_grid                 = false,
-                       const bool periodic                     = false,
-                       const bool athena_ordering              = false);
+                       const bool periodic                     = false);
 
 
 
@@ -118,7 +116,6 @@ namespace sapphirepp
        *        runs fastest?
        * @param uniform_grid Assume uniform grid?
        * @param periodic Extend the grid periodically?
-       * @param athena_ordering Data files use Athena++ ordering of components?
        */
       GridDataFunction(const std::filesystem::path &filename,
                        const unsigned int           n_components          = 1,
@@ -128,8 +125,7 @@ namespace sapphirepp
                        const unsigned int           col_start_data        = dim,
                        const bool last_coordinate_runs_fastest = false,
                        const bool uniform_grid                 = false,
-                       const bool periodic                     = false,
-                       const bool athena_ordering              = false);
+                       const bool periodic                     = false);
 
 
 
@@ -243,8 +239,6 @@ namespace sapphirepp
       const bool uniform_grid;
       /** Extend the grid periodically? */
       const bool periodic;
-      /** Files use Athena++ ordering of components? */
-      const bool athena_ordering;
 
       /** Vector of time stamps for the data. */
       const std::vector<double> time_series;
