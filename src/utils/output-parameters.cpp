@@ -134,10 +134,10 @@ sapphirepp::Utils::OutputParameters::parse_parameters_callback(
       std::filesystem::create_directories(output_path);
 
       saplog << "Log parameters" << std::endl;
-      prm.log_parameters(saplog);
       prm.print_parameters(output_path / static_cast<std::string>("log.prm"),
                            ParameterHandler::ShortPRM);
     }
+  prm.log_parameters(saplog);
 }
 
 
@@ -148,6 +148,7 @@ sapphirepp::Utils::OutputParameters::write_results(
   DataOut<dim>      &data_out,
   const unsigned int time_step_number,
   const double       cur_time,
+  const bool         write_mesh_hdf5,
   const std::string &filename)
 {
   LogStream::Prefix prefix("OutputParameters", saplog);
@@ -191,11 +192,16 @@ sapphirepp::Utils::OutputParameters::write_results(
           // I follow this pull request:
           // https://github.com/dealii/dealii/pull/14958
           const std::string filename_h5 =
-            tmp_base_file_name +
+            tmp_base_file_name + "_" +
             Utilities::int_to_string(time_step_number, n_digits_for_counter) +
             ".h5";
-          const std::string filename_mesh = "mesh.h5";
-          const std::string xdmf_file     = tmp_base_file_name + ".xdmf";
+          if (write_mesh_hdf5)
+            mesh_number_hdf5 = time_step_number;
+          const std::string filename_mesh =
+            tmp_base_file_name + "_mesh_" +
+            Utilities::int_to_string(mesh_number_hdf5, n_digits_for_counter) +
+            ".h5";
+          const std::string xdmf_file = tmp_base_file_name + ".xdmf";
           // https://dealii.org/developer/doxygen/deal.II/structDataOutBase_1_1DataOutFilterFlags.html
           // Whether or not to filter out duplicate vertices and associated
           // values. Setting this value to true will drastically reduce the
@@ -220,7 +226,6 @@ sapphirepp::Utils::OutputParameters::write_results(
           // hdf5Flags.compression_level =
           // dealii::DataOutBase::CompressionLevel::best_compression;
           // dataOut.set_flags(dealii::DataOutBase::Hdf5Flags(hdf5Flags));
-          const bool write_mesh_hdf5 = time_step_number == 0 ? true : false;
 
           data_out.write_hdf5_parallel(data_filter,
                                        write_mesh_hdf5,
@@ -228,14 +233,12 @@ sapphirepp::Utils::OutputParameters::write_results(
                                        output_path / filename_h5,
                                        mpi_communicator);
 
-          XDMFEntry new_xdmf_entry = data_out.create_xdmf_entry(
-            data_filter,
-            filename_mesh,
-            tmp_base_file_name +
-              Utilities::int_to_string(time_step_number, n_digits_for_counter) +
-              ".h5",
-            cur_time,
-            mpi_communicator);
+          XDMFEntry new_xdmf_entry =
+            data_out.create_xdmf_entry(data_filter,
+                                       filename_mesh,
+                                       filename_h5,
+                                       cur_time,
+                                       mpi_communicator);
           /** @todo Append lines to xdmf file instead of rewriting the file */
           xdmf_entries.push_back(new_xdmf_entry);
           // NOTE: For now I a writing the xdmf file in every time step.
@@ -256,16 +259,19 @@ template void
 sapphirepp::Utils::OutputParameters::write_results<1>(DataOut<1> &,
                                                       const unsigned int,
                                                       const double,
+                                                      const bool,
                                                       const std::string &);
 template void
 sapphirepp::Utils::OutputParameters::write_results<2>(DataOut<2> &,
                                                       const unsigned int,
                                                       const double,
+                                                      const bool,
                                                       const std::string &);
 template void
 sapphirepp::Utils::OutputParameters::write_results<3>(DataOut<3> &,
                                                       const unsigned int,
                                                       const double,
+                                                      const bool,
                                                       const std::string &);
 
 
