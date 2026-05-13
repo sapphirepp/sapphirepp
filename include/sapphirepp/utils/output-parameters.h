@@ -159,6 +159,18 @@ namespace sapphirepp
                       const std::string &new_filename = "checkpoint") const;
 
 
+      /**
+       * @brief Write and read the data of this object from a archive.
+       *
+       * @tparam Archive BOOST input/outout archive.
+       * @param ar Archive.
+       * @param version Archive version.
+       */
+      template <class Archive>
+      void
+      serialize(Archive &ar, const unsigned int version);
+
+
     private:
       /**
        * @brief Callback function for parsing parameters
@@ -180,4 +192,30 @@ namespace sapphirepp
 
   } // namespace Utils
 } // namespace sapphirepp
+
+
+
+// ---------------------- inline and template functions --------------------
+
+
+template <class Archive>
+inline void
+sapphirepp::Utils::OutputParameters::serialize(
+  Archive                            &ar,
+  [[maybe_unused]] const unsigned int version)
+{
+  // Check if output_format is the same to ensure consistency
+  unsigned int saved_format = static_cast<unsigned int>(format);
+  ar & saved_format;
+  AssertThrow(saved_format == static_cast<unsigned int>(format),
+              ExcMessage(
+                "Output format mismatch: "
+                "Saved files use a different format than the current setting. "
+                "Use the same format to ensure consistency!"));
+
+  ar & xdmf_entries;
+}
+
+
+
 #endif
