@@ -4,11 +4,16 @@
 
 # Results folder
 results
+*.vtu
+*.pvtu
+*.h5
+*.xdmf
 *.jpg
 *.png
 *.csv
 *.gif
 *.dat
+checkpoint_*
 
 # Temporary files
 tmp*

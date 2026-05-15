@@ -1,5 +1,8 @@
 # Include parameter files
 !*.prm
 
+# Include checkpoint_files
+!checkpoint_*
+
 # Results folder
 results
