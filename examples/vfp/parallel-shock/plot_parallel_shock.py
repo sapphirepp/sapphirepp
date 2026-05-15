@@ -10,11 +10,11 @@ def main() -> dict:
     plot_properties = vfp.PlotPropertiesVFP(
         dimension=2,
         momentum=True,
-        lms_indices=[[0, 0, 0], [1, 0, 0]],
-        preview_size_2d=[1280, 720],
+        lms_indices=[(0, 0, 0), (1, 0, 0)],
+        preview_size_2d=(1280, 720),
         camera_view_2d=(True, 0.85),
-        color_bar_position=[0.1, 0.6],
-        axes_stretch=[1.0, 16.0, 1.0],
+        color_bar_position=(0.1, 0.6),
+        axes_stretch=(1.0, 16.0, 1.0),
     )
 
     results_folder, prm, solution, animation_scene = vfp.load_solution(
@@ -28,7 +28,7 @@ def main() -> dict:
         results_folder,
         "parallel-shock-2D",
         plot_properties,
-        value_range=[1e-6, 30.0],
+        value_range=(1e-6, 30.0),
         save_animation=True,
     )
     # endregion
@@ -36,18 +36,18 @@ def main() -> dict:
     # region Plot shock region
     plot_properties_shock = plot_properties.replace(
         show_grid=True,
-        axes_stretch=[1.0, 1.0, 1.0],
-        text_color=[1.0, 1.0, 1.0],  # Changed color of label text of color bar
+        axes_stretch=(1.0, 1.0, 1.0),
+        text_color=(1.0, 1.0, 1.0),  # Changed color of label text of color bar
     )
     clip_shock = transform.clip_area(
-        solution, x_range=[-6.0, 6.0], plot_properties=plot_properties_shock
+        solution, x_range=(-6.0, 6.0), plot_properties=plot_properties_shock
     )
     layout_shock_region, render_view_shock_region = vfp.plot_f_lms_2d(
         clip_shock,
         results_folder,
         "shock-region",
         plot_properties_shock,
-        value_range=[1e-6, 30.0],
+        value_range=(1e-6, 30.0),
     )
     # endregion
 
@@ -90,9 +90,9 @@ def main() -> dict:
         results_folder,
         "particle-spectrum",
         plot_properties_p,
-        lms_indices=[[0, 0, 0]],
-        offset=[0.001, 0, 0],
-        x_range=[p_inj * -0.1, bounds[3]],
+        lms_indices=[(0, 0, 0)],
+        offset=(0.001, 0, 0),
+        x_range=(p_inj * -0.1, bounds[3]),
     )
     # endregion
 
@@ -167,16 +167,16 @@ def main() -> dict:
         results_folder,
         "spatial-distribution",
         plot_properties_x,
-        lms_indices=[[0, 0, 0], [1, 0, 0]],
+        lms_indices=[(0, 0, 0), (1, 0, 0)],
         direction="x",
-        offset=[0.0, np.log(p_hat), 0.0],
+        offset=(0.0, np.log(p_hat), 0.0),
     )
     # endregion
 
     # region Plot over time (time-dependent acceleration)
     probe_location, plot_properties_t = transform.probe_location(
         solution,
-        [0.001, np.log(p_hat), 0.0],
+        (0.001, np.log(p_hat), 0.0),
         plot_properties_in=plot_properties.replace(
             legend_location="TopLeft", interpol=1
         ),

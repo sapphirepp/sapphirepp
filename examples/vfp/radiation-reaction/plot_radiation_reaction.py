@@ -8,7 +8,7 @@ def main() -> dict:
     plot_properties = vfp.PlotPropertiesVFP(
         dimension=1,
         momentum=True,
-        lms_indices=[[0, 0, 0], [1, 0, 0]],
+        lms_indices=[(0, 0, 0), (1, 0, 0)],
         scaled_distribution_function=True,
         line_colors={
             "g_000": utils.sapphirepp_colors()[0],
@@ -33,7 +33,7 @@ def main() -> dict:
         results_folder,
         "radiation-reaction",
         plot_properties_scaled,
-        value_range=[1e0, 1e6],
+        value_range=(1e0, 1e6),
         log_y_scale=True,
         save_animation=True,
     )

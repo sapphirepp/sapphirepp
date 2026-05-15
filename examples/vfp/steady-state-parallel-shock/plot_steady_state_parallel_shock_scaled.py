@@ -10,8 +10,8 @@ def main() -> dict:
         dimension=2,
         momentum=True,
         scaled_distribution_function=True,
-        lms_indices=[[0, 0, 0]],
-        axes_stretch=[1.0, 2e3, 1.0],
+        lms_indices=[(0, 0, 0)],
+        axes_stretch=(1.0, 2e3, 1.0),
         legend_location="BottomLeft",
     )
 
@@ -34,7 +34,7 @@ def main() -> dict:
         results_folder,
         "steady-state-parallel-shock-scaled-2D",
         plot_properties,
-        value_range=[1e-6, 60.0],
+        value_range=(1e-6, 60.0),
     )
     # endregion
 
@@ -42,7 +42,7 @@ def main() -> dict:
     solution_scaled, plot_properties_scaled = vfp.scale_distribution_function(
         solution,
         plot_properties.replace(interpol=True),
-        lms_indices=[[0, 0, 0]],
+        lms_indices=[(0, 0, 0)],
         spectral_index=4,
     )
     # endregion
@@ -71,8 +71,8 @@ def main() -> dict:
     plot_over_line_p = transform.plot_over_line(
         scaled_f_000_ana_p,
         direction="y",
-        x_range=[0.0, bounds[3]],
-        offset=[0.1, 0.0, 0.0],
+        x_range=(0.0, bounds[3]),
+        offset=(0.1, 0.0, 0.0),
         results_folder=results_folder,
         filename="scaled-particle-spectrum",
         plot_properties=plot_properties_scaled,

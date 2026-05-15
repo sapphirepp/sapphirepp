@@ -10,8 +10,8 @@ def main() -> dict:
     plot_properties = vfp.PlotPropertiesVFP(
         dimension=2,
         momentum=True,
-        lms_indices=[[0, 0, 0]],
-        axes_stretch=[1.0, 2e3, 1.0],
+        lms_indices=[(0, 0, 0)],
+        axes_stretch=(1.0, 2e3, 1.0),
         sampling_resolution=1e-8,
     )
 
@@ -26,7 +26,7 @@ def main() -> dict:
         results_folder,
         "steady-state-parallel-shock-2D",
         plot_properties,
-        value_range=[1e-6, 30.0],
+        value_range=(1e-6, 30.0),
     )
     # endregion
 
@@ -66,9 +66,9 @@ def main() -> dict:
         results_folder,
         "particle-spectrum",
         plot_properties_p,
-        offset=[0.1, 0, 0],
-        x_range=[0.0, bounds[3]],
-        value_range=[1e-6, 14.5],
+        offset=(0.1, 0, 0),
+        x_range=(0.0, bounds[3]),
+        value_range=(1e-6, 14.5),
     )
     # endregion
 
@@ -114,8 +114,8 @@ def main() -> dict:
         "spatial-distribution",
         plot_properties_x,
         direction="x",
-        offset=[0.0, np.log(p_hat), 0.0],
-        x_range=[bounds[0] * 0.1, bounds[1]],  # 10% of the upstream
+        offset=(0.0, np.log(p_hat), 0.0),
+        x_range=(bounds[0] * 0.1, bounds[1]),  # 10% of the upstream
     )
     # endregion
 

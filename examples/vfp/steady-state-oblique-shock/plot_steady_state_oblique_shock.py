@@ -18,6 +18,7 @@ def main() -> dict:
         dimension=2,
         momentum=True,
         scaled_distribution_function=True,
+        axes_stretch=(1.0, 2e3, 1.0),
         debug_input_functions=True,
         sampling_resolution=1e-8,
     )
@@ -28,6 +29,15 @@ def main() -> dict:
     )
 
     # ParaView Plots
+    # 2D render view
+    layout_2d, render_view_2d = vfp.plot_f_lms_2d(
+        solution,
+        results_folder,
+        "phase-space-2D",
+        plot_properties,
+        value_range=(1e-6, 60.0),
+    )
+
     # Spectrum at the shock
     (
         plot_over_line_p_at_the_shock,
@@ -38,9 +48,9 @@ def main() -> dict:
         results_folder,
         "spectrum-at-shock",
         plot_properties,
-        lms_indices=[[0, 0, 0]],
-        offset=[0, 0, 0],
-        value_range=[1e-5, 20],
+        lms_indices=[(0, 0, 0)],
+        offset=(0, 0, 0),
+        value_range=(1e-5, 20),
     )
 
     # Spectrum far downstream
@@ -54,9 +64,9 @@ def main() -> dict:
         results_folder,
         "spectrum-downstream",
         plot_properties,
-        lms_indices=[[0, 0, 0]],
-        offset=[downstream_position, 0, 0],
-        value_range=[1e-5, 20],
+        lms_indices=[(0, 0, 0)],
+        offset=(downstream_position, 0, 0),
+        value_range=(1e-5, 20),
     )
 
     # Python plots
@@ -134,11 +144,11 @@ def main() -> dict:
             results_folder,
             "spatial-profile",
             plot_properties,
-            lms_indices=[[0, 0, 0], [1, 0, 0]],
+            lms_indices=[(0, 0, 0), (1, 0, 0)],
             direction="x",
-            offset=[0, np.log(p_value), 0],
+            offset=(0, np.log(p_value), 0),
             x_label=r"$x$",
-            x_range=[x_min, x_max],
+            x_range=(x_min, x_max),
         )
 
         x, data = numpyify.to_numpy_1d(
