@@ -193,13 +193,8 @@ sapphirepp::Utils::SapphireppLogStream::init_parse(
   namespace po = boost::program_options;
 
   po::options_description sapphirepp_options("Sapphire++ options");
-  sapphirepp_options.add_options()("parameter-file,p",
-                                   po::value<std::string>(&parameter_filename)
-                                     ->default_value(parameter_filename),
-                                   "Parameter file name")(
-    "resume,r", "Resume simulation from checkpoint?");
-  po::positional_options_description pos_args;
-  pos_args.add("parameter-file", 1);
+  sapphirepp_options.add_options()("resume,r",
+                                   "Resume simulation from checkpoint?");
 
   po::options_description desc("saplog options");
   desc.add_options()("help,h", "produce help message")(
@@ -225,11 +220,13 @@ sapphirepp::Utils::SapphireppLogStream::init_parse(
   po::variables_map vm;
   auto              parsed = po::command_line_parser(argc, argv)
                   .options(cmdline_options)
-                  .positional(pos_args)
                   .allow_unregistered()
                   .run();
   po::store(parsed, vm);
   po::notify(vm);
+
+  if (argc > 1)
+    parameter_filename = argv[1];
 
   if (vm.count("help"))
     {
@@ -243,8 +240,6 @@ sapphirepp::Utils::SapphireppLogStream::init_parse(
     }
 
   // RemoveOptions from PETSC options to avoid warnings
-  PetscOptionsClearValue(nullptr, "-p");
-  PetscOptionsClearValue(nullptr, "--parameter-file");
   PetscOptionsClearValue(nullptr, "-r");
   PetscOptionsClearValue(nullptr, "--resume");
   PetscOptionsClearValue(nullptr, "-h");
