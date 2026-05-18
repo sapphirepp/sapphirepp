@@ -407,15 +407,15 @@ sapphirepp::VFP::ProbeLocation<dim>::compute_real_spherical_harmonics(
                       y_lms(j, k, i) = boost::math::spherical_harmonic_r(
                         l, m, theta_values[j], phi_values[k]);
                       if (m > 0)
-                        y_lms(j, k, i) *= M_SQRT2;
+                        y_lms(j, k, i) *= std::numbers::sqrt2;
                       break;
                     }
                   case 1:
                     {
                       Assert(m > 0, ExcInvalidState());
-                      y_lms(j, k, i) =
-                        M_SQRT2 * boost::math::spherical_harmonic_i(
-                                    l, m, theta_values[j], phi_values[k]);
+                      y_lms(j, k, i) = std::numbers::sqrt2 *
+                                       boost::math::spherical_harmonic_i(
+                                         l, m, theta_values[j], phi_values[k]);
                       break;
                     }
                   default:

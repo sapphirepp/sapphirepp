@@ -547,6 +547,8 @@ namespace sapphirepp
       ConditionalOStream pcout;
       /** @dealref{TimerOutput} */
       TimerOutput timer;
+      /** Did the mesh change since the last output? */
+      bool output_write_mesh;
       /** @} */
 
 
@@ -719,6 +721,7 @@ sapphirepp::VFP::VFPSolver<dim>::serialize(
 
   ar & current_time;
   ar & current_time_step_number;
+  ar & output_parameters;
 }
 
 

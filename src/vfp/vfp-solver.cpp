@@ -238,6 +238,7 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
   , debug_input_functions_dof_handler(triangulation)
   , pcout(saplog.to_condition_ostream(3))
   , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
+  , output_write_mesh{true}
 {
   LogStream::Prefix prefix_vfp("VFP", saplog);
   LogStream::Prefix prefix("Constructor", saplog);
@@ -510,6 +511,7 @@ sapphirepp::VFP::VFPSolver<dim>::make_grid()
 
   triangulation.refine_global(vfp_parameters.global_grid_refinement);
 
+  output_write_mesh = true;
   saplog << "The grid was created: "
          << "	#cells=" << triangulation.n_cells()
          << ",	#active cells=" << triangulation.n_global_active_cells()
@@ -2690,7 +2692,9 @@ sapphirepp::VFP::VFPSolver<dim>::output_results()
   data_out.build_patches(vfp_parameters.polynomial_degree);
   output_parameters.write_results<dim>(data_out,
                                        current_time_step_number,
-                                       current_time);
+                                       current_time,
+                                       output_write_mesh);
+  output_write_mesh = false;
 
   probe_location.probe_all_points(
     dof_handler,
@@ -2814,6 +2818,7 @@ sapphirepp::VFP::VFPSolver<dim>::restart()
                                           locally_owned_current_source);
     }
 
+  output_write_mesh = true;
   saplog << "Loaded checkpoint at t = " << current_time << std::endl;
 }
 
