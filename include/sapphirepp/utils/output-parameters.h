@@ -118,6 +118,8 @@ namespace sapphirepp
        *        This function only handles the last step of writing to the file.
        * @param time_step_number Number of the time step
        * @param cur_time Simulation time associated with this time step
+       * @param write_mesh_hdf5 Only for hdf5: Write the mesh file?
+       *        Needed at (re-)start of simulation or after refinement.
        * @param filename Overwrite for the @ref base_file_name
        * @note This function should be a const member. The problem is, that in
        *       case of HDF5 output, the xdmf_entries are changed.
@@ -127,7 +129,8 @@ namespace sapphirepp
       write_results(DataOut<dim>      &data_out,
                     const unsigned int time_step_number = 0,
                     const double cur_time = std::numeric_limits<double>::min(),
-                    const std::string &filename = "");
+                    const bool   write_mesh_hdf5 = true,
+                    const std::string &filename  = "");
 
       /**
        * @brief Write a grid to a file in ucd format
@@ -156,6 +159,18 @@ namespace sapphirepp
                       const std::string &new_filename = "checkpoint") const;
 
 
+      /**
+       * @brief Write and read the data of this object from a archive.
+       *
+       * @tparam Archive BOOST input/outout archive.
+       * @param ar Archive.
+       * @param version Archive version.
+       */
+      template <class Archive>
+      void
+      serialize(Archive &ar, const unsigned int version);
+
+
     private:
       /**
        * @brief Callback function for parsing parameters
@@ -171,8 +186,36 @@ namespace sapphirepp
       const MPI_Comm mpi_communicator;
       /** XDMF entries for the HDF5 record */
       std::vector<XDMFEntry> xdmf_entries;
+      /** HDF5 mesh number */
+      unsigned int mesh_number_hdf5 = 0;
     };
 
   } // namespace Utils
 } // namespace sapphirepp
+
+
+
+// ---------------------- inline and template functions --------------------
+
+
+template <class Archive>
+inline void
+sapphirepp::Utils::OutputParameters::serialize(
+  Archive                            &ar,
+  [[maybe_unused]] const unsigned int version)
+{
+  // Check if output_format is the same to ensure consistency
+  unsigned int saved_format = static_cast<unsigned int>(format);
+  ar & saved_format;
+  AssertThrow(saved_format == static_cast<unsigned int>(format),
+              ExcMessage(
+                "Output format mismatch: "
+                "Saved files use a different format than the current setting. "
+                "Use the same format to ensure consistency!"));
+
+  ar & xdmf_entries;
+}
+
+
+
 #endif

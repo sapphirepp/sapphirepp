@@ -139,6 +139,7 @@ test_run_vfp_output(const sapphirepp::VFP::VFPSolver<dim>     &vfp_solver,
     data_out,
     vfp_solver.get_current_time_step_number(),
     vfp_solver.get_current_time(),
+    true,
     filename);
 
   // probe_location.probe_all_points(
