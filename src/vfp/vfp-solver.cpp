@@ -885,15 +885,6 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               fe_v.shape_grad(i, q_index)[coordinate] *
                               velocities[q_index][coordinate] *
                               fe_v.shape_value(j, q_index) * JxW[q_index];
-
-                            // - [\partial_x(u_x\delta_ij + Ax_ij) +
-                            // \partial_y(u_y\delta_ij +
-                            // - Ay_ij) ] \phi_i \phi_j where \partial_x/y
-                            // Ax/y_ij = 0
-                            copy_data.cell_matrix(i, j) -=
-                              div_velocities[q_index] *
-                              fe_v.shape_value(i, q_index) *
-                              fe_v.shape_value(j, q_index) * JxW[q_index];
                           }
                         else
                           {
@@ -922,6 +913,14 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                                   fe_v.shape_value(j, q_index) * JxW[q_index];
                               }
                           }
+                      }
+                    // \phi_i \partial_k u_k \delta_ij \phi_j
+                    if (component_i == component_j)
+                      {
+                        copy_data.cell_matrix(i, j) -=
+                          div_velocities[q_index] *
+                          fe_v.shape_value(i, q_index) *
+                          fe_v.shape_value(j, q_index) * JxW[q_index];
                       }
                   }
                 if constexpr ((vfp_flags & VFPFlags::rotation) !=
