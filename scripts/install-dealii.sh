@@ -7,7 +7,7 @@ INTERACTIVE=true
 SKIP_PREREQUISITE=false
 PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb (assimp)"
 PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb assimp"
-PREREQUISITES_APT="build-essential gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbb2 libtbb2-dev libassimp-dev"
+PREREQUISITES_APT="build-essential gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbbmalloc2 libassimp-dev"
 if [[ $(uname) == "Darwin" ]]; then
     PACKAGE_INSTALLER="brew"
 else
@@ -17,12 +17,12 @@ fi
 INSTALL_ASSIMP=false
 ASSIMP_DIR=${ASSIMP_DIR:-"$HOME/.local/lib/assimp"}
 # Check here for new versions: https://github.com/assimp/assimp/releases
-ASSIMP_VERSION="6.0.2"
+ASSIMP_VERSION="6.0.5"
 
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
 # Check here for new versions: https://gitlab.com/petsc/petsc/-/tags
-PETSC_VERSION="3.24.2"
+PETSC_VERSION="3.25.4"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
@@ -38,7 +38,7 @@ P4EST_VERSION="2.8.7"
 INSTALL_DEAL_II=false
 DEAL_II_DIR=${DEAL_II_DIR:-"$HOME/.local/lib/dealii"}
 # Check here for new versions: https://github.com/dealii/dealii/releases
-DEAL_II_VERSION="9.7.1"
+DEAL_II_VERSION="9.8.0"
 DEAL_II_FLAGS=${DEAL_II_FLAGS:-""}
 
 if [[ $(uname) == "Darwin" ]]; then
@@ -312,11 +312,44 @@ function install_deal_ii {
     rm -rf "$dirname"
 }
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Install all dependencies for Sapphire++: assimp, PETSc, p4est, and deal.II.
+
+Options:
+  -h, --help                    Show this help message
+  -n, --non-interactive         Disable interactive prompts
+  -skp, --skip-prerequisites    Skip prerequisite installation prompt
+  -asp, --assimp                Install assimp
+  -aspd, --assimp-dir DIR       Set assimp installation directory (default: $ASSIMP_DIR)
+  -aspv, --assimp-version VER   Set assimp version (default: $ASSIMP_VERSION)
+  -psc, --petsc                 Install PETSc
+  -pscd, --petsc-dir DIR        Set PETSc installation directory (default: $PETSC_DIR)
+  -pscv, --petsc-version VER    Set PETSc version (default: $PETSC_VERSION)
+  -pscf, --petsc-flags FLAGS    Set PETSc configure flags (default: "$PETSC_FLAGS")
+  -p4e, --p4est                 Install p4est
+  -p4ed, --p4est-dir DIR        Set p4est installation directory (default: $P4EST_DIR)
+  -p4ev, --p4est-version VER    Set p4est version (default: $P4EST_VERSION)
+  -d, --dealii                  Install deal.II
+  -dd, --dealii-dir DIR         Set deal.II installation directory (default: $DEAL_II_DIR)
+  -dv, --dealii-version VER     Set deal.II version (default: $DEAL_II_VERSION)
+  -df, --dealii-flags FLAGS     Set extra deal.II CMake flags (default: "$DEAL_II_FLAGS")
+  -j, --jobs N                  Number of compile jobs (default: $NUMBER_JOBS)
+  -t, --test                    Run tests after installation
+EOF
+}
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     key="$1"
 
     case $key in
+    -h | --help)
+        usage
+        exit 0
+        ;;
     -n | --non-interactive)
         INTERACTIVE=false
         shift
