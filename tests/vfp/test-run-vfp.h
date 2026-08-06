@@ -363,7 +363,8 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
              << std::endl;
 
       {
-        dealii::LogStream::Prefix              prefix("Summary", saplog);
+        dealii::LogStream::Prefix prefix("Summary", saplog);
+        saplog << "START PERFORMANCE SUMMARY" << std::endl;
         dealii::Utilities::System::MemoryStats memory_stats;
         dealii::Utilities::System::get_memory_stats(memory_stats);
         saplog << "Peak (local) resident memory size (HWM):    \t" //
@@ -377,7 +378,9 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
                << " \t= " << (memory_stats.VmPeak >> 20) << " GiB " //
                << std::endl;
 
-        vfp_solver.get_timer().print_wall_time_statistics(MPI_COMM_WORLD);
+        vfp_solver.get_timer().print_wall_time_statistics(MPI_COMM_WORLD, 0.1);
+        vfp_solver.get_timer().print_summary();
+        saplog << "END PERFORMANCE SUMMARY" << std::endl;
       }
       /** [End simulation] */
     }

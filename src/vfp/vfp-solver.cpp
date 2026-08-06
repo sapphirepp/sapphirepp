@@ -237,7 +237,10 @@ sapphirepp::VFP::VFPSolver<dim>::VFPSolver(
                           background_velocity_field)
   , debug_input_functions_dof_handler(triangulation)
   , pcout(saplog.to_condition_ostream(3))
-  , timer(mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
+  , timer(mpi_communicator,
+          pcout,
+          TimerOutput::never,
+          TimerOutput::cpu_and_wall_times_grouped)
   , output_write_mesh{true}
 {
   LogStream::Prefix prefix_vfp("VFP", saplog);
@@ -304,8 +307,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::setup()
 {
-  TimerOutput::Scope timer_section_setup(timer, "VFP - Setup");
-  LogStream::Prefix  prefix_vfp("VFP", saplog);
+  LogStream::Prefix prefix_vfp("VFP", saplog);
   saplog << "Setup VFP equation solver. \t[" << Utilities::System::get_time()
          << "]" << std::endl;
   LogStream::Prefix prefix("Setup", saplog);
@@ -314,7 +316,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
 
   if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
     {
-      TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+      TimerOutput::Scope timer_section(timer, "VFP - Setup - Mass matrix");
       saplog << "Assemble mass matrix." << std::endl;
       MatrixCreator::create_mass_matrix(mapping,
                                         dof_handler,
@@ -324,7 +326,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
 
   if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
     {
-      TimerOutput::Scope           timer_section(timer, "VFP - Project IC");
+      TimerOutput::Scope timer_section(timer, "VFP - Setup - Project IC");
       InitialValueFunction<dim_ps> initial_value_function(
         physical_parameters, pde_system.system_size);
       PETScWrappers::MPI::Vector initial_condition(locally_owned_dofs,
@@ -340,7 +342,7 @@ sapphirepp::VFP::VFPSolver<dim>::setup()
   // Source term at t = 0;
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
-      TimerOutput::Scope timer_source(timer, "VFP - Source");
+      TimerOutput::Scope timer_source(timer, "VFP - Setup - Source");
       source_function.set_time(0);
       VectorTools::create_right_hand_side(mapping,
                                           dof_handler,
@@ -399,7 +401,27 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
               (current_time_step_number %
                  output_parameters.checkpoint_frequency ==
                0))
-            checkpoint();
+            {
+              checkpoint();
+              LogStream::Prefix prefix("PartSummary", saplog);
+              saplog << "START PERFORMANCE SUMMARY" << std::endl;
+              Utilities::System::MemoryStats memory_stats;
+              Utilities::System::get_memory_stats(memory_stats);
+              saplog << "Peak (local) resident memory size (HWM):    \t" //
+                     << memory_stats.VmHWM << " KiB"                     //
+                     << " \t= " << (memory_stats.VmHWM >> 10) << " MiB " //
+                     << " \t= " << (memory_stats.VmHWM >> 20) << " GiB " //
+                     << std::endl;
+              saplog << "Peak (local) virtual/available memory size: \t"  //
+                     << memory_stats.VmPeak << " KiB"                     //
+                     << " \t= " << (memory_stats.VmPeak >> 10) << " MiB " //
+                     << " \t= " << (memory_stats.VmPeak >> 20) << " GiB " //
+                     << std::endl;
+
+              timer.print_wall_time_statistics(mpi_communicator, 0.1);
+              timer.print_summary();
+              saplog << "END PERFORMANCE SUMMARY" << std::endl;
+            }
 
           const double max_time_step =
             std::min(vfp_parameters.final_time - current_time,
@@ -417,7 +439,8 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
     }
 
   {
-    LogStream::Prefix              prefix("Summary", saplog);
+    LogStream::Prefix prefix("Summary", saplog);
+    saplog << "START PERFORMANCE SUMMARY" << std::endl;
     Utilities::System::MemoryStats memory_stats;
     Utilities::System::get_memory_stats(memory_stats);
     saplog << "Peak (local) resident memory size (HWM):    \t" //
@@ -431,7 +454,9 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
            << " \t= " << (memory_stats.VmPeak >> 20) << " GiB " //
            << std::endl;
 
-    timer.print_wall_time_statistics(mpi_communicator);
+    timer.print_wall_time_statistics(mpi_communicator, 0.1);
+    timer.print_summary();
+    saplog << "END PERFORMANCE SUMMARY" << std::endl;
   }
 }
 
@@ -441,7 +466,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::make_grid()
 {
-  TimerOutput::Scope timer_section(timer, "VFP - Grid setup");
+  TimerOutput::Scope timer_section(timer, "VFP - Setup - Grid");
   saplog << "Create the grid" << std::endl;
 
   switch (vfp_parameters.grid_type)
@@ -620,7 +645,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::setup_system()
 {
-  TimerOutput::Scope timer_section(timer, "VFP - Setup FE system");
+  TimerOutput::Scope timer_section(timer, "VFP - Setup - FE system");
   saplog << "Setup the finite element system" << std::endl;
 
   dof_handler.clear();
@@ -2218,7 +2243,7 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
 {
-  TimerOutput::Scope timer_section(timer, "VFP - Steady state");
+  TimerOutput::Scope timer_section(timer, "VFP - Steady state setup");
   saplog << "Steady-state solve" << std::endl;
   LogStream::Prefix prefix("SteadyState", saplog);
 
@@ -2238,6 +2263,7 @@ sapphirepp::VFP::VFPSolver<dim>::steady_state_solve()
   saplog << "Use solver_control(" << vfp_parameters.solver_max_iter << ", "
          << vfp_parameters.solver_tolerance
          << "*rhs = " << solver_control.tolerance() << ")" << std::endl;
+  timer_section.stop();
   saplog << "Start steady-state solver" << std::endl;
   {
     TimerOutput::Scope timer_solve(timer, "VFP - Matrix solve");
@@ -2260,8 +2286,7 @@ double
 sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "VFP - Theta method");
-  LogStream::Prefix  prefix("ThetaMethod", saplog);
+  LogStream::Prefix prefix("ThetaMethod", saplog);
   // Equation: (mass_matrix + time_step * theta * dg_matrix(time +
   // time_step)) f(time + time_step) = (mass_matrix - time_step * (1 -
   // theta) * dg_matrix(time) ) f(time) + time_step * theta * s(time +
@@ -2359,8 +2384,7 @@ double
 sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "VFP - ERK");
-  LogStream::Prefix  prefix("ERK", saplog);
+  LogStream::Prefix prefix("ERK", saplog);
   // ERK 4
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // Butcher's array
@@ -2548,8 +2572,7 @@ sapphirepp::VFP::VFPSolver<dim>::low_storage_explicit_runge_kutta(
   const double time,
   const double time_step)
 {
-  TimerOutput::Scope timer_section(timer, "VFP - LSERK");
-  LogStream::Prefix  prefix("LSERK", saplog);
+  LogStream::Prefix prefix("LSERK", saplog);
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // see Hesthaven p.64
   Vector<double> a({0.,
@@ -2755,7 +2778,8 @@ template <unsigned int dim>
 void
 sapphirepp::VFP::VFPSolver<dim>::restart()
 {
-  TimerOutput::Scope timer_section(timer, "VFP - Restart");
+  TimerOutput::Scope timer_section_metadata(timer,
+                                            "VFP - Restart - Load Metadata");
   LogStream::Prefix  prefix_vfp("VFP", saplog);
   saplog << "Restarting VFP equation solver. \t["
          << Utilities::System::get_time() << "]" << std::endl;
@@ -2779,23 +2803,31 @@ sapphirepp::VFP::VFPSolver<dim>::restart()
     boost::archive::binary_iarchive archive(checkpoint_file);
     archive >> *this;
   }
+  timer_section_metadata.stop();
 
-  // Create (coarse) grid before loading triangulation
-  make_grid();
-  saplog << "Load triangulation" << std::endl;
-  triangulation.load(checkpoint_basefile);
+  {
+    // Create (coarse) grid before loading triangulation
+    make_grid();
+    TimerOutput::Scope timer_section_grid(timer, "VFP - Restart - Load Grid");
+    saplog << "Load triangulation" << std::endl;
+    triangulation.load(checkpoint_basefile);
+  }
 
   setup_system();
 
-  saplog << "Load solution" << std::endl;
-  SolutionTransfer<dim, PETScWrappers::MPI::Vector> solution_transfer(
-    dof_handler);
-  solution_transfer.deserialize(locally_owned_previous_solution);
-  locally_relevant_current_solution = locally_owned_previous_solution;
+  {
+    TimerOutput::Scope timer_section_solution(timer,
+                                              "VFP - Restart - Load solution");
+    saplog << "Load solution" << std::endl;
+    SolutionTransfer<dim, PETScWrappers::MPI::Vector> solution_transfer(
+      dof_handler);
+    solution_transfer.deserialize(locally_owned_previous_solution);
+    locally_relevant_current_solution = locally_owned_previous_solution;
+  }
 
   if constexpr ((VFPFlags::time_evolution & vfp_flags) != VFPFlags::none)
     {
-      TimerOutput::Scope timer_section(timer, "VFP - Mass matrix");
+      TimerOutput::Scope timer_section(timer, "VFP - Setup - Mass matrix");
       saplog << "Assemble mass matrix." << std::endl;
       MatrixCreator::create_mass_matrix(mapping,
                                         dof_handler,
@@ -2808,7 +2840,7 @@ sapphirepp::VFP::VFPSolver<dim>::restart()
   // Source term at t = current_time;
   if constexpr ((vfp_flags & VFPFlags::source) != VFPFlags::none)
     {
-      TimerOutput::Scope timer_source(timer, "VFP - Source");
+      TimerOutput::Scope timer_source(timer, "VFP - Setup - Source");
       source_function.set_time(current_time);
       VectorTools::create_right_hand_side(mapping,
                                           dof_handler,
