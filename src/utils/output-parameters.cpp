@@ -127,6 +127,9 @@ void
 sapphirepp::Utils::OutputParameters::parse_parameters_callback(
   ParameterHandler &prm) const
 {
+  prm.log_parameters(saplog);
+  // Ensure all processors are done reading the parameter file
+  MPI_Barrier(mpi_communicator);
   // create output directory
   if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
     {
@@ -137,7 +140,6 @@ sapphirepp::Utils::OutputParameters::parse_parameters_callback(
       prm.print_parameters(output_path / static_cast<std::string>("log.prm"),
                            ParameterHandler::ShortPRM);
     }
-  prm.log_parameters(saplog);
 }
 
 
