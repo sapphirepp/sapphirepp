@@ -125,26 +125,19 @@ main(int argc, char *argv[])
 
 
       /** [Compare to exact solution] */
-      saplog << "Compare to exact solution" << std::endl;
-
       InitialValueFunction<dim> exact_solution(
         physical_parameters, vfp_solver.get_pde_system().system_size);
 
       const dealii::ComponentSelectFunction<dim> weight(
         0, vfp_solver.get_pde_system().system_size);
 
-      test_run_vfp_output<dim>(vfp_solver,
-                               vfp_parameters,
-                               output_parameters,
-                               exact_solution,
-                               "exact_solution");
-
-
-      test_run_vfp_error<dim>(
-        vfp_solver, exact_solution, saplog, max_L2_error, &weight);
-
-      sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
-      return 0;
+      return test_run_compare_final<dim>(vfp_solver,
+                                         vfp_parameters,
+                                         physical_parameters,
+                                         output_parameters,
+                                         exact_solution,
+                                         max_L2_error,
+                                         &weight);
       /** [Compare to exact solution] */
     }
   catch (std::exception &exc)

@@ -169,7 +169,7 @@ template <unsigned int dim>
 void
 test_run_vfp_error(const sapphirepp::VFP::VFPSolver<dim> &vfp_solver,
                    dealii::Function<dim>                 &exact_solution,
-                   std::ostream                          &error_file,
+                   dealii::ConditionalOStream            &error_file,
                    const double                           max_L2_error = 0.,
                    const dealii::Function<dim, double>   *weight = nullptr)
 {
@@ -277,10 +277,18 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
         AssertThrow(false, dealii::ExcNotImplemented());
 
       /** [Create error file] */
-      std::ofstream error_file(output_parameters.output_path / "error.csv");
-      AssertThrow(!error_file.fail(),
-                  dealii::ExcFileNotOpen(output_parameters.output_path /
-                                         "error.csv"));
+      const unsigned int mpi_rank =
+        dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+      std::ofstream error_ofstream;
+      if (mpi_rank == 0)
+        {
+          error_ofstream.open(output_parameters.output_path / "error.csv");
+          AssertThrow(!error_ofstream.fail(),
+                      dealii::ExcFileNotOpen(output_parameters.output_path /
+                                             "error.csv"));
+        }
+      dealii::ConditionalOStream error_file(error_ofstream, mpi_rank == 0);
+
       error_file << "time_step_number" << ","  //
                  << "time" << ","              //
                  << "L2_norm" << ","           //
@@ -369,7 +377,8 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
 
 
       /** [End simulation] */
-      error_file.close();
+      if (mpi_rank == 0)
+        error_ofstream.close();
 
       saplog << "Simulation ended at t = " << vfp_solver.get_current_time()
              << " \t[" << dealii::Utilities::System::get_time() << "]"
@@ -396,6 +405,107 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
         saplog << "END PERFORMANCE SUMMARY" << std::endl;
       }
       /** [End simulation] */
+    }
+  catch (std::exception &exc)
+    {
+      sapphirepp::saplog.print_error(exc);
+      return 1;
+    }
+  catch (...)
+    {
+      std::cerr << std::endl;
+      std::cerr << "\n"
+                << "----------------------------------------------------"
+                << "\n"
+                << "Unknown exception!" << "\n"
+                << "Aborting!" << "\n"
+                << "----------------------------------------------------"
+                << std::endl;
+      return 1;
+    }
+
+  sapphirepp::saplog << "Succeeded test run VFP." << std::endl;
+  return 0;
+}
+
+
+
+/**
+ * @brief Compare the solution after the VFP solver finished.
+ *
+ * @tparam dim Dimension of the reduced phase space \f$ (\mathbf{x}, p) \f$,
+ *         `dim_ps`
+ * @param vfp_solver @ref sapphirepp::VFP::VFPSolver.
+ *                    Must already have finished `run()`.
+ * @param vfp_parameters Parameters for the VFP equation
+ * @param physical_parameters User defined parameters of the problem
+ * @param output_parameters Parameters for the output
+ * @param exact_solution Exact solution to compare to
+ * @param max_L2_error Maximum expected L2 error.
+ *        Do not compare for `max_L2_error = 0`.
+ * @param weight Weights for the error
+ * @return Returns `0` on success, or `1` if an error or exception occurs.
+ */
+template <unsigned int dim>
+int
+test_run_compare_final(
+  const sapphirepp::VFP::VFPSolver<dim>                 &vfp_solver,
+  const sapphirepp::VFP::VFPParameters<dim>             &vfp_parameters,
+  [[maybe_unused]] const sapphirepp::PhysicalParameters &physical_parameters,
+  sapphirepp::Utils::OutputParameters                   &output_parameters,
+  dealii::Function<dim>                                 &exact_solution,
+  const double                                           max_L2_error = 0.,
+  const dealii::Function<dim, double>                   *weight       = nullptr)
+{
+  sapphirepp::saplog << "Compare to exact solution" << std::endl;
+  try
+    {
+      using namespace sapphirepp;
+      using namespace VFP;
+      dealii::LogStream::Prefix prefix_test("VFPTest", saplog);
+
+      /** [Create error file] */
+      const unsigned int mpi_rank =
+        dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+      std::ofstream error_ofstream;
+      if (mpi_rank == 0)
+        {
+          error_ofstream.open(output_parameters.output_path / "error.csv");
+          AssertThrow(!error_ofstream.fail(),
+                      dealii::ExcFileNotOpen(output_parameters.output_path /
+                                             "error.csv"));
+        }
+      dealii::ConditionalOStream error_file(error_ofstream, mpi_rank == 0);
+
+      error_file << "time_step_number" << ","  //
+                 << "time" << ","              //
+                 << "L2_norm" << ","           //
+                 << "L2_error" << ","          //
+                 << "relative_L2_error" << "," //
+                 << "L1_norm" << ","           //
+                 << "L1_error" << ","          //
+                 << "relative_L1_error" << "," //
+                 << "Linfty_norm" << ","       //
+                 << "Linfty_error" << ","      //
+                 << "relative_Linfty_error" << std::endl;
+      /** [Create error file] */
+
+
+      /** [Compare to exact solution] */
+      exact_solution.set_time(vfp_solver.get_current_time());
+
+      test_run_vfp_output<dim>(vfp_solver,
+                               vfp_parameters,
+                               output_parameters,
+                               exact_solution,
+                               "exact_solution");
+
+      test_run_vfp_error<dim>(
+        vfp_solver, exact_solution, error_file, max_L2_error, weight);
+
+      if (mpi_rank == 0)
+        error_ofstream.close();
+      /** [Compare to exact solution] */
     }
   catch (std::exception &exc)
     {
