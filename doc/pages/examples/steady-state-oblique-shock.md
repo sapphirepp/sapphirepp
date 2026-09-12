@@ -278,7 +278,7 @@ the particle spectrum at the shock also deviates from a straight power law.
 This is true for case (a) and (b).
 The spectra are broken, however, the slopes of the two parts of the spectra
 does depend on how the turbulence is changed on passing through the shock.
-Below we show the two cases describe in the Sec. [Scattring frequency](#scattering-frequency-steady-state-oblique-shock).
+Below we show the two cases described in the Sec. [Scattering frequency](#scattering-frequency-steady-state-oblique-shock).
 
 <div style="text-align:center;">
 <img alt="Case A: The particle spectrum at the shock for eta constant across the shock."
