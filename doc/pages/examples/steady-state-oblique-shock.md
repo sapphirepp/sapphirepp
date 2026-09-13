@@ -264,7 +264,7 @@ lead to the deviation from a straight power law of spectral index $-4$.
 src="https://sapphirepp.org/img/examples/steady-state-oblique-shock/spectra_kraichnan_turbulence.png">
 </div>
 
-Note, the the normalisation of $\nu$ is set to $\nu_0 = 0.01$.
+Note, that the normalisation of $\nu$ is set to $\nu_0 = 0.01$.
 This implies that the critical momentum $p_{\text{Bohm}}$,
 i.e. the momentum for which the scattering frequency is below the the gyro frequency, is $10^{4}$.
 
