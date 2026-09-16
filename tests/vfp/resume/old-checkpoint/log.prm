@@ -5,7 +5,7 @@ subsection Output
   set Format                       = pvtu
   set Number of digits for counter = 4
   set Output time step             = 0
-  set Results folder               = .
+  set Results folder               = tests/vfp/resume
   set Simulation identifier        = old-checkpoint
 end
 subsection Physical parameters
@@ -49,6 +49,7 @@ subsection VFP
     end
   end
   subsection Numerical parameters
+    set min_time_step    = 1e-08
     set rpe_tolerance    = 1e-08
     set solver_max_iter  = 1000
     set solver_tolerance = 1e-08

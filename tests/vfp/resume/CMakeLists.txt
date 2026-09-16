@@ -40,6 +40,7 @@ set_property(TEST restart-new-checkpoint-vfp PROPERTY LABELS
 )
 
 
+# Create old checkpoint: mpirun -np 4 ./build/tests/vfp/resume/test-resume-vfp tests/vfp/resume/old-checkpoint/log.prm
 add_test(NAME restart-old-checkpoint-vfp COMMAND
   ./test-resume-vfp parameter-restart-old-checkpoint.prm --resume
 )
