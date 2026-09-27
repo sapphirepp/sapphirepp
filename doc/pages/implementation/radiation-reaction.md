@@ -143,7 +143,7 @@ Though before doing this, we rewrite it using the dimensionless units of @sapphi
 This yields
 
 $$
-\frac{3}{2 \underline{\tau}^*_R} \frac{q^{*4}}{m^{*3}} \left[ \frac{1}{p^{*2}} \mathbf{M}^{*}_1 \partial_p \left(p^{*3} \gamma  \mathbf{f}\right)
+\frac{3}{2 \underline{\tau}^*_R} \frac{q^{*4}}{m^{*3}} \left[ \frac{1}{p^{*2}} \mathbf{M}^{*}_1 \partial_{p^*} \left(p^{*3} \gamma  \mathbf{f}\right)
 -\frac{1}{\gamma} \mathbf{M}^{*}_2 \mathbf{f} \right] \,,
 $$
 
