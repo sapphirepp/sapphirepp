@@ -1,4 +1,4 @@
-<!-- HTML footer for doxygen 1.9.8-->
+<!-- HTML footer for doxygen 1.18.0-->
 <!-- start footer part -->
 <!--BEGIN GENERATE_TREEVIEW-->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
@@ -11,20 +11,23 @@
 	<option value="/latest">latest</option>
       </select>
     </li>
-    <li class="footer">$generatedby <a href="https://www.doxygen.org/index.html">
-	<img class="footer" src="$relpath^doxygen.svg" width="104" height="31" alt="doxygen"/></a>
-      $doxygenversion
-    </li>
+    <li class="footer">$generatedby <a href="https://www.doxygen.org/index.html"><img class="footer" src="$relpath^doxygen.svg" width="104" height="31" alt="doxygen"/></a> $doxygenversion </li>
   </ul>
 </div>
 <script>
-  $('#versionSelector').load('/scripts/version-folders.php');
+ fetch('/scripts/version-folders.php')
+    .then(res => res.text())
+    .then(data => {
+            document.getElementById('versionSelector').innerHTML = data;
+        })
+    .catch(error => console.log('Error: ' + error));
 </script>
 <!--END GENERATE_TREEVIEW-->
 <!--BEGIN !GENERATE_TREEVIEW-->
 <hr class="footer"/><address class="footer"><small>
 $generatedby&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="$relpath^doxygen.svg" width="104" height="31" alt="doxygen"/></a> $doxygenversion
 </small></address>
+</div><!-- doc-content -->
 <!--END !GENERATE_TREEVIEW-->
 </body>
 </html>
