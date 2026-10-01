@@ -415,15 +415,13 @@ $$
 
 where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the scaled initial conditions.
 
-Using the initial condition $h_{110}(p) =  0.5/\sqrt{6}  p_{\mathrm{min}} \exp\left(-p / p_{\mathrm{max}}\right)$ and $h_{111}(p) = 0$,
+Using the initial condition $h_{110}(p) =  0.5 p_{\mathrm{min}}/\sqrt{6} \exp\left(-p / p_{\mathrm{max}}\right)$ and $h_{111}(p) = 0$,
 a @sapphire simulation yields
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/radiation-reaction/radiation-reaction-with-rotation.gif"
 alt="Radiation reaction force plus gyro motion. The particles gyrate about the magnetic field and loose energy due to the radiation reaction force." width="80%"/>
 </CENTER>
-
-of the perpendicular dipole components .
 
 The inclusion of the magnetic force term in the VFP a equation leads to an oscillatory exchange between the two dipole components $f_{110}$ and $f_{111}$.
 This exchange represents the gyro motion of the particles. 
