@@ -393,9 +393,11 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
       while ((vfp_parameters.final_time - current_time) >
              vfp_parameters.epsilon_d)
         {
-          if ((current_time_step_number % output_parameters.output_frequency) ==
-              0)
-            output_results();
+          if ((save_next_checkpoint || current_time == 0.) &&
+              ((current_time_step_number %
+                output_parameters.output_frequency) == 0))
+              output_results();
+
           if (save_next_checkpoint &&
               (output_parameters.checkpoint_frequency > 0) &&
               (current_time_step_number %
