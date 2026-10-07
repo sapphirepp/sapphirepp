@@ -132,7 +132,7 @@ main(int argc, char *argv[])
 
       /** [Time loop] */
       while ((vfp_parameters.final_time - vfp_solver.get_current_time()) >
-             vfp_parameters.epsilon_d)
+             vfp_parameters.min_time_step)
         {
           analytic_solution.set_time(vfp_solver.get_current_time());
           /** [Time loop] */

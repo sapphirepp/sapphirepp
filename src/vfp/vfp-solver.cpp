@@ -391,7 +391,7 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
       // Likewise, we do need to create a checkpoint at t=0.
       bool save_next_checkpoint = false;
       while ((vfp_parameters.final_time - current_time) >
-             vfp_parameters.epsilon_d)
+             vfp_parameters.min_time_step)
         {
           if ((current_time_step_number % output_parameters.output_frequency) ==
               0)
@@ -2287,6 +2287,11 @@ sapphirepp::VFP::VFPSolver<dim>::theta_method(const double time,
                                               const double time_step)
 {
   LogStream::Prefix prefix("ThetaMethod", saplog);
+  AssertThrow(time_step > vfp_parameters.min_time_step,
+              ExcMessage(
+                "The time_step=" + Utilities::to_string(time_step) +
+                " is smaller than the minimum time step, " + "min_time_step=" +
+                Utilities::to_string(vfp_parameters.min_time_step) + "."));
   // Equation: (mass_matrix + time_step * theta * dg_matrix(time +
   // time_step)) f(time + time_step) = (mass_matrix - time_step * (1 -
   // theta) * dg_matrix(time) ) f(time) + time_step * theta * s(time +
@@ -2385,6 +2390,11 @@ sapphirepp::VFP::VFPSolver<dim>::explicit_runge_kutta(const double time,
                                                       const double time_step)
 {
   LogStream::Prefix prefix("ERK", saplog);
+  AssertThrow(time_step > vfp_parameters.min_time_step,
+              ExcMessage(
+                "The time_step=" + Utilities::to_string(time_step) +
+                " is smaller than the minimum time step, " + "min_time_step=" +
+                Utilities::to_string(vfp_parameters.min_time_step) + "."));
   // ERK 4
   // \df(t)/dt = - mass_matrix_inv * (dg_matrix(t) * f(t) - s(t))
   // Butcher's array
