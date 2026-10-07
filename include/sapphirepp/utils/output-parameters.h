@@ -68,8 +68,11 @@ namespace sapphirepp
     class OutputParameters
     {
     public:
-      /** Only put out every n-th step */
-      unsigned int output_frequency = 1;
+      /**
+       * Time step for outputing results.
+       * Use `0` to output every time step.
+       */
+      double output_time_step = 0.;
       /** Output folder = results_path + simulation_id */
       std::filesystem::path output_path;
       /** Path to the results directory */

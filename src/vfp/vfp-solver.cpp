@@ -388,14 +388,40 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
       // When resuming a simulation,
       // we do not want to overwrite the checkpoint
       // and output directly after restart.
-      // Likewise, we do need to create a checkpoint at t=0.
-      bool save_next_checkpoint = false;
+      // Likewise, we do not need to create a checkpoint at t=0.
+      bool   save_next_checkpoint = false;
+      double next_output_time     = 0.;
+      if (resume)
+        {
+          if (output_parameters.output_time_step > 0.)
+            next_output_time =
+              (std::floor(current_time / output_parameters.output_time_step) +
+               1) *
+              output_parameters.output_time_step;
+          else
+            next_output_time = current_time + vfp_parameters.min_time_step;
+        }
+
       while ((vfp_parameters.final_time - current_time) >
              vfp_parameters.min_time_step)
         {
-          if ((current_time_step_number % output_parameters.output_frequency) ==
-              0)
-            output_results();
+          if (current_time >= next_output_time)
+            {
+              output_results();
+              next_output_time += output_parameters.output_time_step;
+              if ((output_parameters.output_time_step > 0.) &&
+                  (next_output_time < current_time))
+                {
+                  saplog.print_warning(
+                    "Simulation time step larger than output time step. "
+                    "Skipping intermediate time steps!");
+                  next_output_time =
+                    (std::floor(current_time /
+                                output_parameters.output_time_step) +
+                     1) *
+                    output_parameters.output_time_step;
+                }
+            }
           if (save_next_checkpoint &&
               (output_parameters.checkpoint_frequency > 0) &&
               (current_time_step_number %
@@ -429,6 +455,7 @@ sapphirepp::VFP::VFPSolver<dim>::run(const bool resume)
           do_time_step(max_time_step);
           save_next_checkpoint = true;
         }
+
       // Output and checkpoint at the final result
       output_results();
       if (save_next_checkpoint && (output_parameters.checkpoint_frequency > 0))

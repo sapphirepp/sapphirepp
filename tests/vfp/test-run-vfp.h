@@ -304,6 +304,7 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
 
 
       /** [Time loop] */
+      double next_output_time = 0.;
       while ((vfp_parameters.final_time - vfp_solver.get_current_time()) >
              vfp_parameters.min_time_step)
         {
@@ -312,13 +313,25 @@ test_run_vfp(const sapphirepp::VFP::VFPParameters<dim> &vfp_parameters,
 
 
           /** [Output solution] */
-          if ((vfp_solver.get_current_time_step_number() %
-               output_parameters.output_frequency) == 0)
+          if (vfp_solver.get_current_time() >= next_output_time)
             {
               test_run_vfp_output<dim>(vfp_solver,
                                        vfp_parameters,
                                        output_parameters,
                                        exact_solution);
+              next_output_time += output_parameters.output_time_step;
+              if ((output_parameters.output_time_step > 0.) &&
+                  (next_output_time < vfp_solver.get_current_time()))
+                {
+                  saplog.print_warning(
+                    "Simulation time step larger than output time step. "
+                    "Skipping intermediate time steps!");
+                  next_output_time =
+                    (std::floor(vfp_solver.get_current_time() /
+                                output_parameters.output_time_step) +
+                     1) *
+                    output_parameters.output_time_step;
+                }
               /** [Output solution] */
 
 
