@@ -134,7 +134,7 @@ Key parameters are:
 | :-------------------- | :-------------------- | :------------------------------------------------------------- |
 | Results directory     | `Output`              | Specifies the directory for output files.                      |
 | Format                | `Output`              | Defines the output format (e.g., `vtu/pvtu/hdf5`).             |
-| Output frequency      | `Output`              | Determines the frequency of output.                            |
+| Output time step      | `Output`              | Determines the frequency of output.                            |
 | Simulation identifier | `Output`              | Name of the simulation run, i.e. subfolder for the simulation. |
 | Checkpoint frequency  | `Output`              | Time step frequency at which checkpoints are created.          |
 | Expansion order       | `VFP:Expansion`       | Sets the expansion order in spherical harmonics.               |
@@ -153,7 +153,7 @@ Here's an example of the syntax used in `.prm` files:
 subsection Output
   set Results folder        = ./results
   set Format                = pvtu
-  set Output frequency      = 1
+  set Output time step      = 0
   set Simulation identifier =
 end
 subsection VFP
