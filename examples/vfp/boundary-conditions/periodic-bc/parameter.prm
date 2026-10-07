@@ -10,7 +10,7 @@ subsection Output
   set Simulation identifier        = periodic-bc-website
   set Base file name               = solution
   set Format                       = pvtu
-  set Output frequency             = 20
+  set Output time step             = 0.1
 end
 
 subsection VFP

@@ -2,7 +2,7 @@ subsection Output
   set Results folder               = ./results
   set Simulation identifier        = parallel-shock
   set Format                       = pvtu
-  set Output frequency             = 1
+  set Output time step             = 0
   set Checkpoint frequency         = 50
 end
 subsection VFP

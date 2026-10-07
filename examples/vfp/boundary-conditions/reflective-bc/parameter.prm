@@ -3,7 +3,7 @@ subsection Output
   set Simulation identifier        = reflective-bc-webpage
   # set Simulation identifier        = reflective-bc-per
   set Number of digits for counter = 5
-  set Output frequency             = 10
+  set Output time step             = 0.1
 end
 subsection Physical parameters
   set sigma  = 1.
