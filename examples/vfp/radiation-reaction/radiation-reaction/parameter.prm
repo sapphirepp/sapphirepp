@@ -6,7 +6,7 @@ end
 subsection Output
   set Base file name               = solution
   set Format                       = pvtu
-  set Output frequency             = 20
+  set Output time step             = 1e-7
   set Results folder               = ./results
   set Simulation identifier        = radiation-reaction
 end
@@ -40,5 +40,8 @@ subsection VFP
     set Final time     = 1e-5
     set Method         = ERK4
     set Time step size = 0.5e-8
+  end
+  subsection Numerical parameters
+    set min_time_step    = 1e-10
   end
 end

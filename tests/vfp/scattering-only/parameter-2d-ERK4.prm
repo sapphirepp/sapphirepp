@@ -1,7 +1,7 @@
 subsection Output
   set Format                       = vtu
   set Number of digits for counter = 4
-  set Output frequency             = 1
+  set Output time step             = 0
   set Simulation identifier        = 2d-ERK4
 end
 

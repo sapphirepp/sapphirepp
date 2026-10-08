@@ -4,7 +4,7 @@ subsection Output
   set Base file name               = f
   set Format                       = pvtu
   set Number of digits for counter = 0
-  set Output frequency             = 1
+  set Output time step             = 0
 end
 subsection VFP
   subsection Expansion

@@ -291,6 +291,13 @@ sapphirepp::VFP::VFPParameters<dim>::declare_parameters(ParameterHandler &prm)
                       "Maximum number of iterations for matrix solver.",
                       Patterns::Integer(0));
 
+    prm.add_parameter(
+      "min_time_step",
+      min_time_step,
+      "Minimum time step size for the simulation in dimensionless units. \n"
+      "Abort simulation if the time step is smaller than this number.",
+      Patterns::Double(0));
+
     prm.add_parameter("rpe_tolerance",
                       rpe_tolerance,
                       "Tolerance for RemotePointEvaluation.",

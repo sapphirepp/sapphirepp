@@ -2,7 +2,7 @@ subsection Output
   set Results folder               = ./results
   set Simulation identifier        = gyro-advection
   set Number of digits for counter = 5
-  set Output frequency             = 20
+  set Output time step             = 0.4
 end
 subsection Physical parameters
   set B0/2pi = 1.

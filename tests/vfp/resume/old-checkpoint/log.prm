@@ -4,7 +4,7 @@ subsection Output
   set Debug input functions        = false
   set Format                       = pvtu
   set Number of digits for counter = 4
-  set Output frequency             = 1
+  set Output time step             = 0
   set Results folder               = .
   set Simulation identifier        = old-checkpoint
 end

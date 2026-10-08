@@ -3,7 +3,7 @@ subsection Output
   set Simulation identifier        = convergence-study
   set Format                       = vtu
   set Number of digits for counter = 5
-  set Output frequency             = 20
+  set Output time step             = 0.2
 end
 subsection Physical parameters
   set B0/2pi = 1.

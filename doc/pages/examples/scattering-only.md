@@ -362,7 +362,7 @@ The file begins with the inclusion of several header files:
 - `vfp-parameters.h` declares the parameters related to VFP equation
   solver, such as the time step size and final time.
 - `output-parameters.h` declares the parameters related to output, like the
-  output directory and the output frequency.
+  output directory and the output time step.
 - `sapphirepp-logstream.h` enables console and logfile output
   with varying levels of verbosity.
 
