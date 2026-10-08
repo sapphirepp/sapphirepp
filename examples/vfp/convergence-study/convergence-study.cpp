@@ -131,16 +131,16 @@ main(int argc, char *argv[])
 
 
       /** [Time loop] */
+      double next_output_time = 0.;
       while ((vfp_parameters.final_time - vfp_solver.get_current_time()) >
-             vfp_parameters.epsilon_d)
+             vfp_parameters.min_time_step)
         {
           analytic_solution.set_time(vfp_solver.get_current_time());
           /** [Time loop] */
 
 
           /** [Output solution] */
-          if ((vfp_solver.get_current_time_step_number() %
-               output_parameters.output_frequency) == 0)
+          if (vfp_solver.get_current_time() >= next_output_time)
             {
               LogStream::Prefix prefix("Output", saplog);
               saplog << "Output solution" << std::endl;
@@ -172,32 +172,48 @@ main(int argc, char *argv[])
                 data_out,
                 vfp_solver.get_current_time_step_number(),
                 vfp_solver.get_current_time());
+
+              // Advance next_output_time
+              next_output_time += output_parameters.output_time_step;
+              if ((output_parameters.output_time_step > 0.) &&
+                  (next_output_time < vfp_solver.get_current_time()))
+                {
+                  saplog.print_warning(
+                    "Simulation time step larger than output time step. "
+                    "Skipping intermediate time steps!");
+                  next_output_time =
+                    (std::floor(vfp_solver.get_current_time() /
+                                output_parameters.output_time_step) +
+                     1) *
+                    output_parameters.output_time_step;
+                }
+              /** [Output solution] */
+
+
+              /** [Calculate error] */
+              {
+                LogStream::Prefix prefix_error("Error", saplog);
+                saplog << "Calculate error" << std::endl;
+                const double L2_error =
+                  vfp_solver.compute_global_error(analytic_solution,
+                                                  dealii::VectorTools::L2_norm,
+                                                  dealii::VectorTools::L2_norm,
+                                                  &weight);
+                const double L2_norm =
+                  vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
+                                                   dealii::VectorTools::L2_norm,
+                                                   &weight);
+                saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
+                       << ", rel error = " << L2_error / L2_norm << std::endl;
+
+                error_file << vfp_solver.get_current_time_step_number()
+                           << ","                                  //
+                           << vfp_solver.get_current_time() << "," //
+                           << L2_norm << ","                       //
+                           << L2_error << ","                      //
+                           << L2_error / L2_norm << std::endl;
+              }
             }
-          /** [Output solution] */
-
-
-          /** [Calculate error] */
-          {
-            LogStream::Prefix prefix_error("Error", saplog);
-            saplog << "Calculate error" << std::endl;
-            const double L2_error =
-              vfp_solver.compute_global_error(analytic_solution,
-                                              dealii::VectorTools::L2_norm,
-                                              dealii::VectorTools::L2_norm,
-                                              &weight);
-            const double L2_norm =
-              vfp_solver.compute_weighted_norm(dealii::VectorTools::L2_norm,
-                                               dealii::VectorTools::L2_norm,
-                                               &weight);
-            saplog << "L2_error = " << L2_error << ", L2_norm = " << L2_norm
-                   << ", rel error = " << L2_error / L2_norm << std::endl;
-
-            error_file << vfp_solver.get_current_time_step_number() << "," //
-                       << vfp_solver.get_current_time() << ","             //
-                       << L2_norm << ","                                   //
-                       << L2_error << ","                                  //
-                       << L2_error / L2_norm << std::endl;
-          }
           /** [Calculate error] */
 
 

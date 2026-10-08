@@ -2,7 +2,7 @@ subsection Output
   set Results folder               = ./results
   set Simulation identifier        = continuous-bc-small-domain-cont
   set Number of digits for counter = 5
-  set Output frequency             = 10
+  set Output time step             = 0.1
 end
 subsection Physical parameters
   set B0/2pi = 0.3

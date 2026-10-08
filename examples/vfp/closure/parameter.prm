@@ -2,7 +2,7 @@ subsection Output
   set Results folder               = ./results
   set Simulation identifier        = closure
   set Format                       = pvtu
-  set Output frequency             = 100
+  set Output time step             = 0.577350269189  # = 100 * 0.00577350269189
 end
 subsection Physical parameters
   set Standard deviation   = 1.

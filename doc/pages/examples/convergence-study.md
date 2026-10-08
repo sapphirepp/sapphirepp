@@ -250,12 +250,14 @@ To keep track of the time steps, we use the member variables
 @ref sapphirepp::VFP::VFPSolver::get_current_time "current_time"
 and @ref sapphirepp::VFP::VFPSolver::get_current_time_step_number "current_time_step_number"
 via their respective getter functions.
+In addition, we define the `next_output_time` to track the output.
 
 @snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Time loop
 
-We only want to output the solution every Nth time steps, where N is the
-`output_frequency`. Ensuring this with an `if` statement, we add three
-different vectors to the output:
+We only want to output the solution after an `output_time_step`,
+which can be multiple simulation time steps.
+To this end, we compare the current time to the `next_output_time` defined above.
+For the output, we add three different vectors:
 
 - the numeric solution
   (prefixed with `numeric_f_`)
@@ -263,6 +265,9 @@ different vectors to the output:
   (prefixed `project_f_`)
 - an interpolation of the analytic solution
   (prefixed `interpol_f_`)
+
+The `next_output_time` is then advanced by one `output_time_step`,
+or more if the simulation time step if lager than the output time step.
 
 @snippet{lineno} examples/vfp/convergence-study/convergence-study.cpp Output solution
 

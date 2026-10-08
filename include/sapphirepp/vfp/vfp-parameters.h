@@ -226,6 +226,12 @@ namespace sapphirepp
       unsigned int solver_max_iter = 1000;
 
       /**
+       * Minimum time step size for the simulation in dimensionless units.
+       * Abort simulation if the time step is smaller than this value.
+       */
+      double min_time_step = epsilon_d;
+
+      /**
        * Tolerance for
        * @dealref{RemotePointEvaluation,classUtilities_1_1MPI_1_1RemotePointEvaluation}.
        */

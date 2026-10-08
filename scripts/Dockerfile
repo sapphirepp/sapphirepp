@@ -19,13 +19,12 @@ RUN apt-get update \
     graphviz texlive-bibtex-extra flex bison \
     && rm -rf /var/lib/apt/lists/*
 
-# Install doxygen-v1.15.0 (compile from source needed for arm64)
-RUN apt-get install -y graphviz texlive-bibtex-extra flex bison
-RUN wget https://github.com/doxygen/doxygen/releases/download/Release_1_15_0/doxygen-1.15.0.src.tar.gz && \
-    tar -xzf doxygen-1.15.0.src.tar.gz && \
-    cmake -S doxygen-1.15.0 -B doxygen-build && \
+# Install doxygen-v1.18.0 (compile from source needed for arm64)
+RUN wget https://github.com/doxygen/doxygen/releases/download/Release_1_18_0/doxygen-1.18.0.src.tar.gz && \
+    tar -xzf doxygen-1.18.0.src.tar.gz && \
+    cmake -S doxygen-1.18.0 -B doxygen-build && \
     make -C doxygen-build -j $NJOBS install && \
-    rm -rf doxygen-build doxygen-1.15.0 doxygen-1.15.0.src.tar.gz
+    rm -rf doxygen-build doxygen-1.18.0 doxygen-1.18.0.src.tar.gz
 
 # Install sapphirepp
 USER dealii

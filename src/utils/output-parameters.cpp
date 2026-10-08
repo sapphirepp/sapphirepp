@@ -74,10 +74,11 @@ sapphirepp::Utils::OutputParameters::declare_parameters(ParameterHandler &prm)
                     Patterns::Selection("vtu|pvtu|hdf5"),
                     "The format in which the simulation "
                     "output will be stored.");
-  prm.add_parameter("Output frequency",
-                    output_frequency,
-                    "The frequency at which output files will be written. "
-                    "(In units of time steps)");
+  prm.add_parameter("Output time step",
+                    output_time_step,
+                    "The time step at which output files will be written "
+                    "in dimensionless units. "
+                    "Use '0' to output every time step.");
   prm.add_parameter("Debug input functions",
                     debug_input_functions,
                     "Append the user defined input_functions "
@@ -140,6 +141,8 @@ sapphirepp::Utils::OutputParameters::parse_parameters_callback(
       prm.print_parameters(output_path / static_cast<std::string>("log.prm"),
                            ParameterHandler::ShortPRM);
     }
+  // Ensure results folder is created before continuing
+  MPI_Barrier(mpi_communicator);
 }
 
 

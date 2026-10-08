@@ -42,7 +42,7 @@ containing derivatives of the electromagnetic fields, is dropped,
 whereas the second term of the radiation reaction force $\mathbf{F}_R$ is kept.
 We note that for ultra-relativistic electrons,
 namely electrons with Lorentz factors $\gamma \gg 1$,
-it is the third term that captures the dominant contribution the effects from the radiation reaction, in particular the energy loss.
+it is the third term that captures the dominant contribution of the effects from the radiation reaction, in particular the energy loss.
 
 Before including the radiation reaction force in the VFP equation, we further simplify it.
 In @sapphire we use mixed-coordinates,
@@ -76,7 +76,7 @@ $$
 
 Note that the first term in the expression for $\mathbf{F}'_R$ contains the projection of the velocity along the magnetic field,
 i.e. it gives the rate at which the momentum component parallel to the $\mathbf{B}$-field changes,
-while the second term accounts for the change of perpendicular momentum component
+while the second term accounts for the change of the perpendicular momentum component
 responsible for energy losses.
 
 We, finally, add the radiation reaction force $\mathbf{F}'_R$ to the VFP equation used in @sapphire, i.e. the modified VFP equation is
@@ -107,7 +107,7 @@ Note that we use a spherical coordinate system for the momentum space coordinate
 Our polar direction is the $x$-direction.
 
 This implies that it is necessary to derive partial differential equations (PDEs) for the expansion coefficients $f_{lms}$. This can be done with the operator-based method introduced in @cite Schween2024a .
-The method boils to down to replacing the operators appearing in the VFP equation with their matrix representations in the space of spherical harmonics.
+The method boils down to replacing the operators appearing in the VFP equation with their matrix representations in the space of spherical harmonics.
 
 For the LL radiation reaction force this results in the following replacement:
 
@@ -230,7 +230,7 @@ $$
 which models the evolution of a homogeneous ($\mathbf{x}$-independent) particle distribution that changes only because of the radiation reaction force.
 2. **Cooling and gyromotion**, i.e. we numerically solve
 $$
-\frac{\partial \mathbf{f}}{\partial t} - \omega_{a} \boldsymbol{\Omega}^{a} + \frac{3}{2 \underline{\tau}_R} \frac{q^{4}}{m^{3}} \left[ \frac{1}{p^{2}} \mathbf{M}_1 \partial_p \left(p^{3} \gamma  \mathbf{f}\right)
+\frac{\partial \mathbf{f}}{\partial t} - \omega_{a} \boldsymbol{\Omega}^{a} \mathbf{f} + \frac{3}{2 \underline{\tau}_R} \frac{q^{4}}{m^{3}} \left[ \frac{1}{p^{2}} \mathbf{M}_1 \partial_p \left(p^{3} \gamma  \mathbf{f}\right)
 -\frac{1}{\gamma} \mathbf{M}_2 \mathbf{f} \right]  = \mathbf{0} \,,
 $$
 where $\omega_a = q B_a / \gamma m $ is a gyro frequency
@@ -291,7 +291,7 @@ g_{000}(t, p) = h_{000}\left(\frac{p}{1 - p B^2 t/\underline{\tau}_R}\right) \,,
 $$
 
 where $g_{000} = p^4 f_{000}$ and $h_{000} = p^4 k_{000}$, i.e. we scaled the distribution function ($\alpha = 4$)
-and we used the electron mass $m_e$ and the elementary change $e$ as reference quantities, i.e. we set $q = m = 1$.
+and we used the electron mass $m_e$ and the elementary charge $e$ as reference quantities, i.e. we set $q = m = 1$.
 Note in @sapphire the scaling exponent $\alpha$ is set to three.
 
 This shows that the cooling of the particles, namely the energy loss due to the radiation reaction force, happens at a different rate for particles with different energies.
@@ -316,7 +316,7 @@ $$
 $$
 
 It differs structurally from the equation for the isotropic part $f_{000}$ in having an additional reaction term.
-Though, the methods of characteristics can be still be used to solve it.
+Though, the methods of characteristics can still be used to solve it.
 The solution is
 
 $$
@@ -327,7 +327,7 @@ $$
 We emphasise that the exponential correction factor is strongly suppressed.
 
 We now show the @sapphire and the analytic solutions for the initial conditions $k_{000}(p) = N p^{-4} \exp(-p/p_{\mathrm{max}})$,
-i.e. a power-law with exponential cut-off and an arbitrary normalisation $N$
+i.e. a power-law with exponential cut-off and an arbitrary normalisation $N$,
 and
 $k_{100}(p) = \frac{N}{2 \sqrt{3}} p^{-4} \exp(-p/p_{\mathrm{max}})$ .
 
@@ -370,7 +370,7 @@ then the corresponding difference between its cooling time and the cooling time 
 and $t$ smaller than this difference
 and, hence, the step function evaluates to zero.
 
-The next animation shows the result of @sapphire simulation using as narrow Gaussian distribution as a point-like injection:
+The next animation shows the result of a @sapphire simulation using a narrow Gaussian distribution to mimic a point-like injection:
 
 <CENTER>
 <img src="https://sapphirepp.org/img/implementation/radiation-reaction/radiation-reaction-with-source.gif"
@@ -388,7 +388,7 @@ Physically, the particles now rotate about the magnetic field with angular frequ
 _and_ loose energy due to the back reaction of the synchrotron radiation that they emit.
 
 The explicit form of $\boldsymbol{\Omega}_x$ shows that only the equations for the dipole components $f_{110}$ and $f_{111}$ change.
-The evolution of isotropic part and the dipole component pointing into the $x$-direction is unaffected.
+The evolution of the isotropic part and the dipole component pointing into the $x$-direction is unaffected.
 
 To derive an analytic expression for the dipole components perpendicular to the $\mathbf{B}$-field,
 we define
@@ -415,7 +415,7 @@ $$
 
 where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the scaled initial conditions.
 
-Using the initial condition $h_{110}(p) =  0.5/\sqrt{6} * p_{min}  std::exp(-p / p_{max})$ and $h_{111}(p) = 0$,
+Using the initial condition $h_{110}(p) =  0.5 p_{\mathrm{min}}/\sqrt{6} \exp\left(-p / p_{\mathrm{max}}\right)$ and $h_{111}(p) = 0$,
 a @sapphire simulation yields
 
 <CENTER>
@@ -423,11 +423,14 @@ a @sapphire simulation yields
 alt="Radiation reaction force plus gyro motion. The particles gyrate about the magnetic field and loose energy due to the radiation reaction force." width="80%"/>
 </CENTER>
 
-The inclusion of the magnetic force term in the VFP a equation leads to a shifted of oscillation, with angular frequency $\omega_x$,
-of the perpendicular dipole components $f_{110}$ and $f_{111}$.
-This oscillatory exchange represents the gyro motion of the particles.
-Their perpendicular momentum is lost due to the radiation reaction force.
-This leads to the shift of the initial condition $d_{\perp, 0}$ to lower momenta.
+The inclusion of the magnetic force term in the VFP a equation leads to an oscillatory exchange between the two dipole components $f_{110}$ and $f_{111}$.
+This exchange represents the gyro motion of the particles. 
+The angular frequency of this oscillation is $\omega_x$, i.e. it is different for different momenta.
+The higher the momenta, the lower the gyro frequency and vice versa. 
+This explains the rapid/slow oscillations in the lower/upper part of the $p$-domain.
+Almost invisible in the shown simulation is a shift of the initial condition $d_{\perp, 0}$ to lower momenta;
+the particles lose their perpendicular momentum due to the radiation reaction force.
+
 
 <div class="section_buttons">
 

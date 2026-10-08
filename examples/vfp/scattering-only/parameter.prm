@@ -8,7 +8,7 @@ subsection Output
   set Simulation identifier        = scattering-only
   set Base file name               = solution
   set Format                       = vtu
-  set Output frequency             = 1
+  set Output time step             = 0
 end
 
 subsection VFP

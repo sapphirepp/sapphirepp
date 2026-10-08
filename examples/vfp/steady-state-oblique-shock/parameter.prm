@@ -23,7 +23,7 @@ subsection Output
   set Base file name               = g
   set Format                       = pvtu
   set Number of digits for counter = 0
-  set Output frequency             = 1
+  set Output time step             = 0
   set Results folder               = ./results/steady-state-oblique-shock
   set Simulation identifier        = kraichnan-turbulence
   set Debug input functions        = true
