@@ -30,6 +30,72 @@
 
 #include <numbers>
 
+sapphirepp::VFP::IndexMap
+all_sh(unsigned int expansion_order)
+{
+  const unsigned int system_size =
+    (expansion_order + 1) * (expansion_order + 1);
+  sapphirepp::VFP::IndexMap index_map = sapphirepp::VFP::IndexMap(system_size);
+
+  unsigned int l = 0;
+  int          m = 0;
+  for (std::size_t i = 0; i < system_size; ++i)
+    {
+      index_map[i][0] = l;
+      index_map[i][1] = static_cast<unsigned int>(std::abs(m));
+      index_map[i][2] = m < 0 ? 1 : 0;
+
+      if (static_cast<unsigned int>(-m) == l)
+        {
+          ++l;
+          m = l;
+        }
+      else
+        --m;
+    }
+  return index_map;
+}
+
+sapphirepp::VFP::IndexMap
+x_rotationally_symmetric_sh(unsigned int const expansion_order)
+{
+  unsigned int const        system_size = expansion_order + 1;
+  sapphirepp::VFP::IndexMap index_map{system_size};
+  for (unsigned int i = 0, l = 0; l <= expansion_order; ++l, ++i)
+    index_map[i] = {{l, 0, 0}};
+  return index_map;
+}
+
+sapphirepp::VFP::IndexMap
+xz_plane_mirror_symmetric_sh(const unsigned int expansion_order)
+{
+  const unsigned int system_size =
+    ((expansion_order + 1) * (expansion_order + 2)) / 2;
+  sapphirepp::VFP::IndexMap index_map = sapphirepp::VFP::IndexMap(system_size);
+
+  std::size_t i = 0;
+  for (unsigned int l = 0; l <= expansion_order; ++l)
+    {
+      for (unsigned int s = 0; s <= 1; ++s)
+        {
+          for (unsigned int m = s; m <= l; ++m)
+            {
+              if (m % 2 == 0 && s == 0)
+                {
+                  index_map[i] = {{l, m, s}};
+                  ++i;
+                }
+              else if (m % 2 != 0 && s == 1)
+                {
+                  index_map[i] = {{l, m, s}};
+                  ++i;
+                }
+            }
+        }
+    }
+  return index_map;
+}
+
 
 sapphirepp::VFP::PDESystem::PDESystem(unsigned int expansion_order)
   : expansion_order{expansion_order}
