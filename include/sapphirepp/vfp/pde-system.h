@@ -50,23 +50,23 @@ namespace sapphirepp
 
     /**
      * @brief An index map is used to map from an index \$f i \f$ to the real
-     * spherical harmonic indices \f$ l,m,s \f$ .
+     *        spherical harmonic indices \f$ l,m,s \f$ .
      *
      * Note that index maps can be used and are used to restrict the
      * computations to certain subspaces of the space of spherical harmonics.
      * For example, the rotational symmetry in the case of a steady-state
      * parallel shock allows a restriction to the Legendre polynomials; all
-     * expansion coefficients with
-     * \f$ m \neq 0\f$ are zero.
+     * expansion coefficients with \f$ m \neq 0\f$ are zero.
      */
     using IndexMap = std::vector<std::array<unsigned int, 3>>;
 
     /**
      * @brief Create an @ref IndexMap that includes all spherical harmonics.
-     * This means that \f$ (l_{\rm max} + 1)^2 \f$ spherical harmonics are used
-     * in the expansion of the distribution function \f$f\$.
+     *        This means that \f$ (l_{\rm max} + 1)^2 \f$ spherical harmonics
+     *        are used in the expansion of the distribution function \f$f\$.
      *
-     * @param expansion_order The expansion order is \f$ l_{\mathrm{max}} \f$. 
+     * @param expansion_order The expansion order is \f$ l_{\mathrm{max}} \f$.
+     *
      * @return IndexMap lms_indices. The mapping `lms_indices[i] = {l,m,s}`.
      */
     IndexMap
@@ -74,30 +74,34 @@ namespace sapphirepp
 
     /**
      * @brief Create an @ref IndexMap that includes the spherical harmonics that
-     * are invariant under rotations about the \f$x\f$-axis, i.e. \f$ e^{alpha *
-     * L_x} Y_lms = Y_lms \f$. This means that \f$ l_{\mathrm{max}} \f$, namely
-     * the Legendre polynomials, are used in the spherical harmonic expansion of
-     * the distribution function \f$f\f$. The created index map can be used in
-     * the parallel-shock example.
+     *        are invariant under rotations about the \f$x\f$-axis, i.e. \f$
+     *        e^{alpha * L_x} Y_lms = Y_lms \f$. This means that \f$
+     *        l_{\mathrm{max}} \f$, namely the Legendre polynomials, are used in
+     *        the spherical harmonic expansion of the distribution function
+     *        \f$f\f$. The created index map can be used in the parallel-shock
+     *        example.
      *
      * @param expansion_order The expansion order is \f$ l_{\mathrm{max}} \f$.
+     *
      * @return IndexMap lms_indices. The mapping `lms_indices[i] = {l,m,s}`.
      */
-    
+
     IndexMap
     x_rotationally_symmetric_sh(unsigned int expansion_order);
+
     /**
      * @brief Create an @ref IndexMap that includes the spherical harmonics that
-     * are invariant under the transformation \f$ \varphi \rightarrow \pi -
-     * \varphi$, i.e. \f$ Y_{lms}(\theta, \varphi) = Y_{lms}(\theta, \pi -
-     * \vaphi)$. This are all spherical harmonics with \f$ m\f$ even, \f$ s =
-     * 0\$f and \$f m\f$ odd, \f$ s = 1\f$, in total \f$ ((l_max + 1) * (l_max +
-     * 2)) / 2 \f$.
+     *        are invariant under the transformation \f$ \varphi \rightarrow \pi
+     *        - \varphi$, i.e. \f$ Y_{lms}(\theta, \varphi) = Y_{lms}(\theta,
+     *        \pi - \vaphi)$. This are all spherical harmonics with \f$ m\f$
+     *        even, \f$ s = 0\$f and \$f m\f$ odd, \f$ s = 1\f$, in total \f$
+     *        ((l_max + 1) * (l_max + 2)) / 2 \f$.
      *
      * This means that \f$ l_{\mathrm{max}} \f$ spherical harmonics are used,
      * namely the Legendre polynomials.
      *
      * @param expansion_order The expansion order is \f$ l_{\mathrm{max}} \f$.
+     *
      * @return IndexMap lms_indices. The mapping `lms_indices[i] = {l,m,s}`.
      */
     IndexMap
