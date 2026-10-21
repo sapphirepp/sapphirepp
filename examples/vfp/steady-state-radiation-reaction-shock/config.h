@@ -250,7 +250,7 @@ namespace sapphirepp
       {
         AssertDimension(points.size(), bc_values.size());
         AssertDimension(bc_values[0].size(), this->n_components);
-
+        /**[Boundary Value Function] */
         if (boundary_id == 2)
         {
           for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
@@ -261,6 +261,7 @@ namespace sapphirepp
               /** [Boundary value] */
             }
         }
+        /**[Boundary Value Function] */
       }
 
 
