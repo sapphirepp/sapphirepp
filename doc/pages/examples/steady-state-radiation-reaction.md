@@ -141,34 +141,24 @@ python examples/vfp/steady-state-radiation-reaction-shock/plot_steady_state_radi
 
 ## Results {#results-steady-state-radiation-reaction-shock}
 
-The result section is split into two parts:
-Firstly, we show how the particle spectrum looks at a parallel shock 
-compared to the spectrum without synchrotron damping.
-
-Second, we demonstrate how the distribution changes for different 
-obliquity, scattering rate and shock velocity.
-
-### Impact of synchrotron damping on the distribution at the shock {#results-comparison-steady-state-radiation-reaction-shock}
-
-Including radiation reaction damping will lead to a cut-off of the distribution 
-at the shock, 
-where radiation damping exceeds acceleration gain. 
-
-This is shown for a parallel shock with a shock velocity of $U/c = 0.1$ and a 
-gyrofrequency-normalized scattering rate of $\nu_0 = 0.33$ in the plot below.
-
-<div style="text-align:center;">
-<img alt="Particle distribution at the shock with and without radiation damping."
-src="https://sapphirepp.org/img/examples/steady-state-radiation-reaction-shock/distribution_comparison_parallel.png">
-</div>
-
-### Impact of shock parameters {#results-shock-parameters-steady-state-radiation-reaction-shock}
-
 The position and steepness of the cut-off is sensitive to the obliquity,
  shock velocity, gyrofrequency-averaged scattering rate and the magnetic field 
- strength. 
+ strength. This is illustrated in the following plot. 
 
-Below we show how the damped distribution changes with each parameter.
+The fiducial shock parameters are $U/c = 0.05$, $\nu_0 = 0.05$, 
+$\theta_\mathrm{B} = 30^\circ$ and $B_1 = 10 \, \mu \mathrm{G}$.
+
+The first panel shows how the cut-off moves to higher momenta when the magentic
+field has an angle of $\theta_\mathrm{B} = 30 ^\circ$ to the shock normal. 
+The spectral index decreases as well, 
+and we observe the expected pile up near the shock region. 
+
+The cut-off momentum also increases for higher shock velocity, 
+as shown in the second panel, and for increased scattering rate at the chosen
+obliquity, as shown in the third panel.
+
+The last panel shows how radiation damping decreases the cut-off momentum 
+when the magnetic field is enhanced. 
 
 
 <div style="text-align:center;">
