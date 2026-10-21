@@ -71,7 +71,7 @@ spatial domain.
 The implementation of the `BoundaryValueFunction` function including lower $p$ 
 injection looks like
 
-@snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h BoundaryValueFunction
+@snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h Boundary Value Function
 
 We normalize the distribution to the lower $p$ boundary,
 which we set equal to the injection momentum `prm.ln_p_inj` specified in the 
@@ -124,7 +124,7 @@ The parameter file is
 Each run can be started with
 
 ```shell
-mpirun -n 192 ./build/examples/vfp/steady-state-radiation-reaction-shock/steady-state-radiation-reaction-shock examples/vfp/steady-state-radiation-reaction-shock/parameter.prm
+mpirun -n 32 ./build/examples/vfp/steady-state-radiation-reaction-shock/steady-state-radiation-reaction-shock examples/vfp/steady-state-radiation-reaction-shock/parameter.prm
 ```
 
 @note The size of the simulation is such that it requires the usage of many cores
