@@ -1,32 +1,28 @@
+subsection Physical parameters
+  set B0                       = 10.
+  set Q                        = 1.
+  set alpha                    = -1.
+  set compression ratio        = 4.
+  set ln_p_inj                 = 14.5
+  set nu0                      = 0.33
+  set obliqueness              = 0.
+  set shock width              = 39650
+  set sig_ln_p                 = 0.5
+  set sig_x                    = 19830
+  set u_sh                     = 0.1
+  set x_inj                    = 0.0
+end
+
 subsection Output
   set Base file name               = g
   set Debug input functions        = true
   set Format                       = pvtu
   set Number of digits for counter = 0
   set Output frequency             = 1
-  set Results folder               = /nfs/scratch/magrebe/results/steady-state-RR/
-  set Simulation identifier        = s-10-89-0.05-0.01
+  set Results folder               = ./results/steady-state-radiation-reaction-shock
+  set Simulation identifier        = radiation-reaction
 end
-subsection Physical parameters
-  set B0                       = 10.
-  set Q                        = 1.
-  set alpha                    = -1.
-  # set case identifier          = a
-  set compression ratio        = 4.
-  # set enhanced scattering zone = false
-  set ln_p_inj                 = 15.5
-  set nu0                      = 0.01
-  set obliqueness              = 89.
-  set shock width              = 26950
-  set sig_ln_p                 = 0.5
-  set sig_x                    = 13480
-  set transition length        = 4.
-  set transition point         = -20.
-  set u_sh                     = 0.05
-  set x_inj                    = 0.0
-  # set zeta one                 = 0.03
-  # set zeta two                 = 0.3
-end
+
 subsection VFP
   subsection Expansion
     set Expansion order = 6
@@ -39,11 +35,10 @@ subsection VFP
     set Grid type             = Shock grid
     set Number of cells       = 365, 64
     set Number of shock cells = 10 
-    set Point 1               = -6.28e08, 15.5
-    set Point 2               = 7.92e07, 22.0
+    set Point 1               = -5.80e09, 14.5
+    set Point 2               = 9.95e09, 22.0
     set Scaling factor shock  = 1.1
-    # set Global grid refinement = 1
-    set Shock width           = 26950
+    set Shock width           = 39650
     subsection Boundary conditions
       set lower p = inflow
       set lower x = zero inflow
@@ -69,5 +64,4 @@ subsection VFP
     set Magnetic field strength = 1.e-10
     set Mass                    = 9.1093837e-31
   end
-
 end
