@@ -178,5 +178,5 @@ src="https://sapphirepp.org/img/examples/steady-state-radiation-reaction-shock/s
 ---
 
 @author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
-@author Asma Shirin (<magrebe@mpi-hd.mpg.de>)
+@author Marie-Ann Grebe (<magrebe@mpi-hd.mpg.de>)
 @date 2025-10-19
