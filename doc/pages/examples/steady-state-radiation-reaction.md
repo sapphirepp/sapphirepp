@@ -101,7 +101,11 @@ we introduce a new subsection to the parameter file,
     set Magnetic field strength = 1.e-10
     set Mass                    = 9.1093837e-31
   end
-``
+```
+
+We recommend that the spatial grid extends at least 7 diffusion lengths 
+of the maximum momentum upstream 
+and 3 diffusion lengths downstream.
 
 ### Compile and run {#compile-steady-state-radiation-reaction-shock}
 
@@ -132,7 +136,7 @@ The plots can be created with a @sapplot script:
 ```shell
 conda activate sapplot
 export SAPPHIREPP_RESULTS=$(pwd)/results
-python examples/vfp/steady-state-oblique-shock/plot_steady_state_oblique_shock.py
+python examples/vfp/steady-state-radiation-reaction-shock/plot_steady_state_radiation_reaction_shock.py
 ```
 
 ## Results {#results-steady-state-radiation-reaction-shock}
@@ -144,7 +148,7 @@ compared to the spectrum without synchrotron damping.
 Second, we demonstrate how the distribution changes for different 
 obliquity, scattering rate and shock velocity.
 
-### Impact of synchrotron damping on the distribution at the shock 
+### Impact of synchrotron damping on the distribution at the shock {#results-comparison-steady-state-radiation-reaction-shock}
 
 Including radiation reaction damping will lead to a cut-off of the distribution 
 at the shock, 
@@ -158,7 +162,7 @@ gyrofrequency-normalized scattering rate of $\nu_0 = 0.33$ in the plot below.
 src="https://sapphirepp.org/img/examples/steady-state-radiation-reaction-shock/distribution_comparison_parallel.png">
 </div>
 
-### Impact of shock parameters 
+### Impact of shock parameters {#results-shock-parameters-steady-state-radiation-reaction-shock}
 
 The position and steepness of the cut-off is sensitive to the obliquity,
  shock velocity, gyrofrequency-averaged scattering rate and the magnetic field 
