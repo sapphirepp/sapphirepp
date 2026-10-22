@@ -17,8 +17,8 @@ The setup closely follows the [oblique shock](#oblique-shock) example.
 
 Compared to the physical scenario presented there, 
 we apply Bohm-scaling scattering, 
-i.e. $\alpha = 1$, 
-and do not require the parameters `enhanced scattering zone`, `alpha`, 
+i.e. $\alpha = -1$, 
+and do not require the parameters `enhanced scattering zone`,  
 `case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
 
 Furthermore, we change the injection from Gaussian injection at the shock to 
@@ -77,7 +77,8 @@ We normalize the distribution to the lower $p$ boundary,
 which we set equal to the injection momentum `prm.ln_p_inj` specified in the 
 parameter file, see below. 
 
-The factor `std::sqrt(4*std::numbers::pi)` accounts for the normalization. 
+The factor `std::sqrt(4*std::numbers::pi)` accounts for the normalization of the 
+zeroth order spherical harmonics in the expansion of the distribution function. 
 
 In the parameter file, we set for the lower $p$ boundary 
 `set lower p = inflow`.
