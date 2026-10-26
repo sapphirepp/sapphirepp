@@ -132,7 +132,11 @@ mpirun -n 32 ./build/examples/vfp/steady-state-radiation-reaction-shock/steady-s
 and a lot of memory,
 typically only available on clusters.
 
-The plots can be created with a @sapplot script:
+The following @sapplot script creates a $2D$-plot of the distribution, 
+the scaled, normalized distribution $p^4 f_{000}$ at the shock,
+as well as the spatial distribution at fixed momentum value. 
+
+It furthermore provides .csv files of the momentum and spatial distribution.
 
 ```shell
 conda activate sapplot
