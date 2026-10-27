@@ -2,35 +2,34 @@
 
 @tableofcontents
 
-In @cite Grebe2026 we compare the results of analytical estimates in the 
-diffusion approximation of the cut-off momentum of electrons accelerated at 
-astrophysical shocks and damped by synchrotron radiation,
- to the results of simulations including higher-order ansiotropies. 
+In @cite Grebe2026 we compare the results of analytical estimates of the 
+cut-off momentum of electrons accelerated at astrophysical shocks 
+and damped by synchrotron radiation,
+obtained in the diffusion approximation,
+to the results of simulations including higher-order ansiotropies. 
 
 In this example, we provide the @sapphire setup
-that we used to obtain the results presented in @cite Grebe2026 .
-The example focuses on the relevant aspects only.
+that we used to obtain the results presented in @cite Grebe2026.
 
 ## Introduction {#introduction-steady-state-radiation-reaction-shock}
 
-The setup closely follows the [oblique shock](#oblique-shock) example. 
+The setup closely follows the [oblique shock](#steady-state-oblique-shock) example. 
 
-Compared to the physical scenario presented there, 
-we apply Bohm-scaling scattering, 
+Compared to the scenario presented there, 
+here we apply Bohm-scaling scattering, 
 i.e. $\alpha = -1$, 
 and do not require the parameters `enhanced scattering zone`,  
 `case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
 
 Furthermore, we change the injection from Gaussian injection at the shock to 
-lower $p$ boundary injection. 
-This means that we inject the istropic distribution at the lower $p$ boundary 
+`lower-$p$-boundary' injection. 
+This means that we inject the isotropic distribution at the lower $p$ boundary 
 along the total spatial domain. 
 As the acceleration term in the transport equation is proportional to the 
 gradient of the fluid velocity, 
-this produces the same spectrum at the shock as Gaussian injection would. 
+this produces the same spectrum as Gaussian injection at the shock. 
 
 We detail the implementation in the following section.
-
 
 ## Implementation {#implementation-steady-state-radiation-reaction-shock}
 
@@ -61,36 +60,36 @@ and work in logarithmic momenta.
 
 Note that the 
 @ref sapphirepp::VFP::VFPFlags::source "source" flag
-is disabled.
+is disabled, 
+and the new flag 
+@ref sapphirepp::VFP::VFPFlags::radiation_reaction "radiation_reaction".
 
 ### Injection {#injection-steady-state-radiation-reaction-shock}
 
 We choose to inject particles along the lower $p$ boundary across the total 
-spatial domain. 
-
-The implementation of the `BoundaryValueFunction` function including lower $p$ 
-injection looks like
-
-@snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h Boundary Value Function
-
-We normalize the distribution to the lower $p$ boundary,
+spatial domain and normalize the distribution to this momentum, 
 which we set equal to the injection momentum `prm.ln_p_inj` specified in the 
 parameter file, see below. 
+
+The implementation of the `BoundaryValueFunction` function is 
+
+@snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h Boundary Value Function
 
 The factor `std::sqrt(4*std::numbers::pi)` accounts for the normalization of the 
 zeroth order spherical harmonics in the expansion of the distribution function. 
 
-In the parameter file, we set for the lower $p$ boundary 
+In the parameter file, we set furthermore
 `set lower p = inflow`.
 
 ### Radiation Reaction Force {#radiation-reaction-force-steady-state-radiation-reaction-shock}
 
-The details of the derivation of the radiation reaction term as implemented 
-in @sapphire
-as well as validation thereof can be found at [radiation reaction](#radiation-reaction)
+A detailed derivation of the radiation reaction term as implemented 
+in @sapphire,
+as well as validation thereof, 
+can be found at [radiation reaction](#radiation-reaction)
 and @cite Grebe2026.
 
-As we use dimensionless units for the radiation reaction term, 
+As we use dimensionless units, 
 we introduce a new subsection to the parameter file, 
 
 ```  subsection Particle properties
