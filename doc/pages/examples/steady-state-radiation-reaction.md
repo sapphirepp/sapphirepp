@@ -6,7 +6,7 @@ In @cite Grebe2026 we compare the results of analytical estimates of the
 cut-off momentum of electrons accelerated at astrophysical shocks 
 and damped by synchrotron radiation,
 obtained in the diffusion approximation,
-to the results of simulations including higher-order ansiotropies. 
+to the results of simulations including higher-order anisotropies. 
 
 In this example, we provide the @sapphire setup
 that we used to obtain the results presented in @cite Grebe2026.
@@ -55,10 +55,7 @@ The list of activated `vfp_flags` is
 @snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h VFP Flags
 
 We include again the 
-@ref sapphirepp::VFP::VFPFlags::scaled_distribution_function "scaled_distribution_function" flag.
-and work in logarithmic momenta.
-
-Note that the 
+@ref sapphirepp::VFP::VFPFlags::scaled_distribution_function "scaled_distribution_function" flag, note that the 
 @ref sapphirepp::VFP::VFPFlags::source "source" flag
 is disabled, 
 and the new flag 
@@ -117,7 +114,7 @@ and the executable can be found in the
 The executable is called `steady-state-radiation-reaction-shock`.
 
 The parameter file is 
-`examples/vfp/steady-state-radiation-reaction-shock/parameter.prm` .
+`examples/vfp/steady-state-radiation-reaction-shock/parameter.prm`.
 
 @include examples/vfp/steady-state-radiation-reaction-shock/parameter.prm
 
@@ -152,17 +149,19 @@ The position and steepness of the cut-off is sensitive to the obliquity,
 The fiducial shock parameters are $U/c = 0.05$, $\nu_0 = 0.05$, 
 $\theta_\mathrm{B} = 30^\circ$ and $B_1 = 10 \, \mu \mathrm{G}$.
 
-The first panel shows how the cut-off moves to higher momenta when the magentic
-field has an angle of $\theta_\mathrm{B} = 30 ^\circ$ to the shock normal. 
-The spectral index decreases as well, 
+The first panel shows how the cut-off moves to higher momenta when comparing 
+a magnetic field aligned parllel to the shock normal or at 
+${\theta_\mathrm{B} = 30 ^\circ}$. 
+The spectral index decreases due to the obliquity, 
 and we observe the expected pile up near the shock region. 
 
-The cut-off momentum also increases for higher shock velocity, 
+The cut-off also increases for higher shock velocity, 
 as shown in the second panel, and for increased scattering rate at the chosen
-obliquity, as shown in the third panel.
+obliquity, 
+as shown in the third panel.
 
-The last panel shows how radiation damping decreases the cut-off momentum 
-when the magnetic field is enhanced. 
+The last panel shows how an enhanced magnetic field increases radiation damping 
+and thereby decreases the cut-off momentum.
 
 
 <div style="text-align:center;">
