@@ -1,4 +1,4 @@
-# Steady-state acceleration with synchrotron damping {#steady-state-radiation-reaction-shock}
+# Steady-state radiation reaction shock {#steady-state-radiation-reaction-shock}
 
 @tableofcontents
 
