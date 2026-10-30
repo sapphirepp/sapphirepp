@@ -1367,12 +1367,12 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               {
                                 // \phi *
                                 // jacobian[coordinate_1][coordinate_2]
-                                // * T_coordinate_2,coordinate_1 * \phi
+                                // * T_coordinate_1,coordinate_2 * \phi
                                 copy_data.cell_matrix(i, j) +=
                                   fe_v.shape_value(i, q_index) *
                                   jacobians_vel[q_index][coordinate_1]
                                                [coordinate_2] *
-                                  t_matrices[coordinate_2 * 3 + coordinate_1](
+                                  t_matrices[coordinate_1 * 3 + coordinate_2](
                                     component_i, component_j) *
                                   fe_v.shape_value(j, q_index) * JxW[q_index];
                               }
@@ -1784,12 +1784,12 @@ sapphirepp::VFP::VFPSolver<dim>::assemble_dg_matrix(const double time)
                               {
                                 // \phi *
                                 // jacobian[coordinate_1][coordinate_2]
-                                // * T_coordinate_2,coordinate_1 * \phi
+                                // * T_coordinate_1,coordinate_2 * \phi
                                 copy_data.cell_matrix(i, j) +=
                                   fe_v.shape_value(i, q_index) *
                                   jacobians_vel[q_index][coordinate_1]
                                                [coordinate_2] *
-                                  t_matrices[coordinate_2 * 3 + coordinate_1](
+                                  t_matrices[coordinate_1 * 3 + coordinate_2](
                                     component_i, component_j) *
                                   fe_v.shape_value(j, q_index) * JxW[q_index];
                               }
