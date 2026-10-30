@@ -123,20 +123,15 @@ Additionally, we introduced the matrices
 
 $$ \mathbf{M}_1=\mathbf{A}^a \mathbf{A}^b B_a B_b - B^2\mathbf{1}
 \quad \text{and} \quad
-\mathbf{M}_2=\frac{3}{2}\mathbf{A}^a\mathbf{A}^bB_aB_b-\frac{1}{2}B^2\mathbf{1} \,,
+\mathbf{M}_2= 3 \mathbf{A}^a\mathbf{A}^bB_aB_b- B^2\mathbf{1} + \varepsilon_{abc} B_a B_d \mathbf{A}^d \mathbf{A}^b \boldsymbol{\Omega}^c\,,
 $$
 
-where $\mathbf{1}$ is the identity matrix and where we implicitly sum over the indices $a$ and $b$.
+where $\mathbf{1}$ is the identity matrix 
+and where we implicitly sum over the indices $a$, $b$, $c$ and $d$.
 Moreover, $\mathbf{A}^{i}$ are the (real) representation matrices of the direction operators
-and $\boldsymbol{\Omega}^{i}$ are the ones of the angular momentum operator.
-
-The following relations have been used to arrive at the above form
-
-$$
-\varepsilon_{abc} \mathbf{A}^b \boldsymbol{\Omega}^c \mathbf{A}^a  = -2 \mathbf{1} \quad \text{and} \quad \varepsilon_{abc} B_{a}  B_{d} \mathbf{A}^{b} \boldsymbol{\Omega}^{c}\mathbf{A}^{d} = -\frac{1}{2}\mathbf{A}^a \mathbf{A}^b B_a B_b - \frac{1}{2}B^2 \mathbf{1}\, .
-$$
-
-The details of the derivation and a proof that the two identities hold can be found in @cite Harsh2026 .
+and $\boldsymbol{\Omega}^{i}$ are the ones of the angular momentum operator. The details of the derivation can be found in Appendix A of @cite Grebe2026 . 
+Note that matrix products are evaluated using the expansion order $l_{\mathrm{max}} + 1$ and
+, subsequently, shrinking the matrices to the matrix size corresponding to the expansion order $l_{\mathrm{max}}$.
 
 In the next section, we state which form the radiation reaction force term has in the weak formulation of the VFP equation.
 Though before doing this, we rewrite it using the dimensionless units of @sapphire, see @ref sapphirepp::VFP::ReferenceValues "Reference Values".
@@ -173,21 +168,21 @@ Additionally, it is possible to scale the distribution function, i.e. $\mathbf{g
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \mathbf{h} \cdot
+& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{T} \partial_p \left( \mathbf{h} \cdot
 \left[\left( \mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \right]
-\mathbf{f} n_{p} \\
+\mathbf{g} \right) \\
 &{}- \int_{T} \frac{\partial \mathbf{h}}{\partial p}\cdot
 \left[
   \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \right]
-\mathbf{f}  \\
+\mathbf{g}  \\
 &{}+ \int_{T} \mathbf{h}\cdot
 \left[
-  \left((2-\alpha) \gamma-\frac{3}{2\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  -\left((2-\alpha)\gamma - \frac{1}{2\gamma}\right)B^2\mathbf{1}
- \right]
-\mathbf{f}  \Bigg\}
+  \left((2-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  -\left((2-\alpha)\gamma - \frac{1}{\gamma}\right)B^2\mathbf{1}
+ - \frac{1}{\gamma} \varepsilon_{abc} B_d B_a \mathbf{A}^d \mathbf{A}^b \boldsymbol{\Omega}^c\right]
+\mathbf{g}  \Bigg\}
 \end{split}
 $$
 
@@ -195,21 +190,22 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{\partial T} \mathbf{h} \cdot
+& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{T} \partial_p \left( \mathbf{h} \cdot
 \left[\left( \mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
  \right]
-\mathbf{f} n_{p} \\
+\mathbf{g} \right) \\
 &{}- \int_{T} \frac{\partial \mathbf{h}}{\partial \ln p} \cdot
 \left[
   \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \right]
-\mathbf{f}  \\
+\mathbf{g}  \\
 &{}+ \int_{T} \mathbf{h}\cdot
 \left[
-  \left((3-\alpha) \gamma-\frac{3}{2\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
-  - \left((3-\alpha)\gamma - \frac{1}{2\gamma}\right)B^2\mathbf{1}
+  \left((3-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
+  - \left((3-\alpha)\gamma - \frac{1}{\gamma}\right)B^2\mathbf{1}
+  - \frac{1}{\gamma} \varepsilon_{abc} B_d B_a \mathbf{A}^d \mathbf{A}^b \boldsymbol{\Omega}^c
 \right]
-\mathbf{f}  \Bigg\}
+\mathbf{g}  \Bigg\}
 \end{split}
 $$
 
@@ -415,7 +411,7 @@ $$
 
 where $d_{\perp, 0} = h_{110}(p) + \mathrm{i} h_{111}(p)$ are the scaled initial conditions.
 
-Using the initial condition $h_{110}(p) =  0.5 p_{\mathrm{min}}/\sqrt{6} \exp\left(-p / p_{\mathrm{max}}\right)$ and $h_{111}(p) = 0$,
+Using the initial condition $h_{110}(p) = p_{\mathrm{min}}/(2\sqrt{6}) \exp\left(-p / p_{\mathrm{max}}\right)$ and $h_{111}(p) = 0$,
 a @sapphire simulation yields
 
 <CENTER>
