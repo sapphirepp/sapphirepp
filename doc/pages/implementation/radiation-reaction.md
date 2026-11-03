@@ -37,10 +37,16 @@ $q$ is the charge of the particle and $\mathbf{v}$ its velocity.
 Moreover, $\gamma = (1 - \beta^{2})^{-1/2}$ is its Lorentz factor
 and $\beta = \| \boldsymbol{\beta} \| = \| \mathbf{v}\|/c$.
 
-Following @cite tamburini2010radiation , the first curly-bracketed term,
-containing derivatives of the electromagnetic fields, is dropped,
-whereas the second term of the radiation reaction force $\mathbf{F}_R$ is kept.
-We note that for ultra-relativistic electrons,
+We drop the first curly-bracketed term,
+containing the derivatives of the electromagnetic fields,
+whereas we keep the second term of the radiation reaction force $\mathbf{F}_R$. 
+The first term is of the same order of magnitude as the second one, 
+if the electromagnetic fields vary on time and length scales comparable to the gryoperiods and gryoradii of the particles.
+We implicitly make the assumption that this is not the case. 
+Moreover, we keep the second term, 
+because it assures that the particles stay on mass shell, i.e. $p_{\mu}p^{\mu} = m_0c^2$ 
+where $m_0$ is the rest mass of the particles.
+We emphasise that for ultra-relativistic electrons,
 namely electrons with Lorentz factors $\gamma \gg 1$,
 it is the third term that captures the dominant contribution of the effects from the radiation reaction, in particular the energy loss.
 
@@ -149,7 +155,7 @@ and the dimensionless _energy independent_ radiation-reaction timescale is defin
 $$
 \underline{\tau}_R = \frac{9\pi \underline{m}^3 c \underline{\omega}_g}{\mu_0 \underline{q}^4\underline{B}^2} \,,
 $$
-where the inverse of  $\underline{\omega}_g = \underline{q} \underline{B}/ \underline{m}$ is used as the reference time. For the case of an electron with the default reference magnetic field of $1\mu G$, the radiation-reaction timescale is $\underline{\tau}_R \approx 1.3619 \times 10^{22}$.
+where the inverse of  $\underline{\omega}_g = \underline{q} \underline{B}/ \underline{m}$ is used as the reference time. For the case of an electron with the default reference magnetic field of $1\mu G$, the radiation-reaction timescale is $\underline{\tau}_R \approx  1.3609746345 \times 10^{22}$.
 
 Note that we drop the asterisk in the following equations;
 it is implicit that everything is done @sapphire units.
@@ -320,7 +326,13 @@ $$
  \exp\left(\frac{3}{5 p^2} \frac{t}{\tau_c} \left[1 - \frac{3}{10} \frac{t}{\tau_c}\right] \right) \,.
 $$
 
-We emphasise that the exponential correction factor is strongly suppressed.
+We emphasise that the form of the exponential correction factor
+is a consequence of the approximation $\gamma \approx p$.
+This approximation is not made in @sapphire
+and, thus, its solution may contain a different exponential correction factor.
+In any case, the correction factor is strongly suppressed  for ultra-relativistic particles
+and, consequently, does not make a difference in our comparison
+of the analytic and the @sapphire solution.
 
 We now show the @sapphire and the analytic solutions for the initial conditions $k_{000}(p) = N p^{-4} \exp(-p/p_{\mathrm{max}})$,
 i.e. a power-law with exponential cut-off and an arbitrary normalisation $N$,
