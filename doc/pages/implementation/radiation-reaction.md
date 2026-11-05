@@ -169,6 +169,7 @@ Here we merely state it. For more details we refer the reader to @cite Schween20
 Because we allow users of @sapphire to choose between a linear and logarithmic momentum variable ($p$ and $\ln p$ respectively),
  there are variants of the weak formulation.
 Additionally, it is possible to scale the distribution function, i.e. $\mathbf{g} = p^{\alpha} \mathbf{f}$, where $\alpha$ is the scaling exponent.
+We also add a subscript $h$ to $\mathbf{g}$ to indicate that we work with a _discrete_ weak formulation.
 
 ### Linear momentum variable
 
@@ -177,18 +178,18 @@ $$
 & \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{T} \partial_p \left( \mathbf{h} \cdot
 \left[\left( \mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \right]
-\mathbf{g} \right) \\
+\mathbf{g}_{h} \right) \\
 &{}- \int_{T} \frac{\partial \mathbf{h}}{\partial p}\cdot
 \left[
   \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) p \gamma
 \right]
-\mathbf{g}  \\
+\mathbf{g}_{h}  \\
 &{}+ \int_{T} \mathbf{h}\cdot
 \left[
   \left((2-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   -\left((2-\alpha)\gamma - \frac{1}{\gamma}\right)B^2\mathbf{1}
  - \frac{1}{\gamma} \varepsilon_{abc} B_d B_a \mathbf{A}^d \mathbf{A}^b \boldsymbol{\Omega}^c\right]
-\mathbf{g}  \Bigg\}
+\mathbf{g}_{h}  \Bigg\}
 \end{split}
 $$
 
@@ -196,22 +197,22 @@ $$
 
 $$
 \begin{split}
-& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{T} \partial_p \left( \mathbf{h} \cdot
+& \frac{3}{2 \underline{\tau}_R} \frac{q^4}{m^3} \Bigg\{ \int_{T} \partial_{\ln p} \left( \mathbf{h} \cdot
 \left[\left( \mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
  \right]
-\mathbf{g} \right) \\
+\mathbf{g}_{h} \right) \\
 &{}- \int_{T} \frac{\partial \mathbf{h}}{\partial \ln p} \cdot
 \left[
   \left(\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}-B^2\mathbf{1}\right) \gamma
 \right]
-\mathbf{g}  \\
+\mathbf{g}_{h}  \\
 &{}+ \int_{T} \mathbf{h}\cdot
 \left[
   \left((3-\alpha) \gamma-\frac{3}{\gamma}\right)\mathbf{A}^{a}\mathbf{A}^{b}B_{a}B_{b}
   - \left((3-\alpha)\gamma - \frac{1}{\gamma}\right)B^2\mathbf{1}
   - \frac{1}{\gamma} \varepsilon_{abc} B_d B_a \mathbf{A}^d \mathbf{A}^b \boldsymbol{\Omega}^c
 \right]
-\mathbf{g}  \Bigg\}
+\mathbf{g}_{h}  \Bigg\}
 \end{split}
 $$
 
