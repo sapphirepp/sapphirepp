@@ -76,3 +76,41 @@ contribute some code.
 Sapphire++ is licensed under the GNU Lesser General Public License; while you
 will retain copyright on your contributions, all changes to the core library
 must be provided under this common license.
+
+## Building the documentation locally
+
+Building the documentation locally is optional and only needed
+if you want to preview documentation changes.
+It is not required to build or run the code.
+
+### Installing doxygen
+
+Most Linux distributions ship an outdated version of doxygen.
+Version 1.18.0 or newer is required and must be compiled from source:
+
+```shell
+sudo apt install graphviz flex bison texlive-bibtex-extra  # install prerequisites
+curl -LO "https://github.com/doxygen/doxygen/releases/download/Release_1_18_0/doxygen-1.18.0.src.tar.gz"
+tar -xzf doxygen-1.18.0.src.tar.gz
+cmake -S doxygen-1.18.0 -B doxygen-build -DCMAKE_INSTALL_PREFIX=$HOME/.local
+make -C doxygen-build -j install
+rm -r doxygen-build doxygen-1.18.0 doxygen-1.18.0.src.tar.gz
+```
+
+On macOS, the brew package is sufficiently up to date:
+
+```shell
+brew install doxygen
+```
+
+### Build documentation
+
+Once doxygen is installed, rerun `cmake` build the documentation:
+
+```shell
+cd sapphirepp
+cmake -S . -B build -DDOC=ON
+make --directory=build doc
+```
+
+Then open `sapphirepp/build/doc/latest/index.html` in your browser.
