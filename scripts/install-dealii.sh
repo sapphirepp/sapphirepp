@@ -5,9 +5,9 @@ export LC_ALL="C" # suppress warnings in p4est installation
 # Set default values
 INTERACTIVE=true
 SKIP_PREREQUISITE=false
-PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb (assimp)"
-PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb assimp"
-PREREQUISITES_APT="build-essential gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev  zlib1g-dev liblapack-dev libtbbmalloc2 libassimp-dev"
+PREREQUISITES="gcc make cmake open-mpi hdf5-mpi boost zlib lapack tbb"
+PREREQUISITES_BREW="gcc make cmake open-mpi hdf5-mpi boost lapack tbb"
+PREREQUISITES_APT="build-essential gcc make cmake openmpi-bin libhdf5-openmpi-dev libboost-all-dev zlib1g-dev liblapack-dev libtbbmalloc2"
 if [[ $(uname) == "Darwin" ]]; then
     PACKAGE_INSTALLER="brew"
 else
@@ -22,7 +22,7 @@ ASSIMP_VERSION="6.0.5"
 INSTALL_PETSC=false
 PETSC_DIR=${PETSC_DIR:-"$HOME/.local/lib/petsc"}
 # Check here for new versions: https://gitlab.com/petsc/petsc/-/tags
-PETSC_VERSION="3.25.4"
+PETSC_VERSION="3.26.1"
 if [[ $(uname) == "Darwin" ]]; then
     PETSC_ARCH=${PETSC_ARCH:-"arch-darwin-c-debug"}
 else
@@ -138,51 +138,155 @@ function print_configuration {
 }
 
 function install_prerequisites {
-    echo "Are the following prerequisites installed on your machine?"
-    echo ""
-    echo "  $PREREQUISITES"
-    echo ""
-    read -rp "[y/N]: " install_prerequisite_input
+    cat <<EOF
 
-    if [[ ! $install_prerequisite_input =~ ^[Nn]$ ]]; then
+This installer will set up deal.II and its dependencies.
+The following prerequisites are required:
+
+  $PREREQUISITES
+
+These can be installed via your system package manager.
+Additionally, assimp, PETSc, p4est, and deal.II itself
+may also be available as system packages -
+in that case, no compilation is needed at all.
+Installing from source is recommended
+if system packages are unavailable (e.g. on HPC clusters)
+or a specific configuration is required.
+
+How would you like to proceed?
+
+  1) Full    - Install prerequisites and deal.II via system packages (no compilation)
+  2) Partial - Install prerequisites via system packages, compile deal.II from source
+  3) Skip    - Prerequisites already installed, proceed to compile deal.II from source
+
+EOF
+    read -rp "Enter choice [1-3] (default: 3): " install_prerequisite_input
+    install_prerequisite_input=${install_prerequisite_input:-3}
+
+    # Exit early if skipping
+    if [[ $install_prerequisite_input == "3" ]]; then
         return
     fi
+    if [[ ! $install_prerequisite_input =~ ^[12]$ ]]; then
+        echo "Invalid choice. Installation aborted."
+        exit 1
+    fi
 
-    read -rp "Which package manager do you want to use to install the prerequisites? [brew/apt/apt-get/...]: " package_installer_input
-    echo ""
+    # Determine package manager
+    read -rp "Which package manager do you want to use? [brew/apt/apt-get/...] (default: $PACKAGE_INSTALLER): " package_installer_input
     if [[ $package_installer_input ]]; then
         PACKAGE_INSTALLER=$package_installer_input
     fi
 
-    if [ "$PACKAGE_INSTALLER" == "brew" ]; then
-        echo "To install the prerequisites with brew, run the following command:"
-        echo ""
-        echo "  brew install $PREREQUISITES_BREW"
-        echo ""
-        echo "We recommend to pin the installed packages:"
-        echo ""
-        echo "  brew pin $PREREQUISITES_BREW"
-        echo ""
-    elif [ "$PACKAGE_INSTALLER" == "apt" ]; then
-        echo "To install the prerequisites with apt, run the following command:"
-        echo ""
-        echo "  sudo apt install $PREREQUISITES_APT"
-        echo ""
-    elif [ "$PACKAGE_INSTALLER" == "apt-get" ]; then
-        echo "To install the prerequisites with apt-get, run the following command:"
-        echo ""
-        echo "  sudo apt-get install $PREREQUISITES_APT"
-        echo ""
-    else
-        echo "Please install the prerequisites manually."
-        echo "Hint: If you are using a Debian-based distribution like Ubuntu, the following command can be used:"
-        echo ""
-        echo "  sudo apt install $PREREQUISITES_APT"
-    fi
-    echo "Afterwards you can continue with the installation with:"
-    echo ""
-    echo "  ./install_dealii.sh --skip-prerequisites"
-    exit 2
+    case $install_prerequisite_input in
+    1)
+        if [ "$PACKAGE_INSTALLER" == "brew" ]; then
+            cat <<EOF
+
+To install all dependencies as system packages, run:
+
+  brew install $PREREQUISITES_BREW assimp petsc
+
+We recommend to pin the installed packages:
+
+  brew pin $PREREQUISITES_BREW assimp petsc
+
+NOTE: p4est and deal.II are not available as a brew packages.
+Please continue the installation
+by compiling it from source after installing the system packages:
+
+  ./install_dealii.sh --skip-prerequisites --p4est --dealii
+
+EOF
+        elif [ "$PACKAGE_INSTALLER" == "apt" ] || [ "$PACKAGE_INSTALLER" == "apt-get" ]; then
+            cat <<EOF
+
+To install all dependencies as system packages, run:
+
+  sudo $PACKAGE_INSTALLER install $PREREQUISITES_APT libassimp-dev petsc-dev libp4est-dev libdeal.ii-dev
+
+NOTE: On older Ubuntu/Debian systems,
+some of these packages may not be available or may be outdated.
+If the installation of any package fails,
+you can install the missing ones from source by running:
+
+  ./install_dealii.sh --skip-prerequisites [--assimp] [--petsc] [--p4est] [--dealii]
+
+where you include only the flags for the packages that failed to install.
+
+EOF
+        else
+            cat <<EOF
+
+Please install packages equivalent to the following prerequisites
+using your package manager:
+
+  $PREREQUISITES
+
+Additionally, install packages equivalent to:
+
+  assimp, PETSc, p4est, and deal.II
+
+The exact package names will depend on your package manager.
+For reference, on Debian/Ubuntu the following packages can be used:
+
+  $PREREQUISITES_APT libassimp-dev petsc-dev libp4est-dev libdeal.ii-dev
+
+NOTE: If some packages are unavailable or outdated for your system,
+you can install the missing ones from source by running:
+
+  ./install_dealii.sh --skip-prerequisites [--assimp] [--petsc] [--p4est] [--dealii]
+
+where you include only the flags for the packages that failed to install.
+
+EOF
+        fi
+        exit 0
+        ;;
+    2)
+        if [ "$PACKAGE_INSTALLER" == "brew" ]; then
+            cat <<EOF
+
+To install the prerequisites, run:
+
+  brew install $PREREQUISITES_BREW
+
+We recommend to pin the installed packages:
+
+  brew pin $PREREQUISITES_BREW
+
+EOF
+        elif [ "$PACKAGE_INSTALLER" == "apt" ] || [ "$PACKAGE_INSTALLER" == "apt-get" ]; then
+            cat <<EOF
+
+To install the prerequisites, run:
+
+  sudo $PACKAGE_INSTALLER install $PREREQUISITES_APT
+
+EOF
+        else
+            cat <<EOF
+
+Please install packages equivalent to the following prerequisites
+using your package manager:
+
+  $PREREQUISITES
+
+For reference, on Debian/Ubuntu the following packages can be used:
+
+  $PREREQUISITES_APT
+
+EOF
+        fi
+        cat <<EOF
+Afterwards, continue with the installation by running:
+
+  ./install_dealii.sh --skip-prerequisites
+
+EOF
+        exit 2
+        ;;
+    esac
 }
 
 function install_assimp {
@@ -228,7 +332,7 @@ function install_petsc {
     ./configure --prefix="$PETSC_DIR" --PETSC_DIR="$(pwd)" --PETSC_ARCH="$PETSC_ARCH" $PETSC_FLAGS
     make -j"$NUMBER_JOBS" PETSC_DIR="$(pwd)" PETSC_ARCH="$PETSC_ARCH" all
     make -j"$NUMBER_JOBS" PETSC_DIR="$(pwd)" PETSC_ARCH="$PETSC_ARCH" install
-    
+
     if [[ $RUN_TEST == true ]]; then
         make PETSC_DIR="$(pwd)" PETSC_ARCH="$PETSC_ARCH" check
         make PETSC_DIR="$PETSC_DIR" PETSC_ARCH="" check
