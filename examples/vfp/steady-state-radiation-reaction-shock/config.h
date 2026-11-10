@@ -180,10 +180,10 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |  //
-                                   VFPFlags::momentum |           //
-                                   VFPFlags::collision |          //
-                                   VFPFlags::rotation |           //
+    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection | //
+                                   VFPFlags::momentum |          //
+                                   VFPFlags::collision |         //
+                                   VFPFlags::rotation |          //
                                    //VFPFlags::source |             //
                                    VFPFlags::radiation_reaction | //
                                    VFPFlags::scaled_distribution_function;
@@ -252,18 +252,19 @@ namespace sapphirepp
         AssertDimension(bc_values[0].size(), this->n_components);
         /**[Boundary Value Function] */
         if (boundary_id == 2)
-        {
-          for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
-            {
-              bc_values[q_index][0] = std::exp( points[q_index][1] * 3) / std::exp( prm.ln_p_inj * 3 ) * std::sqrt(4*std::numbers::pi);
-              /** [Boundary value] */
-              // No inflow boundary
-              /** [Boundary value] */
-            }
-        }
+          {
+            for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
+              {
+                bc_values[q_index][0] = std::exp(points[q_index][1] * 3) /
+                                        std::exp(prm.ln_p_inj * 3) *
+                                        std::sqrt(4 * std::numbers::pi);
+                /** [Boundary value] */
+                // No inflow boundary
+                /** [Boundary value] */
+              }
+          }
         /**[Boundary Value Function] */
       }
-
 
 
 
