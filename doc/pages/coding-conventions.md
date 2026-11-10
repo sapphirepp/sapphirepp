@@ -566,7 +566,7 @@ to refer to @sapphire and @dealii consistently.
 
 We use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 ([Cheat Sheet](https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13))
-to ensure meaning full and consistent commit messages.
+to ensure meaningful and consistent commit messages.
 Please follow these conventions by using the following commit message format:
 
 ```text
@@ -577,8 +577,12 @@ optional body
 optional footer
 ```
 
-with one of the following type:
-`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, ...
+Use one of the following types:
+`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, etc.
+The footer can be used for breaking changes,
+issue references (e.g., `Fixes #123`),
+or to declare AI assistance using the format:
+`Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL]`
 
 Don't think of these conventions as a hurdle to contribute!
 Feel free to contribute in any way you like.

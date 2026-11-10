@@ -77,6 +77,33 @@ Sapphire++ is licensed under the GNU Lesser General Public License; while you
 will retain copyright on your contributions, all changes to the core library
 must be provided under this common license.
 
+### Large Language model (LLM) assisted coding
+
+We do not prohibit the use of LLM, commonly called AI, assisted coding.
+Because Sapphire++ is a scientific software,
+we understand what the code we write is doing and how it is doing it.
+We require the same from any contributor independently of their LLM usage.
+That it passes all tests is not enough.
+The contributor remains fully accountable.
+
+If you use a LLM to relevantly assist with your contribution,
+please declare it as [git trailers](https://git-scm.com/docs/git-interpret-trailers):
+
+```text
+Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL]
+```
+
+We are aware of the fact that the use of LLMs consumes enormous amounts of energy,
+that contribute to climate change, 
+its negative impacts on the job market 
+and its many more negative consequences.
+However, we also acknowledge LLMs as powerful tools
+that help us to be more efficient in our work as scientists.
+In regard of this dilemma,
+we advocate a thoughtful use of LLMs.
+For example, check if a small scale model is available enough for the task at hand,
+e.g. one that runs a single GPU.
+
 ## Building the documentation locally
 
 Building the documentation locally is optional and only needed
