@@ -22,7 +22,7 @@ and do not require the parameters `enhanced scattering zone`,
 `case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
 
 Furthermore, we change the injection from Gaussian injection at the shock to 
-`lower-$p$-boundary' injection. 
+"lower-$p$-boundary" injection. 
 This means that we inject the isotropic distribution at the lower $p$ boundary 
 along the total spatial domain. 
 As the acceleration term in the transport equation is proportional to the 
@@ -41,6 +41,7 @@ directory `sapphirepp/examples/vfp/steady-state-radiation-reaction-shock`.
 We solve the VFP equation including the radiation reaction force 
 $\mathbf{F}_R$, i.e. 
 
+$$
 \begin{multline}
 \frac{\partial f}{\partial t} + (\mathbf{U} + \mathbf{v}) \cdot \nabla_x f
 -\gamma m \frac{\mathrm{D} \mathbf{U}}{\mathrm{D} t} \cdot \nabla_p f
@@ -49,6 +50,7 @@ $\mathbf{F}_R$, i.e.
 + q (\mathbf{v} \times \mathbf{B} ) \cdot \nabla_p f
 = \frac{\nu}{2}\,\Delta_{\theta \varphi} f + S \, .
 \end{multline}
+$$
 
 The list of activated `vfp_flags` is 
 
