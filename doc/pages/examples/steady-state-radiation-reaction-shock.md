@@ -2,11 +2,11 @@
 
 @tableofcontents
 
-In @cite Grebe2026 we compare the results of analytical estimates of the 
-cut-off momentum of electrons accelerated at astrophysical shocks 
+In @cite Grebe2026 we compare the results of analytical estimates of the
+cut-off momentum of electrons accelerated at astrophysical shocks
 and damped by synchrotron radiation,
 obtained in the diffusion approximation,
-to the results of simulations including higher-order anisotropies. 
+to the results of simulations including higher-order anisotropies.
 
 In this example, we provide the @sapphire setup
 that we used to obtain the results presented in @cite Grebe2026.
