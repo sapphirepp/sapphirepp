@@ -68,17 +68,23 @@ and the new flag
 
 ### Injection {#injection-steady-state-radiation-reaction-shock}
 
-We choose to inject particles along the lower $p$ boundary across the total 
-spatial domain and normalize the distribution to this momentum, 
-which we set equal to the injection momentum `prm.ln_p_inj` specified in the 
-parameter file, see below. 
+We prescribe an isotropic particle distribution along the lower $p$ boundary across the total
+spatial domain and normalize the distribution with `prm.Q`.
+Note that the lower $p$ boundary sets injection momentum,
+despite the fact that we also defined the injection momentum parameter `prm.ln_p_inj`.
+We use `prm.ln_p_inj`to scale the momentum variable, see below.
 
-The implementation of the `BoundaryValueFunction` function is 
+The implementation of the `BoundaryValueFunction` function is
 
 @snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h Boundary Value Function
 
-The factor `std::sqrt(4*std::numbers::pi)` accounts for the normalization of the 
-zeroth order spherical harmonics in the expansion of the distribution function. 
+The variable `boundary_id` is used to distinguish the different boundaries of the computational domain,
+cf. "Boundary indicator" and "Colorization" in the [deal.II Glossary](https://dealii.org/current/doxygen/deal.II/DEALGlossary.html).
+The id two corresponds to the lower $p$ boundary.
+
+The factor `std::sqrt(4*std::numbers::pi)` accounts for the normalization of the
+zeroth order spherical harmonic in the expansion of the distribution function
+and the factor $(p/p_inj)^3$ reflects that we work with a scaled distribution function.
 
 In the parameter file, we set furthermore
 `set lower p = inflow`.
