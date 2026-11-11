@@ -13,21 +13,24 @@ that we used to obtain the results presented in @cite Grebe2026.
 
 ## Introduction {#introduction-steady-state-radiation-reaction-shock}
 
-The setup closely follows the [oblique shock](#steady-state-oblique-shock) example. 
+The setup closely follows the [oblique shock](#steady-state-oblique-shock) example.
 
-Compared to the scenario presented there, 
-here we apply Bohm-scaling scattering, 
-i.e. $\alpha = -1$, 
-and do not require the parameters `enhanced scattering zone`,  
+Compared to the scenario presented there,
+here we apply Bohm-scaling scattering,
+i.e. $\alpha = -1$,
+and do not need the parameters `enhanced scattering zone`,
 `case identifier`, `zeta one`, `zeta two`, `transition point` and `transition length`.
+We thus removed them from the example.
 
-Furthermore, we change the injection from Gaussian injection at the shock to 
-"lower-$p$-boundary" injection. 
-This means that we inject the isotropic distribution at the lower $p$ boundary 
-along the total spatial domain. 
-As the acceleration term in the transport equation is proportional to the 
-gradient of the fluid velocity, 
-this produces the same spectrum as Gaussian injection at the shock. 
+Furthermore, we change the injection from Gaussian injection at the shock to
+&ldquo; lower-$p$-boundary &rdquo; injection.
+This means that we prescribe an isotropic particle distribution at the lower $p$ boundary
+along the total spatial domain.
+As the acceleration term in the transport equation is proportional to the
+gradient of the fluid velocity,
+this only injects particles in the shock zone.
+The resulting spectrum is comparable to the Gaussian injection at the shock
+used in [oblique shock](#steady-state-oblique-shock) example.
 
 We detail the implementation in the following section.
 
