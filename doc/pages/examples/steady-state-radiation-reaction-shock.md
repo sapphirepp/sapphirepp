@@ -41,8 +41,8 @@ directory `sapphirepp/examples/vfp/steady-state-radiation-reaction-shock`.
 
 ### VFP equation {#vfp-steady-state-radiation-reaction-shock}
 
-We solve the VFP equation including the radiation reaction force 
-$\mathbf{F}_R$, i.e. 
+We solve the VFP equation including the radiation reaction force
+$\mathbf{F}_R$, i.e.
 
 $$
 \begin{multline}
@@ -55,15 +55,15 @@ $$
 \end{multline}
 $$
 
-The list of activated `vfp_flags` is 
+The list of activated `vfp_flags` is
 
 @snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h VFP Flags
 
-We include again the 
-@ref sapphirepp::VFP::VFPFlags::scaled_distribution_function "scaled_distribution_function" flag, note that the 
+We include again the
+@ref sapphirepp::VFP::VFPFlags::scaled_distribution_function "scaled_distribution_function" flag, note that the
 @ref sapphirepp::VFP::VFPFlags::source "source" flag
-is disabled, 
-and the new flag 
+was removed,
+and the new flag
 @ref sapphirepp::VFP::VFPFlags::radiation_reaction "radiation_reaction".
 
 ### Injection {#injection-steady-state-radiation-reaction-shock}
