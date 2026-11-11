@@ -82,6 +82,7 @@ main(int argc, char *argv[])
         prm.print_parameters("parameter-template.prm",
                              ParameterHandler::PRM |
                                ParameterHandler::KeepDeclarationOrder);
+      MPI_Barrier(MPI_COMM_WORLD);
 
       prm.parse_input(parameter_filename);
 
