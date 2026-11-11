@@ -97,20 +97,23 @@ as well as validation thereof,
 can be found at [radiation reaction](#radiation-reaction)
 and @cite Grebe2026.
 
-As we are interested in the acceleration of electrons,
-we introduce a new subsection to the parameter file
-that allows us to change the reference mass and charge,
+As we use electrons in this example,
+we use a negative charge $-q^*$,
+and set the @ref sapphirepp::VFP::ReferenceValues "reference units"
+for the simulation to
+the electron mass $\underline{m} = 9.1093837 \times 10^{-31} \, \mathrm{kg}$
+and elementary charge $\underline{q} = 1.602176634 \times 10^{−19} \, \mathrm{C}$.
 
-```
-  subsection Particle properties
-    set Charge = -1
-    set Mass   = 1.0
-  end
-  subsection Reference units
-    set Charge                  = 1.602176634e-19
-    set Magnetic field strength = 1.e-10
-    set Mass                    = 9.1093837e-31
-  end
+```prm
+subsection Particle properties
+  set Charge = -1
+  set Mass   = 1.0
+end
+subsection Reference units
+  set Charge                  = 1.602176634e-19
+  set Magnetic field strength = 1.e-10
+  set Mass                    = 9.1093837e-31
+end
 ```
 
 We recommend that the spatial grid extends at least 7 diffusion lengths
