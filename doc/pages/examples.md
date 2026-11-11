@@ -11,8 +11,8 @@
     This example inter alia investigates the consequences of a magnetic field,
     which is oblique with respect to the shock normal, on the acceleration process.
  4. @subpage steady-state-radiation-reaction-shock  
-    This example investigates the influence of synchrotron damping on the particle 
-    distribution.
+    This example investigates the influence of synchrotron damping
+    on the particle distribution.
  5. @subpage gyro-advection  
     This example illustrates how an isotropic distribution of particles gyrates
     in a magnetic field, while being advected by a background plasma flow.

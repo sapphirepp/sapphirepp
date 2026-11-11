@@ -86,10 +86,8 @@ main(int argc, char *argv[])
       std::cerr << "\n"
                 << "----------------------------------------------------"
                 << "\n"
-                << "Unknown exception!"
-                << "\n"
-                << "Aborting!"
-                << "\n"
+                << "Unknown exception!" << "\n"
+                << "Aborting!" << "\n"
                 << "----------------------------------------------------"
                 << std::endl;
       return 1;

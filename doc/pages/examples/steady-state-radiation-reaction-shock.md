@@ -76,7 +76,7 @@ We use `prm.ln_p_inj`to scale the momentum variable, see below.
 
 The implementation of the `BoundaryValueFunction` function is
 
-@snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h Boundary Value Function
+@snippet{lineno} examples/vfp/steady-state-radiation-reaction-shock/config.h Boundary value
 
 The variable `boundary_id` is used to distinguish the different boundaries of the computational domain,
 cf. "Boundary indicator" and "Colorization" in the [deal.II Glossary](https://dealii.org/current/doxygen/deal.II/DEALGlossary.html).
@@ -156,7 +156,7 @@ python examples/vfp/steady-state-radiation-reaction-shock/plot_steady_state_radi
 ## Results {#results-steady-state-radiation-reaction-shock}
 
 The position and steepness of the cut-off is sensitive to the obliquity,
-shock velocity, gyrofrequency-averaged scattering rate and the magnetic field strength. 
+shock velocity, gyrofrequency-averaged scattering rate and the magnetic field strength.
 This is illustrated in the following plot.
 
 The fiducial shock parameters are $U/c = 0.05$, $\nu_0 = 0.05$,
@@ -176,12 +176,10 @@ as shown in the third panel.
 The last panel shows how an enhanced magnetic field increases radiation damping
 and thereby decreases the cut-off momentum.
 
-
 <div style="text-align:center;">
 <img alt="Dependence of particle distribution at the shock with and without radiation damping on the shock parameters."
 src="https://sapphirepp.org/img/examples/steady-state-radiation-reaction-shock/shockparameter_influence.png">
 </div>
-
 
 <div class="section_buttons">
 

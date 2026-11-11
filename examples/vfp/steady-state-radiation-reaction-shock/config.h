@@ -220,19 +220,17 @@ namespace sapphirepp
       {
         AssertDimension(points.size(), bc_values.size());
         AssertDimension(bc_values[0].size(), this->n_components);
-        /**[Boundary Value Function] */
+        /** [Boundary value] */
         if (boundary_id == 2)
           {
             for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
               {
-                /** [Boundary value] */
                 bc_values[q_index][0] =
                   prm.Q * std::exp(3 * (points[q_index][1] - prm.ln_p_inj)) *
                   std::sqrt(4 * std::numbers::pi);
-                /** [Boundary value] */
               }
           }
-        /**[Boundary Value Function] */
+        /** [Boundary value] */
       }
 
 
