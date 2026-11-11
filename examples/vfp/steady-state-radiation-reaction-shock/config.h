@@ -53,19 +53,13 @@ namespace sapphirepp
   {
   public:
     /** [Define runtime parameter] */
-    double u_sh                     = 0.1;
-    double B0                       = 1.;
-    double obliqueness              = 60.;
-    double compression_ratio        = 4.;
-    double shock_width              = 0.04;
-    double nu0                      = 0.1;
-    double alpha                    = -0.5;
-    bool   enhanced_scattering_zone = false;
-    double transition_length        = 0.4;
-    double transition_point         = 20.;
-    double zeta_one                 = 0.03;
-    double zeta_two                 = 0.3;
-    char   case_identifier          = 'a';
+    double u_sh              = 0.1;
+    double B0                = 1.;
+    double obliqueness       = 60.;
+    double compression_ratio = 4.;
+    double shock_width       = 0.04;
+    double nu0               = 0.1;
+    double alpha             = -0.5;
 
     // Source
     double Q        = 0.1;
@@ -107,33 +101,12 @@ namespace sapphirepp
         "alpha",
         alpha,
         "The exponent of the p-dependence of the scattering frequency, e.g. alpha = -1 corresponds to Bohm scaling.");
-      prm.add_parameter(
-        "enhanced scattering zone",
-        enhanced_scattering_zone,
-        "Activate an enhanced scattering zone in the precursor of the shock.");
-      prm.add_parameter(
-        "transition length",
-        transition_length,
-        "The length of the transition from zeta one to zeta two");
-      prm.add_parameter(
-        "transition point",
-        transition_point,
-        "The x-coordinate of the transition from zeta one to zeta two");
-
-      prm.add_parameter("zeta one",
-                        zeta_one,
-                        "Lower value of the tanh profile of eta or nu");
-      prm.add_parameter("zeta two",
-                        zeta_two,
-                        "Upper value of the tanh profile of eta or nu");
-
-      prm.declare_entry("case identifier",
-                        "a",
-                        dealii::Patterns::Selection("a|b"),
-                        "Distinguish between zeta = eta and zeta propto nu");
 
       // Source
-      prm.add_parameter("Q", Q, "The injection rate.");
+      prm.add_parameter(
+        "Q",
+        Q,
+        "The normalisation of the istotropic distribution at the lower p-boundary.");
       prm.add_parameter("ln_p_inj", ln_p_inj, "The injection momentum.");
       prm.add_parameter("x_inj", x_inj, "The injection position.");
       prm.add_parameter("sig_ln_p",
@@ -159,8 +132,6 @@ namespace sapphirepp
 
       /** [Parse runtime parameter] */
       // Parameters are automatically parsed by add_parameter() a part from
-      // "case identifier"
-      case_identifier = *prm.get("case identifier").c_str();
       /** [Parse runtime parameter] */
 
       prm.leave_subsection();
@@ -180,11 +151,10 @@ namespace sapphirepp
 
     /** [VFP Flags] */
     /** Specify which terms of the VFP equation should be active */
-    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection | //
-                                   VFPFlags::momentum |          //
-                                   VFPFlags::collision |         //
-                                   VFPFlags::rotation |          //
-                                   //VFPFlags::source |             //
+    constexpr VFPFlags vfp_flags = VFPFlags::spatial_advection |  //
+                                   VFPFlags::momentum |           //
+                                   VFPFlags::collision |          //
+                                   VFPFlags::rotation |           //
                                    VFPFlags::radiation_reaction | //
                                    VFPFlags::scaled_distribution_function;
     /** [VFP Flags] */
@@ -255,11 +225,10 @@ namespace sapphirepp
           {
             for (unsigned int q_index = 0; q_index < points.size(); ++q_index)
               {
-                bc_values[q_index][0] = std::exp(points[q_index][1] * 3) /
-                                        std::exp(prm.ln_p_inj * 3) *
-                                        std::sqrt(4 * std::numbers::pi);
                 /** [Boundary value] */
-                // No inflow boundary
+                bc_values[q_index][0] =
+                  prm.Q * std::exp(3 * (points[q_index][1] - prm.ln_p_inj)) *
+                  std::sqrt(4 * std::numbers::pi);
                 /** [Boundary value] */
               }
           }
@@ -339,34 +308,10 @@ namespace sapphirepp
               std::sqrt(std::pow(B_value[0], 2) + std::pow(B_value[2], 2));
 
             /** [Scattering frequency] */
-            if (prm.enhanced_scattering_zone == false)
-              scattering_frequencies[q_index] =
-                prm.nu0 * B_mag * std::exp(prm.alpha * points[q_index][1]);
-            else
-              {
-                scattering_frequencies[q_index] =
-                  0.5 *
-                  (prm.zeta_one + prm.zeta_two -
-                   (prm.zeta_one - prm.zeta_two) *
-                     std::tanh((points[q_index][0] - prm.transition_point) /
-                               prm.transition_length)) *
-                  std::exp(prm.alpha * points[q_index][1]);
-                switch (prm.case_identifier)
-                  {
-                    case 'a':
-                      scattering_frequencies[q_index] *= B_mag;
-                      break;
-                    case 'b':
-                      scattering_frequencies[q_index] *= prm.B0;
-                      break;
-                    default:
-                      AssertThrow(false,
-                                  dealii::ExcNotImplemented(
-                                    "There are no other cases but a and b."));
-                  }
-              }
-            /** [Scattering frequency] */
+            scattering_frequencies[q_index] =
+              prm.nu0 * B_mag * std::exp(prm.alpha * points[q_index][1]);
           }
+        /** [Scattering frequency] */
       }
 
 
@@ -401,21 +346,7 @@ namespace sapphirepp
         for (unsigned int i = 0; i < source_values.size(); ++i)
           {
             /** [Source] */
-            if (i == 0)
-              {
-                const double ln_p = point[1];
-                const double x    = point[0];
-
-                // S_000 = sqrt(4 pi) * S
-                source_values[0] =
-                  prm.Q / (2 * M_PI * prm.sig_ln_p * prm.sig_x) *
-                  std::exp(-(ln_p - prm.ln_p_inj) * (ln_p - prm.ln_p_inj) /
-                           (2. * prm.sig_ln_p * prm.sig_ln_p)) *
-                  std::exp(-(x - prm.x_inj) * (x - prm.x_inj) /
-                           (2. * prm.sig_x * prm.sig_x));
-              }
-            else
-              source_values[i] = 0.;
+            source_values[i] = 0.;
             /** [Source] */
           }
       }
