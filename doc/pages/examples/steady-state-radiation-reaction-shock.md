@@ -91,16 +91,18 @@ In the parameter file, we set furthermore
 
 ### Radiation Reaction Force {#radiation-reaction-force-steady-state-radiation-reaction-shock}
 
-A detailed derivation of the radiation reaction term as implemented 
+A detailed derivation of the radiation reaction term as implemented
 in @sapphire,
-as well as validation thereof, 
+as well as validation thereof,
 can be found at [radiation reaction](#radiation-reaction)
 and @cite Grebe2026.
 
-As we use dimensionless units, 
-we introduce a new subsection to the parameter file, 
+As we are interested in the acceleration of electrons,
+we introduce a new subsection to the parameter file
+that allows us to change the reference mass and charge,
 
-```  subsection Particle properties
+```
+  subsection Particle properties
     set Charge = -1
     set Mass   = 1.0
   end
@@ -111,8 +113,8 @@ we introduce a new subsection to the parameter file,
   end
 ```
 
-We recommend that the spatial grid extends at least 7 diffusion lengths 
-of the maximum momentum upstream 
+We recommend that the spatial grid extends at least 7 diffusion lengths
+of the maximum momentum upstream
 and 3 diffusion lengths downstream.
 
 ### Compile and run {#compile-steady-state-radiation-reaction-shock}
@@ -124,7 +126,7 @@ and the executable can be found in the
 `build/examples/vfp/steady-state-radiation-reaction-shock` folder.
 The executable is called `steady-state-radiation-reaction-shock`.
 
-The parameter file is 
+The parameter file is
 `examples/vfp/steady-state-radiation-reaction-shock/parameter.prm`.
 
 @include examples/vfp/steady-state-radiation-reaction-shock/parameter.prm
@@ -139,9 +141,9 @@ mpirun -n 32 ./build/examples/vfp/steady-state-radiation-reaction-shock/steady-s
 and a lot of memory,
 typically only available on clusters.
 
-The following @sapplot script creates a $2D$-plot of the distribution, 
+The following @sapplot script creates a $2D$-plot of the distribution function,
 the scaled, normalized distribution $p^4 f_{000}$ at the shock,
-as well as the spatial distribution at fixed momentum value. 
+as well as the spatial distribution at fixed momentum value.
 
 It furthermore provides .csv files of the momentum and spatial distribution.
 
@@ -154,24 +156,24 @@ python examples/vfp/steady-state-radiation-reaction-shock/plot_steady_state_radi
 ## Results {#results-steady-state-radiation-reaction-shock}
 
 The position and steepness of the cut-off is sensitive to the obliquity,
- shock velocity, gyrofrequency-averaged scattering rate and the magnetic field 
- strength. This is illustrated in the following plot. 
+shock velocity, gyrofrequency-averaged scattering rate and the magnetic field strength. 
+This is illustrated in the following plot.
 
-The fiducial shock parameters are $U/c = 0.05$, $\nu_0 = 0.05$, 
+The fiducial shock parameters are $U/c = 0.05$, $\nu_0 = 0.05$,
 $\theta_\mathrm{B} = 30^\circ$ and $B_1 = 10 \, \mu \mathrm{G}$.
 
-The first panel shows how the cut-off moves to higher momenta when comparing 
-a magnetic field aligned parllel to the shock normal or at 
-${\theta_\mathrm{B} = 30 ^\circ}$. 
-The spectral index decreases due to the obliquity, 
-and we observe the expected pile up near the shock region. 
+The first panel shows how the cut-off moves to higher momenta when comparing
+a magnetic field parallel to the shock normal or at
+${\theta_\mathrm{B} = 30 ^\circ}$.
+The spectral index decreases due to the obliquity,
+and we observe the expected pile up near the shock region.
 
-The cut-off also increases for higher shock velocity, 
+The cut-off also increases for higher shock velocity,
 as shown in the second panel, and for increased scattering rate at the chosen
-obliquity, 
+obliquity,
 as shown in the third panel.
 
-The last panel shows how an enhanced magnetic field increases radiation damping 
+The last panel shows how an enhanced magnetic field increases radiation damping
 and thereby decreases the cut-off momentum.
 
 
@@ -191,6 +193,6 @@ src="https://sapphirepp.org/img/examples/steady-state-radiation-reaction-shock/s
 
 ---
 
-@author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
 @author Marie-Ann Grebe (<magrebe@mpi-hd.mpg.de>)
-@date 2025-10-19
+@author Nils Schween (<nils.schween@mpi-hd.mpg.de>)
+@date 2026-11-11
