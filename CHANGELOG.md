@@ -2,6 +2,38 @@
 
 @tableofcontents
 
+## Changes: 1.4.0
+
+- **Breaking change:** The minimum required deal.II version is now 9.7.1.
+  The minimum required Doxygen version is now 1.18.0.
+
+### VFP
+
+- Include the Landau--Lifschitz radiation-reaction (RR) force in the VFP equation  
+  The RR force can, for example, be used to compute the energy loss
+  of relativistic electrons due to their synchrotron emission.
+  Its implementation is described [here](https://sapphirepp.org/latest/radiation-reaction.html)
+  and an [example](https://sapphirepp.org/latest/steady-state-radiation-reaction-shock.html) is provided.
+- Add the ability to checkpoint simulations  
+  A simulation can be restarted after a failure.
+  An explanation on how to checkpoint and how to resume simulation
+  is given in the subsection "Resume simulation"
+  on the [parallel-shock example](https://sapphirepp.org/latest/parallel-shock.html) page.
+- **Breaking change:** Parameter `Output frequency` was replaced with `Output time step`  
+  Instead of specifying the frequency at which simulation results are output,
+  the user sets the length of time interval after which output is produced.
+- Bug: Weak formulation of the spatial advection part  
+  Simulations with `dim_cs > 1` and $\nabla \cdot U \neq 0$ were affected.  
+  See [Commit 70484e3](https://github.com/sapphirepp/sapphirepp/commit/70484e3752c63c0fc2a717c9507d30cb883457c4).
+- Bug: Weak formulation of the reaction part of the fictitious force term  
+  Simulations with `VFPFlags::momentum` activated
+  and a Jacobian velocity field with $(\mathbf{J}_{\mathbf{U}})_{ij} \neq =0$ for $i,j > 1$.  
+  See [Commit c4ed003](https://github.com/sapphirepp/sapphirepp/commit/c4ed003ce16e819dc90338ad9ecd3a7ce16248cd)
+- Improve the `install-dealii.sh` script
+- Improve sapplot (link to changelog of sapplot)
+
+**Full Changelog**: https://github.com/sapphirepp/sapphirepp/compare/v1.3.0...v1.4.0
+
 ## Changes: 1.3.0
 
 - **Breaking change:** Change C++ standard from 17 to 20.  
