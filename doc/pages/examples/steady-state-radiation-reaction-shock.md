@@ -45,14 +45,12 @@ We solve the VFP equation including the radiation reaction force
 $\mathbf{F}_R$, i.e.
 
 $$
-\begin{multline}
 \frac{\partial f}{\partial t} + (\mathbf{U} + \mathbf{v}) \cdot \nabla_x f
 -\gamma m \frac{\mathrm{D} \mathbf{U}}{\mathrm{D} t} \cdot \nabla_p f
-- (\mathbf{p} \cdot \nabla_x) \mathbf{U} \cdot \nabla_p f \\
+- (\mathbf{p} \cdot \nabla_x) \mathbf{U} \cdot \nabla_p f
 +\nabla_p \cdot (\mathbf{F}_R f)
 + q (\mathbf{v} \times \mathbf{B} ) \cdot \nabla_p f
-= \frac{\nu}{2}\,\Delta_{\theta \varphi} f + S \, .
-\end{multline}
+= \frac{\nu}{2}\,\Delta_{\theta \varphi} f \, .
 $$
 
 The list of activated `vfp_flags` is
@@ -71,7 +69,7 @@ and the new flag
 We prescribe an isotropic particle distribution along the lower $p$ boundary across the total
 spatial domain and normalize the distribution with `prm.Q`.
 The lower $p$ boundary sets the injection momentum.
-Here, the prm.ln_p_inj is instead employed to scale the momentum variable,
+Here, the `prm.ln_p_inj` is instead employed to scale the momentum variable,
 see below.
 
 The implementation of the `BoundaryValueFunction` function is
@@ -84,7 +82,7 @@ The id two corresponds to the lower $p$ boundary.
 
 The factor `std::sqrt(4*std::numbers::pi)` accounts for the normalization of the
 zeroth order spherical harmonic in the expansion of the distribution function
-and the factor $(p/p_inj)^3$ reflects that we work with a scaled distribution function.
+and the factor $(p/p_{inj})^3$ reflects that we work with a scaled distribution function.
 
 In the parameter file, we set furthermore
 `set lower p = inflow`.
