@@ -68,7 +68,8 @@ compute the transport of radiation (interpreting $f$ as the intensity).
 
 @sapphire is developed by
 [Nils Schween](https://github.com/nils-schween),
-[Florian Schulze](https://github.com/floschulze) and
+[Florian Schulze](https://github.com/floschulze),
+[Marie-Ann Grebe](https://github.com/TheRumaWo) and
 [Brian Reville](https://github.com/brevrev)
 members of the [Astrophysical Plasma
 Theory](https://www.mpi-hd.mpg.de/mpi/en/research/scientific-divisions-and-groups/independent-research-groups/apt)
