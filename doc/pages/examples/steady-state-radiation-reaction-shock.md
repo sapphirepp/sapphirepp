@@ -70,9 +70,9 @@ and the new flag
 
 We prescribe an isotropic particle distribution along the lower $p$ boundary across the total
 spatial domain and normalize the distribution with `prm.Q`.
-Note that the lower $p$ boundary sets injection momentum,
-despite the fact that we also defined the injection momentum parameter `prm.ln_p_inj`.
-We use `prm.ln_p_inj`to scale the momentum variable, see below.
+The lower $p$ boundary sets the injection momentum.
+Here, the prm.ln_p_inj is instead employed to scale the momentum variable,
+see below.
 
 The implementation of the `BoundaryValueFunction` function is
 
