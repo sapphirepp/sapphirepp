@@ -51,7 +51,7 @@ def main() -> dict:
     scaled_f_000_ana_p = ps.PythonCalculator(
         registrationName="scaled_f_000_ana_p", Input=solution_scaled
     )
-    scaled_f_000_ana_p.ArrayName = "interpol_p^s f_000"
+    scaled_f_000_ana_p.ArrayName = "interpol_F_000"
     scaled_f_000_ana_p.UseMultilineExpression = 1
     scaled_f_000_ana_p.MultilineExpression = f"""
     # Physical Parameters
@@ -82,9 +82,9 @@ def main() -> dict:
         plot_over_line_p,
         layout_p,
         x_label=r"$\ln p$",
-        y_label=r"$p^s f_{000}$",
+        y_label=r"$F_{000}$",
         x_array_name="Points_Y",
-        visible_lines=["g_000", "p^s f_000", "interpol_p^s f_000"],
+        visible_lines=["g_000", "F_000", "interpol_F_000"],
         log_y_scale=False,
         plot_properties=plot_properties_scaled,
     )

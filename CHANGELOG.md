@@ -30,7 +30,7 @@
   and a Jacobian velocity field with $(\mathbf{J}\_{\mathbf{U}})\_{ij} \neq 0$ for $i,j > 0$.  
   See [Commit c4ed003](https://github.com/sapphirepp/sapphirepp/commit/c4ed003ce16e819dc90338ad9ecd3a7ce16248cd)
 - Improve the `install-dealii.sh` script
-- Improve sapplot (link to changelog of sapplot)
+- Update `sapplot` to [v2.0.0](https://github.com/sapphirepp/sapphireppplot/releases/tag/v2.0.0)
 
 **Full Changelog**: https://github.com/sapphirepp/sapphirepp/compare/v1.3.0...v1.4.0
 
