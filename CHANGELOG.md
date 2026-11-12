@@ -27,7 +27,7 @@
   See [Commit 70484e3](https://github.com/sapphirepp/sapphirepp/commit/70484e3752c63c0fc2a717c9507d30cb883457c4).
 - Bug: Weak formulation of the reaction part of the fictitious force term  
   Simulations with `VFPFlags::momentum` activated
-  and a Jacobian velocity field with $(\mathbf{J}_{\mathbf{U}})_{ij} \neq =0$ for $i,j > 1$.  
+  and a Jacobian velocity field with $(\mathbf{J}\_{\mathbf{U}})\_{ij} \neq 0$ for $i,j > 0$.  
   See [Commit c4ed003](https://github.com/sapphirepp/sapphirepp/commit/c4ed003ce16e819dc90338ad9ecd3a7ce16248cd)
 - Improve the `install-dealii.sh` script
 - Improve sapplot (link to changelog of sapplot)
