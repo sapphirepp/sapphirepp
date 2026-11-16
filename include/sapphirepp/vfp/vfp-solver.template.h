@@ -20,13 +20,14 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file vfp-solver.cpp
+ * @file vfp-solver.template.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de),
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement @ref sapphirepp::VFP::VFPSolver
  */
 
-#include "vfp-solver.h"
+#ifndef VFP_VFPSOLVER_TEMPLATE_H
+#define VFP_VFPSOLVER_TEMPLATE_H
 
 #include <deal.II/base/data_out_base.h>
 #include <deal.II/base/exceptions.h>
@@ -76,6 +77,7 @@
 #include "probe-location.h"
 #include "sapphirepp-logstream.h"
 #include "vfp-flags.h"
+#include "vfp-solver.h"
 
 
 
@@ -3008,10 +3010,4 @@ sapphirepp::VFP::VFPSolver<dim>::compute_weighted_norm(
 
   return global_weighted_norm;
 }
-
-
-
-// Explicit instantiations
-template class sapphirepp::VFP::VFPSolver<1>;
-template class sapphirepp::VFP::VFPSolver<2>;
-template class sapphirepp::VFP::VFPSolver<3>;
+#endif

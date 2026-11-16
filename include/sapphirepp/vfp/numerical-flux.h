@@ -247,4 +247,9 @@ namespace sapphirepp
     };
   } // namespace VFP
 } // namespace sapphirepp
+
+
+
+#include "numerical-flux.template.h"
+
 #endif

@@ -77,11 +77,6 @@ if(SAPPHIREPP)
     message(STATUS "Preparing VFP module")
     add_subdirectory(src/vfp)
     include(cmake/macro_sapphirepp_setup_target_vfp.cmake)
-
-    # VFP source files have to be compiled together with the main/config file
-    set(VFP_SOURCES ${PROJECT_SOURCE_DIR}/src/vfp/numerical-flux.cpp
-      ${PROJECT_SOURCE_DIR}/src/vfp/vfp-solver.cpp
-    )
   endif(VFP)
 
   # Check if all modules are enabled

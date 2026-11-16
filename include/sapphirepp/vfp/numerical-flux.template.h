@@ -20,18 +20,21 @@
 // -----------------------------------------------------------------------------
 
 /**
- * @file numerical-flux.cpp
+ * @file numerical-flux.template.h
  * @author Nils Schween (nils.schween@mpi-hd.mpg.de)
  * @author Florian Schulze (florian.schulze@mpi-hd.mpg.de)
  * @brief Implement @ref sapphirepp::VFP::NumericalFlux
  */
 
-#include "numerical-flux.h"
+#ifndef VFP_NUMERICALFLUX_TEMPLATE_H
+#define VFP_NUMERICALFLUX_TEMPLATE_H
 
 #include <deal.II/base/exceptions.h>
 
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/lapack_support.h>
+
+#include "numerical-flux.h"
 // direct access to the Fortran driver routines of Lapack
 #include <deal.II/lac/lapack_templates.h>
 #include <deal.II/lac/vector.h>
@@ -972,16 +975,18 @@ sapphirepp::VFP::NumericalFlux<dim, has_momentum, logarithmic_p>::
 
 
 
-// explicit instantiation
-template class sapphirepp::VFP::NumericalFlux<1, true, true>;
-template class sapphirepp::VFP::NumericalFlux<1, true, false>;
-template class sapphirepp::VFP::NumericalFlux<1, false, true>;
-template class sapphirepp::VFP::NumericalFlux<1, false, false>;
-template class sapphirepp::VFP::NumericalFlux<2, true, true>;
-template class sapphirepp::VFP::NumericalFlux<2, true, false>;
-template class sapphirepp::VFP::NumericalFlux<2, false, true>;
-template class sapphirepp::VFP::NumericalFlux<2, false, false>;
-template class sapphirepp::VFP::NumericalFlux<3, true, true>;
-template class sapphirepp::VFP::NumericalFlux<3, true, false>;
-template class sapphirepp::VFP::NumericalFlux<3, false, true>;
-template class sapphirepp::VFP::NumericalFlux<3, false, false>;
+// // explicit instantiation
+// template class sapphirepp::VFP::NumericalFlux<1, true, true>;
+// template class sapphirepp::VFP::NumericalFlux<1, true, false>;
+// template class sapphirepp::VFP::NumericalFlux<1, false, true>;
+// template class sapphirepp::VFP::NumericalFlux<1, false, false>;
+// template class sapphirepp::VFP::NumericalFlux<2, true, true>;
+// template class sapphirepp::VFP::NumericalFlux<2, true, false>;
+// template class sapphirepp::VFP::NumericalFlux<2, false, true>;
+// template class sapphirepp::VFP::NumericalFlux<2, false, false>;
+// template class sapphirepp::VFP::NumericalFlux<3, true, true>;
+// template class sapphirepp::VFP::NumericalFlux<3, true, false>;
+// template class sapphirepp::VFP::NumericalFlux<3, false, true>;
+// template class sapphirepp::VFP::NumericalFlux<3, false, false>;
+
+#endif
