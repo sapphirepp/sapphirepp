@@ -4,7 +4,7 @@
 #   docker build --build-arg https_proxy=http://$https_proxy . -t sapphirepp
 # Run with: 
 #   docker run --rm -ti -u root -v $(pwd)/results:/home/dealii/sapphirepp/results sapphirepp bash
-FROM dealii/dealii:v9.7.1-noble
+FROM dealii/dealii:v9.8.0-resolute
 USER root
 # Allow run mpi as root (workaround for host filesystem owner matching problem)
 ENV OMPI_ALLOW_RUN_AS_ROOT=1
