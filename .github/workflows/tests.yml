@@ -3,12 +3,12 @@ name: GitHub CI
 on:
   push:
     branches:
-        - main
+      - main
   pull_request:
     branches:
-        - main
+      - main
   workflow_dispatch:
-    
+
 env:
   COMPILE_JOBS: ${{ vars.NCPUS || 1 }}
   CXX_FLAGS: "-Werror -Wall -Wextra -Wno-ignored-optimization-argument"
@@ -23,12 +23,12 @@ jobs:
       fail-fast: true
       matrix:
         build_type: ["Release", "Debug"]
-    
+
     container:
       image: sapphirepp/sapphirepp:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configure cmake
         run: |
