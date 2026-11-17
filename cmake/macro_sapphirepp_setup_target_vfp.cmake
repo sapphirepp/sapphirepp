@@ -27,12 +27,7 @@ macro(sapphirepp_setup_target_vfp _target)
     " using ${_config_header_dir}/config.h"
   )
 
-  target_sources(${_target} PRIVATE ${VFP_SOURCES})
-
   deal_ii_setup_target(${_target})
-  target_include_directories(${_target} PUBLIC
-    ${PROJECT_SOURCE_DIR}/include/sapphirepp/vfp
-  )
   target_include_directories(${_target} PUBLIC ${_config_header_dir})
   target_link_libraries(${_target} UtilsLib VFPLib)
 endmacro()

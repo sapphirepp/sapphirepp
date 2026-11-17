@@ -789,4 +789,6 @@ sapphirepp::VFP::VFPSolver<dim>::get_timer() const
 
 
 
+#include "vfp-solver.template.h"
+
 #endif

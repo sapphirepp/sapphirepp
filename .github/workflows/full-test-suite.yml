@@ -4,9 +4,9 @@ on:
   release:
     types: [created]
   schedule:
-  - cron:  '0 0 1 * *'
+    - cron: "0 0 1 * *"
   workflow_dispatch:
-    
+
 env:
   COMPILE_JOBS: ${{ vars.NCPUS || 1 }}
   CXX_FLAGS: "-Werror -Wall -Wextra -Wno-ignored-optimization-argument"
@@ -21,10 +21,10 @@ jobs:
       fail-fast: false
       matrix:
         build_type: ["Release", "Debug"]
-        dealii_version: ["v9.7.1", "master"]
-    
+        dealii_version: ["v9.7.1-noble", "master-resolute"]
+
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-noble
+      image: dealii/dealii:${{ matrix.dealii_version }}
       options: --user root
 
     steps:
@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get install -y nodejs
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # - name: Install clang-tidy
       #   run: |
@@ -48,7 +48,7 @@ jobs:
       - name: Compile
         run: |
           make --directory=build -j${{ env.COMPILE_JOBS }}
-       
+
       - name: Test
         env:
           OMPI_ALLOW_RUN_AS_ROOT: 1
